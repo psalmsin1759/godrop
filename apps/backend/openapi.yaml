@@ -25,6 +25,8 @@ info:
 servers:
   - url: https://api.godrop.ng/v1
     description: Production
+  - url: https://godrop-production.up.railway.app/api/v1
+    description: Staging
   - url: http://localhost:4000/api/v1
     description: Local development
 

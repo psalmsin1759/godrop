@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "prisma generate --schema=src/prisma/schema.prisma && tsc",
+    "start": "prisma migrate deploy --schema=src/prisma/schema.prisma && node dist/index.js",
     "lint": "eslint src/",
     "db:generate": "prisma generate --schema=src/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=src/prisma/schema.prisma",

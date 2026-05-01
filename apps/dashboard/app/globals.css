@@ -1,0 +1,169 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bs-blue: #0d6efd;
+  --bs-indigo: #6610f2;
+  --bs-purple: #6f42c1;
+  --bs-pink: #d63384;
+  --bs-red: #dc3545;
+  --bs-orange: #fd7e14;
+  --bs-yellow: #ffc107;
+  --bs-green: #198754;
+  --bs-teal: #20c997;
+  --bs-cyan: #0dcaf0;
+  --bs-black: #000;
+  --bs-white: #fff;
+  --bs-gray: #6c757d;
+  --bs-gray-dark: #343a40;
+  --bs-gray-100: #f8f9fa;
+  --bs-gray-200: #e9ecef;
+  --bs-gray-300: #dee2e6;
+  --bs-gray-400: #ced4da;
+  --bs-gray-500: #adb5bd;
+  --bs-gray-600: #6c757d;
+  --bs-gray-700: #495057;
+  --bs-gray-800: #343a40;
+  --bs-gray-900: #212529;
+  --bs-primary: #3454d1;
+  --bs-secondary: #64748b;
+  --bs-success: #17c666;
+  --bs-info: #3dc7be;
+  --bs-warning: #ffa21d;
+  --bs-danger: #ea4d4d;
+  --bs-light: #eff0f6;
+  --bs-dark: #283c50;
+  --bs-darken: #001327;
+  --bs-body-color: #4b5563;
+  --bs-body-bg: #f0f2f8;
+  --bs-border-color: #e5e7eb;
+  --bs-border-radius: 4px;
+  --bs-border-radius-sm: 2px;
+  --bs-border-radius-lg: 6px;
+
+  --sidebar-width: 220px;
+  --topbar-height: 56px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  line-height: 1.6;
+  color: #6b7885;
+  overflow-x: hidden;
+  font-size: 0.84rem;
+  scroll-behavior: smooth;
+  font-family: Inter, sans-serif;
+  transition: all 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  background-color: #f3f4f6;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-lg border border-[#e5e7eb] shadow-card;
+  }
+
+  .card-header {
+    @apply flex items-center justify-between px-4 py-3 border-b border-[#e5e7eb];
+  }
+
+  .card-title {
+    @apply text-sm font-semibold text-[#283c50];
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-[#283c50] leading-none;
+  }
+
+  .text-muted {
+    @apply text-[#6b7885];
+  }
+
+  .badge-success {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[#e8faf2] text-[#17c666];
+  }
+
+  .badge-info {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[#e8f8f7] text-[#3dc7be];
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[#fff6e8] text-[#ffa21d];
+  }
+
+  .badge-danger {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[#fdf0f0] text-[#ea4d4d];
+  }
+
+  .badge-primary {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[#eef1fb] text-[#3454d1];
+  }
+
+  .btn-primary {
+    @apply bg-[#3454d1] hover:bg-[#2a43a8] text-white text-xs font-medium px-3 py-1.5 rounded transition-colors;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2 rounded text-sm text-white/70 hover:bg-white/10 hover:text-white transition-all duration-150 cursor-pointer;
+  }
+
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-3 py-2 rounded text-sm bg-[#3454d1] text-white font-medium cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+  .animate-delay-500 { animation-delay: 500ms; }
+}
+
+/* Recharts customization */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+.recharts-default-tooltip {
+  border-radius: 6px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,.07) !important;
+  font-size: 0.8rem !important;
+}
+
+@layer base {
+  html {
+    @apply font-sans;
+  }
+}

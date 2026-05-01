@@ -1,0 +1,148 @@
+import { Router } from "express";
+import { validate } from "../middleware/validate";
+import { requireSystemAuth, requireSystemRole } from "../middleware/systemAuth";
+import { auditSystemAction } from "../middleware/auditLog";
+import {
+  adminLoginSchema,
+  createSystemAdminSchema,
+  updateSystemAdminSchema,
+  rejectVendorSchema,
+  suspendVendorSchema,
+  auditLogQuerySchema,
+  graphQuerySchema,
+  adminUpdateOrderStatusSchema,
+  adminCancelOrderSchema,
+  customerQuerySchema,
+  customerOrderQuerySchema,
+  updateCustomerStatusSchema,
+  walletTxQuerySchema,
+} from "../validators/systemAdminValidators";
+import * as ctrl from "../controllers/systemAdminController";
+import * as analyticsCtrl from "../controllers/analyticsController";
+
+const router = Router();
+
+// ─── Public ───────────────────────────────────────────────────
+router.post("/login", validate(adminLoginSchema), ctrl.login);
+
+// ─── Authenticated ────────────────────────────────────────────
+router.use(requireSystemAuth);
+
+router.get("/me", ctrl.getMe);
+
+// ─── Admin Management (SUPER_ADMIN only) ─────────────────────
+router.get(
+  "/admins",
+  requireSystemRole("SUPER_ADMIN"),
+  ctrl.listAdmins
+);
+router.post(
+  "/admins",
+  requireSystemRole("SUPER_ADMIN"),
+  validate(createSystemAdminSchema),
+  auditSystemAction({ action: "CREATE_SYSTEM_ADMIN", entity: "SystemAdmin" }),
+  ctrl.createAdmin
+);
+router.patch(
+  "/admins/:id",
+  requireSystemRole("SUPER_ADMIN"),
+  validate(updateSystemAdminSchema),
+  auditSystemAction({ action: "UPDATE_SYSTEM_ADMIN", entity: "SystemAdmin", getEntityId: (r) => r.params.id }),
+  ctrl.updateAdmin
+);
+
+// ─── Vendor Management (ADMIN+) ───────────────────────────────
+router.get("/vendors", requireSystemRole("ADMIN"), ctrl.listVendors);
+router.get("/vendors/:id", requireSystemRole("ADMIN"), ctrl.getVendor);
+router.patch(
+  "/vendors/:id/approve",
+  requireSystemRole("ADMIN"),
+  auditSystemAction({ action: "APPROVE_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
+  ctrl.approveVendor
+);
+router.patch(
+  "/vendors/:id/reject",
+  requireSystemRole("ADMIN"),
+  validate(rejectVendorSchema),
+  auditSystemAction({ action: "REJECT_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
+  ctrl.rejectVendor
+);
+router.patch(
+  "/vendors/:id/suspend",
+  requireSystemRole("ADMIN"),
+  validate(suspendVendorSchema),
+  auditSystemAction({ action: "SUSPEND_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
+  ctrl.suspendVendor
+);
+router.patch(
+  "/vendors/:id/reinstate",
+  requireSystemRole("ADMIN"),
+  auditSystemAction({ action: "REINSTATE_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
+  ctrl.reinstateVendor
+);
+
+// ─── Customer Management (ADMIN+) ────────────────────────────
+router.get(
+  "/customers",
+  requireSystemRole("ADMIN"),
+  validate(customerQuerySchema, "query"),
+  ctrl.listCustomers
+);
+router.get("/customers/:id", requireSystemRole("ADMIN"), ctrl.getCustomer);
+router.get(
+  "/customers/:id/orders",
+  requireSystemRole("ADMIN"),
+  validate(customerOrderQuerySchema, "query"),
+  ctrl.getCustomerOrders
+);
+router.patch(
+  "/customers/:id/status",
+  requireSystemRole("ADMIN"),
+  validate(updateCustomerStatusSchema),
+  auditSystemAction({ action: "UPDATE_CUSTOMER_STATUS", entity: "User", getEntityId: (r) => r.params.id }),
+  ctrl.updateCustomerStatus
+);
+router.get("/customers/:id/wallet", requireSystemRole("ADMIN"), ctrl.getCustomerWallet);
+router.get(
+  "/customers/:id/wallet/transactions",
+  requireSystemRole("ADMIN"),
+  validate(walletTxQuerySchema, "query"),
+  ctrl.getCustomerWalletTransactions
+);
+
+// ─── Analytics (ADMIN+) ──────────────────────────────────────
+router.get("/analytics", requireSystemRole("ADMIN"), analyticsCtrl.systemAnalytics);
+router.get(
+  "/analytics/graph",
+  requireSystemRole("ADMIN"),
+  validate(graphQuerySchema, "query"),
+  analyticsCtrl.systemGraphData
+);
+
+// ─── Audit Logs (ADMIN+) ──────────────────────────────────────
+router.get(
+  "/audit-logs",
+  requireSystemRole("ADMIN"),
+  validate(auditLogQuerySchema, "query"),
+  ctrl.listAuditLogs
+);
+
+// ─── Orders (ADMIN+) ─────────────────────────────────────────
+router.get("/orders", requireSystemRole("ADMIN"), ctrl.listOrders);
+router.get("/orders/:id", requireSystemRole("ADMIN"), ctrl.getOrder);
+router.patch(
+  "/orders/:id/status",
+  requireSystemRole("ADMIN"),
+  validate(adminUpdateOrderStatusSchema),
+  auditSystemAction({ action: "UPDATE_ORDER_STATUS", entity: "Order", getEntityId: (r) => r.params.id }),
+  ctrl.updateOrderStatus
+);
+router.patch(
+  "/orders/:id/cancel",
+  requireSystemRole("ADMIN"),
+  validate(adminCancelOrderSchema),
+  auditSystemAction({ action: "CANCEL_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
+  ctrl.cancelOrder
+);
+
+export default router;

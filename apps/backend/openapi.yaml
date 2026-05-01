@@ -1,0 +1,4407 @@
+openapi: 3.0.3
+info:
+  title: Godrop API
+  description: |
+    On-demand delivery and logistics platform for Nigeria.
+
+    **Authentication domains:**
+    - **Customer API** — Phone OTP → JWT. Pass token as `Authorization: Bearer <token>`.
+    - **Vendor Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
+    - **System Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
+
+    **Currency:** All monetary amounts are in **Kobo** (₦ × 100). Never Naira floats.
+    **Phone:** E.164 format, e.g. `+2348012345678`.
+
+    **Response envelope:**
+    - Success: `{ "success": true, ...fields }` — fields vary by endpoint (see each response schema).
+    - Error: `{ "success": false, "error": "message" }`.
+    - Single-entity detail responses wrap the entity in a `data` key.
+    - Paginated list responses return `data` (array) + `meta` (pagination) at the top level.
+  version: 1.0.0
+  contact:
+    name: Godrop Engineering
+    email: dev@godrop.ng
+
+servers:
+  - url: https://api.godrop.ng/v1
+    description: Production
+  - url: http://localhost:4000/api/v1
+    description: Local development
+
+# ─── Security ─────────────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Used by all three auth domains (customer, vendor admin, system admin). Each token encodes a `type` claim."
+
+  schemas:
+    # ─ Primitives ─────────────────────────────────────────────
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer, example: 1 }
+        limit: { type: integer, example: 20 }
+        total: { type: integer, example: 143 }
+        totalPages: { type: integer, example: 8 }
+
+    ApiSuccess:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+
+    ApiError:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        error: { type: string }
+
+    # ─ Customer Auth ──────────────────────────────────────────
+    TokenPair:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+
+    # ─ Customer Profile ───────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string, example: "+2348012345678" }
+        email: { type: string, format: email }
+        avatarUrl: { type: string }
+        walletBalanceKobo: { type: integer }
+
+    Address:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string, example: "Home" }
+        address: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        isDefault: { type: boolean }
+
+    # ─ Wallet ─────────────────────────────────────────────────
+    WalletTransaction:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [TOPUP, PAYMENT, REFUND] }
+        amountKobo: { type: integer }
+        reference: { type: string }
+        description: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    # ─ Vendors (customer-facing) ──────────────────────────────
+    Restaurant:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        logoUrl: { type: string }
+        cuisines: { type: array, items: { type: string } }
+        rating: { type: number }
+        deliveryFeeKobo: { type: integer }
+        estimatedMinutes: { type: integer }
+        isOpen: { type: boolean }
+
+    MenuItem:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        priceKobo: { type: integer }
+        imageUrl: { type: string }
+        isAvailable: { type: boolean }
+
+    Product:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        priceKobo: { type: integer }
+        imageUrl: { type: string }
+        stock: { type: integer }
+
+    Review:
+      type: object
+      properties:
+        id: { type: string }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    # ─ Orders ─────────────────────────────────────────────────
+    Order:
+      type: object
+      properties:
+        id: { type: string }
+        trackingCode: { type: string, example: "GD-261234567" }
+        type:
+          type: string
+          enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK]
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        totalKobo: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    TruckType:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        capacity: { type: string }
+        imageUrl: { type: string }
+        baseFeeKobo: { type: integer }
+        perKmKobo: { type: integer }
+        isActive: { type: boolean }
+
+    ApartmentType:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: "2 Bedroom Flat" }
+        description: { type: string }
+        priceKobo: { type: integer, example: 8000000 }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TruckPricingConfig:
+      type: object
+      properties:
+        id: { type: string, example: "singleton" }
+        perKmKobo: { type: integer, example: 15000, description: "Cost per kilometre in Kobo" }
+        perLoaderKobo: { type: integer, example: 500000, description: "Cost per loader in Kobo" }
+        updatedAt: { type: string, format: date-time }
+
+    TruckPricingSummary:
+      type: object
+      properties:
+        apartmentTypes:
+          type: array
+          items: { $ref: "#/components/schemas/ApartmentType" }
+        perKmKobo: { type: integer, example: 15000 }
+        perLoaderKobo: { type: integer, example: 500000 }
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        body: { type: string }
+        isRead: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    Banner:
+      type: object
+      properties:
+        id: { type: string }
+        imageUrl: { type: string }
+        title: { type: string }
+        linkType: { type: string }
+        linkValue: { type: string }
+
+    LocationInput:
+      type: object
+      required: [lat, lng, address]
+      properties:
+        lat: { type: number }
+        lng: { type: number }
+        address: { type: string }
+
+    PriceBreakdownParcel:
+      type: object
+      properties:
+        deliveryFeeKobo: { type: integer }
+        serviceFeeKobo: { type: integer }
+        totalKobo: { type: integer }
+
+    PriceBreakdownTruck:
+      type: object
+      properties:
+        apartmentCostKobo: { type: integer, description: "Fixed cost for the apartment type" }
+        distanceKm: { type: number, description: "Total route distance in km" }
+        kmCostKobo: { type: integer, description: "Distance cost (distanceKm × perKmKobo)" }
+        loadersCostKobo: { type: integer, description: "Loaders cost (numLoaders × perLoaderKobo)" }
+        totalKobo: { type: integer }
+
+    # ─ Vendor Onboarding / Admin ──────────────────────────────
+    VendorAdminProfile:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        role:
+          type: string
+          enum: [OWNER, MANAGER, STAFF]
+        isActive: { type: boolean }
+        vendorId: { type: string }
+        vendor: { $ref: "#/components/schemas/VendorFull" }
+        createdAt: { type: string, format: date-time }
+
+    VendorFull:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type:
+          type: string
+          enum: [RESTAURANT, GROCERY, RETAIL, PHARMACY]
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, SUSPENDED]
+        description: { type: string }
+        logoUrl: { type: string }
+        coverUrl: { type: string }
+        address: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        phone: { type: string }
+        email: { type: string, format: email }
+        cuisines: { type: array, items: { type: string } }
+        rating: { type: number }
+        ratingCount: { type: integer }
+        deliveryFeeKobo: { type: integer }
+        estimatedMinutes: { type: integer }
+        isOpen: { type: boolean }
+        isActive: { type: boolean }
+        openingHours: { type: object }
+        rejectionReason: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    ProductCategory:
+      type: object
+      properties:
+        id: { type: string }
+        vendorId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        imageUrl: { type: string }
+        isActive: { type: boolean }
+        sortOrder: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        _count:
+          type: object
+          properties:
+            products: { type: integer }
+
+    ProductAdmin:
+      type: object
+      properties:
+        id: { type: string }
+        categoryId: { type: string }
+        category:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+        name: { type: string }
+        description: { type: string }
+        priceKobo: { type: integer }
+        imageUrl: { type: string }
+        isAvailable: { type: boolean }
+        stock: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    VendorOrder:
+      type: object
+      properties:
+        id: { type: string }
+        trackingCode: { type: string }
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        type:
+          type: string
+          enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK]
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              quantity: { type: integer }
+              unitPriceKobo: { type: integer }
+              totalKobo: { type: integer }
+              notes: { type: string }
+        customer:
+          type: object
+          properties:
+            firstName: { type: string }
+            lastName: { type: string }
+            phone: { type: string }
+        subtotalKobo: { type: integer }
+        deliveryFeeKobo: { type: integer }
+        serviceFeeKobo: { type: integer }
+        discountKobo: { type: integer }
+        totalKobo: { type: integer }
+        paymentMethod: { type: string, enum: [CARD, WALLET, CASH] }
+        paymentStatus: { type: string, enum: [PENDING, PAID, REFUNDED, FAILED] }
+        notes: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AdminCustomer:
+      type: object
+      description: Customer record as seen by system admins (list view)
+      properties:
+        id: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string, example: "+2348012345678" }
+        email: { type: string, format: email, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        isVerified: { type: boolean }
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED, DEACTIVATED]
+        createdAt: { type: string, format: date-time }
+        wallet:
+          type: object
+          nullable: true
+          properties:
+            balanceKobo: { type: integer }
+        _count:
+          type: object
+          properties:
+            orders: { type: integer }
+
+    AdminCustomerDetail:
+      type: object
+      description: Full customer profile returned to system admins (detail view)
+      properties:
+        id: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string, example: "+2348012345678" }
+        email: { type: string, format: email, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        referralCode: { type: string, nullable: true }
+        isVerified: { type: boolean }
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED, DEACTIVATED]
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        wallet:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            balanceKobo: { type: integer }
+            createdAt: { type: string, format: date-time }
+        _count:
+          type: object
+          properties:
+            orders: { type: integer }
+            addresses: { type: integer }
+
+    AdminWallet:
+      type: object
+      description: Customer wallet with owner summary
+      properties:
+        id: { type: string }
+        balanceKobo: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        user:
+          type: object
+          properties:
+            id: { type: string }
+            firstName: { type: string }
+            lastName: { type: string }
+            phone: { type: string }
+
+    AdminWalletTransaction:
+      type: object
+      properties:
+        id: { type: string }
+        walletId: { type: string }
+        type:
+          type: string
+          enum: [TOPUP, PAYMENT, REFUND]
+        amountKobo: { type: integer }
+        reference: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    AdminOrder:
+      type: object
+      description: Full order record returned to system admins
+      properties:
+        id: { type: string }
+        trackingCode: { type: string, example: "GD-261234567" }
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        type:
+          type: string
+          enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK]
+        vendor:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            name: { type: string }
+            type: { type: string, enum: [RESTAURANT, GROCERY, RETAIL, PHARMACY] }
+        customer:
+          type: object
+          properties:
+            id: { type: string }
+            firstName: { type: string }
+            lastName: { type: string }
+            phone: { type: string }
+        rider:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            firstName: { type: string }
+            lastName: { type: string }
+            phone: { type: string }
+            lat: { type: number, nullable: true }
+            lng: { type: number, nullable: true }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              quantity: { type: integer }
+              unitPriceKobo: { type: integer }
+              totalKobo: { type: integer }
+              notes: { type: string }
+        timeline:
+          type: array
+          description: Ordered history of status transitions
+          items:
+            type: object
+            properties:
+              status: { type: string }
+              description: { type: string }
+              createdAt: { type: string, format: date-time }
+        apartmentType:
+          type: object
+          nullable: true
+          description: Present only for TRUCK orders
+          properties:
+            id: { type: string }
+            name: { type: string, example: "2 Bedroom Flat" }
+            priceKobo: { type: integer }
+        numLoaders: { type: integer, nullable: true, description: "Number of loaders requested (TRUCK orders)" }
+        stops:
+          type: array
+          nullable: true
+          description: Intermediate stops (TRUCK orders)
+          items:
+            type: object
+            properties:
+              lat: { type: number }
+              lng: { type: number }
+              address: { type: string }
+        pickupAddress: { type: string }
+        pickupLat: { type: number }
+        pickupLng: { type: number }
+        dropoffAddress: { type: string }
+        dropoffLat: { type: number }
+        dropoffLng: { type: number }
+        packageDescription: { type: string, nullable: true, description: "PARCEL orders" }
+        weightKg: { type: number, nullable: true, description: "PARCEL orders" }
+        sizeCategory: { type: string, nullable: true, description: "PARCEL orders" }
+        recipientName: { type: string, nullable: true, description: "PARCEL orders" }
+        recipientPhone: { type: string, nullable: true, description: "PARCEL orders" }
+        subtotalKobo: { type: integer }
+        deliveryFeeKobo: { type: integer }
+        serviceFeeKobo: { type: integer }
+        discountKobo: { type: integer }
+        totalKobo: { type: integer }
+        paymentMethod: { type: string, enum: [CARD, WALLET, CASH] }
+        paymentStatus: { type: string, enum: [PENDING, PAID, REFUNDED, FAILED] }
+        scheduledAt: { type: string, format: date-time, nullable: true }
+        estimatedMinutes: { type: integer, nullable: true }
+        notes: { type: string, nullable: true }
+        cancellationReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TeamMember:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        role: { type: string, enum: [OWNER, MANAGER, STAFF] }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    VendorSettings:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        deliveryFeeKobo: { type: integer }
+        estimatedMinutes: { type: integer }
+        isOpen: { type: boolean }
+        openingHours: { type: object }
+
+    # ─ System Admin ───────────────────────────────────────────
+    SystemAdminProfile:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        role: { type: string, enum: [SUPER_ADMIN, ADMIN] }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    VendorSummary:
+      type: object
+      description: Vendor list item returned to system admins
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string, enum: [RESTAURANT, GROCERY, RETAIL, PHARMACY] }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, SUSPENDED] }
+        email: { type: string }
+        phone: { type: string }
+        address: { type: string }
+        rating: { type: number }
+        isOpen: { type: boolean }
+        isActive: { type: boolean }
+        admins:
+          type: array
+          description: Owner account only
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              email: { type: string }
+              firstName: { type: string }
+              lastName: { type: string }
+        _count:
+          type: object
+          properties:
+            orders: { type: integer }
+            categories: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    AuditLog:
+      type: object
+      properties:
+        id: { type: string }
+        admin:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            email: { type: string }
+            firstName: { type: string }
+            lastName: { type: string }
+        vendor:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            name: { type: string }
+        action: { type: string, example: "APPROVE_VENDOR" }
+        entity: { type: string, example: "Vendor" }
+        entityId: { type: string }
+        oldValues: { type: object }
+        newValues: { type: object }
+        ipAddress: { type: string }
+        userAgent: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    VendorAnalytics:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            totalOrders: { type: integer, example: 120 }
+            completedOrders: { type: integer, example: 98 }
+            cancelledOrders: { type: integer, example: 8 }
+            totalRevenueKobo: { type: integer, example: 24000000, description: "Sum of subtotalKobo for PAID orders" }
+            avgOrderValueKobo: { type: integer, example: 244897 }
+        ordersByStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { type: string, enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED] }
+              count: { type: integer }
+        revenueByDay:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string, format: date, example: "2026-01-15" }
+              orders: { type: integer }
+              revenueKobo: { type: integer }
+        topProducts:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              orders: { type: integer }
+              revenueKobo: { type: integer }
+
+    SystemAnalytics:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            totalUsers: { type: integer }
+            newUsers: { type: integer, description: "New users in the selected date range" }
+            totalVendors: { type: integer }
+            activeVendors: { type: integer, description: "Vendors with status APPROVED" }
+            pendingVendors: { type: integer }
+            totalOrders: { type: integer }
+            completedOrders: { type: integer }
+            totalRevenueKobo: { type: integer, description: "Sum of totalKobo for all PAID orders" }
+        ordersByStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { type: string }
+              count: { type: integer }
+        ordersByType:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string, enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK] }
+              count: { type: integer }
+              revenueKobo: { type: integer }
+        revenueByDay:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string, format: date }
+              orders: { type: integer }
+              revenueKobo: { type: integer }
+        topVendors:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              type: { type: string, enum: [RESTAURANT, GROCERY, RETAIL, PHARMACY] }
+              rating: { type: number }
+              orders: { type: integer }
+              revenueKobo: { type: integer }
+
+    VendorGraphData:
+      type: object
+      properties:
+        granularity:
+          type: string
+          enum: [day, week, month]
+          example: day
+        points:
+          type: array
+          items:
+            type: object
+            required: [date, orders, revenueKobo]
+            properties:
+              date:
+                type: string
+                format: date
+                description: "Start of the period bucket (YYYY-MM-DD). For week/month granularity this is the Monday/first-of-month in Africa/Lagos time."
+                example: "2026-04-21"
+              orders:
+                type: integer
+                example: 14
+              revenueKobo:
+                type: integer
+                description: "Sum of subtotalKobo for PAID orders in this bucket"
+                example: 3450000
+
+    SystemGraphData:
+      type: object
+      properties:
+        granularity:
+          type: string
+          enum: [day, week, month]
+          example: day
+        points:
+          type: array
+          items:
+            type: object
+            required: [date, orders, revenueKobo, newUsers]
+            properties:
+              date:
+                type: string
+                format: date
+                description: "Start of the period bucket (YYYY-MM-DD). For week/month granularity this is the Monday/first-of-month in Africa/Lagos time."
+                example: "2026-04-21"
+              orders:
+                type: integer
+                example: 340
+              revenueKobo:
+                type: integer
+                description: "Sum of totalKobo for PAID orders in this bucket"
+                example: 87500000
+              newUsers:
+                type: integer
+                description: "New user registrations in this bucket"
+                example: 27
+
+# ─── Paths ────────────────────────────────────────────────────
+paths:
+
+  # ══════════════════════════════════════════════════════════════
+  # CUSTOMER API
+  # ══════════════════════════════════════════════════════════════
+
+  # ─ Auth & Onboarding ─────────────────────────────────────────
+  /auth/otp/request:
+    post:
+      tags: [Auth]
+      summary: Request OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string, example: "+2348012345678" }
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: "OTP sent" }
+                  expiresIn: { type: integer, description: "Seconds until OTP expires", example: 600 }
+
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP and issue tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, otp]
+              properties:
+                phone: { type: string }
+                otp: { type: string, minLength: 6, maxLength: 6 }
+      responses:
+        "200":
+          description: OTP verified — returns tokens and whether this is a new user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+                  isNewUser: { type: boolean }
+        "400":
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Complete registration (new users only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, firstName, lastName]
+              properties:
+                phone: { type: string }
+                firstName: { type: string }
+                lastName: { type: string }
+                email: { type: string, format: email }
+                referralCode: { type: string }
+      responses:
+        "201":
+          description: Registration complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+                  user: { $ref: "#/components/schemas/User" }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+        "401":
+          description: Invalid or expired refresh token
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout (revoke refresh token)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+
+  # ─ Profile & Addresses ────────────────────────────────────────
+  /me:
+    get:
+      tags: [Profile]
+      summary: Get profile
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  id: { type: string }
+                  firstName: { type: string }
+                  lastName: { type: string }
+                  phone: { type: string }
+                  email: { type: string, format: email }
+                  avatarUrl: { type: string }
+                  walletBalanceKobo: { type: integer }
+    patch:
+      tags: [Profile]
+      summary: Update profile
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                email: { type: string, format: email }
+                avatarUrl: { type: string }
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  user: { $ref: "#/components/schemas/User" }
+
+  /me/avatar:
+    post:
+      tags: [Profile]
+      summary: Upload avatar
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: Avatar uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  avatarUrl: { type: string }
+
+  /me/addresses:
+    get:
+      tags: [Profile]
+      summary: List saved addresses
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Saved addresses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  addresses:
+                    type: array
+                    items: { $ref: "#/components/schemas/Address" }
+    post:
+      tags: [Profile]
+      summary: Add saved address
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label, address, lat, lng]
+              properties:
+                label: { type: string }
+                address: { type: string }
+                lat: { type: number }
+                lng: { type: number }
+                isDefault: { type: boolean }
+      responses:
+        "201":
+          description: Address saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  address: { $ref: "#/components/schemas/Address" }
+
+  /me/addresses/{id}:
+    patch:
+      tags: [Profile]
+      summary: Update saved address
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label: { type: string }
+                address: { type: string }
+                lat: { type: number }
+                lng: { type: number }
+                isDefault: { type: boolean }
+      responses:
+        "200":
+          description: Address updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  address: { $ref: "#/components/schemas/Address" }
+        "404":
+          description: Address not found
+    delete:
+      tags: [Profile]
+      summary: Delete saved address
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        "404":
+          description: Address not found
+
+  # ─ Wallet ─────────────────────────────────────────────────────
+  /me/wallet:
+    get:
+      tags: [Wallet]
+      summary: Get wallet balance
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  balanceKobo: { type: integer }
+
+  /me/wallet/transactions:
+    get:
+      tags: [Wallet]
+      summary: Get wallet transactions
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/WalletTransaction" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /me/wallet/topup:
+    post:
+      tags: [Wallet]
+      summary: Initialize wallet top-up via Paystack
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountKobo]
+              properties:
+                amountKobo: { type: integer, minimum: 10000 }
+      responses:
+        "200":
+          description: Paystack checkout URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  paystackAuthUrl: { type: string }
+                  reference: { type: string }
+
+  /me/wallet/topup/verify:
+    post:
+      tags: [Wallet]
+      summary: Verify wallet top-up
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference]
+              properties:
+                reference: { type: string }
+      responses:
+        "200":
+          description: Updated balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  balanceKobo: { type: integer }
+                  transaction: { $ref: "#/components/schemas/WalletTransaction" }
+
+  # ─ Payments ───────────────────────────────────────────────────
+  /payments/initialize:
+    post:
+      tags: [Payments]
+      summary: Initialize payment for an order
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId, method]
+              properties:
+                orderId: { type: string }
+                method: { type: string, enum: [card, wallet, cash] }
+      responses:
+        "200":
+          description: Payment initialized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  method: { type: string, enum: [card, wallet, cash] }
+                  reference: { type: string, nullable: true }
+                  paystackAuthUrl: { type: string, description: "Only present when method=card" }
+        "422":
+          description: Order not found, already paid, or insufficient wallet balance
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /payments/verify:
+    post:
+      tags: [Payments]
+      summary: Verify Paystack payment
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference]
+              properties:
+                reference: { type: string }
+      responses:
+        "200":
+          description: Payment verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  status: { type: string, example: "paid" }
+                  order: { $ref: "#/components/schemas/Order" }
+        "422":
+          description: Payment not successful or reference not found
+
+  # ─ Food ───────────────────────────────────────────────────────
+  /food/restaurants:
+    get:
+      tags: [Food]
+      summary: List restaurants
+      description: Only returns vendors with `status = APPROVED` and `isActive = true`.
+      parameters:
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: isOpen
+          schema: { type: boolean }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Restaurant list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /food/restaurants/{id}:
+    get:
+      tags: [Food]
+      summary: Get restaurant with menu categories
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Restaurant detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  restaurant: { $ref: "#/components/schemas/VendorFull" }
+                  categories:
+                    type: array
+                    items: { $ref: "#/components/schemas/ProductCategory" }
+        "404":
+          description: Restaurant not found
+
+  /food/restaurants/{id}/menu:
+    get:
+      tags: [Food]
+      summary: Get menu items (available only)
+      description: Only returns products with `isAvailable = true`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+      responses:
+        "200":
+          description: Menu items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/MenuItem" }
+
+  /food/restaurants/{id}/reviews:
+    get:
+      tags: [Food]
+      summary: Get restaurant reviews
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Reviews with average rating
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Review" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+                  averageRating: { type: number, example: 4.3 }
+
+  /food/search:
+    get:
+      tags: [Food]
+      summary: Search food
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+      responses:
+        "200":
+          description: Matching restaurants and items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  restaurants:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/MenuItem" }
+
+  # ─ Grocery ────────────────────────────────────────────────────
+  /grocery/stores:
+    get:
+      tags: [Grocery]
+      summary: List grocery stores
+      description: Only returns vendors with `status = APPROVED` and `isActive = true`.
+      parameters:
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Store list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /grocery/stores/{id}:
+    get:
+      tags: [Grocery]
+      summary: Get grocery store
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Store detail with categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  store: { $ref: "#/components/schemas/VendorFull" }
+                  categories:
+                    type: array
+                    items: { $ref: "#/components/schemas/ProductCategory" }
+        "404":
+          description: Store not found
+
+  /grocery/stores/{id}/products:
+    get:
+      tags: [Grocery]
+      summary: Get store products (available only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Product" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /grocery/search:
+    get:
+      tags: [Grocery]
+      summary: Search grocery
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+      responses:
+        "200":
+          description: Matching stores and products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  stores:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  products:
+                    type: array
+                    items: { $ref: "#/components/schemas/Product" }
+
+  # ─ Retail ─────────────────────────────────────────────────────
+  /retail/stores:
+    get:
+      tags: [Retail]
+      summary: List retail stores
+      description: Only returns vendors with `status = APPROVED` and `isActive = true`.
+      parameters:
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Store list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /retail/stores/{id}:
+    get:
+      tags: [Retail]
+      summary: Get retail store
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Store detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  store: { $ref: "#/components/schemas/VendorFull" }
+                  categories:
+                    type: array
+                    items: { $ref: "#/components/schemas/ProductCategory" }
+        "404":
+          description: Store not found
+
+  /retail/stores/{id}/products:
+    get:
+      tags: [Retail]
+      summary: Get store products (available only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Product" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /retail/categories:
+    get:
+      tags: [Retail]
+      summary: List retail categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  categories:
+                    type: array
+                    items: { $ref: "#/components/schemas/ProductCategory" }
+
+  /retail/search:
+    get:
+      tags: [Retail]
+      summary: Search retail
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+      responses:
+        "200":
+          description: Matching stores and products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  stores:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  products:
+                    type: array
+                    items: { $ref: "#/components/schemas/Product" }
+
+  # ─ Pharmacy ───────────────────────────────────────────────────
+  /pharmacy/stores:
+    get:
+      tags: [Pharmacy]
+      summary: List pharmacies
+      description: Only returns vendors with `status = APPROVED` and `isActive = true`.
+      parameters:
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: isOpen
+          schema: { type: boolean }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Pharmacy list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /pharmacy/stores/{id}:
+    get:
+      tags: [Pharmacy]
+      summary: Get pharmacy
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Pharmacy detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  pharmacy: { $ref: "#/components/schemas/VendorFull" }
+                  categories:
+                    type: array
+                    items: { $ref: "#/components/schemas/ProductCategory" }
+        "404":
+          description: Pharmacy not found
+
+  /pharmacy/stores/{id}/products:
+    get:
+      tags: [Pharmacy]
+      summary: Get pharmacy products (available only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Product" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /pharmacy/search:
+    get:
+      tags: [Pharmacy]
+      summary: Search pharmacy
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: lat
+          schema: { type: number }
+        - in: query
+          name: lng
+          schema: { type: number }
+      responses:
+        "200":
+          description: Matching pharmacies and products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  pharmacies:
+                    type: array
+                    items: { $ref: "#/components/schemas/Restaurant" }
+                  products:
+                    type: array
+                    items: { $ref: "#/components/schemas/Product" }
+
+  # ─ Parcel ─────────────────────────────────────────────────────
+  /parcel/quote:
+    post:
+      tags: [Parcel]
+      summary: Get parcel delivery quote
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pickup, dropoff]
+              properties:
+                pickup: { $ref: "#/components/schemas/LocationInput" }
+                dropoff: { $ref: "#/components/schemas/LocationInput" }
+                weightKg: { type: number }
+                sizeCategory: { type: string, enum: [small, medium, large, extra_large] }
+      responses:
+        "200":
+          description: Price quote
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  priceBreakdown: { $ref: "#/components/schemas/PriceBreakdownParcel" }
+                  estimatedMinutes: { type: integer }
+
+  /parcel/orders:
+    post:
+      tags: [Parcel]
+      summary: Place parcel order
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pickup, dropoff, packageDescription, paymentMethod, recipientName, recipientPhone]
+              properties:
+                pickup: { $ref: "#/components/schemas/LocationInput" }
+                dropoff: { $ref: "#/components/schemas/LocationInput" }
+                packageDescription: { type: string }
+                weightKg: { type: number }
+                sizeCategory: { type: string }
+                paymentMethod: { type: string, enum: [card, wallet, cash] }
+                recipientName: { type: string }
+                recipientPhone: { type: string }
+                scheduleAt: { type: string, format: date-time }
+      responses:
+        "201":
+          description: Parcel order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  order: { $ref: "#/components/schemas/Order" }
+
+  # ─ Truck ──────────────────────────────────────────────────────
+
+  /truck/pricing:
+    get:
+      tags: [Truck]
+      summary: Get full pricing summary (apartment types + rates)
+      description: Returns all active apartment types with their costs, the global per-km rate, and the global per-loader rate. Use this to populate the booking UI.
+      responses:
+        "200":
+          description: Pricing summary
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: "#/components/schemas/ApiSuccess" }
+                  - { $ref: "#/components/schemas/TruckPricingSummary" }
+
+  /truck/apartment-types:
+    get:
+      tags: [Truck]
+      summary: List active apartment types (mobile/customer)
+      responses:
+        "200":
+          description: Active apartment types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  types:
+                    type: array
+                    items: { $ref: "#/components/schemas/ApartmentType" }
+
+    post:
+      tags: [Truck]
+      summary: Create an apartment type (admin)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, priceKobo]
+              properties:
+                name: { type: string, example: "2 Bedroom Flat" }
+                description: { type: string }
+                priceKobo: { type: integer, minimum: 0, example: 8000000 }
+                isActive: { type: boolean }
+      responses:
+        "201":
+          description: Apartment type created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  type: { $ref: "#/components/schemas/ApartmentType" }
+        "409":
+          description: Name already exists
+
+  /truck/admin/apartment-types:
+    get:
+      tags: [Truck]
+      summary: List all apartment types including inactive (admin)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: All apartment types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  types:
+                    type: array
+                    items: { $ref: "#/components/schemas/ApartmentType" }
+
+  /truck/apartment-types/{id}:
+    patch:
+      tags: [Truck]
+      summary: Update an apartment type (admin)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                priceKobo: { type: integer, minimum: 0 }
+                isActive: { type: boolean }
+      responses:
+        "200":
+          description: Apartment type updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  type: { $ref: "#/components/schemas/ApartmentType" }
+        "404":
+          description: Apartment type not found
+        "409":
+          description: Name already exists
+
+    delete:
+      tags: [Truck]
+      summary: Delete an apartment type (admin)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        "404":
+          description: Apartment type not found
+
+  /truck/pricing/per-km:
+    put:
+      tags: [Truck]
+      summary: Set cost per kilometre (admin)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [perKmKobo]
+              properties:
+                perKmKobo: { type: integer, minimum: 0, example: 15000, description: "Cost per km in Kobo (e.g. 15000 = ₦150/km)" }
+      responses:
+        "200":
+          description: Rate updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  config: { $ref: "#/components/schemas/TruckPricingConfig" }
+
+  /truck/pricing/per-loader:
+    put:
+      tags: [Truck]
+      summary: Set cost per loader (admin)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [perLoaderKobo]
+              properties:
+                perLoaderKobo: { type: integer, minimum: 0, example: 500000, description: "Cost per loader in Kobo (e.g. 500000 = ₦5,000/loader)" }
+      responses:
+        "200":
+          description: Rate updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  config: { $ref: "#/components/schemas/TruckPricingConfig" }
+
+  /truck/quote:
+    post:
+      tags: [Truck]
+      summary: Get truck booking quote
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [apartmentTypeId, pickup, dropoff]
+              properties:
+                apartmentTypeId: { type: string }
+                numLoaders: { type: integer, minimum: 0, default: 0 }
+                pickup: { $ref: "#/components/schemas/LocationInput" }
+                dropoff: { $ref: "#/components/schemas/LocationInput" }
+                stops:
+                  type: array
+                  items: { $ref: "#/components/schemas/LocationInput" }
+      responses:
+        "200":
+          description: Truck price quote
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  priceBreakdown: { $ref: "#/components/schemas/PriceBreakdownTruck" }
+                  estimatedMinutes: { type: integer }
+        "404":
+          description: Apartment type not found
+
+  /truck/orders:
+    post:
+      tags: [Truck]
+      summary: Place a truck booking order
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [apartmentTypeId, pickup, dropoff, paymentMethod]
+              properties:
+                apartmentTypeId: { type: string }
+                numLoaders: { type: integer, minimum: 0, default: 0 }
+                pickup: { $ref: "#/components/schemas/LocationInput" }
+                dropoff: { $ref: "#/components/schemas/LocationInput" }
+                stops:
+                  type: array
+                  items: { $ref: "#/components/schemas/LocationInput" }
+                scheduledAt: { type: string, format: date-time }
+                paymentMethod: { type: string, enum: [card, wallet, cash] }
+                notes: { type: string }
+      responses:
+        "201":
+          description: Truck order placed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  order: { $ref: "#/components/schemas/Order" }
+        "404":
+          description: Apartment type not found
+
+  /truck/types:
+    get:
+      tags: [Truck]
+      summary: List vehicle truck types
+      responses:
+        "200":
+          description: Available truck vehicle types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  types:
+                    type: array
+                    items: { $ref: "#/components/schemas/TruckType" }
+
+    post:
+      tags: [Truck]
+      summary: Create a truck vehicle type (admin)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, baseFeeKobo, perKmKobo]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                capacity: { type: string }
+                imageUrl: { type: string, format: uri }
+                baseFeeKobo: { type: integer, minimum: 0 }
+                perKmKobo: { type: integer, minimum: 0 }
+                isActive: { type: boolean }
+      responses:
+        "201":
+          description: Truck type created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  truckType: { $ref: "#/components/schemas/TruckType" }
+        "409":
+          description: Truck type name already exists
+
+  /truck/types/{id}:
+    patch:
+      tags: [Truck]
+      summary: Update a truck vehicle type (admin)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                capacity: { type: string }
+                imageUrl: { type: string, format: uri }
+                baseFeeKobo: { type: integer, minimum: 0 }
+                perKmKobo: { type: integer, minimum: 0 }
+                isActive: { type: boolean }
+      responses:
+        "200":
+          description: Truck type updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  truckType: { $ref: "#/components/schemas/TruckType" }
+        "404":
+          description: Truck type not found
+        "409":
+          description: Truck type name already exists
+
+    delete:
+      tags: [Truck]
+      summary: Delete a truck vehicle type (admin)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Truck type deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        "404":
+          description: Truck type not found
+
+  # ─ Orders (unified) ───────────────────────────────────────────
+  /orders:
+    get:
+      tags: [Orders]
+      summary: List orders
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED] }
+        - in: query
+          name: type
+          schema: { type: string, enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK] }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Paginated orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Order" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get order details
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order with items, timeline, and rider
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  order: { $ref: "#/components/schemas/Order" }
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string }
+                        quantity: { type: integer }
+                        unitPriceKobo: { type: integer }
+                        totalKobo: { type: integer }
+                        notes: { type: string }
+                  timeline:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        status: { type: string }
+                        createdAt: { type: string, format: date-time }
+                  rider:
+                    nullable: true
+                    type: object
+                    properties:
+                      id: { type: string }
+                      firstName: { type: string }
+                      lastName: { type: string }
+                      phone: { type: string }
+                      lat: { type: number }
+                      lng: { type: number }
+        "404":
+          description: Order not found
+
+  /orders/{id}/cancel:
+    post:
+      tags: [Orders]
+      summary: Cancel an order
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  order: { $ref: "#/components/schemas/Order" }
+        "404":
+          description: Order not found
+        "422":
+          description: Order cannot be cancelled (already out for delivery or delivered)
+
+  /orders/{id}/rating:
+    post:
+      tags: [Orders]
+      summary: Rate a delivered order
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string }
+      responses:
+        "200":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  review: { $ref: "#/components/schemas/Review" }
+
+  /orders/{id}/reorder:
+    post:
+      tags: [Orders]
+      summary: Pre-fill cart from past order
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Pre-filled cart payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  cart:
+                    type: object
+                    properties:
+                      vendorId: { type: string }
+                      type: { type: string }
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            productId: { type: string }
+                            name: { type: string }
+                            quantity: { type: integer }
+                            unitPriceKobo: { type: integer }
+
+  /orders/{id}/tracking:
+    get:
+      tags: [Tracking]
+      summary: Poll order tracking status
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Rider location and estimated minutes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  status: { type: string }
+                  estimatedMinutes: { type: integer, nullable: true }
+                  riderLat: { type: number, nullable: true }
+                  riderLng: { type: number, nullable: true }
+
+  # ─ Notifications ──────────────────────────────────────────────
+  /me/push-token:
+    post:
+      tags: [Notifications]
+      summary: Register FCM push token
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string }
+                platform: { type: string, enum: [android, ios] }
+      responses:
+        "200":
+          description: Token registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+
+  /me/notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: isRead
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Notifications with unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Notification" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+                  unreadCount: { type: integer, description: "Total unread (regardless of current filter)" }
+
+  /me/notifications/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark notifications as read
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items: { type: string }
+                  description: "Omit or pass empty array to mark all as read"
+      responses:
+        "200":
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+
+  # ─ Promotions ─────────────────────────────────────────────────
+  /promotions/apply:
+    post:
+      tags: [Promotions]
+      summary: Apply promo code
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, orderType, amountKobo]
+              properties:
+                code: { type: string }
+                orderType: { type: string }
+                amountKobo: { type: integer }
+      responses:
+        "200":
+          description: Discount applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  discountKobo: { type: integer }
+                  description: { type: string }
+                  validUntil: { type: string, format: date-time }
+        "422":
+          description: Invalid, expired, or inapplicable promo code
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /promotions/banners:
+    get:
+      tags: [Promotions]
+      summary: List active promotional banners
+      responses:
+        "200":
+          description: Banner list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  banners:
+                    type: array
+                    items: { $ref: "#/components/schemas/Banner" }
+
+  # ══════════════════════════════════════════════════════════════
+  # VENDOR ONBOARDING
+  # ══════════════════════════════════════════════════════════════
+
+  /vendor:
+    post:
+      tags: [Vendor Onboarding]
+      summary: Apply as a vendor
+      description: |
+        Creates a vendor and an OWNER account in one step. The vendor starts in `PENDING` status
+        and must be approved by a system admin before it is visible to customers.
+        A welcome email is sent to the owner's email address upon submission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, type, address, lat, lng, phone, email, ownerFirstName, ownerLastName, ownerPassword]
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  example: "Mama's Kitchen"
+                type:
+                  type: string
+                  enum: [RESTAURANT, GROCERY, RETAIL, PHARMACY]
+                description:
+                  type: string
+                  maxLength: 500
+                address:
+                  type: string
+                  example: "14 Admiralty Way, Lekki Phase 1, Lagos"
+                lat: { type: number, example: 6.4314 }
+                lng: { type: number, example: 3.4703 }
+                phone:
+                  type: string
+                  pattern: '^\+234\d{10}$'
+                  example: "+2348012345678"
+                email:
+                  type: string
+                  format: email
+                  example: "owner@mamaskitchen.ng"
+                cuisines:
+                  type: array
+                  items: { type: string }
+                  example: ["Nigerian", "Soups"]
+                openingHours:
+                  type: object
+                  example:
+                    monday: { open: "08:00", close: "22:00" }
+                    friday: { open: "08:00", close: "23:00" }
+                ownerFirstName: { type: string, example: "Mama" }
+                ownerLastName: { type: string, example: "Ngozi" }
+                ownerPassword:
+                  type: string
+                  minLength: 8
+                  example: "SecurePass123!"
+      responses:
+        "201":
+          description: Vendor application submitted. Welcome email sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  vendor: { $ref: "#/components/schemas/VendorFull" }
+                  admin:
+                    allOf:
+                      - $ref: "#/components/schemas/VendorAdminProfile"
+                      - type: object
+                        description: Password excluded from response
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  # ══════════════════════════════════════════════════════════════
+  # VENDOR ADMIN API  (prefix: /vendor-admin)
+  # Token type: "admin" — obtain from POST /admin/login
+  # ══════════════════════════════════════════════════════════════
+
+  /vendor-admin/me:
+    get:
+      tags: [Vendor Admin — Auth]
+      summary: Get own profile (all roles)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Admin profile with vendor details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorAdminProfile" }
+        "401":
+          description: Unauthorized
+
+  /vendor-admin/me/change-password:
+    post:
+      tags: [Vendor Admin — Auth]
+      summary: Change own password (all roles)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string, minLength: 8 }
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        "400":
+          description: Current password is incorrect
+
+  # ─ Categories (MANAGER+) ──────────────────────────────────────
+  /vendor-admin/categories:
+    get:
+      tags: [Vendor Admin — Categories]
+      summary: List own vendor's categories (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Categories with product counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/ProductCategory" }
+    post:
+      tags: [Vendor Admin — Categories]
+      summary: Create category (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 100 }
+                description: { type: string, maxLength: 500 }
+                imageUrl: { type: string, format: uri }
+                isActive: { type: boolean, default: true }
+                sortOrder: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductCategory" }
+
+  /vendor-admin/categories/{id}:
+    get:
+      tags: [Vendor Admin — Categories]
+      summary: Get category by ID (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Category detail with product count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductCategory" }
+        "404":
+          description: Category not found
+    put:
+      tags: [Vendor Admin — Categories]
+      summary: Update category (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 100 }
+                description: { type: string, maxLength: 500, nullable: true }
+                imageUrl: { type: string, format: uri, nullable: true }
+                sortOrder: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductCategory" }
+        "404":
+          description: Category not found
+    delete:
+      tags: [Vendor Admin — Categories]
+      summary: Delete category (MANAGER+)
+      description: Fails with 409 if the category still has products.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+        "404":
+          description: Category not found
+        "409":
+          description: Category still has products
+
+  /vendor-admin/categories/{id}/active:
+    patch:
+      tags: [Vendor Admin — Categories]
+      summary: Toggle category visibility (MANAGER+)
+      description: |
+        Setting `isActive: false` hides the entire category and all its products
+        from customer-facing listings immediately.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive: { type: boolean }
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductCategory" }
+        "404":
+          description: Category not found
+
+  # ─ Products (MANAGER+) ────────────────────────────────────────
+  /vendor-admin/products:
+    get:
+      tags: [Vendor Admin — Products]
+      summary: List products (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated products including unavailable ones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/ProductAdmin" }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+    post:
+      tags: [Vendor Admin — Products]
+      summary: Create product (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId, name, priceKobo]
+              properties:
+                categoryId: { type: string }
+                name: { type: string, maxLength: 200 }
+                description: { type: string, maxLength: 1000 }
+                priceKobo: { type: integer, minimum: 1 }
+                imageUrl: { type: string, format: uri }
+                isAvailable: { type: boolean, default: true }
+                stock: { type: integer, minimum: 0 }
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductAdmin" }
+        "404":
+          description: Category not found or does not belong to this vendor
+
+  /vendor-admin/products/{id}:
+    get:
+      tags: [Vendor Admin — Products]
+      summary: Get product by ID (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductAdmin" }
+        "404":
+          description: Product not found
+    put:
+      tags: [Vendor Admin — Products]
+      summary: Update product (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                categoryId: { type: string }
+                name: { type: string, maxLength: 200 }
+                description: { type: string, nullable: true }
+                priceKobo: { type: integer, minimum: 1 }
+                imageUrl: { type: string, format: uri, nullable: true }
+                isAvailable: { type: boolean }
+                stock: { type: integer, minimum: 0, nullable: true }
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductAdmin" }
+        "404":
+          description: Product or category not found
+    delete:
+      tags: [Vendor Admin — Products]
+      summary: Delete product (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deleted
+        "404":
+          description: Product not found
+
+  /vendor-admin/products/{id}/availability:
+    patch:
+      tags: [Vendor Admin — Products]
+      summary: Toggle product availability (MANAGER+)
+      description: |
+        Customers will immediately stop seeing unavailable products.
+        Use this to temporarily remove a sold-out or paused item.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isAvailable]
+              properties:
+                isAvailable: { type: boolean }
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/ProductAdmin" }
+        "404":
+          description: Product not found
+
+  # ─ Orders (STAFF+) ────────────────────────────────────────────
+  /vendor-admin/orders:
+    get:
+      tags: [Vendor Admin — Orders]
+      summary: List orders for this vendor (STAFF+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/VendorOrder" }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+
+  /vendor-admin/orders/{id}:
+    get:
+      tags: [Vendor Admin — Orders]
+      summary: Get order detail (STAFF+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order with items, customer info, and event timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorOrder" }
+        "404":
+          description: Order not found
+
+  /vendor-admin/orders/{id}/accept:
+    patch:
+      tags: [Vendor Admin — Orders]
+      summary: Accept order — PENDING → ACCEPTED (STAFF+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorOrder" }
+        "404":
+          description: Order not found
+        "409":
+          description: Order is not in PENDING status
+
+  /vendor-admin/orders/{id}/preparing:
+    patch:
+      tags: [Vendor Admin — Orders]
+      summary: Mark order as preparing — ACCEPTED → PREPARING (STAFF+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorOrder" }
+        "409":
+          description: Invalid status transition
+
+  /vendor-admin/orders/{id}/ready:
+    patch:
+      tags: [Vendor Admin — Orders]
+      summary: Mark order ready for pickup — ACCEPTED/PREPARING → READY_FOR_PICKUP (STAFF+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorOrder" }
+        "409":
+          description: Invalid status transition
+
+  /vendor-admin/orders/{id}/reject:
+    patch:
+      tags: [Vendor Admin — Orders]
+      summary: Reject order — PENDING → CANCELLED (STAFF+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Order rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorOrder" }
+        "409":
+          description: Order is not in PENDING status
+
+  # ─ Settings (view MANAGER+, update OWNER) ─────────────────────
+  /vendor-admin/settings:
+    get:
+      tags: [Vendor Admin — Settings]
+      summary: Get vendor settings (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Full vendor record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorSettings" }
+    put:
+      tags: [Vendor Admin — Settings]
+      summary: Update vendor settings (OWNER only)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 2, maxLength: 100 }
+                description: { type: string, maxLength: 500, nullable: true }
+                phone:
+                  type: string
+                  pattern: '^\+234\d{10}$'
+                email: { type: string, format: email }
+                deliveryFeeKobo: { type: integer, minimum: 0 }
+                estimatedMinutes: { type: integer, minimum: 1, maximum: 300 }
+                isOpen: { type: boolean }
+                openingHours: { type: object }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorSettings" }
+        "403":
+          description: Forbidden — requires OWNER role
+
+  # ─ Team (view MANAGER+, manage OWNER) ─────────────────────────
+  /vendor-admin/team:
+    get:
+      tags: [Vendor Admin — Team]
+      summary: List team members (MANAGER+)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: All team members for this vendor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/TeamMember" }
+    post:
+      tags: [Vendor Admin — Team]
+      summary: Invite team member (OWNER only)
+      description: |
+        Creates a MANAGER or STAFF account and sends a team invite email with a
+        temporary password. The new member must change their password on first login.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, firstName, lastName, role]
+              properties:
+                email: { type: string, format: email }
+                firstName: { type: string, maxLength: 50 }
+                lastName: { type: string, maxLength: 50 }
+                role:
+                  type: string
+                  enum: [MANAGER, STAFF]
+      responses:
+        "201":
+          description: Team member created, invite email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/TeamMember" }
+        "403":
+          description: Forbidden — requires OWNER role
+        "409":
+          description: Email already registered
+
+  /vendor-admin/team/{memberId}:
+    patch:
+      tags: [Vendor Admin — Team]
+      summary: Change team member role (OWNER only)
+      description: Cannot change the OWNER's role.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { type: string, enum: [MANAGER, STAFF] }
+      responses:
+        "200":
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/TeamMember" }
+        "403":
+          description: Forbidden — requires OWNER role
+        "404":
+          description: Team member not found
+        "409":
+          description: Cannot change the role of the OWNER
+    delete:
+      tags: [Vendor Admin — Team]
+      summary: Remove team member (OWNER only)
+      description: Soft-deletes by setting `isActive = false`. Cannot remove the OWNER or yourself.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: memberId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Team member removed
+        "403":
+          description: Forbidden — requires OWNER role
+        "404":
+          description: Team member not found
+        "409":
+          description: Cannot remove the OWNER or yourself
+
+  # ══════════════════════════════════════════════════════════════
+  # SYSTEM ADMIN API  (prefix: /admin)
+  # Token type: "admin" — obtain from POST /admin/login
+  # Roles: SUPER_ADMIN > ADMIN
+  # ══════════════════════════════════════════════════════════════
+
+  /admin/login:
+    post:
+      tags: [Admin — Auth]
+      summary: Admin login (system admin and vendor admin)
+      description: |
+        Unified login endpoint for all admin types. Accepts email + password
+        and returns a JWT token valid for both system admins (8h) and vendor
+        admins (7d). The `admin.type` field in the response indicates whether
+        the caller is a `SYSTEM` or `VENDOR` admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200":
+          description: JWT token and admin profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  token: { type: string }
+                  admin:
+                    oneOf:
+                      - $ref: "#/components/schemas/SystemAdminProfile"
+                      - $ref: "#/components/schemas/VendorAdminProfile"
+                    discriminator:
+                      propertyName: type
+                      mapping:
+                        SYSTEM: "#/components/schemas/SystemAdminProfile"
+                        VENDOR: "#/components/schemas/VendorAdminProfile"
+        "401":
+          description: Invalid credentials
+
+  /admin/me:
+    get:
+      tags: [System Admin — Auth]
+      summary: Get own system admin profile (ADMIN+)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: System admin profile (password excluded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAdminProfile" }
+
+  # ─ Admin Management (SUPER_ADMIN only) ───────────────────────
+  /admin/admins:
+    get:
+      tags: [System Admin — Admins]
+      summary: List system admins (SUPER_ADMIN only)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated list of system admins
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/SystemAdminProfile" }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+        "403":
+          description: Forbidden — requires SUPER_ADMIN role
+    post:
+      tags: [System Admin — Admins]
+      summary: Create system admin (SUPER_ADMIN only)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, firstName, lastName, password]
+              properties:
+                email: { type: string, format: email }
+                firstName: { type: string, maxLength: 50 }
+                lastName: { type: string, maxLength: 50 }
+                password: { type: string, minLength: 8 }
+                role:
+                  type: string
+                  enum: [SUPER_ADMIN, ADMIN]
+                  default: ADMIN
+      responses:
+        "201":
+          description: Admin created (password excluded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAdminProfile" }
+        "403":
+          description: Forbidden — requires SUPER_ADMIN role
+        "409":
+          description: Email already registered
+
+  /admin/admins/{id}:
+    patch:
+      tags: [System Admin — Admins]
+      summary: Update system admin (SUPER_ADMIN only)
+      description: Can update name, active status, and role.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string, maxLength: 50 }
+                lastName: { type: string, maxLength: 50 }
+                isActive: { type: boolean }
+                role: { type: string, enum: [SUPER_ADMIN, ADMIN] }
+      responses:
+        "200":
+          description: Updated admin profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAdminProfile" }
+        "403":
+          description: Forbidden — requires SUPER_ADMIN role
+
+  # ─ Vendor Management (ADMIN+) ─────────────────────────────────
+  /admin/vendors:
+    get:
+      tags: [System Admin — Vendors]
+      summary: List all vendors (ADMIN+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED, SUSPENDED] }
+        - in: query
+          name: type
+          schema: { type: string, enum: [RESTAURANT, GROCERY, RETAIL, PHARMACY] }
+        - in: query
+          name: search
+          description: Searches by vendor name (case-insensitive)
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated vendor list with owner info and counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/VendorSummary" }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+
+  /admin/vendors/{id}:
+    get:
+      tags: [System Admin — Vendors]
+      summary: Get vendor detail (ADMIN+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Full vendor with all team members and counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorSummary" }
+
+  /admin/vendors/{id}/approve:
+    patch:
+      tags: [System Admin — Vendors]
+      summary: Approve vendor (ADMIN+)
+      description: |
+        Sets status to APPROVED and `isActive = true`.
+        Sends an approval email to the vendor owner.
+        This action is audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Vendor approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorFull" }
+        "409":
+          description: Vendor is already approved
+
+  /admin/vendors/{id}/reject:
+    patch:
+      tags: [System Admin — Vendors]
+      summary: Reject vendor (ADMIN+)
+      description: |
+        Sets status to REJECTED and `isActive = false`. Stores the rejection reason.
+        Sends a rejection email to the vendor owner.
+        This action is audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: "Incomplete documentation submitted"
+      responses:
+        "200":
+          description: Vendor rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorFull" }
+        "409":
+          description: Vendor is already rejected
+
+  /admin/vendors/{id}/suspend:
+    patch:
+      tags: [System Admin — Vendors]
+      summary: Suspend vendor (ADMIN+)
+      description: |
+        Sets status to SUSPENDED and `isActive = false`.
+        The vendor immediately disappears from customer listings.
+        This action is audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Vendor suspended
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorFull" }
+        "409":
+          description: Vendor is already suspended
+
+  /admin/vendors/{id}/reinstate:
+    patch:
+      tags: [System Admin — Vendors]
+      summary: Reinstate vendor (ADMIN+)
+      description: |
+        Sets status back to APPROVED and `isActive = true`.
+        Use this to un-suspend a previously suspended vendor.
+        This action is audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Vendor reinstated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorFull" }
+
+  # ─ Audit Logs (ADMIN+) ────────────────────────────────────────
+  /admin/audit-logs:
+    get:
+      tags: [System Admin — Audit Logs]
+      summary: Query audit logs (ADMIN+)
+      description: |
+        Returns a paginated, filterable audit trail of all actions taken by
+        vendor admins and system admins. Sorted by most recent first.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: vendorId
+          description: Filter by vendor
+          schema: { type: string }
+        - in: query
+          name: adminId
+          description: Filter by actor (vendor admin or system admin) ID
+          schema: { type: string }
+        - in: query
+          name: action
+          description: Partial match on action string (case-insensitive), e.g. "APPROVE"
+          schema: { type: string }
+        - in: query
+          name: entity
+          description: Partial match on entity name, e.g. "Vendor"
+          schema: { type: string }
+        - in: query
+          name: from
+          description: ISO 8601 datetime — log entries on or after this time
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          description: ISO 8601 datetime — log entries on or before this time
+          schema: { type: string, format: date-time }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AuditLog" }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+
+  # ─ Orders (ADMIN+) ───────────────────────────────────────────
+  /admin/orders:
+    get:
+      tags: [System Admin — Orders]
+      summary: List all platform orders (ADMIN+)
+      description: |
+        Returns a paginated, filterable list of all orders across all vendors.
+        Sorted by most recent first.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK]
+        - in: query
+          name: vendorId
+          schema: { type: string }
+        - in: query
+          name: search
+          description: Search by tracking code, customer name, or phone
+          schema: { type: string }
+        - in: query
+          name: from
+          description: "ISO date (YYYY-MM-DD) — orders created on or after this date"
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          description: "ISO date (YYYY-MM-DD) — orders created on or before this date"
+          schema: { type: string, format: date }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Paginated platform orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AdminOrder" }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  /admin/orders/{id}:
+    get:
+      tags: [System Admin — Orders]
+      summary: Get order detail (ADMIN+)
+      description: |
+        Returns the full order record including customer, vendor, rider, line items,
+        status timeline, and — for TRUCK orders — apartment type, loader count, and stops.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Full order detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/AdminOrder" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+        "404":
+          description: Order not found
+
+  /admin/orders/{id}/status:
+    patch:
+      tags: [System Admin — Orders]
+      summary: Update order status (ADMIN+)
+      description: |
+        Manually advances or changes the status of any non-terminal order.
+        Use this to progress a truck booking through its lifecycle
+        (e.g. PENDING → ACCEPTED → IN_TRANSIT → DELIVERED) or to correct
+        a stuck order on any order type.
+
+        **Terminal statuses** (`DELIVERED`, `CANCELLED`, `FAILED`) cannot be overwritten —
+        the endpoint returns 409 in that case.
+
+        Every status change is recorded in the order's event timeline and is audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+                  example: IN_TRANSIT
+                note:
+                  type: string
+                  description: Optional note to attach to the timeline event
+                  example: "Driver picked up the furniture — en route to Lekki"
+      responses:
+        "200":
+          description: Order with updated status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/AdminOrder" }
+        "404":
+          description: Order not found
+        "409":
+          description: Order is already in a terminal state (DELIVERED, CANCELLED, FAILED)
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  /admin/orders/{id}/cancel:
+    patch:
+      tags: [System Admin — Orders]
+      summary: Force-cancel an order (ADMIN+)
+      description: |
+        Cancels any active order regardless of its current status.
+        Use this to cancel a stuck or problematic order that the customer cannot cancel themselves.
+
+        **Cannot cancel terminal orders** — returns 409 if the order is already
+        `DELIVERED`, `CANCELLED`, or `FAILED`.
+
+        This action is audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: "Customer requested cancellation via support"
+      responses:
+        "200":
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/AdminOrder" }
+        "404":
+          description: Order not found
+        "409":
+          description: Order is already in a terminal state (DELIVERED, CANCELLED, FAILED)
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  # ─ Customer Management ────────────────────────────────────────
+  /admin/customers:
+    get:
+      tags: [System Admin — Customers]
+      summary: List all customers (ADMIN+)
+      description: |
+        Returns a paginated list of all registered customers.
+        Supports filtering by `status` and full-text `search` across name, phone, and email.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [ACTIVE, SUSPENDED, DEACTIVATED] }
+          description: Filter by account status
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Search by name, phone, or email
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated customer list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AdminCustomer" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  /admin/customers/{id}:
+    get:
+      tags: [System Admin — Customers]
+      summary: Get customer detail (ADMIN+)
+      description: Returns full profile, wallet balance, and order/address counts for a single customer.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Customer detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/AdminCustomerDetail" }
+        "404":
+          description: Customer not found
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  /admin/customers/{id}/orders:
+    get:
+      tags: [System Admin — Customers]
+      summary: Get a customer's orders (ADMIN+)
+      description: Returns a paginated list of all orders placed by the specified customer.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+          description: Filter by order status
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated order list for the customer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AdminOrder" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  /admin/customers/{id}/status:
+    patch:
+      tags: [System Admin — Customers]
+      summary: Update customer account status (ADMIN+)
+      description: |
+        Changes a customer's account status.
+
+        | Status | Effect |
+        |--------|--------|
+        | `ACTIVE` | Normal access restored |
+        | `SUSPENDED` | Account temporarily blocked — customer cannot log in or place orders |
+        | `DEACTIVATED` | Account permanently closed |
+
+        This action is audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [ACTIVE, SUSPENDED, DEACTIVATED]
+                  example: SUSPENDED
+      responses:
+        "200":
+          description: Customer status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      firstName: { type: string }
+                      lastName: { type: string }
+                      phone: { type: string }
+                      email: { type: string }
+                      status: { type: string, enum: [ACTIVE, SUSPENDED, DEACTIVATED] }
+                      updatedAt: { type: string, format: date-time }
+        "404":
+          description: Customer not found
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  /admin/customers/{id}/wallet:
+    get:
+      tags: [System Admin — Customers]
+      summary: Get customer wallet (ADMIN+)
+      description: "Returns the customer's wallet including balance in Kobo. Returns `data: null` if the customer has no wallet yet."
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Customer wallet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    nullable: true
+                    allOf:
+                      - $ref: "#/components/schemas/AdminWallet"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  /admin/customers/{id}/wallet/transactions:
+    get:
+      tags: [System Admin — Customers]
+      summary: Get customer wallet transactions (ADMIN+)
+      description: Returns a paginated list of wallet transactions for the specified customer. Returns an empty list if the customer has no wallet.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: type
+          schema: { type: string, enum: [TOPUP, PAYMENT, REFUND] }
+          description: Filter by transaction type
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated wallet transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AdminWalletTransaction" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  # ─ Vendor Analytics ──────────────────────────────────────────
+  /vendor-admin/analytics:
+    get:
+      tags: [Vendor Admin — Analytics]
+      summary: Vendor performance analytics (MANAGER+)
+      description: |
+        Returns order counts, revenue, daily breakdown, and top products for the authenticated vendor.
+        Dates are interpreted in **Africa/Lagos** (WAT, UTC+1) timezone.
+        Defaults to the last 30 days when `from`/`to` are omitted.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date, example: "2026-01-01" }
+          description: Start date (inclusive). Defaults to 30 days ago.
+        - in: query
+          name: to
+          schema: { type: string, format: date, example: "2026-04-25" }
+          description: End date (inclusive). Defaults to today.
+      responses:
+        "200":
+          description: Analytics data for the vendor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorAnalytics" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires MANAGER role or higher
+
+  # ─ System Analytics ───────────────────────────────────────────
+  /admin/analytics:
+    get:
+      tags: [System Admin — Analytics]
+      summary: Platform-wide analytics (ADMIN+)
+      description: |
+        Returns user growth, vendor counts, order volume, revenue, daily breakdown, and top vendors
+        for the selected date range.
+        Dates are interpreted in **Africa/Lagos** (WAT, UTC+1) timezone.
+        Defaults to the last 30 days when `from`/`to` are omitted.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date, example: "2026-01-01" }
+          description: Start date (inclusive). Defaults to 30 days ago.
+        - in: query
+          name: to
+          schema: { type: string, format: date, example: "2026-04-25" }
+          description: End date (inclusive). Defaults to today.
+      responses:
+        "200":
+          description: Platform-wide analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAnalytics" }
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+  # ─ Vendor Graph Data ──────────────────────────────────────────
+  /vendor-admin/analytics/graph:
+    get:
+      tags: [Vendor Admin — Analytics]
+      summary: Vendor time-series graph data (MANAGER+)
+      description: |
+        Returns order counts and revenue aggregated by the chosen granularity (day/week/month),
+        suitable for rendering line or bar charts on the vendor dashboard.
+
+        All buckets use **Africa/Lagos** (WAT, UTC+1) timezone.
+        - `day` — each point covers one calendar day; `date` is `YYYY-MM-DD`.
+        - `week` — each point covers Mon–Sun; `date` is the Monday of that ISO week.
+        - `month` — each point covers a full calendar month; `date` is the 1st of that month.
+
+        Defaults to the last 30 days with `granularity=day` when parameters are omitted.
+        Only buckets that have at least one order are returned (no zero-fill).
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date, example: "2026-01-01" }
+          description: "Start date, inclusive (YYYY-MM-DD). Defaults to 30 days ago."
+        - in: query
+          name: to
+          schema: { type: string, format: date, example: "2026-04-25" }
+          description: "End date, inclusive (YYYY-MM-DD). Defaults to today."
+        - in: query
+          name: granularity
+          schema: { type: string, enum: [day, week, month], default: day }
+          description: "Time bucket size. Defaults to `day`."
+      responses:
+        "200":
+          description: Graph-ready time-series data for the vendor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/VendorGraphData" }
+        "400":
+          description: Invalid query parameters
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires MANAGER role or higher
+
+  # ─ System Graph Data ──────────────────────────────────────────
+  /admin/analytics/graph:
+    get:
+      tags: [System Admin — Analytics]
+      summary: Platform-wide time-series graph data (ADMIN+)
+      description: |
+        Returns platform order counts, revenue, and new user registrations aggregated by
+        the chosen granularity (day/week/month), suitable for rendering line or bar charts
+        on the ops dashboard.
+
+        All buckets use **Africa/Lagos** (WAT, UTC+1) timezone.
+        - `day` — each point covers one calendar day; `date` is `YYYY-MM-DD`.
+        - `week` — each point covers Mon–Sun; `date` is the Monday of that ISO week.
+        - `month` — each point covers a full calendar month; `date` is the 1st of that month.
+
+        Defaults to the last 30 days with `granularity=day` when parameters are omitted.
+        Buckets with no orders OR no new users are still included when the other metric is non-zero.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date, example: "2026-01-01" }
+          description: "Start date, inclusive (YYYY-MM-DD). Defaults to 30 days ago."
+        - in: query
+          name: to
+          schema: { type: string, format: date, example: "2026-04-25" }
+          description: "End date, inclusive (YYYY-MM-DD). Defaults to today."
+        - in: query
+          name: granularity
+          schema: { type: string, enum: [day, week, month], default: day }
+          description: "Time bucket size. Defaults to `day`."
+      responses:
+        "200":
+          description: Graph-ready time-series data for the platform
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/SystemGraphData" }
+        "400":
+          description: Invalid query parameters
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — requires ADMIN role or higher
+
+# ─── WebSocket ────────────────────────────────────────────────
+# Connect to: ws://host/ws/orders/:orderId/tracking
+# The server broadcasts JSON payloads whenever the rider's location changes.
+# No authentication is enforced at the WS layer in the current implementation.
+
+# ─── Tags ─────────────────────────────────────────────────────
+tags:
+  # Customer
+  - name: Auth
+    description: Phone OTP authentication flow
+  - name: Profile
+    description: Customer profile and saved addresses
+  - name: Wallet
+    description: Godrop wallet and top-up
+  - name: Payments
+    description: Order payments via Paystack
+  - name: Food
+    description: Restaurants and food delivery
+  - name: Grocery
+    description: Grocery stores and products
+  - name: Retail
+    description: Retail stores and products
+  - name: Pharmacy
+    description: Pharmacies and medicines
+  - name: Parcel
+    description: On-demand parcel delivery
+  - name: Truck
+    description: Truck booking for relocation
+  - name: Orders
+    description: Unified order management
+  - name: Tracking
+    description: "Real-time order tracking (REST poll: GET /orders/:id/tracking; WebSocket push: ws://host/ws/orders/:id/tracking)"
+  - name: Notifications
+    description: Push notifications
+  - name: Promotions
+    description: Promo codes and banners
+  # Admin
+  - name: Admin — Auth
+    description: "Unified login for system admins and vendor admins. POST /admin/login returns a JWT and admin profile with a type field (SYSTEM or VENDOR)."
+  # Vendor
+  - name: Vendor Onboarding
+    description: Public endpoint to apply as a vendor. No authentication required.
+  - name: Vendor Admin — Auth
+    description: "Vendor admin profile. Authenticate via POST /admin/login."
+  - name: Vendor Admin — Categories
+    description: "Product category management. Minimum role: MANAGER."
+  - name: Vendor Admin — Products
+    description: "Product CRUD and availability toggle. Minimum role: MANAGER."
+  - name: Vendor Admin — Orders
+    description: "Order acceptance and status updates. Minimum role: STAFF."
+  - name: Vendor Admin — Settings
+    description: "Vendor profile and operational settings. View: MANAGER+. Update: OWNER."
+  - name: Vendor Admin — Team
+    description: "Team member management. View: MANAGER+. Invite/update/remove: OWNER."
+  # System Admin
+  - name: System Admin — Auth
+    description: "System admin profile. Authenticate via POST /admin/login (token expires in 8 hours)."
+  - name: System Admin — Admins
+    description: "System admin user management. Minimum role: SUPER_ADMIN."
+  - name: System Admin — Vendors
+    description: "Vendor approval, rejection, suspension, and reinstatement. Minimum role: ADMIN."
+  - name: System Admin — Audit Logs
+    description: "Immutable audit trail of all vendor admin and system admin actions. Minimum role: ADMIN."
+  - name: System Admin — Orders
+    description: "Platform-wide order browsing, full detail view, status updates, and force-cancel. Minimum role: ADMIN."
+  - name: System Admin — Customers
+    description: "Customer account management — list, detail, orders, status changes, wallet and transactions. Minimum role: ADMIN."
+  - name: Vendor Admin — Analytics
+    description: "Vendor performance analytics — order counts, revenue, top products. Minimum role: MANAGER."
+  - name: System Admin — Analytics
+    description: "Platform-wide analytics — users, vendors, orders, revenue, top vendors. Minimum role: ADMIN."

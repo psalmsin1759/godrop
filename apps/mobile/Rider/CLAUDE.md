@@ -1,0 +1,102 @@
+# CLAUDE.md — Godrop Rider App (Flutter)
+
+## What this app is
+The rider-facing Flutter app for Godrop in Nigeria.
+Riders use it to receive job assignments, accept or reject deliveries, update job status at each stage, and share live location during active deliveries.
+
+Entry point: `lib/main_rider.dart`
+
+## Tech stack
+- **Framework**: Flutter (latest stable) + Dart
+- **State management**: flutter_bloc (prefer `Bloc` for event-driven flows, `Cubit` for simple state)
+- **Navigation**: go_router (`lib/app/rider_app.dart`)
+- **HTTP client**: Dio (with interceptors for JWT refresh)
+- **Maps**: Google Maps Flutter + Geolocator
+- **Local storage**: flutter_secure_storage (tokens), shared_preferences (settings)
+- **Push notifications**: Firebase Cloud Messaging (FCM) — primary channel for new job alerts
+- **Real-time tracking**: WebSocket via `web_socket_channel` — streams rider location to backend
+- **Image picking**: image_picker (proof-of-delivery photos)
+
+## Project structure
+```
+lib/
+  main_rider.dart
+  app/
+    rider_app.dart      # MaterialApp + go_router setup
+    theme.dart          # Godrop brand colors and typography
+  features/
+    auth/               # Login, OTP verification (shared with customer)
+      bloc/             # AuthBloc / AuthCubit
+    rider/
+      jobs/             # Incoming job list, job detail, accept/reject
+        bloc/
+      active/           # Active delivery — navigate to pickup, then dropoff
+        bloc/
+      history/          # Completed deliveries, earnings summary
+        bloc/
+    profile/            # Rider profile, vehicle info, documents
+      bloc/
+  shared/
+    api/                # Dio client + API service classes
+    models/             # Dart models (mirror @godrop/shared-types)
+    widgets/            # Reusable UI components
+    utils/              # formatKobo, phoneValidation, etc.
+```
+
+## Bloc conventions
+- One Bloc/Cubit per feature screen or logical unit — no god blocs
+- Use `Cubit` for simple state (toggle, one-shot load); use `Bloc` for multiple distinct events
+- State classes use `freezed` — always define `initial`, `loading`, `success`, `failure` variants
+- Blocs live inside their feature folder: `features/<feature>/bloc/`
+- Never emit state from outside a Bloc/Cubit — widgets dispatch events only
+
+## Key conventions
+- Mirror the types from `@godrop/shared-types` as Dart classes with `fromJson`/`toJson`
+- Use `freezed` + `json_serializable` for all model classes
+- All monetary display: format Kobo → Naira with `₦` symbol (e.g. `₦1,500.00`)
+- Phone input: show Nigerian flag 🇳🇬, auto-prepend `+234`, validate 11-digit local format
+- All API calls live in `lib/shared/api/` service classes — never call Dio from widgets
+- Use `go_router` for all navigation — no `Navigator.push` in feature code
+- Target: Android first (most Nigerian riders), then iOS
+
+## API
+- Base URL (dev): `http://10.0.2.2:4000/api/v1` (Android emulator localhost)
+- Base URL (prod): `https://api.godrop.ng/v1`
+- Auth: Bearer token in `Authorization` header
+- Full API contract: see `apps/backend/openapi.yaml` in the monorepo root
+
+## Brand colors & typography (Godrop)
+
+**Font family:** iOS system stack — use `fontFamily: '.SF UI Text'` on iOS, fall back to system sans-serif on Android. In Flutter, set `fontFamilyFallback: ['-apple-system', 'sans-serif']`.
+
+**Color roles:**
+```dart
+static const Color ink    = Color(0xFF0B1F4A); // primary text — headings, body
+static const Color slate  = Color(0xFF4A5068); // secondary — descriptions
+static const Color mute   = Color(0xFF8A90A3); // tertiary — meta, timestamps
+static const Color blue   = Color(0xFF1E5FFF); // links, active labels
+static const Color orange = Color(0xFFFF6A2C); // prices, accent highlights
+static const Color white  = Color(0xFFFFFFFF); // text on dark/gradient headers
+```
+
+**Usage rules:**
+- Headings and body copy → `ink`
+- Supporting descriptions, subtitles → `slate`
+- Timestamps, metadata, hints → `mute`
+- Tappable links, selected tab labels → `blue`
+- Earnings figures, fare amounts → `orange`
+- Text placed on dark or gradient backgrounds → `white`
+
+## Nigerian UX considerations
+- Support low-bandwidth conditions — lazy load images, paginate lists
+- Riders are often on motorcycles — keep tap targets large, minimize required reading
+- Show distance and ETA in minutes, not exact times (Lagos traffic is unpredictable)
+- Battery-aware location updates — reduce GPS polling frequency when job is inactive
+- Dark mode support is nice-to-have, not required at launch
+
+## Running locally
+```bash
+flutter pub get
+flutter run -t lib/main_rider.dart         # on connected device or emulator
+flutter build apk -t lib/main_rider.dart   # release APK
+```

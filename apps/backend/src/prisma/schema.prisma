@@ -1,0 +1,505 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ─────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  phone        String     @unique
+  firstName    String?
+  lastName     String?
+  email        String?    @unique
+  avatarUrl    String?
+  referralCode String?    @unique
+  isVerified   Boolean    @default(false)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  wallet        Wallet?
+  addresses     SavedAddress[]
+  orders        Order[]
+  reviews       Review[]
+  notifications Notification[]
+  pushTokens    PushToken[]
+  refreshTokens RefreshToken[]
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── Profile ──────────────────────────────────────────────────
+
+model SavedAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  label     String
+  address   String
+  lat       Float
+  lng       Float
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ─── Wallet ───────────────────────────────────────────────────
+
+model Wallet {
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  user         User                @relation(fields: [userId], references: [id])
+  balanceKobo  Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id          String       @id @default(cuid())
+  walletId    String
+  wallet      Wallet       @relation(fields: [walletId], references: [id])
+  type        WalletTxType
+  amountKobo  Int
+  reference   String?      @unique
+  description String?
+  createdAt   DateTime     @default(now())
+
+  @@index([walletId])
+}
+
+enum WalletTxType {
+  TOPUP
+  PAYMENT
+  REFUND
+}
+
+// ─── Vendors ──────────────────────────────────────────────────
+
+model Vendor {
+  id               String       @id @default(cuid())
+  type             VendorType
+  status           VendorStatus @default(PENDING)
+  name             String
+  description      String?
+  logoUrl          String?
+  coverUrl         String?
+  address          String
+  lat              Float
+  lng              Float
+  phone            String?
+  email            String?
+  cuisines         String[]
+  rating           Float        @default(0)
+  ratingCount      Int          @default(0)
+  deliveryFeeKobo  Int          @default(0)
+  estimatedMinutes Int          @default(30)
+  isOpen           Boolean      @default(true)
+  isActive         Boolean      @default(true)
+  openingHours     Json?
+  rejectionReason  String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  categories ProductCategory[]
+  orders     Order[]
+  reviews    Review[]
+  admins     Admin[]
+  auditLogs  AuditLog[]
+}
+
+enum VendorType {
+  RESTAURANT
+  GROCERY
+  RETAIL
+  PHARMACY
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+// ─── Admin ────────────────────────────────────────────────────
+
+model Admin {
+  id        String    @id @default(cuid())
+  type      AdminType
+  role      AdminRole
+  vendorId  String?
+  vendor    Vendor?   @relation(fields: [vendorId], references: [id])
+  email     String    @unique
+  firstName String
+  lastName  String
+  password  String
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@index([vendorId])
+}
+
+enum AdminType {
+  SYSTEM
+  VENDOR
+}
+
+enum AdminRole {
+  // System roles
+  SUPER_ADMIN
+  ADMIN
+  // Vendor roles
+  OWNER
+  MANAGER
+  STAFF
+}
+
+// ─── Audit Log ────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String?
+  admin     Admin?   @relation(fields: [adminId], references: [id])
+  vendorId  String?
+  vendor    Vendor?  @relation(fields: [vendorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([vendorId])
+  @@index([createdAt])
+}
+
+model ProductCategory {
+  id        String    @id @default(cuid())
+  vendorId  String
+  vendor    Vendor    @relation(fields: [vendorId], references: [id])
+  name      String
+  description String?
+  imageUrl  String?
+  isActive  Boolean   @default(true)
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@index([vendorId])
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  categoryId  String
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  name        String
+  description String?
+  priceKobo   Int
+  imageUrl    String?
+  isAvailable Boolean         @default(true)
+  stock       Int?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+}
+
+// ─── Truck ────────────────────────────────────────────────────
+
+model TruckType {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  capacity    String?
+  imageUrl    String?
+  baseFeeKobo Int
+  perKmKobo   Int
+  isActive    Boolean @default(true)
+
+  orders Order[]
+}
+
+model ApartmentType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  priceKobo   Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders Order[]
+}
+
+// Singleton row (id = "singleton") stores global truck pricing rates.
+model TruckPricingConfig {
+  id            String   @id @default("singleton")
+  perKmKobo     Int      @default(0)
+  perLoaderKobo Int      @default(0)
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── Orders ───────────────────────────────────────────────────
+
+model Order {
+  id           String        @id @default(cuid())
+  trackingCode String        @unique
+  customerId   String
+  customer     User          @relation(fields: [customerId], references: [id])
+  type         OrderType
+  status       OrderStatus   @default(PENDING)
+
+  vendorId    String?
+  vendor      Vendor?    @relation(fields: [vendorId], references: [id])
+  truckTypeId String?
+  truckType   TruckType? @relation(fields: [truckTypeId], references: [id])
+  apartmentTypeId String?
+  apartmentType   ApartmentType? @relation(fields: [apartmentTypeId], references: [id])
+  numLoaders      Int?
+
+  pickupAddress  String
+  pickupLat      Float
+  pickupLng      Float
+  dropoffAddress String
+  dropoffLat     Float
+  dropoffLng     Float
+  stops          Json?
+
+  packageDescription String?
+  weightKg           Float?
+  sizeCategory       String?
+  recipientName      String?
+  recipientPhone     String?
+
+  riderId String?
+  rider   Rider?  @relation(fields: [riderId], references: [id])
+
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  paystackRef   String?       @unique
+
+  subtotalKobo    Int @default(0)
+  deliveryFeeKobo Int @default(0)
+  serviceFeeKobo  Int @default(0)
+  discountKobo    Int @default(0)
+  totalKobo       Int
+
+  scheduledAt      DateTime?
+  estimatedMinutes Int?
+
+  notes              String?
+  cancellationReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items  OrderItem[]
+  events OrderEvent[]
+  review Review?
+
+  @@index([customerId])
+  @@index([vendorId])
+  @@index([riderId])
+  @@index([status])
+  @@index([apartmentTypeId])
+}
+
+enum OrderType {
+  FOOD
+  GROCERY
+  RETAIL
+  PHARMACY
+  PARCEL
+  TRUCK
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY_FOR_PICKUP
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  FAILED
+}
+
+enum PaymentMethod {
+  CARD
+  WALLET
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id])
+  name          String
+  unitPriceKobo Int
+  quantity      Int
+  totalKobo     Int
+  notes         String?
+
+  @@index([orderId])
+}
+
+model OrderEvent {
+  id          String      @id @default(cuid())
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id])
+  status      OrderStatus
+  description String?
+  createdAt   DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+// ─── Riders ───────────────────────────────────────────────────
+
+model Rider {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  phone        String   @unique
+  avatarUrl    String?
+  vehicleType  String?
+  vehiclePlate String?
+  lat          Float?
+  lng          Float?
+  isAvailable  Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  rating       Float    @default(0)
+  ratingCount  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orders Order[]
+}
+
+// ─── Reviews ──────────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  vendorId  String?
+  vendor    Vendor?  @relation(fields: [vendorId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([vendorId])
+  @@index([userId])
+}
+
+// ─── Notifications ────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String
+  platform  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, token])
+}
+
+// ─── Promotions ───────────────────────────────────────────────
+
+model Promotion {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  description  String
+  type         String   // percent | fixed
+  value        Int
+  maxDiscount  Int?
+  minOrderKobo Int?
+  orderTypes   String[]
+  usageLimit   Int?
+  usageCount   Int      @default(0)
+  validFrom    DateTime
+  validUntil   DateTime
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  title     String?
+  linkType  String?
+  linkValue String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}

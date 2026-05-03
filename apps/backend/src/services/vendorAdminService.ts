@@ -408,3 +408,44 @@ export async function getProfile(adminId: string) {
     },
   });
 }
+
+export async function updateProfile(
+  adminId: string,
+  data: { firstName?: string; lastName?: string; email?: string }
+) {
+  if (data.email) {
+    const conflict = await prisma.admin.findFirst({ where: { email: data.email, NOT: { id: adminId } } });
+    if (conflict) throw new Error("Email is already in use");
+  }
+  return prisma.admin.update({
+    where: { id: adminId },
+    data,
+    select: {
+      id: true,
+      type: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      vendorId: true,
+    },
+  });
+}
+
+const DEFAULT_VENDOR_SETTINGS = { emailNotifications: true, orderAlerts: true };
+
+export async function getSettings(adminId: string) {
+  const admin = await prisma.admin.findUniqueOrThrow({ where: { id: adminId }, select: { settings: true } });
+  return { ...DEFAULT_VENDOR_SETTINGS, ...(admin.settings as object | null ?? {}) };
+}
+
+export async function updateSettings(
+  adminId: string,
+  data: { emailNotifications?: boolean; orderAlerts?: boolean }
+) {
+  const admin = await prisma.admin.findUniqueOrThrow({ where: { id: adminId }, select: { settings: true } });
+  const merged = { ...DEFAULT_VENDOR_SETTINGS, ...(admin.settings as object | null ?? {}), ...data };
+  await prisma.admin.update({ where: { id: adminId }, data: { settings: merged } });
+  return merged;
+}

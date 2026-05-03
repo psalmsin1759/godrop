@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ok, fail } from "../utils/response";
 import * as svc from "../services/systemAdminService";
 import * as orderService from "../services/orderService";
+import * as notifSvc from "../services/notificationService";
 import { paginate, buildMeta } from "../utils/pagination";
 
 // ─── Auth ─────────────────────────────────────────────────────
@@ -19,6 +20,44 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 export async function getMe(req: Request, res: Response) {
   const { password: _pw, ...safe } = req.admin as any;
   return ok(res, { data: safe });
+}
+
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    await svc.changeAdminPassword(req.admin!.id, req.body.currentPassword, req.body.newPassword);
+    return ok(res, { message: "Password changed successfully" });
+  } catch (err: any) {
+    if (err.message === "Current password is incorrect") return fail(res, err.message, 400);
+    next(err);
+  }
+}
+
+export async function updateProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const admin = await svc.updateAdminProfile(req.admin!.id, req.body);
+    return ok(res, { data: admin });
+  } catch (err: any) {
+    if (err.message === "Email is already in use") return fail(res, err.message, 409);
+    next(err);
+  }
+}
+
+export async function getSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const settings = await svc.getAdminSettings(req.admin!.id);
+    return ok(res, { data: settings });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const settings = await svc.updateAdminSettings(req.admin!.id, req.body);
+    return ok(res, { data: settings });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // ─── System Admin Management ──────────────────────────────────
@@ -251,6 +290,51 @@ export async function cancelOrder(req: Request, res: Response, next: NextFunctio
     ok(res, { data: order });
   } catch (err: any) {
     if (err.message?.includes("terminal")) return fail(res, err.message, 409);
+    next(err);
+  }
+}
+
+// ─── Notifications ────────────────────────────────────────────
+
+export async function listNotifications(req: Request, res: Response, next: NextFunction) {
+  try {
+    const q = req.query as any;
+    const { page, limit } = paginate(q.page, q.limit);
+    const result = await notifSvc.listAdminNotifications(req.admin!.id, {
+      unreadOnly: q.unreadOnly === "true",
+      page,
+      limit,
+    });
+    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total), unreadCount: result.unreadCount });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getNotificationsUnreadCount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const count = await notifSvc.getUnreadCount(req.admin!.id);
+    return ok(res, { data: { count } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function markNotificationRead(req: Request, res: Response, next: NextFunction) {
+  try {
+    const notif = await notifSvc.markNotificationRead(req.params.id, req.admin!.id);
+    return ok(res, { data: notif });
+  } catch (err: any) {
+    if (err.message === "Notification not found") return fail(res, err.message, 404);
+    next(err);
+  }
+}
+
+export async function markAllNotificationsRead(req: Request, res: Response, next: NextFunction) {
+  try {
+    await notifSvc.markAllNotificationsRead(req.admin!.id);
+    return ok(res, { message: "All notifications marked as read" });
+  } catch (err) {
     next(err);
   }
 }

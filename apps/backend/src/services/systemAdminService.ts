@@ -30,6 +30,48 @@ export async function loginAdmin(email: string, password: string) {
   return { token, admin: adminSafe };
 }
 
+// ─── System Admin Profile ─────────────────────────────────────
+
+export async function changeAdminPassword(adminId: string, currentPassword: string, newPassword: string) {
+  const admin = await prisma.admin.findUniqueOrThrow({ where: { id: adminId } });
+  const valid = await bcrypt.compare(currentPassword, admin.password);
+  if (!valid) throw new Error("Current password is incorrect");
+  const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await prisma.admin.update({ where: { id: adminId }, data: { password: hashed } });
+}
+
+export async function updateAdminProfile(
+  adminId: string,
+  data: { firstName?: string; lastName?: string; email?: string }
+) {
+  if (data.email) {
+    const conflict = await prisma.admin.findFirst({ where: { email: data.email, NOT: { id: adminId } } });
+    if (conflict) throw new Error("Email is already in use");
+  }
+  return prisma.admin.update({
+    where: { id: adminId },
+    data,
+    select: { id: true, type: true, email: true, firstName: true, lastName: true, role: true, isActive: true },
+  });
+}
+
+const DEFAULT_SYSTEM_SETTINGS = { emailNotifications: true, weeklyReport: true };
+
+export async function getAdminSettings(adminId: string) {
+  const admin = await prisma.admin.findUniqueOrThrow({ where: { id: adminId }, select: { settings: true } });
+  return { ...DEFAULT_SYSTEM_SETTINGS, ...(admin.settings as object | null ?? {}) };
+}
+
+export async function updateAdminSettings(
+  adminId: string,
+  data: { emailNotifications?: boolean; weeklyReport?: boolean }
+) {
+  const admin = await prisma.admin.findUniqueOrThrow({ where: { id: adminId }, select: { settings: true } });
+  const merged = { ...DEFAULT_SYSTEM_SETTINGS, ...(admin.settings as object | null ?? {}), ...data };
+  await prisma.admin.update({ where: { id: adminId }, data: { settings: merged } });
+  return merged;
+}
+
 // ─── System Admin Management ──────────────────────────────────
 
 export async function createSystemAdmin(data: {

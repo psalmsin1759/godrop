@@ -15,6 +15,8 @@ import {
   changePasswordSchema,
   rejectOrderSchema,
   graphQuerySchema,
+  updateVendorAdminProfileSchema,
+  updateVendorAdminSettingsSchema,
 } from "../validators/vendorAdminValidators";
 import * as ctrl from "../controllers/vendorAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
@@ -32,6 +34,14 @@ router.post(
   auditVendorAction({ action: "CHANGE_PASSWORD", entity: "VendorAdmin" }),
   ctrl.changePassword
 );
+router.patch(
+  "/me/profile",
+  validate(updateVendorAdminProfileSchema),
+  auditVendorAction({ action: "UPDATE_PROFILE", entity: "VendorAdmin" }),
+  ctrl.updateProfile
+);
+router.get("/me/settings", ctrl.getProfileSettings);
+router.patch("/me/settings", validate(updateVendorAdminSettingsSchema), ctrl.updateProfileSettings);
 
 // Categories (MANAGER+)
 router.get("/categories", requireVendorRole("MANAGER"), ctrl.listCategories);
@@ -165,5 +175,11 @@ router.delete(
   auditVendorAction({ action: "REMOVE_TEAM_MEMBER", entity: "VendorAdmin", getEntityId: (r) => r.params.memberId }),
   ctrl.removeTeamMember
 );
+
+// ─── Notifications ────────────────────────────────────────────
+router.get("/notifications", ctrl.listNotifications);
+router.get("/notifications/unread-count", ctrl.getNotificationsUnreadCount);
+router.patch("/notifications/read-all", ctrl.markAllNotificationsRead);
+router.patch("/notifications/:id/read", ctrl.markNotificationRead);
 
 export default router;

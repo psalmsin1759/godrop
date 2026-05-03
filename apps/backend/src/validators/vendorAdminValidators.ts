@@ -80,3 +80,14 @@ export const changePasswordSchema = z.object({
 export const rejectOrderSchema = z.object({
   reason: z.string().min(1).optional(),
 });
+
+export const updateVendorAdminProfileSchema = z.object({
+  firstName: z.string().min(1).max(50).optional(),
+  lastName: z.string().min(1).max(50).optional(),
+  email: z.string().email().optional(),
+});
+
+export const updateVendorAdminSettingsSchema = z.object({
+  emailNotifications: z.boolean().optional(),
+  orderAlerts: z.boolean().optional(),
+});

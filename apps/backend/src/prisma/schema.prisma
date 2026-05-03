@@ -155,6 +155,13 @@ enum VendorStatus {
   SUSPENDED
 }
 
+enum RiderKycStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
 // ─── Admin ────────────────────────────────────────────────────
 
 model Admin {
@@ -167,11 +174,13 @@ model Admin {
   firstName String
   lastName  String
   password  String
+  settings  Json?
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  auditLogs AuditLog[]
+  auditLogs     AuditLog[]
+  notifications AdminNotification[]
 
   @@index([vendorId])
 }
@@ -410,21 +419,55 @@ model OrderEvent {
 // ─── Riders ───────────────────────────────────────────────────
 
 model Rider {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   firstName    String
   lastName     String
-  phone        String   @unique
+  phone        String         @unique
+  email        String?        @unique
   avatarUrl    String?
+  dateOfBirth  DateTime?
+  gender       String?
+
+  streetAddress String?
+  city          String?
+  state         String?
+  landmark      String?
+
   vehicleType  String?
   vehiclePlate String?
-  lat          Float?
-  lng          Float?
-  isAvailable  Boolean  @default(true)
-  isActive     Boolean  @default(true)
-  rating       Float    @default(0)
-  ratingCount  Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  vehicleColor String?
+  vehicleModel String?
+  vehicleYear  Int?
+
+  driverLicenseNumber    String?
+  driverLicenseExpiry    DateTime?
+  vehicleInsuranceExpiry DateTime?
+
+  bankName      String?
+  bankCode      String?
+  accountNumber String?
+  accountName   String?
+
+  bvn           String?
+  nin           String?
+  kycStatus     RiderKycStatus @default(PENDING)
+  kycNotes      String?
+
+  emergencyContactName         String?
+  emergencyContactPhone        String?
+  emergencyContactRelationship String?
+
+  guarantors Json?
+  documents  Json?
+
+  lat         Float?
+  lng         Float?
+  isAvailable Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  rating      Float    @default(0)
+  ratingCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   orders Order[]
 }
@@ -472,6 +515,21 @@ model PushToken {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, token])
+}
+
+model AdminNotification {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id])
+  type      String
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([adminId, isRead])
 }
 
 // ─── Promotions ───────────────────────────────────────────────

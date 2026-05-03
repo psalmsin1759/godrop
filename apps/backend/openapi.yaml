@@ -565,6 +565,18 @@ components:
         isOpen: { type: boolean }
         openingHours: { type: object }
 
+    VendorAdminSettings:
+      type: object
+      properties:
+        emailNotifications: { type: boolean, example: true }
+        orderAlerts: { type: boolean, example: true, description: "Receive email on new incoming orders" }
+
+    SystemAdminSettings:
+      type: object
+      properties:
+        emailNotifications: { type: boolean, example: true }
+        weeklyReport: { type: boolean, example: true, description: "Receive weekly platform summary email" }
+
     # ─ System Admin ───────────────────────────────────────────
     SystemAdminProfile:
       type: object
@@ -2703,6 +2715,76 @@ paths:
         "400":
           description: Current password is incorrect
 
+  /vendor-admin/me/profile:
+    patch:
+      tags: [Vendor Admin — Auth]
+      summary: Update own profile (all roles)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string, minLength: 1, maxLength: 50 }
+                lastName: { type: string, minLength: 1, maxLength: 50 }
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: Updated admin profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorAdminProfile" }
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /vendor-admin/me/settings:
+    get:
+      tags: [Vendor Admin — Auth]
+      summary: Get own notification settings (all roles)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Admin notification settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorAdminSettings" }
+    patch:
+      tags: [Vendor Admin — Auth]
+      summary: Update own notification settings (all roles)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emailNotifications: { type: boolean }
+                orderAlerts: { type: boolean }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/VendorAdminSettings" }
+
   # ─ Categories (MANAGER+) ──────────────────────────────────────
   /vendor-admin/categories:
     get:
@@ -3403,6 +3485,107 @@ paths:
                 properties:
                   success: { type: boolean }
                   data: { $ref: "#/components/schemas/SystemAdminProfile" }
+
+  /admin/me/change-password:
+    post:
+      tags: [System Admin — Auth]
+      summary: Change own password
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string, minLength: 8 }
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        "400":
+          description: Current password is incorrect
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /admin/me/profile:
+    patch:
+      tags: [System Admin — Auth]
+      summary: Update own profile (firstName, lastName, email)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string, minLength: 1, maxLength: 50 }
+                lastName: { type: string, minLength: 1, maxLength: 50 }
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: Updated system admin profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAdminProfile" }
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /admin/me/settings:
+    get:
+      tags: [System Admin — Auth]
+      summary: Get own notification/report settings
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Admin settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAdminSettings" }
+    patch:
+      tags: [System Admin — Auth]
+      summary: Update own notification/report settings
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emailNotifications: { type: boolean }
+                weeklyReport: { type: boolean }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAdminSettings" }
 
   # ─ Admin Management (SUPER_ADMIN only) ───────────────────────
   /admin/admins:

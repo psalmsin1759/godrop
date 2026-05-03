@@ -16,9 +16,14 @@ import {
   customerOrderQuerySchema,
   updateCustomerStatusSchema,
   walletTxQuerySchema,
+  changeAdminPasswordSchema,
+  updateAdminProfileSchema,
+  updateAdminSettingsSchema,
 } from "../validators/systemAdminValidators";
 import * as ctrl from "../controllers/systemAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
+import * as riderCtrl from "../controllers/riderController";
+import { createRiderSchema, updateRiderSchema, updateRiderKycSchema, riderQuerySchema } from "../validators/riderValidators";
 
 const router = Router();
 
@@ -29,6 +34,20 @@ router.post("/login", validate(adminLoginSchema), ctrl.login);
 router.use(requireSystemAuth);
 
 router.get("/me", ctrl.getMe);
+router.post(
+  "/me/change-password",
+  validate(changeAdminPasswordSchema),
+  auditSystemAction({ action: "CHANGE_PASSWORD", entity: "SystemAdmin" }),
+  ctrl.changePassword
+);
+router.patch(
+  "/me/profile",
+  validate(updateAdminProfileSchema),
+  auditSystemAction({ action: "UPDATE_PROFILE", entity: "SystemAdmin" }),
+  ctrl.updateProfile
+);
+router.get("/me/settings", ctrl.getSettings);
+router.patch("/me/settings", validate(updateAdminSettingsSchema), ctrl.updateSettings);
 
 // ─── Admin Management (SUPER_ADMIN only) ─────────────────────
 router.get(
@@ -144,5 +163,19 @@ router.patch(
   auditSystemAction({ action: "CANCEL_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.cancelOrder
 );
+
+// ─── Notifications (ADMIN+) ───────────────────────────────────
+router.get("/notifications", requireSystemRole("ADMIN"), ctrl.listNotifications);
+router.get("/notifications/unread-count", requireSystemRole("ADMIN"), ctrl.getNotificationsUnreadCount);
+router.patch("/notifications/read-all", requireSystemRole("ADMIN"), ctrl.markAllNotificationsRead);
+router.patch("/notifications/:id/read", requireSystemRole("ADMIN"), ctrl.markNotificationRead);
+
+// ─── Riders (ADMIN+) ─────────────────────────────────────────
+router.get("/riders", requireSystemRole("ADMIN"), validate(riderQuerySchema, "query"), riderCtrl.listRiders);
+router.post("/riders", requireSystemRole("ADMIN"), validate(createRiderSchema), riderCtrl.createRider);
+router.get("/riders/:id", requireSystemRole("ADMIN"), riderCtrl.getRider);
+router.patch("/riders/:id", requireSystemRole("ADMIN"), validate(updateRiderSchema), riderCtrl.updateRider);
+router.patch("/riders/:id/kyc", requireSystemRole("ADMIN"), validate(updateRiderKycSchema), riderCtrl.updateRiderKyc);
+router.patch("/riders/:id/toggle-active", requireSystemRole("ADMIN"), riderCtrl.toggleRiderActive);
 
 export default router;

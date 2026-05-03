@@ -69,6 +69,22 @@ export const walletTxQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional().default(20),
 });
 
+export const changeAdminPasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
+export const updateAdminProfileSchema = z.object({
+  firstName: z.string().min(1).max(50).optional(),
+  lastName: z.string().min(1).max(50).optional(),
+  email: z.string().email().optional(),
+});
+
+export const updateAdminSettingsSchema = z.object({
+  emailNotifications: z.boolean().optional(),
+  weeklyReport: z.boolean().optional(),
+});
+
 export const auditLogQuerySchema = z.object({
   vendorId: z.string().cuid().optional(),
   adminId: z.string().cuid().optional(),

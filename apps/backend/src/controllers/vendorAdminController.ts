@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { ok, fail } from "../utils/response";
 import * as svc from "../services/vendorAdminService";
+import * as notifSvc from "../services/notificationService";
+import { paginate, buildMeta } from "../utils/pagination";
 
 export async function getProfile(req: Request, res: Response, next: NextFunction) {
   try {
@@ -17,6 +19,34 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
     return ok(res, { message: "Password changed successfully" });
   } catch (err: any) {
     if (err.message === "Current password is incorrect") return fail(res, err.message, 400);
+    next(err);
+  }
+}
+
+export async function updateProfile(req: Request, res: Response, next: NextFunction) {
+  try {
+    const admin = await svc.updateProfile(req.admin!.id, req.body);
+    return ok(res, { data: admin });
+  } catch (err: any) {
+    if (err.message === "Email is already in use") return fail(res, err.message, 409);
+    next(err);
+  }
+}
+
+export async function getProfileSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const settings = await svc.getSettings(req.admin!.id);
+    return ok(res, { data: settings });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateProfileSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const settings = await svc.updateSettings(req.admin!.id, req.body);
+    return ok(res, { data: settings });
+  } catch (err) {
     next(err);
   }
 }
@@ -288,6 +318,51 @@ export async function removeTeamMember(req: Request, res: Response, next: NextFu
   } catch (err: any) {
     if (err.message === "Team member not found") return fail(res, err.message, 404);
     if (err.message?.includes("Cannot remove")) return fail(res, err.message, 409);
+    next(err);
+  }
+}
+
+// ─── Notifications ────────────────────────────────────────────
+
+export async function listNotifications(req: Request, res: Response, next: NextFunction) {
+  try {
+    const q = req.query as any;
+    const { page, limit } = paginate(q.page, q.limit);
+    const result = await notifSvc.listAdminNotifications(req.admin!.id, {
+      unreadOnly: q.unreadOnly === "true",
+      page,
+      limit,
+    });
+    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total), unreadCount: result.unreadCount });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getNotificationsUnreadCount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const count = await notifSvc.getUnreadCount(req.admin!.id);
+    return ok(res, { data: { count } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function markNotificationRead(req: Request, res: Response, next: NextFunction) {
+  try {
+    const notif = await notifSvc.markNotificationRead(req.params.id, req.admin!.id);
+    return ok(res, { data: notif });
+  } catch (err: any) {
+    if (err.message === "Notification not found") return fail(res, err.message, 404);
+    next(err);
+  }
+}
+
+export async function markAllNotificationsRead(req: Request, res: Response, next: NextFunction) {
+  try {
+    await notifSvc.markAllNotificationsRead(req.admin!.id);
+    return ok(res, { message: "All notifications marked as read" });
+  } catch (err) {
     next(err);
   }
 }

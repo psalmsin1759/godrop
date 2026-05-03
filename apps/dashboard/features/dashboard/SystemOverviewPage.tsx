@@ -1,8 +1,10 @@
 'use client'
 
-import { ShoppingBag, TrendingUp, AlertTriangle, Store, Users, Loader2 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { ShoppingBag, TrendingUp, AlertTriangle, Store, Users, Loader2, Bike, Star } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import { useGetSystemAnalyticsQuery, useGetSystemGraphQuery } from '@/store/services/analyticsApi'
+import { useGetRiderStatsQuery } from '@/store/services/ridersApi'
+import { useGetRidersQuery } from '@/store/services/ridersApi'
 import { formatNaira, formatNumber } from '@/lib/utils'
 
 const TYPE_COLORS: Record<string, string> = {
@@ -85,9 +87,15 @@ function StatCard({
   )
 }
 
+const KYC_COLORS: Record<string, string> = {
+  PENDING: '#ffa21d', SUBMITTED: '#3454d1', VERIFIED: '#17c666', REJECTED: '#ea4d4d',
+}
+
 export default function SystemOverviewPage() {
   const { data: analytics, isLoading } = useGetSystemAnalyticsQuery()
   const { data: graph } = useGetSystemGraphQuery()
+  const { data: riderStats } = useGetRiderStatsQuery()
+  const { data: ridersData } = useGetRidersQuery({ page: 1, limit: 5 })
 
   const chartData = graph?.points.slice(-14).map((p) => ({
     date: p.date.slice(5),
@@ -160,6 +168,42 @@ export default function SystemOverviewPage() {
           sublabel={s ? `${s.pendingVendors} pending review` : 'Approved vendors'}
           value={s ? formatNumber(s.activeVendors) : '—'}
           icon={Store}
+          iconColor="#3dc7be"
+          iconBg="#e0f9f7"
+        />
+      </div>
+
+      {/* Rider stats row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Riders"
+          sublabel="All registered"
+          value={riderStats ? formatNumber(riderStats.total) : '—'}
+          icon={Bike}
+          iconColor="#3454d1"
+          iconBg="#eef1fb"
+        />
+        <StatCard
+          label="Active Riders"
+          sublabel="Account enabled"
+          value={riderStats ? formatNumber(riderStats.active) : '—'}
+          icon={Bike}
+          iconColor="#17c666"
+          iconBg="#e8faf2"
+        />
+        <StatCard
+          label="Online Now"
+          sublabel="Available for dispatch"
+          value={riderStats ? formatNumber(riderStats.available) : '—'}
+          icon={Bike}
+          iconColor="#ffa21d"
+          iconBg="#fff6e8"
+        />
+        <StatCard
+          label="KYC Verified"
+          sublabel={riderStats ? `${(riderStats.byKycStatus.PENDING ?? 0) + (riderStats.byKycStatus.SUBMITTED ?? 0)} awaiting review` : 'Verified riders'}
+          value={riderStats ? formatNumber(riderStats.byKycStatus.VERIFIED ?? 0) : '—'}
+          icon={Bike}
           iconColor="#3dc7be"
           iconBg="#e0f9f7"
         />
@@ -326,6 +370,127 @@ export default function SystemOverviewPage() {
           </div>
         </div>
       )}
+
+      {/* Rider fleet section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* KYC breakdown donut */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Rider KYC Status</h3>
+          </div>
+          <div className="p-4">
+            {riderStats ? (() => {
+              const kycData = Object.entries(riderStats.byKycStatus)
+                .filter(([, v]) => v > 0)
+                .map(([k, v]) => ({ name: k, value: v }))
+              return kycData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={140}>
+                    <PieChart>
+                      <Pie data={kycData} cx="50%" cy="50%" innerRadius={38} outerRadius={60}
+                        paddingAngle={2} dataKey="value">
+                        {kycData.map((entry, i) => (
+                          <Cell key={i} fill={KYC_COLORS[entry.name] ?? '#9ca3af'} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v: number) => formatNumber(v)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-1.5 mt-2">
+                    {kycData.map((d) => (
+                      <div key={d.name} className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: KYC_COLORS[d.name] ?? '#9ca3af' }} />
+                          <span className="text-[#4b5563] capitalize">{d.name.toLowerCase()}</span>
+                        </span>
+                        <span className="font-semibold text-[#283c50]">{formatNumber(d.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="h-[140px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+              )
+            })() : (
+              <div className="h-[140px] flex items-center justify-center">
+                <Loader2 className="w-4 h-4 animate-spin text-[#3454d1]" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Top riders table */}
+        <div className="lg:col-span-2 card overflow-hidden">
+          <div className="card-header">
+            <h3 className="card-title">Top Riders by Orders</h3>
+            <a href="/riders" className="text-xs text-[#3454d1] hover:underline">View all</a>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                  {['Rider', 'Vehicle', 'Rating', 'Orders', 'Status'].map((h) => (
+                    <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-2.5 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f9fafb]">
+                {ridersData?.data && ridersData.data.length > 0 ? (
+                  [...ridersData.data]
+                    .sort((a, b) => (b._count?.orders ?? 0) - (a._count?.orders ?? 0))
+                    .slice(0, 5)
+                    .map((rider) => (
+                      <tr key={rider.id} className="hover:bg-[#fafafa] transition-colors">
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                              style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}>
+                              {rider.firstName[0]}{rider.lastName[0]}
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium text-[#283c50]">{rider.firstName} {rider.lastName}</p>
+                              {rider.isAvailable && (
+                                <span className="text-[10px] text-[#17c666]">● Online</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-xs text-[#6b7885] capitalize">{rider.vehicleType?.toLowerCase() ?? '—'}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {rider.rating != null ? (
+                            <div className="flex items-center gap-1">
+                              <Star className="w-3 h-3 text-[#ffa21d]" fill="#ffa21d" />
+                              <span className="text-xs font-semibold text-[#283c50]">{rider.rating.toFixed(1)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-[#9ca3af]">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-xs font-bold text-[#3454d1]">{rider._count?.orders ?? 0}</span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className="text-[11px] font-medium rounded-full px-2 py-0.5"
+                            style={rider.isActive
+                              ? { backgroundColor: '#e8faf2', color: '#17c666' }
+                              : { backgroundColor: '#f3f4f6', color: '#9ca3af' }}>
+                            {rider.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-xs text-[#9ca3af]">No rider data.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

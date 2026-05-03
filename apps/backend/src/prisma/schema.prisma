@@ -345,9 +345,10 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items  OrderItem[]
-  events OrderEvent[]
-  review Review?
+  items   OrderItem[]
+  events  OrderEvent[]
+  review  Review?
+  earning RiderEarning?
 
   @@index([customerId])
   @@index([vendorId])
@@ -469,7 +470,94 @@ model Rider {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  orders Order[]
+  orders        Order[]
+  refreshTokens RiderRefreshToken[]
+  pushTokens    RiderPushToken[]
+  notifications RiderNotification[]
+  earnings      RiderEarning[]
+  withdrawals   RiderWithdrawal[]
+}
+
+model RiderRefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  riderId   String
+  rider     Rider    @relation(fields: [riderId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([riderId])
+}
+
+model RiderPushToken {
+  id        String   @id @default(cuid())
+  riderId   String
+  rider     Rider    @relation(fields: [riderId], references: [id])
+  token     String
+  platform  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([riderId, token])
+}
+
+model RiderNotification {
+  id        String   @id @default(cuid())
+  riderId   String
+  rider     Rider    @relation(fields: [riderId], references: [id])
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([riderId])
+  @@index([riderId, isRead])
+}
+
+model RiderEarning {
+  id         String             @id @default(cuid())
+  riderId    String
+  rider      Rider              @relation(fields: [riderId], references: [id])
+  orderId    String             @unique
+  order      Order              @relation(fields: [orderId], references: [id])
+  amountKobo Int
+  status     RiderEarningStatus @default(PENDING)
+  settledAt  DateTime?
+  createdAt  DateTime           @default(now())
+
+  @@index([riderId])
+}
+
+enum RiderEarningStatus {
+  PENDING
+  SETTLED
+}
+
+model RiderWithdrawal {
+  id            String                @id @default(cuid())
+  riderId       String
+  rider         Rider                 @relation(fields: [riderId], references: [id])
+  amountKobo    Int
+  bankName      String
+  bankCode      String
+  accountNumber String
+  accountName   String
+  reference     String?               @unique
+  status        RiderWithdrawalStatus @default(PENDING)
+  notes         String?
+  processedAt   DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([riderId])
+}
+
+enum RiderWithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 // ─── Reviews ──────────────────────────────────────────────────

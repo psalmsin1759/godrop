@@ -25,6 +25,7 @@ import promotionsRouter from "./routes/promotions";
 import vendorOnboardingRouter from "./routes/vendorOnboarding";
 import vendorAdminRouter from "./routes/vendorAdmin";
 import systemAdminRouter from "./routes/systemAdmin";
+import riderAppRouter from "./routes/riderApp";
 import { errorHandler } from "./middleware/errorHandler";
 import * as orderService from "./services/orderService";
 
@@ -59,6 +60,7 @@ app.use("/api/v1/promotions", promotionsRouter);
 app.use("/api/v1/vendor", vendorOnboardingRouter);
 app.use("/api/v1/vendor-admin", vendorAdminRouter);
 app.use("/api/v1/admin", systemAdminRouter);
+app.use("/api/v1/rider", riderAppRouter);
 
 // ─── Docs ─────────────────────────────────────────────────────
 const openApiSpec = YAML.load(

@@ -1,5 +1,15 @@
 import { api } from '@/store/baseApi'
-import type { TeamMember, InviteTeamMemberRequest, VendorSettings, UpdateVendorSettingsRequest } from '@/types/api'
+import type {
+  TeamMember,
+  InviteTeamMemberRequest,
+  VendorSettings,
+  UpdateVendorSettingsRequest,
+  VendorAdminSettings,
+  UpdateVendorAdminSettingsRequest,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+  AdminUser,
+} from '@/types/api'
 
 type Wrap<T> = { success: boolean; data: T }
 
@@ -43,6 +53,28 @@ export const teamApi = api.injectEndpoints({
       invalidatesTags: ['VendorSettings'],
       transformResponse: (res: Wrap<VendorSettings>) => res.data,
     }),
+
+    getVendorAdminSettings: build.query<VendorAdminSettings, void>({
+      query: () => '/vendor-admin/me/settings',
+      providesTags: ['VendorAdminSettings'],
+      transformResponse: (res: Wrap<VendorAdminSettings>) => res.data,
+    }),
+
+    updateVendorAdminSettings: build.mutation<VendorAdminSettings, UpdateVendorAdminSettingsRequest>({
+      query: (body) => ({ url: '/vendor-admin/me/settings', method: 'PATCH', body }),
+      invalidatesTags: ['VendorAdminSettings'],
+      transformResponse: (res: Wrap<VendorAdminSettings>) => res.data,
+    }),
+
+    updateVendorAdminProfile: build.mutation<AdminUser, UpdateProfileRequest>({
+      query: (body) => ({ url: '/vendor-admin/me/profile', method: 'PATCH', body }),
+      transformResponse: (res: Wrap<AdminUser>) => res.data,
+    }),
+
+    changeVendorAdminPassword: build.mutation<{ message: string }, ChangePasswordRequest>({
+      query: (body) => ({ url: '/vendor-admin/me/change-password', method: 'POST', body }),
+      transformResponse: (res: { success: boolean; message: string }) => ({ message: res.message }),
+    }),
   }),
   overrideExisting: false,
 })
@@ -54,4 +86,8 @@ export const {
   useRemoveTeamMemberMutation,
   useGetVendorSettingsQuery,
   useUpdateVendorSettingsMutation,
+  useGetVendorAdminSettingsQuery,
+  useUpdateVendorAdminSettingsMutation,
+  useUpdateVendorAdminProfileMutation,
+  useChangeVendorAdminPasswordMutation,
 } = teamApi

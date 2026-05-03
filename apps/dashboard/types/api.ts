@@ -4,7 +4,9 @@ export interface ApiResponse<T> {
   message?: string
 }
 
-export type AdminRole = 'SUPER_ADMIN' | 'ADMIN | OWNER | MANAGER | STAFF'
+export type SystemAdminRole = 'SUPER_ADMIN' | 'ADMIN'
+export type VendorAdminRole = 'OWNER' | 'MANAGER' | 'STAFF'
+export type AdminRole = SystemAdminRole | VendorAdminRole
 export type AdminType = 'SYSTEM' | 'VENDOR'
 export type VendorStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
 export type VendorType = 'RESTAURANT' | 'GROCERY' | 'RETAIL' | 'PHARMACY'
@@ -81,14 +83,14 @@ export interface CreateAdminRequest {
   firstName: string
   lastName: string
   password: string
-  role?: AdminRole
+  role?: SystemAdminRole
 }
 
 export interface UpdateAdminRequest {
   firstName?: string
   lastName?: string
   isActive?: boolean
-  role?: AdminRole
+  role?: SystemAdminRole
 }
 
 export interface AuditLogFilters {
@@ -351,6 +353,38 @@ export interface InviteTeamMemberRequest {
   firstName: string
   lastName: string
   role: 'MANAGER' | 'STAFF'
+}
+
+// ─── Admin Settings (Personal) ────────────────────────────────────────────
+export interface VendorAdminSettings {
+  emailNotifications: boolean
+  orderAlerts: boolean
+}
+
+export interface UpdateVendorAdminSettingsRequest {
+  emailNotifications?: boolean
+  orderAlerts?: boolean
+}
+
+export interface SystemAdminSettings {
+  emailNotifications: boolean
+  weeklyReport: boolean
+}
+
+export interface UpdateSystemAdminSettingsRequest {
+  emailNotifications?: boolean
+  weeklyReport?: boolean
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
+export interface UpdateProfileRequest {
+  firstName?: string
+  lastName?: string
+  email?: string
 }
 
 // ─── Vendor Settings ───────────────────────────────────────────────────────
@@ -624,6 +658,210 @@ export interface CustomersListParams {
 
 export interface CustomerWalletTransactionsParams {
   type?: WalletTransactionType
+  page?: number
+  limit?: number
+}
+
+// ─── Riders ────────────────────────────────────────────────────────────────
+export type RiderKycStatus = 'PENDING' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED'
+export type VehicleType = 'BICYCLE' | 'MOTORCYCLE' | 'CAR' | 'VAN'
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER'
+
+export interface RiderGuarantor {
+  name: string
+  phone: string
+  relationship: string
+  address?: string
+  occupation?: string
+}
+
+export interface Rider {
+  id: string
+  firstName: string
+  lastName: string
+  phone: string
+  email?: string | null
+  avatarUrl?: string | null
+  vehicleType?: VehicleType | null
+  vehiclePlate?: string | null
+  kycStatus: RiderKycStatus
+  isAvailable: boolean
+  isActive: boolean
+  rating?: number | null
+  ratingCount: number
+  city?: string | null
+  state?: string | null
+  createdAt: string
+  _count: { orders: number }
+}
+
+export interface RiderDetail extends Omit<Rider, '_count'> {
+  dateOfBirth?: string | null
+  gender?: Gender | null
+  streetAddress?: string | null
+  landmark?: string | null
+  vehicleColor?: string | null
+  vehicleModel?: string | null
+  vehicleYear?: number | null
+  driverLicenseNumber?: string | null
+  driverLicenseExpiry?: string | null
+  vehicleInsuranceExpiry?: string | null
+  bankName?: string | null
+  bankCode?: string | null
+  accountNumber?: string | null
+  accountName?: string | null
+  bvn?: string | null
+  nin?: string | null
+  emergencyContactName?: string | null
+  emergencyContactPhone?: string | null
+  emergencyContactRelationship?: string | null
+  guarantors?: RiderGuarantor[] | null
+  updatedAt: string
+}
+
+export interface CreateRiderRequest {
+  firstName: string
+  lastName: string
+  phone: string
+  email?: string
+  dateOfBirth?: string
+  gender?: Gender
+  streetAddress?: string
+  city?: string
+  state?: string
+  landmark?: string
+  vehicleType?: VehicleType
+  vehiclePlate?: string
+  vehicleColor?: string
+  vehicleModel?: string
+  vehicleYear?: number
+  driverLicenseNumber?: string
+  driverLicenseExpiry?: string
+  vehicleInsuranceExpiry?: string
+  bankName?: string
+  bankCode?: string
+  accountNumber?: string
+  accountName?: string
+  bvn?: string
+  nin?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactRelationship?: string
+  guarantors?: RiderGuarantor[]
+}
+
+export interface UpdateRiderRequest extends Partial<CreateRiderRequest> {
+  isActive?: boolean
+}
+
+export interface RidersListParams {
+  search?: string
+  kycStatus?: RiderKycStatus
+  isActive?: boolean
+  page?: number
+  limit?: number
+}
+
+export interface RidersListMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export interface RiderStats {
+  total: number
+  active: number
+  available: number
+  byKycStatus: {
+    PENDING: number
+    SUBMITTED: number
+    VERIFIED: number
+    REJECTED: number
+  }
+}
+
+export interface AvailableRider {
+  id: string
+  firstName: string
+  lastName: string
+  phone: string
+  vehicleType?: VehicleType | null
+  vehiclePlate?: string | null
+  lat?: number | null
+  lng?: number | null
+  rating: number
+}
+
+export interface RiderOrderSummary {
+  id: string
+  trackingCode: string
+  type: OrderType
+  status: OrderStatus
+  pickupAddress: string
+  dropoffAddress: string
+  deliveryFeeKobo: number
+  totalKobo: number
+  paymentMethod: PaymentMethod
+  createdAt: string
+}
+
+export interface RiderOrdersParams {
+  status?: OrderStatus
+  page?: number
+  limit?: number
+}
+
+export interface RiderEarning {
+  id: string
+  amountKobo: number
+  status: 'PENDING' | 'SETTLED'
+  settledAt: string | null
+  createdAt: string
+  order: {
+    id: string
+    trackingCode: string
+    type: OrderType
+    pickupAddress: string
+    dropoffAddress: string
+    createdAt: string
+  }
+}
+
+export interface RiderEarningsResponse {
+  data: RiderEarning[]
+  meta: RidersListMeta
+  totalEarnedKobo: number
+}
+
+export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+
+export interface RiderWithdrawal {
+  id: string
+  amountKobo: number
+  bankName: string
+  accountNumber: string
+  accountName: string
+  status: WithdrawalStatus
+  notes: string | null
+  processedAt: string | null
+  createdAt: string
+}
+
+// ─── Admin Notifications ───────────────────────────────────────────────────
+export interface AdminNotification {
+  id: string
+  adminId: string
+  type: string
+  title: string
+  body: string
+  isRead: boolean
+  data?: Record<string, unknown>
+  createdAt: string
+}
+
+export interface NotificationsListParams {
+  unreadOnly?: boolean
   page?: number
   limit?: number
 }

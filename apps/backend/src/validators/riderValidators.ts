@@ -59,3 +59,18 @@ export const riderQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(100).optional().default(20),
 });
+
+export const riderOrderQuerySchema = z.object({
+  status: z.string().optional(),
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().positive().max(100).optional().default(20),
+});
+
+export const assignOrderSchema = z.object({
+  orderId: z.string().min(1),
+});
+
+export const processWithdrawalSchema = z.object({
+  action: z.enum(["approve", "reject"]),
+  notes: z.string().optional(),
+});

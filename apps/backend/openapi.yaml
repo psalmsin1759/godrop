@@ -5,7 +5,8 @@ info:
     On-demand delivery and logistics platform for Nigeria.
 
     **Authentication domains:**
-    - **Customer API** — Phone OTP → JWT. Pass token as `Authorization: Bearer <token>`.
+    - **Customer API** — Phone OTP → JWT. Pass token as `Authorization: Bearer <token>`. Payload: `{ userId }`.
+    - **Rider App API** — Phone OTP → JWT. Same header. Payload: `{ riderId, type: "rider" }`.
     - **Vendor Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
     - **System Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
 
@@ -786,6 +787,238 @@ components:
                 type: integer
                 description: "New user registrations in this bucket"
                 example: 27
+
+    # ─ Rider App ─────────────────────────────────────────────
+    RiderProfile:
+      type: object
+      description: Full rider profile returned to the rider mobile app
+      properties:
+        id: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string, example: "+2348012345678" }
+        email: { type: string, format: email, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        dateOfBirth: { type: string, format: date-time, nullable: true }
+        gender: { type: string, enum: [MALE, FEMALE, OTHER], nullable: true }
+        streetAddress: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        state: { type: string, nullable: true }
+        vehicleType: { type: string, enum: [BICYCLE, MOTORCYCLE, CAR, VAN], nullable: true }
+        vehiclePlate: { type: string, nullable: true }
+        vehicleColor: { type: string, nullable: true }
+        vehicleModel: { type: string, nullable: true }
+        vehicleYear: { type: integer, nullable: true }
+        driverLicenseNumber: { type: string, nullable: true }
+        driverLicenseExpiry: { type: string, format: date-time, nullable: true }
+        vehicleInsuranceExpiry: { type: string, format: date-time, nullable: true }
+        bankName: { type: string, nullable: true }
+        accountNumber: { type: string, nullable: true }
+        accountName: { type: string, nullable: true }
+        kycStatus: { type: string, enum: [PENDING, SUBMITTED, VERIFIED, REJECTED] }
+        kycNotes: { type: string, nullable: true }
+        emergencyContactName: { type: string, nullable: true }
+        emergencyContactPhone: { type: string, nullable: true }
+        isAvailable: { type: boolean }
+        isActive: { type: boolean }
+        rating: { type: number }
+        ratingCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    RiderOrder:
+      type: object
+      description: Order record as seen by the assigned rider
+      properties:
+        id: { type: string }
+        trackingCode: { type: string }
+        type: { type: string, enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK] }
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        pickupAddress: { type: string }
+        pickupLat: { type: number }
+        pickupLng: { type: number }
+        dropoffAddress: { type: string }
+        dropoffLat: { type: number }
+        dropoffLng: { type: number }
+        deliveryFeeKobo: { type: integer }
+        totalKobo: { type: integer }
+        paymentMethod: { type: string, enum: [CARD, WALLET, CASH] }
+        recipientName: { type: string, nullable: true }
+        recipientPhone: { type: string, nullable: true }
+        vendor:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            name: { type: string }
+            logoUrl: { type: string, nullable: true }
+            address: { type: string }
+            lat: { type: number }
+            lng: { type: number }
+        createdAt: { type: string, format: date-time }
+
+    RiderOrderDetail:
+      allOf:
+        - $ref: "#/components/schemas/RiderOrder"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  quantity: { type: integer }
+                  unitPriceKobo: { type: integer }
+                  totalKobo: { type: integer }
+                  notes: { type: string, nullable: true }
+            events:
+              type: array
+              items:
+                type: object
+                properties:
+                  status: { type: string }
+                  description: { type: string, nullable: true }
+                  createdAt: { type: string, format: date-time }
+
+    RiderEarning:
+      type: object
+      properties:
+        id: { type: string }
+        amountKobo: { type: integer }
+        status: { type: string, enum: [PENDING, SETTLED] }
+        settledAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        order:
+          type: object
+          properties:
+            id: { type: string }
+            trackingCode: { type: string }
+            type: { type: string, enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK] }
+            pickupAddress: { type: string }
+            dropoffAddress: { type: string }
+            createdAt: { type: string, format: date-time }
+
+    RiderEarningsSummary:
+      type: object
+      properties:
+        totalKobo: { type: integer, description: "Lifetime earnings in kobo" }
+        todayKobo: { type: integer }
+        thisWeekKobo: { type: integer }
+        thisMonthKobo: { type: integer }
+        pendingBalanceKobo: { type: integer, description: "Balance not yet settled/withdrawn" }
+        deliveryCount: { type: integer }
+
+    RiderWithdrawal:
+      type: object
+      properties:
+        id: { type: string }
+        amountKobo: { type: integer }
+        bankName: { type: string }
+        accountNumber: { type: string }
+        accountName: { type: string }
+        status: { type: string, enum: [PENDING, PROCESSING, COMPLETED, FAILED] }
+        notes: { type: string, nullable: true }
+        processedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    RiderNotification:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        body: { type: string }
+        data: { type: object, nullable: true }
+        isRead: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    # ─ Admin Rider ────────────────────────────────────────────
+    AdminRiderSummary:
+      type: object
+      description: Rider record as seen by system admins (list view)
+      properties:
+        id: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string, example: "+2348012345678" }
+        email: { type: string, format: email, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        vehicleType: { type: string, enum: [BICYCLE, MOTORCYCLE, CAR, VAN], nullable: true }
+        vehiclePlate: { type: string, nullable: true }
+        kycStatus: { type: string, enum: [PENDING, SUBMITTED, VERIFIED, REJECTED] }
+        isAvailable: { type: boolean }
+        isActive: { type: boolean }
+        rating: { type: number }
+        ratingCount: { type: integer }
+        city: { type: string, nullable: true }
+        state: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        _count:
+          type: object
+          properties:
+            orders: { type: integer }
+
+    AdminRiderDetail:
+      type: object
+      description: Full rider record returned to system admins (detail view)
+      properties:
+        id: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string, example: "+2348012345678" }
+        email: { type: string, format: email, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        dateOfBirth: { type: string, format: date-time, nullable: true }
+        gender: { type: string, enum: [MALE, FEMALE, OTHER], nullable: true }
+        streetAddress: { type: string, nullable: true }
+        city: { type: string, nullable: true }
+        state: { type: string, nullable: true }
+        landmark: { type: string, nullable: true }
+        vehicleType: { type: string, enum: [BICYCLE, MOTORCYCLE, CAR, VAN], nullable: true }
+        vehiclePlate: { type: string, nullable: true }
+        vehicleColor: { type: string, nullable: true }
+        vehicleModel: { type: string, nullable: true }
+        vehicleYear: { type: integer, nullable: true }
+        driverLicenseNumber: { type: string, nullable: true }
+        driverLicenseExpiry: { type: string, format: date-time, nullable: true }
+        vehicleInsuranceExpiry: { type: string, format: date-time, nullable: true }
+        bankName: { type: string, nullable: true }
+        bankCode: { type: string, nullable: true }
+        accountNumber: { type: string, nullable: true }
+        accountName: { type: string, nullable: true }
+        bvn: { type: string, nullable: true }
+        nin: { type: string, nullable: true }
+        kycStatus: { type: string, enum: [PENDING, SUBMITTED, VERIFIED, REJECTED] }
+        kycNotes: { type: string, nullable: true }
+        emergencyContactName: { type: string, nullable: true }
+        emergencyContactPhone: { type: string, nullable: true }
+        emergencyContactRelationship: { type: string, nullable: true }
+        guarantors: { type: array, items: { type: object }, nullable: true }
+        documents: { type: object, nullable: true }
+        lat: { type: number, nullable: true }
+        lng: { type: number, nullable: true }
+        isAvailable: { type: boolean }
+        isActive: { type: boolean }
+        rating: { type: number }
+        ratingCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    RiderStats:
+      type: object
+      properties:
+        total: { type: integer }
+        active: { type: integer }
+        available: { type: integer }
+        byKycStatus:
+          type: object
+          properties:
+            PENDING: { type: integer }
+            SUBMITTED: { type: integer }
+            VERIFIED: { type: integer }
+            REJECTED: { type: integer }
 
 # ─── Paths ────────────────────────────────────────────────────
 paths:
@@ -4519,6 +4752,1244 @@ paths:
         "403":
           description: Forbidden — requires ADMIN role or higher
 
+  # ══════════════════════════════════════════════════════════════
+  # RIDER APP API
+  # ══════════════════════════════════════════════════════════════
+
+  # ─ Rider Auth ────────────────────────────────────────────────
+  /rider/auth/request-otp:
+    post:
+      tags: [Rider App — Auth]
+      summary: Request OTP for rider login
+      description: Sends a 6-digit OTP to the rider's phone. Rider must already exist in the system (created by admin).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string, example: "+2348012345678" }
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: "OTP sent" }
+                  expiresIn: { type: integer, example: 600, description: "Seconds until OTP expires" }
+        "404":
+          description: No rider account found for this phone number
+
+  /rider/auth/verify-otp:
+    post:
+      tags: [Rider App — Auth]
+      summary: Verify OTP and get access tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, otp]
+              properties:
+                phone: { type: string, example: "+2348012345678" }
+                otp: { type: string, example: "482910" }
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+                  rider: { $ref: "#/components/schemas/RiderProfile" }
+        "400":
+          description: Invalid or expired OTP
+        "403":
+          description: Rider account is inactive
+
+  /rider/auth/refresh:
+    post:
+      tags: [Rider App — Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: New token pair issued
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiSuccess"
+                  - $ref: "#/components/schemas/TokenPair"
+        "401":
+          description: Invalid or expired refresh token
+
+  /rider/auth/logout:
+    post:
+      tags: [Rider App — Auth]
+      summary: Logout and revoke refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: Logged out successfully
+
+  # ─ Rider Profile ─────────────────────────────────────────────
+  /rider/me:
+    get:
+      tags: [Rider App — Profile]
+      summary: Get own profile
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Rider profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderProfile" }
+        "401":
+          description: Unauthorized
+    patch:
+      tags: [Rider App — Profile]
+      summary: Update own profile (personal info and emergency contact)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string, maxLength: 50 }
+                lastName: { type: string, maxLength: 50 }
+                email: { type: string, format: email, nullable: true }
+                dateOfBirth: { type: string, example: "1995-06-15", description: "YYYY-MM-DD" }
+                gender: { type: string, enum: [MALE, FEMALE, OTHER] }
+                streetAddress: { type: string }
+                city: { type: string }
+                state: { type: string }
+                landmark: { type: string }
+                emergencyContactName: { type: string }
+                emergencyContactPhone: { type: string }
+                emergencyContactRelationship: { type: string }
+                guarantors:
+                  type: array
+                  maxItems: 3
+                  items:
+                    type: object
+                    required: [name, phone, relationship]
+                    properties:
+                      name: { type: string }
+                      phone: { type: string }
+                      relationship: { type: string }
+                      address: { type: string }
+                      occupation: { type: string }
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderProfile" }
+
+  /rider/me/avatar:
+    patch:
+      tags: [Rider App — Profile]
+      summary: Update profile avatar URL
+      description: Upload the image to Cloudinary first, then pass the resulting URL here.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [avatarUrl]
+              properties:
+                avatarUrl: { type: string, format: uri }
+      responses:
+        "200":
+          description: Avatar updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderProfile" }
+
+  /rider/me/kyc:
+    post:
+      tags: [Rider App — Profile]
+      summary: Submit KYC documents
+      description: |
+        Rider submits vehicle, license, insurance, BVN/NIN, and guarantor info.
+        Sets `kycStatus` to `SUBMITTED`. A system admin then reviews and sets it to `VERIFIED` or `REJECTED`.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicleType: { type: string, enum: [BICYCLE, MOTORCYCLE, CAR, VAN] }
+                vehiclePlate: { type: string }
+                vehicleColor: { type: string }
+                vehicleModel: { type: string }
+                vehicleYear: { type: integer, minimum: 1990, maximum: 2030 }
+                driverLicenseNumber: { type: string }
+                driverLicenseExpiry: { type: string, example: "2028-05-01", description: "YYYY-MM-DD" }
+                vehicleInsuranceExpiry: { type: string, example: "2026-12-31", description: "YYYY-MM-DD" }
+                bvn: { type: string, minLength: 11, maxLength: 11 }
+                nin: { type: string, minLength: 11, maxLength: 11 }
+                guarantors:
+                  type: array
+                  maxItems: 3
+                  items:
+                    type: object
+                    required: [name, phone, relationship]
+                    properties:
+                      name: { type: string }
+                      phone: { type: string }
+                      relationship: { type: string }
+                      address: { type: string }
+                      occupation: { type: string }
+                documents:
+                  type: object
+                  description: "Key-value map of document type to Cloudinary URL. e.g. { \"driverLicense\": \"https://...\", \"vehicleInsurance\": \"https://...\" }"
+                  additionalProperties: { type: string }
+      responses:
+        "200":
+          description: KYC submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderProfile" }
+
+  /rider/me/bank:
+    patch:
+      tags: [Rider App — Profile]
+      summary: Update bank account details
+      description: Bank account used for earnings withdrawal.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bankName, bankCode, accountNumber, accountName]
+              properties:
+                bankName: { type: string, example: "Guaranty Trust Bank" }
+                bankCode: { type: string, example: "058" }
+                accountNumber: { type: string, minLength: 10, maxLength: 10 }
+                accountName: { type: string }
+      responses:
+        "200":
+          description: Bank account updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderProfile" }
+
+  /rider/me/availability:
+    patch:
+      tags: [Rider App — Profile]
+      summary: Toggle online/offline status
+      description: "Riders must be online (isAvailable: true) to receive order assignments."
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isAvailable]
+              properties:
+                isAvailable: { type: boolean }
+      responses:
+        "200":
+          description: Availability updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderProfile" }
+
+  /rider/me/location:
+    post:
+      tags: [Rider App — Profile]
+      summary: Update current location (background polling)
+      description: Use this endpoint for periodic background location updates. For real-time delivery tracking, use `POST /rider/orders/:id/location` which also broadcasts via WebSocket.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng]
+              properties:
+                lat: { type: number, minimum: -90, maximum: 90 }
+                lng: { type: number, minimum: -180, maximum: 180 }
+      responses:
+        "200":
+          description: Location updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: "Location updated" }
+
+  /rider/me/push-token:
+    post:
+      tags: [Rider App — Profile]
+      summary: Register push notification token
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string }
+                platform: { type: string, enum: [ios, android] }
+      responses:
+        "200":
+          description: Token registered
+    delete:
+      tags: [Rider App — Profile]
+      summary: Remove push notification token (on logout)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200":
+          description: Token removed
+
+  # ─ Rider Orders ───────────────────────────────────────────────
+  /rider/orders:
+    get:
+      tags: [Rider App — Orders]
+      summary: List own orders
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated list of rider's orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RiderOrder" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /rider/orders/active:
+    get:
+      tags: [Rider App — Orders]
+      summary: Get active order
+      description: Returns the single active order currently assigned to the rider (status ACCEPTED, READY_FOR_PICKUP, PICKED_UP, or IN_TRANSIT). Returns `null` in `data` if none.
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Active order or null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    nullable: true
+                    allOf:
+                      - $ref: "#/components/schemas/RiderOrderDetail"
+
+  /rider/orders/{id}:
+    get:
+      tags: [Rider App — Orders]
+      summary: Get order detail
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderOrderDetail" }
+        "404":
+          description: Order not found or not assigned to this rider
+
+  /rider/orders/{id}/accept:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Accept order assignment
+      description: Rider confirms they will fulfil the order. Logs an OrderEvent — does not change order status (vendor controls status progression for food orders).
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderOrder" }
+        "400":
+          description: Order cannot be accepted at this stage
+        "404":
+          description: Order not found
+
+  /rider/orders/{id}/reject:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Reject order assignment
+      description: Rider declines the assignment. Clears the riderId so the dispatcher can reassign.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Order rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderOrder" }
+        "404":
+          description: Order not found
+
+  /rider/orders/{id}/picked-up:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Mark order as picked up
+      description: Transitions status from ACCEPTED or READY_FOR_PICKUP → PICKED_UP.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order marked as picked up
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderOrder" }
+        "400":
+          description: Order cannot be marked as picked up at this stage
+        "404":
+          description: Order not found
+
+  /rider/orders/{id}/in-transit:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Mark order as in transit
+      description: Transitions status from PICKED_UP → IN_TRANSIT.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Order in transit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderOrder" }
+        "400":
+          description: Order must be in PICKED_UP status first
+        "404":
+          description: Order not found
+
+  /rider/orders/{id}/delivered:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Mark order as delivered
+      description: |
+        Transitions status to DELIVERED. Automatically creates a `RiderEarning` record
+        for 80% of the order's `deliveryFeeKobo` (configurable via `RIDER_EARNING_RATE` env var).
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                proofNote: { type: string, description: "Optional delivery note, e.g. left with neighbour" }
+      responses:
+        "200":
+          description: Order delivered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderOrder" }
+        "400":
+          description: Order must be PICKED_UP or IN_TRANSIT to mark as delivered
+        "404":
+          description: Order not found
+
+  /rider/orders/{id}/failed:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Mark delivery as failed
+      description: Transitions status to FAILED. Stores the reason in `cancellationReason`.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, example: "Recipient unreachable after 3 attempts" }
+      responses:
+        "200":
+          description: Delivery marked as failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderOrder" }
+        "404":
+          description: Order not found
+
+  /rider/orders/{id}/location:
+    post:
+      tags: [Rider App — Orders]
+      summary: Push real-time location update for active order
+      description: Updates rider's stored lat/lng AND broadcasts `{ lat, lng, updatedAt }` to all WebSocket clients watching `ws://host/ws/orders/:id/tracking`.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng]
+              properties:
+                lat: { type: number, minimum: -90, maximum: 90 }
+                lng: { type: number, minimum: -180, maximum: 180 }
+      responses:
+        "200":
+          description: Location updated and broadcast to tracking clients
+        "404":
+          description: Order not found or not assigned to this rider
+
+  # ─ Rider Earnings ─────────────────────────────────────────────
+  /rider/earnings:
+    get:
+      tags: [Rider App — Earnings]
+      summary: List earning records (per delivery)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated earnings list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RiderEarning" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /rider/earnings/summary:
+    get:
+      tags: [Rider App — Earnings]
+      summary: Get earnings summary (today, week, month, total, pending balance)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Earnings summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderEarningsSummary" }
+
+  /rider/earnings/withdrawal:
+    post:
+      tags: [Rider App — Earnings]
+      summary: Request withdrawal of pending earnings to bank account
+      description: |
+        Creates a `RiderWithdrawal` record in PENDING status. A system admin then approves
+        or rejects via `PATCH /admin/riders/:id/withdrawals/:withdrawalId`.
+
+        Minimum withdrawal: ₦100 (10,000 kobo).
+        Amount cannot exceed current pending balance.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountKobo]
+              properties:
+                amountKobo: { type: integer, minimum: 10000, description: "Amount in kobo. Min ₦100 = 10,000 kobo" }
+                bankName: { type: string, description: "Override saved bank name" }
+                bankCode: { type: string, description: "Override saved bank code" }
+                accountNumber: { type: string, description: "Override saved account number" }
+                accountName: { type: string, description: "Override saved account name" }
+      responses:
+        "201":
+          description: Withdrawal request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderWithdrawal" }
+        "400":
+          description: Insufficient balance or below minimum withdrawal amount
+
+  /rider/earnings/withdrawals:
+    get:
+      tags: [Rider App — Earnings]
+      summary: List withdrawal history
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated withdrawal history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RiderWithdrawal" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  # ─ Rider Notifications ────────────────────────────────────────
+  /rider/notifications:
+    get:
+      tags: [Rider App — Notifications]
+      summary: List notifications
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated notifications list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RiderNotification" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /rider/notifications/unread-count:
+    get:
+      tags: [Rider App — Notifications]
+      summary: Get unread notification count
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  count: { type: integer }
+
+  /rider/notifications/read-all:
+    patch:
+      tags: [Rider App — Notifications]
+      summary: Mark all notifications as read
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: All marked as read
+
+  /rider/notifications/{id}/read:
+    patch:
+      tags: [Rider App — Notifications]
+      summary: Mark a notification as read
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderNotification" }
+        "404":
+          description: Notification not found
+
+  # ══════════════════════════════════════════════════════════════
+  # SYSTEM ADMIN — RIDERS
+  # ══════════════════════════════════════════════════════════════
+
+  /admin/riders/stats:
+    get:
+      tags: [System Admin — Riders]
+      summary: Rider overview stats
+      description: Returns total, active, available counts and KYC status breakdown. Minimum role ADMIN.
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Rider stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderStats" }
+
+  /admin/riders/available:
+    get:
+      tags: [System Admin — Riders]
+      summary: List online and available riders (for manual dispatch)
+      description: Returns riders where `isAvailable = true`, `isActive = true`, and `kycStatus = VERIFIED`. Minimum role ADMIN.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: lat
+          schema: { type: number }
+          description: Optional reference latitude for proximity sorting (future use)
+        - in: query
+          name: lng
+          schema: { type: number }
+          description: Optional reference longitude
+      responses:
+        "200":
+          description: List of available riders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        firstName: { type: string }
+                        lastName: { type: string }
+                        phone: { type: string }
+                        vehicleType: { type: string, nullable: true }
+                        vehiclePlate: { type: string, nullable: true }
+                        lat: { type: number, nullable: true }
+                        lng: { type: number, nullable: true }
+                        rating: { type: number }
+
+  /admin/riders:
+    get:
+      tags: [System Admin — Riders]
+      summary: List all riders (paginated, searchable)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Search by name, phone, or email
+        - in: query
+          name: kycStatus
+          schema: { type: string, enum: [PENDING, SUBMITTED, VERIFIED, REJECTED] }
+        - in: query
+          name: isActive
+          schema: { type: string, enum: ["true", "false"] }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated rider list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AdminRiderSummary" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+    post:
+      tags: [System Admin — Riders]
+      summary: Create a new rider account
+      description: Admin-created rider accounts. The rider uses their phone to log in via OTP. Minimum role ADMIN.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, phone]
+              properties:
+                firstName: { type: string, maxLength: 50 }
+                lastName: { type: string, maxLength: 50 }
+                phone: { type: string, example: "+2348012345678" }
+                email: { type: string, format: email }
+                dateOfBirth: { type: string, example: "1995-06-15" }
+                gender: { type: string, enum: [MALE, FEMALE, OTHER] }
+                streetAddress: { type: string }
+                city: { type: string }
+                state: { type: string }
+                vehicleType: { type: string, enum: [BICYCLE, MOTORCYCLE, CAR, VAN] }
+                vehiclePlate: { type: string }
+                vehicleColor: { type: string }
+                vehicleModel: { type: string }
+                vehicleYear: { type: integer }
+                bankName: { type: string }
+                bankCode: { type: string }
+                accountNumber: { type: string }
+                accountName: { type: string }
+      responses:
+        "201":
+          description: Rider created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/AdminRiderDetail" }
+        "409":
+          description: Phone or email already exists
+
+  /admin/riders/{id}:
+    get:
+      tags: [System Admin — Riders]
+      summary: Get rider detail
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Rider detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/AdminRiderDetail" }
+        "404":
+          description: Rider not found
+    patch:
+      tags: [System Admin — Riders]
+      summary: Update rider record (admin-side)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                phone: { type: string }
+                email: { type: string, format: email, nullable: true }
+                vehicleType: { type: string, enum: [BICYCLE, MOTORCYCLE, CAR, VAN] }
+                vehiclePlate: { type: string }
+                isActive: { type: boolean }
+      responses:
+        "200":
+          description: Rider updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/AdminRiderDetail" }
+        "404":
+          description: Rider not found
+        "409":
+          description: Phone or email conflict
+
+  /admin/riders/{id}/kyc:
+    patch:
+      tags: [System Admin — Riders]
+      summary: Update KYC status
+      description: Approve or reject a rider's submitted KYC documents. Minimum role ADMIN.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [PENDING, SUBMITTED, VERIFIED, REJECTED] }
+                notes: { type: string, description: "Reason for rejection (required when rejecting)" }
+      responses:
+        "200":
+          description: KYC status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/AdminRiderDetail" }
+        "404":
+          description: Rider not found
+
+  /admin/riders/{id}/toggle-active:
+    patch:
+      tags: [System Admin — Riders]
+      summary: Activate or deactivate a rider account
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive: { type: boolean }
+      responses:
+        "200":
+          description: Rider active status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/AdminRiderDetail" }
+
+  /admin/riders/{id}/assign-order:
+    post:
+      tags: [System Admin — Riders]
+      summary: Manually assign an order to this rider
+      description: Dispatchers use this to assign an order to a specific rider. Logs an audit event. Minimum role ADMIN.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId: { type: string }
+      responses:
+        "200":
+          description: Order assigned to rider
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/AdminOrder" }
+        "400":
+          description: Order cannot be assigned at this stage or rider is inactive
+        "404":
+          description: Order or rider not found
+
+  /admin/riders/{id}/orders:
+    get:
+      tags: [System Admin — Riders]
+      summary: Get a rider's order history
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Paginated order list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RiderOrder" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+        "404":
+          description: Rider not found
+
+  /admin/riders/{id}/earnings:
+    get:
+      tags: [System Admin — Riders]
+      summary: Get a rider's earnings (list + total)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Earnings with total summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RiderEarning" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+                  totalEarnedKobo: { type: integer }
+        "404":
+          description: Rider not found
+
+  /admin/riders/{id}/withdrawals/{withdrawalId}:
+    patch:
+      tags: [System Admin — Riders]
+      summary: Approve or reject a rider's withdrawal request
+      description: |
+        - `approve`: Sets status to PROCESSING, marks all PENDING earnings as SETTLED.
+        - `reject`: Sets status to FAILED. Balance remains available for a future withdrawal.
+
+        Minimum role ADMIN. Audit-logged.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+          description: Rider ID
+        - in: path
+          name: withdrawalId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [approve, reject] }
+                notes: { type: string, description: "Optional note, e.g. bank transfer reference" }
+      responses:
+        "200":
+          description: Withdrawal processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/RiderWithdrawal" }
+        "400":
+          description: Withdrawal is not in PENDING status
+        "404":
+          description: Withdrawal not found
+
 # ─── WebSocket ────────────────────────────────────────────────
 # Connect to: ws://host/ws/orders/:orderId/tracking
 # The server broadcasts JSON payloads whenever the rider's location changes.
@@ -4590,3 +6061,17 @@ tags:
     description: "Vendor performance analytics — order counts, revenue, top products. Minimum role: MANAGER."
   - name: System Admin — Analytics
     description: "Platform-wide analytics — users, vendors, orders, revenue, top vendors. Minimum role: ADMIN."
+  # Rider App
+  - name: Rider App — Auth
+    description: "Phone OTP login flow for riders. Riders are created by system admins; they log in with their registered phone number."
+  - name: Rider App — Profile
+    description: "Rider profile management, KYC submission, bank account, availability toggle, and location updates."
+  - name: Rider App — Orders
+    description: "Order management from the rider's perspective — view assignments, accept/reject, mark pickup/delivery, push live location."
+  - name: Rider App — Earnings
+    description: "Per-delivery earning records, summary dashboard (today/week/month/total), and withdrawal requests."
+  - name: Rider App — Notifications
+    description: "In-app push notifications for the rider app."
+  # System Admin Riders
+  - name: System Admin — Riders
+    description: "Rider account management, KYC review, manual order dispatch, earnings overview, and withdrawal processing. Minimum role: ADMIN."

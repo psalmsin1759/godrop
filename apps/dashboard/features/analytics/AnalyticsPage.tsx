@@ -13,13 +13,20 @@ import {
   useGetVendorAnalyticsQuery,
   useGetVendorGraphQuery,
 } from '@/store/services/analyticsApi'
+import { useGetRiderStatsQuery, useGetRidersQuery } from '@/store/services/ridersApi'
 import { formatNaira, formatNumber } from '@/lib/utils'
-import { Loader2, TrendingUp, ShoppingBag, Users, Store } from 'lucide-react'
+import { Loader2, TrendingUp, ShoppingBag, Users, Store, Bike, Star, UserCheck, Shield } from 'lucide-react'
 import type { GraphGranularity } from '@/types/api'
 
 const TYPE_COLORS: Record<string, string> = {
   FOOD: '#3454d1', GROCERY: '#17c666', RETAIL: '#ffa21d',
   PHARMACY: '#3dc7be', PARCEL: '#8b5cf6', TRUCK: '#ea4d4d',
+}
+const KYC_COLORS: Record<string, string> = {
+  PENDING: '#ffa21d', SUBMITTED: '#3454d1', VERIFIED: '#17c666', REJECTED: '#ea4d4d',
+}
+const VEHICLE_COLORS: Record<string, string> = {
+  MOTORCYCLE: '#3454d1', BICYCLE: '#17c666', CAR: '#ffa21d', VAN: '#ea4d4d',
 }
 const STATUS_COLORS: Record<string, string> = {
   DELIVERED: '#17c666', IN_TRANSIT: '#3454d1', PENDING: '#ffa21d',
@@ -59,7 +66,10 @@ const granularities: { value: GraphGranularity; label: string }[] = [
   { value: 'month', label: 'Monthly' },
 ]
 
+type SystemTab = 'platform' | 'riders'
+
 function SystemAnalyticsView() {
+  const [tab, setTab] = useState<SystemTab>('platform')
   const [granularity, setGranularity] = useState<GraphGranularity>('day')
   const { data: analytics, isLoading } = useGetSystemAnalyticsQuery()
   const { data: graph, isLoading: graphLoading } = useGetSystemGraphQuery({ granularity })
@@ -81,6 +91,25 @@ function SystemAnalyticsView() {
 
   return (
     <div className="space-y-5">
+      {/* Tab switcher */}
+      <div className="flex gap-1 border-b border-[#e5e7eb]">
+        {([
+          { id: 'platform', label: 'Platform', icon: <ShoppingBag className="w-3.5 h-3.5" /> },
+          { id: 'riders',   label: 'Riders',   icon: <Bike className="w-3.5 h-3.5" /> },
+        ] as { id: SystemTab; label: string; icon: React.ReactNode }[]).map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${
+              tab === t.id
+                ? 'border-[#3454d1] text-[#3454d1]'
+                : 'border-transparent text-[#6b7885] hover:text-[#283c50]'
+            }`}>
+            {t.icon}{t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'riders' && <RidersAnalyticsView />}
+      {tab === 'platform' && <>
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
@@ -230,9 +259,227 @@ function SystemAnalyticsView() {
           </div>
         </div>
       ) : null}
+      </>}
     </div>
   )
 }
+
+// ─── Riders Analytics ─────────────────────────────────────────────────────────
+
+function RidersAnalyticsView() {
+  const { data: stats, isLoading } = useGetRiderStatsQuery()
+  const { data: ridersData, isLoading: ridersLoading } = useGetRidersQuery({ page: 1, limit: 50 })
+  const riders = ridersData?.data ?? []
+
+  const kycData = stats
+    ? Object.entries(stats.byKycStatus)
+        .filter(([, v]) => v > 0)
+        .map(([k, v]) => ({ name: k, value: v }))
+    : []
+
+  const vehicleCounts = riders.reduce<Record<string, number>>((acc, r) => {
+    const v = r.vehicleType ?? 'UNKNOWN'
+    acc[v] = (acc[v] ?? 0) + 1
+    return acc
+  }, {})
+  const vehicleData = Object.entries(vehicleCounts).map(([name, value]) => ({ name, value }))
+
+  const topRiders = [...riders]
+    .sort((a, b) => (b._count?.orders ?? 0) - (a._count?.orders ?? 0))
+    .slice(0, 10)
+
+  const topEarningRiders = [...riders]
+    .filter((r) => r.rating != null)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 10)
+
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="w-6 h-6 animate-spin text-[#3454d1]" />
+    </div>
+  )
+
+  return (
+    <div className="space-y-5">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Riders', value: stats ? formatNumber(stats.total) : '—', icon: Bike, color: '#3454d1', bg: '#eef1fb' },
+          { label: 'Active Riders', value: stats ? formatNumber(stats.active) : '—', icon: UserCheck, color: '#17c666', bg: '#e8faf2' },
+          { label: 'Online Now', value: stats ? formatNumber(stats.available) : '—', icon: Bike, color: '#ffa21d', bg: '#fff6e8' },
+          { label: 'KYC Verified', value: stats ? formatNumber(stats.byKycStatus.VERIFIED ?? 0) : '—', icon: Shield, color: '#3dc7be', bg: '#e0f9f7' },
+        ].map((c) => (
+          <div key={c.label} className="card p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ backgroundColor: c.bg }}>
+              <c.icon style={{ color: c.color, width: 18, height: 18 }} />
+            </div>
+            <p className="text-lg font-bold text-[#283c50]">{c.value}</p>
+            <p className="text-xs text-[#6b7885] mt-0.5">{c.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* KYC breakdown */}
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">KYC Status Breakdown</h3></div>
+          <div className="p-4">
+            {kycData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={kycData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
+                    paddingAngle={2} dataKey="value" nameKey="name">
+                    {kycData.map((entry, i) => (
+                      <Cell key={i} fill={KYC_COLORS[entry.name] ?? '#9ca3af'} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatNumber(v)} />
+                  <Legend formatter={(value) => (
+                    <span style={{ fontSize: 11, color: '#4b5563', textTransform: 'capitalize' }}>
+                      {value.toLowerCase()}
+                    </span>
+                  )} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Vehicle type breakdown */}
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">Riders by Vehicle Type</h3></div>
+          <div className="p-4">
+            {vehicleData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={vehicleData} barSize={32}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false}
+                    tickFormatter={(v) => v.charAt(0) + v.slice(1).toLowerCase()} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={28} />
+                  <Tooltip formatter={(v: number) => [formatNumber(v), 'Riders']} />
+                  <Bar dataKey="value" name="Riders" radius={[3, 3, 0, 0]}>
+                    {vehicleData.map((entry, i) => (
+                      <Cell key={i} fill={VEHICLE_COLORS[entry.name] ?? '#9ca3af'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Top riders by orders */}
+      {!ridersLoading && topRiders.length > 0 && (
+        <div className="card overflow-hidden">
+          <div className="card-header"><h3 className="card-title">Top Riders by Orders</h3></div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                  {['#', 'Rider', 'Vehicle', 'KYC', 'Rating', 'Orders', 'Status'].map((h) => (
+                    <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f9fafb]">
+                {topRiders.map((rider, i) => {
+                  const kycColor = KYC_COLORS[rider.kycStatus] ?? '#9ca3af'
+                  const kycBg = rider.kycStatus === 'VERIFIED' ? '#e8faf2'
+                    : rider.kycStatus === 'SUBMITTED' ? '#eef1fb'
+                    : rider.kycStatus === 'REJECTED' ? '#fdf0f0' : '#fff6e8'
+                  return (
+                    <tr key={rider.id} className="hover:bg-[#fafafa] transition-colors">
+                      <td className="px-4 py-2.5">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                          style={{ backgroundColor: '#eef1fb', color: '#3454d1' }}>{i + 1}</span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                            style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}>
+                            {rider.firstName[0]}{rider.lastName[0]}
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-[#283c50]">{rider.firstName} {rider.lastName}</p>
+                            {rider.isAvailable && <span className="text-[10px] text-[#17c666]">● Online</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-xs text-[#6b7885] capitalize">{rider.vehicleType?.toLowerCase() ?? '—'}</span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-[11px] font-medium rounded-full px-2 py-0.5 capitalize"
+                          style={{ backgroundColor: kycBg, color: kycColor }}>
+                          {rider.kycStatus.toLowerCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {rider.rating != null ? (
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-[#ffa21d]" fill="#ffa21d" />
+                            <span className="text-xs font-semibold text-[#283c50]">{rider.rating.toFixed(1)}</span>
+                          </div>
+                        ) : <span className="text-xs text-[#9ca3af]">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-xs font-bold text-[#3454d1]">{rider._count?.orders ?? 0}</span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <span className="text-[11px] font-medium rounded-full px-2 py-0.5"
+                          style={rider.isActive
+                            ? { backgroundColor: '#e8faf2', color: '#17c666' }
+                            : { backgroundColor: '#f3f4f6', color: '#9ca3af' }}>
+                          {rider.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Top rated riders */}
+      {!ridersLoading && topEarningRiders.length > 0 && (
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">Highest Rated Riders</h3></div>
+          <div className="p-4">
+            <div className="space-y-3">
+              {topEarningRiders.slice(0, 5).map((rider, i) => (
+                <div key={rider.id} className="flex items-center gap-3">
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                    style={{ backgroundColor: '#eef1fb', color: '#3454d1' }}>{i + 1}</span>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}>
+                    {rider.firstName[0]}{rider.lastName[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-[#283c50] truncate">{rider.firstName} {rider.lastName}</p>
+                    <p className="text-[11px] text-[#9ca3af]">{rider._count?.orders ?? 0} orders · {rider.ratingCount} reviews</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Star className="w-3.5 h-3.5 text-[#ffa21d]" fill="#ffa21d" />
+                    <span className="text-sm font-bold text-[#283c50]">{rider.rating?.toFixed(1)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Vendor Analytics ─────────────────────────────────────────────────────────
 
 function VendorAnalyticsView() {
   const [granularity, setGranularity] = useState<GraphGranularity>('day')

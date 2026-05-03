@@ -1,7 +1,8 @@
 'use client'
 
-import { Bell, Search, ChevronRight, Calendar, LogOut } from 'lucide-react'
+import { Search, ChevronRight, Calendar, LogOut } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
+import NotificationBell from './NotificationBell'
 
 interface TopbarProps {
   breadcrumb?: string[]
@@ -63,15 +64,7 @@ export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'] 
         </div>
 
         {/* Notifications */}
-        <button className="relative w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f6] transition-colors">
-          <Bell className="w-4 h-4 text-[#6b7885]" />
-          <span
-            className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-            style={{ backgroundColor: '#ea4d4d' }}
-          >
-            5
-          </span>
-        </button>
+        <NotificationBell />
 
         {/* Admin avatar + sign out */}
         <div className="flex items-center gap-2">

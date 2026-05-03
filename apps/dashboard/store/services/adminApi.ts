@@ -5,6 +5,10 @@ import type {
   LoginResponse,
   CreateAdminRequest,
   UpdateAdminRequest,
+  SystemAdminSettings,
+  UpdateSystemAdminSettingsRequest,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
 } from '@/types/api'
 
 
@@ -22,10 +26,37 @@ export const adminApi = api.injectEndpoints({
       transformResponse: (res: Wrap<AdminUser>) => res.data,
     }),
 
-    getAdmins: build.query<AdminUser[], void>({
-      query: () => '/admin/admins',
+    updateProfile: build.mutation<AdminUser, UpdateProfileRequest>({
+      query: (body) => ({ url: '/admin/me/profile', method: 'PATCH', body }),
+      transformResponse: (res: Wrap<AdminUser>) => res.data,
+    }),
+
+    changePassword: build.mutation<{ message: string }, ChangePasswordRequest>({
+      query: (body) => ({ url: '/admin/me/change-password', method: 'POST', body }),
+      transformResponse: (res: { success: boolean; message: string }) => ({ message: res.message }),
+    }),
+
+    getSystemAdminSettings: build.query<SystemAdminSettings, void>({
+      query: () => '/admin/me/settings',
+      providesTags: ['SystemAdminSettings'],
+      transformResponse: (res: Wrap<SystemAdminSettings>) => res.data,
+    }),
+
+    updateSystemAdminSettings: build.mutation<SystemAdminSettings, UpdateSystemAdminSettingsRequest>({
+      query: (body) => ({ url: '/admin/me/settings', method: 'PATCH', body }),
+      invalidatesTags: ['SystemAdminSettings'],
+      transformResponse: (res: Wrap<SystemAdminSettings>) => res.data,
+    }),
+
+    getAdmins: build.query<{ data: AdminUser[]; total: number; page: number; limit: number }, { page?: number; limit?: number } | void>({
+      query: (params) => ({ url: '/admin/admins', params: params ?? {} }),
       providesTags: ['Admin'],
-      transformResponse: (res: Wrap<AdminUser[]>) => res.data,
+      transformResponse: (res: { success: boolean; data: AdminUser[]; total: number; page: number; limit: number }) => ({
+        data: res.data ?? [],
+        total: res.total ?? 0,
+        page: res.page ?? 1,
+        limit: res.limit ?? 20,
+      }),
     }),
 
     createAdmin: build.mutation<AdminUser, CreateAdminRequest>({
@@ -46,6 +77,10 @@ export const adminApi = api.injectEndpoints({
 export const {
   useLoginMutation,
   useGetMeQuery,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+  useGetSystemAdminSettingsQuery,
+  useUpdateSystemAdminSettingsMutation,
   useGetAdminsQuery,
   useCreateAdminMutation,
   useUpdateAdminMutation,

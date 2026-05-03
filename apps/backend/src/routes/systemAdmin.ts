@@ -23,7 +23,15 @@ import {
 import * as ctrl from "../controllers/systemAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
 import * as riderCtrl from "../controllers/riderController";
-import { createRiderSchema, updateRiderSchema, updateRiderKycSchema, riderQuerySchema } from "../validators/riderValidators";
+import {
+  createRiderSchema,
+  updateRiderSchema,
+  updateRiderKycSchema,
+  riderQuerySchema,
+  riderOrderQuerySchema,
+  assignOrderSchema,
+  processWithdrawalSchema,
+} from "../validators/riderValidators";
 
 const router = Router();
 
@@ -171,11 +179,34 @@ router.patch("/notifications/read-all", requireSystemRole("ADMIN"), ctrl.markAll
 router.patch("/notifications/:id/read", requireSystemRole("ADMIN"), ctrl.markNotificationRead);
 
 // ─── Riders (ADMIN+) ─────────────────────────────────────────
+router.get("/riders/stats", requireSystemRole("ADMIN"), riderCtrl.getRiderStats);
+router.get("/riders/available", requireSystemRole("ADMIN"), riderCtrl.listAvailableRiders);
 router.get("/riders", requireSystemRole("ADMIN"), validate(riderQuerySchema, "query"), riderCtrl.listRiders);
 router.post("/riders", requireSystemRole("ADMIN"), validate(createRiderSchema), riderCtrl.createRider);
 router.get("/riders/:id", requireSystemRole("ADMIN"), riderCtrl.getRider);
 router.patch("/riders/:id", requireSystemRole("ADMIN"), validate(updateRiderSchema), riderCtrl.updateRider);
 router.patch("/riders/:id/kyc", requireSystemRole("ADMIN"), validate(updateRiderKycSchema), riderCtrl.updateRiderKyc);
 router.patch("/riders/:id/toggle-active", requireSystemRole("ADMIN"), riderCtrl.toggleRiderActive);
+router.post(
+  "/riders/:id/assign-order",
+  requireSystemRole("ADMIN"),
+  validate(assignOrderSchema),
+  auditSystemAction({ action: "ASSIGN_ORDER_TO_RIDER", entity: "Order", getEntityId: (r) => r.body.orderId }),
+  riderCtrl.assignOrderToRider
+);
+router.get(
+  "/riders/:id/orders",
+  requireSystemRole("ADMIN"),
+  validate(riderOrderQuerySchema, "query"),
+  riderCtrl.getRiderOrders
+);
+router.get("/riders/:id/earnings", requireSystemRole("ADMIN"), riderCtrl.getRiderEarnings);
+router.patch(
+  "/riders/:id/withdrawals/:withdrawalId",
+  requireSystemRole("ADMIN"),
+  validate(processWithdrawalSchema),
+  auditSystemAction({ action: "PROCESS_RIDER_WITHDRAWAL", entity: "RiderWithdrawal", getEntityId: (r) => r.params.withdrawalId }),
+  riderCtrl.processWithdrawal
+);
 
 export default router;

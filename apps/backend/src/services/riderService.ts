@@ -190,3 +190,156 @@ export async function toggleRiderActive(id: string, isActive: boolean) {
   if (!rider) throw new Error("Rider not found");
   return prisma.rider.update({ where: { id }, data: { isActive } });
 }
+
+export async function getRiderStats() {
+  const [total, active, available, kycBreakdown] = await prisma.$transaction([
+    prisma.rider.count(),
+    prisma.rider.count({ where: { isActive: true } }),
+    prisma.rider.count({ where: { isAvailable: true, isActive: true } }),
+    prisma.rider.groupBy({ by: ["kycStatus"], orderBy: { kycStatus: "asc" }, _count: true }),
+  ]);
+
+  const byKycStatus = Object.fromEntries(
+    kycBreakdown.map((r) => [r.kycStatus, r._count])
+  );
+
+  return { total, active, available, byKycStatus };
+}
+
+export async function getRiderOrders(
+  id: string,
+  opts: { page: number; limit: number; status?: string }
+) {
+  const rider = await prisma.rider.findUnique({ where: { id } });
+  if (!rider) throw new Error("Rider not found");
+
+  const skip = (opts.page - 1) * opts.limit;
+  const where: any = { riderId: id };
+  if (opts.status) where.status = opts.status;
+
+  const [data, total] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      skip,
+      take: opts.limit,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        trackingCode: true,
+        type: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        deliveryFeeKobo: true,
+        totalKobo: true,
+        paymentMethod: true,
+        createdAt: true,
+        vendor: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return { data, total, page: opts.page, limit: opts.limit };
+}
+
+export async function getRiderEarnings(id: string, opts: { page: number; limit: number }) {
+  const rider = await prisma.rider.findUnique({ where: { id } });
+  if (!rider) throw new Error("Rider not found");
+
+  const skip = (opts.page - 1) * opts.limit;
+  const [data, total, aggregate] = await prisma.$transaction([
+    prisma.riderEarning.findMany({
+      where: { riderId: id },
+      skip,
+      take: opts.limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        order: { select: { id: true, trackingCode: true, type: true, createdAt: true } },
+      },
+    }),
+    prisma.riderEarning.count({ where: { riderId: id } }),
+    prisma.riderEarning.aggregate({ where: { riderId: id }, _sum: { amountKobo: true } }),
+  ]);
+
+  return {
+    data,
+    total,
+    page: opts.page,
+    limit: opts.limit,
+    totalEarnedKobo: aggregate._sum.amountKobo ?? 0,
+  };
+}
+
+export async function assignOrderToRider(orderId: string, riderId: string) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error("Order not found");
+  if (!["PENDING", "ACCEPTED", "READY_FOR_PICKUP"].includes(order.status)) {
+    throw new Error("Order cannot be assigned at this stage");
+  }
+
+  const rider = await prisma.rider.findUnique({ where: { id: riderId } });
+  if (!rider) throw new Error("Rider not found");
+  if (!rider.isActive) throw new Error("Rider is not active");
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: { riderId },
+  });
+
+  await prisma.orderEvent.create({
+    data: {
+      orderId,
+      status: updated.status,
+      description: `Rider assigned: ${rider.firstName} ${rider.lastName}`,
+    },
+  });
+
+  return updated;
+}
+
+export async function listAvailableRiders(lat?: number, lng?: number) {
+  const riders = await prisma.rider.findMany({
+    where: { isAvailable: true, isActive: true, kycStatus: "VERIFIED" },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      vehicleType: true,
+      vehiclePlate: true,
+      lat: true,
+      lng: true,
+      rating: true,
+      ratingCount: true,
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  return riders;
+}
+
+export async function processWithdrawal(
+  withdrawalId: string,
+  action: "approve" | "reject",
+  notes?: string
+) {
+  const withdrawal = await prisma.riderWithdrawal.findUnique({ where: { id: withdrawalId } });
+  if (!withdrawal) throw new Error("Withdrawal not found");
+  if (withdrawal.status !== "PENDING") throw new Error("Withdrawal is not pending");
+
+  const status = action === "approve" ? "PROCESSING" : "FAILED";
+
+  const updated = await prisma.riderWithdrawal.update({
+    where: { id: withdrawalId },
+    data: { status, notes: notes ?? null, processedAt: new Date() },
+  });
+
+  if (action === "approve") {
+    await prisma.riderEarning.updateMany({
+      where: { riderId: withdrawal.riderId, status: "PENDING" },
+      data: { status: "SETTLED", settledAt: new Date() },
+    });
+  }
+
+  return updated;
+}

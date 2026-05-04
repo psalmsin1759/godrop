@@ -3,6 +3,7 @@ import { OrderStatus, OrderType, PaymentMethod } from "@prisma/client";
 import { generateTrackingCode } from "../utils/generateTrackingCode";
 import { paginate } from "../utils/pagination";
 import * as pricingService from "./pricingService";
+import * as fcmService from "./fcmService";
 
 export async function listOrders(
   customerId: string,
@@ -117,6 +118,7 @@ export async function placeParcelOrder(
   data: {
     pickup: { lat: number; lng: number; address: string };
     dropoff: { lat: number; lng: number; address: string };
+    vehicleTypeId?: string;
     packageDescription: string;
     weightKg?: number;
     sizeCategory?: string;
@@ -126,7 +128,20 @@ export async function placeParcelOrder(
     scheduleAt?: string;
   }
 ) {
-  const { priceBreakdown, estimatedMinutes } = pricingService.parcelQuote(data.pickup, data.dropoff);
+  let vehicleType: { id: string; baseFeeKobo: number; perKmKobo: number } | null = null;
+  if (data.vehicleTypeId) {
+    vehicleType = await prisma.parcelVehicleType.findFirst({
+      where: { id: data.vehicleTypeId, isActive: true },
+      select: { id: true, baseFeeKobo: true, perKmKobo: true },
+    });
+    if (!vehicleType) throw new Error("Vehicle type not found or inactive");
+  }
+
+  const { priceBreakdown, estimatedMinutes } = pricingService.parcelQuote(
+    data.pickup,
+    data.dropoff,
+    vehicleType ?? undefined
+  );
   const trackingCode = generateTrackingCode();
 
   const order = await prisma.order.create({
@@ -141,6 +156,7 @@ export async function placeParcelOrder(
       dropoffAddress: data.dropoff.address,
       dropoffLat: data.dropoff.lat,
       dropoffLng: data.dropoff.lng,
+      parcelVehicleTypeId: vehicleType?.id,
       packageDescription: data.packageDescription,
       weightKg: data.weightKg,
       sizeCategory: data.sizeCategory,
@@ -154,7 +170,17 @@ export async function placeParcelOrder(
       scheduledAt: data.scheduleAt ? new Date(data.scheduleAt) : undefined,
       events: { create: { status: OrderStatus.PENDING, description: "Parcel order placed" } },
     },
+    include: { parcelVehicleType: { select: { id: true, name: true } } },
   });
+
+  // Notify all online riders via FCM (fire-and-forget)
+  fcmService.notifyOnlineRidersNewParcel({
+    id: order.id,
+    trackingCode: order.trackingCode,
+    pickupAddress: order.pickupAddress,
+    dropoffAddress: order.dropoffAddress,
+    totalKobo: order.totalKobo,
+  }).catch((err) => console.error("FCM notify failed:", err));
 
   return order;
 }

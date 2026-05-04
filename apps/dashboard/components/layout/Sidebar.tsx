@@ -9,6 +9,7 @@ import {
   Bike,
   Store,
   Truck,
+  Package,
   Users,
   BarChart3,
   AlertTriangle,
@@ -27,6 +28,7 @@ const systemNav = [
   { href: '/riders', icon: Bike, label: 'Riders' },
   { href: '/customers', icon: Users, label: 'Customers' },
   { href: '/trucks', icon: Truck, label: 'Trucks' },
+  { href: '/parcels', icon: Package, label: 'Parcels' },
 ]
 
 const systemReportsNav = [

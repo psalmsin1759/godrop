@@ -29,6 +29,7 @@ model User {
   notifications Notification[]
   pushTokens    PushToken[]
   refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
 }
 
 enum UserStatus {
@@ -208,6 +209,8 @@ model AuditLog {
   admin     Admin?   @relation(fields: [adminId], references: [id])
   vendorId  String?
   vendor    Vendor?  @relation(fields: [vendorId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   action    String
   entity    String
   entityId  String?
@@ -219,6 +222,7 @@ model AuditLog {
 
   @@index([adminId])
   @@index([vendorId])
+  @@index([userId])
   @@index([createdAt])
 }
 
@@ -254,6 +258,22 @@ model Product {
   orderItems OrderItem[]
 
   @@index([categoryId])
+}
+
+// ─── Parcel ───────────────────────────────────────────────────
+
+model ParcelVehicleType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  imageUrl    String?
+  baseFeeKobo Int
+  perKmKobo   Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders Order[]
 }
 
 // ─── Truck ────────────────────────────────────────────────────
@@ -305,6 +325,8 @@ model Order {
   vendor      Vendor?    @relation(fields: [vendorId], references: [id])
   truckTypeId String?
   truckType   TruckType? @relation(fields: [truckTypeId], references: [id])
+  parcelVehicleTypeId String?
+  parcelVehicleType   ParcelVehicleType? @relation(fields: [parcelVehicleTypeId], references: [id])
   apartmentTypeId String?
   apartmentType   ApartmentType? @relation(fields: [apartmentTypeId], references: [id])
   numLoaders      Int?

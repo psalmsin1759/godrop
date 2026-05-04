@@ -3,6 +3,7 @@
 import { ShoppingBag, TrendingUp, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { useGetVendorAnalyticsQuery, useGetVendorGraphQuery } from '@/store/services/analyticsApi'
+import { useGetVendorSettingsQuery, useUpdateVendorSettingsMutation } from '@/store/services/teamApi'
 import { formatNaira, formatNumber } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
 
@@ -70,6 +71,13 @@ export default function VendorOverviewPage() {
   const { data: session } = useSession()
   const { data: analytics, isLoading } = useGetVendorAnalyticsQuery()
   const { data: graph } = useGetVendorGraphQuery()
+  const { data: settings } = useGetVendorSettingsQuery()
+  const [updateSettings, { isLoading: togglingOpen }] = useUpdateVendorSettingsMutation()
+
+  async function toggleOpen() {
+    if (!settings) return
+    await updateSettings({ isOpen: !settings.isOpen })
+  }
 
   const chartData = graph?.points.slice(-14).map((p) => ({
     date: p.date.slice(5),
@@ -104,10 +112,27 @@ export default function VendorOverviewPage() {
             })}
           </p>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-[#6b7885] bg-white border border-[#e5e7eb] rounded px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#17c666] animate-pulse" />
-          Live data
-        </span>
+        <div className="flex items-center gap-2">
+          {settings != null && (
+            <button
+              onClick={toggleOpen}
+              disabled={togglingOpen}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-60"
+              style={settings.isOpen
+                ? { backgroundColor: '#e8faf2', color: '#17c666', borderColor: '#a7f3d0' }
+                : { backgroundColor: '#f3f4f6', color: '#6b7885', borderColor: '#e5e7eb' }}
+            >
+              {togglingOpen
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <span className={`w-1.5 h-1.5 rounded-full ${settings.isOpen ? 'bg-[#17c666] animate-pulse' : 'bg-[#9ca3af]'}`} />}
+              {settings.isOpen ? 'Store Open' : 'Store Closed'}
+            </button>
+          )}
+          <span className="flex items-center gap-1.5 text-xs text-[#6b7885] bg-white border border-[#e5e7eb] rounded px-3 py-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#17c666] animate-pulse" />
+            Live data
+          </span>
+        </div>
       </div>
 
       {/* Stats */}

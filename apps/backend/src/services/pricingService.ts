@@ -5,8 +5,12 @@ const PARCEL_BASE_FEE_KOBO = 50000; // ₦500
 const PARCEL_PER_KM_KOBO = 8000; // ₦80/km
 const SPEED_KMH = 25; // average Lagos speed
 
-export function calcDeliveryFee(distanceKm: number): number {
-  return Math.round(PARCEL_BASE_FEE_KOBO + distanceKm * PARCEL_PER_KM_KOBO);
+export function calcDeliveryFee(
+  distanceKm: number,
+  baseFeeKobo = PARCEL_BASE_FEE_KOBO,
+  perKmKobo = PARCEL_PER_KM_KOBO
+): number {
+  return Math.round(baseFeeKobo + distanceKm * perKmKobo);
 }
 
 export function calcEstimatedMinutes(distanceKm: number): number {
@@ -15,10 +19,15 @@ export function calcEstimatedMinutes(distanceKm: number): number {
 
 export function parcelQuote(
   pickup: { lat: number; lng: number },
-  dropoff: { lat: number; lng: number }
+  dropoff: { lat: number; lng: number },
+  vehicleType?: { baseFeeKobo: number; perKmKobo: number }
 ) {
   const distanceKm = haversineKm(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng);
-  const deliveryFeeKobo = calcDeliveryFee(distanceKm);
+  const deliveryFeeKobo = calcDeliveryFee(
+    distanceKm,
+    vehicleType?.baseFeeKobo,
+    vehicleType?.perKmKobo
+  );
   const serviceFeeKobo = SERVICE_FEE_KOBO;
   return {
     priceBreakdown: {
@@ -26,6 +35,7 @@ export function parcelQuote(
       serviceFeeKobo,
       totalKobo: deliveryFeeKobo + serviceFeeKobo,
     },
+    distanceKm: Math.round(distanceKm * 10) / 10,
     estimatedMinutes: calcEstimatedMinutes(distanceKm),
   };
 }

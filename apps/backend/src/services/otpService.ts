@@ -10,7 +10,6 @@ function generateCode(): string {
 export async function sendOtp(phone: string): Promise<{ expiresIn: number }> {
   const code = generateCode();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-  console.log(`Generated OTP for ${phone}: ${code} (expires at ${expiresAt.toISOString()})`);
   // Invalidate previous OTPs for this phone
   await prisma.otp.updateMany({
     where: { phone, used: false },
@@ -18,6 +17,8 @@ export async function sendOtp(phone: string): Promise<{ expiresIn: number }> {
   });
 
   await prisma.otp.create({ data: { phone, code, expiresAt } });
+  // Log after DB write so the code is guaranteed to be stored
+  console.log(`[OTP] ${phone} → ${code} (expires ${expiresAt.toISOString()})`);
 
   // Send via Termii
   /* if (process.env.TERMII_API_KEY) {
@@ -39,11 +40,22 @@ export async function sendOtp(phone: string): Promise<{ expiresIn: number }> {
 
 export async function verifyOtp(phone: string, code: string): Promise<boolean> {
   const otp = await prisma.otp.findFirst({
-    where: { phone, code, used: false, expiresAt: { gt: new Date() } },
+    where: { phone, code },
     orderBy: { createdAt: "desc" },
   });
 
-  if (!otp) return false;
+  if (!otp) {
+    console.log(`[OTP verify] No OTP found for phone=${phone}`);
+    return false;
+  }
+  if (otp.used) {
+    console.log(`[OTP verify] OTP already used for phone=${phone}`);
+    return false;
+  }
+  if (otp.expiresAt <= new Date()) {
+    console.log(`[OTP verify] OTP expired for phone=${phone}, expired at ${otp.expiresAt.toISOString()}`);
+    return false;
+  }
 
   await prisma.otp.update({ where: { id: otp.id }, data: { used: true } });
   return true;

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   useGetVendorsQuery,
   useApproveVendorMutation,
@@ -22,6 +23,30 @@ import {
   Loader2,
   Store,
 } from 'lucide-react'
+
+function exportVendorsCSV(vendors: Vendor[]) {
+  const headers = ['Name', 'Email', 'Phone', 'Type', 'Status', 'Address', 'Rating', 'Joined']
+  const rows = vendors.map((v) => [
+    v.name,
+    v.email,
+    v.phone,
+    v.type,
+    v.status,
+    v.address,
+    v.rating != null ? v.rating.toFixed(1) : '',
+    new Date(v.createdAt).toLocaleDateString('en-NG'),
+  ])
+  const csv = [headers, ...rows]
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `vendors-${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
 
 const statusConfig: Record<VendorStatus, { bg: string; text: string; label: string }> = {
   APPROVED: { bg: '#e8faf2', text: '#17c666', label: 'Approved' },
@@ -142,6 +167,7 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
 }
 
 export default function VendorsPage() {
+  const router = useRouter()
   const { data: vendors = [], isLoading, isError } = useGetVendorsQuery()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<VendorStatus | 'ALL'>('ALL')
@@ -178,7 +204,10 @@ export default function VendorsPage() {
           <p className="text-xs text-[#9ca3af] mt-0.5">Manage vendor onboarding, approval and status</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 text-xs text-[#6b7885] bg-white border border-[#e5e7eb] rounded px-3 py-1.5 hover:bg-[#f9fafb]">
+          <button
+            onClick={() => exportVendorsCSV(filtered)}
+            className="flex items-center gap-1.5 text-xs text-[#6b7885] bg-white border border-[#e5e7eb] rounded px-3 py-1.5 hover:bg-[#f9fafb]"
+          >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
           <button className="btn-primary flex items-center gap-1.5">
@@ -291,7 +320,11 @@ export default function VendorsPage() {
                       const type = typeConfig[vendor.type]
                       const status = statusConfig[vendor.status]
                       return (
-                        <tr key={vendor.id} className="hover:bg-[#fafafa] transition-colors" onClick={(e) => e.stopPropagation()}>
+                        <tr
+                          key={vendor.id}
+                          className="hover:bg-[#fafafa] transition-colors cursor-pointer"
+                          onClick={() => router.push(`/vendors/${vendor.id}`)}
+                        >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
                               <div
@@ -337,9 +370,12 @@ export default function VendorsPage() {
                               {new Date(vendor.createdAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-1 relative">
-                              <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#eef1fb] transition-colors">
+                              <button
+                                onClick={() => router.push(`/vendors/${vendor.id}`)}
+                                className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#eef1fb] transition-colors"
+                              >
                                 <Eye className="w-3.5 h-3.5 text-[#3454d1]" />
                               </button>
                               <div className="relative">

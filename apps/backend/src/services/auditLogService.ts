@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma";
 export interface LogActionParams {
   adminId?: string;
   vendorId?: string;
+  userId?: string;
   action: string;
   entity: string;
   entityId?: string;

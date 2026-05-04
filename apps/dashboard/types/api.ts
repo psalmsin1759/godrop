@@ -547,6 +547,13 @@ export interface AdminOrder {
   apartmentType?: { id: string; name: string; priceKobo: number } | null
   numLoaders?: number | null
   stops?: AdminOrderStop[] | null
+  // parcel-specific
+  packageDescription?: string | null
+  weightKg?: number | null
+  sizeCategory?: 'small' | 'medium' | 'large' | 'extra_large' | null
+  recipientName?: string | null
+  recipientPhone?: string | null
+  vehicleType?: { id: string; name: string; baseFeeKobo: number; perKmKobo: number } | null
   // financials
   subtotalKobo: number
   deliveryFeeKobo: number
@@ -590,6 +597,43 @@ export interface Pagination {
 }
 
 export interface TruckOrdersParams {
+  page?: number
+  limit?: number
+  status?: OrderStatus
+}
+
+// ─── Parcel ─────────────────────────────────────────────────────────────────
+export interface ParcelVehicleType {
+  id: string
+  name: string
+  description?: string
+  imageUrl?: string
+  baseFeeKobo: number
+  perKmKobo: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateParcelVehicleTypeRequest {
+  name: string
+  description?: string
+  imageUrl?: string
+  baseFeeKobo: number
+  perKmKobo: number
+  isActive?: boolean
+}
+
+export interface UpdateParcelVehicleTypeRequest {
+  name?: string
+  description?: string
+  imageUrl?: string
+  baseFeeKobo?: number
+  perKmKobo?: number
+  isActive?: boolean
+}
+
+export interface ParcelOrdersParams {
   page?: number
   limit?: number
   status?: OrderStatus

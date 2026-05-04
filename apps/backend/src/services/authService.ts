@@ -36,8 +36,10 @@ export async function rotateRefreshToken(oldToken: string) {
   return issueTokens(user);
 }
 
-export async function revokeRefreshToken(token: string) {
+export async function revokeRefreshToken(token: string): Promise<string | undefined> {
+  const record = await prisma.refreshToken.findUnique({ where: { token }, select: { userId: true } });
   await prisma.refreshToken.deleteMany({ where: { token } });
+  return record?.userId;
 }
 
 export async function findOrCreateUser(phone: string): Promise<{ user: User; isNewUser: boolean }> {

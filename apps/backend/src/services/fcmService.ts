@@ -1,0 +1,100 @@
+import admin from "firebase-admin";
+import { prisma } from "../lib/prisma";
+
+let messaging: admin.messaging.Messaging | null = null;
+
+function getMessaging(): admin.messaging.Messaging | null {
+  if (messaging) return messaging;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  if (!projectId || !clientEmail || !privateKey) return null;
+
+  const app = admin.apps.length
+    ? admin.apps[0]!
+    : admin.initializeApp({
+        credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+      });
+
+  messaging = admin.messaging(app);
+  return messaging;
+}
+
+export async function sendToTokens(
+  tokens: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<void> {
+  if (tokens.length === 0) return;
+  const fcm = getMessaging();
+  if (!fcm) {
+    console.warn("FCM not configured — skipping push notification");
+    return;
+  }
+
+  const response = await fcm.sendEachForMulticast({
+    tokens,
+    notification,
+    data,
+    android: { priority: "high" },
+    apns: { payload: { aps: { contentAvailable: true } } },
+  });
+
+  // Remove stale tokens that are no longer valid
+  const staleTokens: string[] = [];
+  response.responses.forEach((res, i) => {
+    if (!res.success && res.error?.code === "messaging/registration-token-not-registered") {
+      staleTokens.push(tokens[i]);
+    }
+  });
+  if (staleTokens.length > 0) {
+    await prisma.riderPushToken.deleteMany({ where: { token: { in: staleTokens } } });
+  }
+}
+
+export async function notifyOnlineRidersNewParcel(order: {
+  id: string;
+  trackingCode: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  totalKobo: number;
+}): Promise<void> {
+  const riders = await prisma.rider.findMany({
+    where: { isAvailable: true, isActive: true },
+    select: { id: true, pushTokens: { select: { token: true } } },
+  });
+
+  if (riders.length === 0) return;
+
+  const tokens = riders.flatMap((r) => r.pushTokens.map((t) => t.token));
+  const amountNaira = (order.totalKobo / 100).toLocaleString("en-NG");
+
+  await Promise.all([
+    sendToTokens(
+      tokens,
+      {
+        title: "New Parcel Order",
+        body: `${order.pickupAddress} → ${order.dropoffAddress} • ₦${amountNaira}`,
+      },
+      {
+        type: "NEW_PARCEL_ORDER",
+        orderId: order.id,
+        trackingCode: order.trackingCode,
+      }
+    ),
+    prisma.riderNotification.createMany({
+      data: riders.map((r) => ({
+        riderId: r.id,
+        title: "New Parcel Order",
+        body: `${order.pickupAddress} → ${order.dropoffAddress} • ₦${amountNaira}`,
+        data: {
+          type: "NEW_PARCEL_ORDER",
+          orderId: order.id,
+          trackingCode: order.trackingCode,
+        },
+      })),
+    }),
+  ]);
+}

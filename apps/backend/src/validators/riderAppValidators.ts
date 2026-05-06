@@ -103,6 +103,7 @@ export const rejectOrderSchema = z.object({
 });
 
 export const markDeliveredSchema = z.object({
+  confirmationCode: z.string().length(4),
   proofNote: z.string().optional(),
 });
 

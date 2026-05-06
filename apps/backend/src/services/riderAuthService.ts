@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
 import { Rider } from "@prisma/client";
 
-const ACCESS_TTL = "15m";
+const ACCESS_TTL = "1y"; // TODO: restore to "15m" before production
 const REFRESH_TTL_DAYS = 30;
 
 function accessToken(riderId: string): string {

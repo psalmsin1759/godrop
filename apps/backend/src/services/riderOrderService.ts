@@ -112,11 +112,26 @@ export async function getRiderOrderDetail(riderId: string, orderId: string) {
     },
   });
   if (!order) throw new Error("Order not found");
-  if (order.riderId !== riderId) throw new Error("Order not found");
+  // Allow if: assigned to this rider, OR still available (no rider, READY_FOR_PICKUP)
+  const isAssignedToRider = order.riderId === riderId;
+  const isAvailableToView = order.riderId === null && order.status === "READY_FOR_PICKUP";
+  if (!isAssignedToRider && !isAvailableToView) throw new Error("Order no longer available");
   return order;
 }
 
 export async function acceptOrder(riderId: string, orderId: string) {
+  // Block if rider already has an active order
+  const activeOrder = await prisma.order.findFirst({
+    where: {
+      riderId,
+      status: { in: ["ACCEPTED", "READY_FOR_PICKUP", "PICKED_UP", "IN_TRANSIT"] },
+    },
+    select: { id: true, trackingCode: true },
+  });
+  if (activeOrder) {
+    throw new Error(`You already have an active order (#${activeOrder.trackingCode}). Complete it before accepting another.`);
+  }
+
   const order = await prisma.$transaction(async (tx) => {
     const existing = await tx.order.findUnique({ where: { id: orderId } });
     if (!existing) throw new Error("Order not found");
@@ -137,6 +152,12 @@ export async function acceptOrder(riderId: string, orderId: string) {
 
     return tx.order.findUnique({ where: { id: orderId } });
   });
+
+  // Push real-time status update to any open WebSocket connections for this order
+  prisma.rider
+    .findUnique({ where: { id: riderId }, select: { firstName: true, lastName: true, phone: true } })
+    .then((rider) => broadcastTracking(order!.id, { type: "STATUS_UPDATE", status: "ACCEPTED", rider }))
+    .catch(() => {});
 
   // Notify customer outside the transaction — don't block the response on FCM
   notifyCustomerRiderAccepted(order!).catch(() => {});
@@ -221,12 +242,20 @@ export async function markInTransit(riderId: string, orderId: string) {
   return updated;
 }
 
-export async function markDelivered(riderId: string, orderId: string, proofNote?: string) {
+export async function markDelivered(
+  riderId: string,
+  orderId: string,
+  confirmationCode: string,
+  proofNote?: string
+) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new Error("Order not found");
   if (order.riderId !== riderId) throw new Error("Order not found");
   if (!["PICKED_UP", "IN_TRANSIT"].includes(order.status)) {
     throw new Error("Order must be in transit or picked up to mark as delivered");
+  }
+  if (!order.confirmationCode || order.confirmationCode !== confirmationCode) {
+    throw new Error("Invalid confirmation code. Ask the customer for their 4-digit code.");
   }
 
   const updated = await prisma.order.update({
@@ -242,7 +271,10 @@ export async function markDelivered(riderId: string, orderId: string, proofNote?
     },
   });
 
-  const earningKobo = Math.floor(order.deliveryFeeKobo * RIDER_EARNING_RATE);
+  // Read the global earning rate from platform settings; fall back to env var
+  const platform = await prisma.platformSettings.findUnique({ where: { id: "global" } });
+  const rate = platform?.riderEarningRate ?? RIDER_EARNING_RATE;
+  const earningKobo = Math.floor(order.deliveryFeeKobo * rate);
   await createRiderEarning(riderId, orderId, earningKobo);
 
   return updated;

@@ -57,6 +57,29 @@ export async function updateAdminProfile(
 
 const DEFAULT_SYSTEM_SETTINGS = { emailNotifications: true, weeklyReport: true };
 
+// ─── Platform Settings (global, singleton) ───────────────────────────────────
+
+export async function getPlatformSettings() {
+  return prisma.platformSettings.upsert({
+    where: { id: "global" },
+    update: {},
+    create: { id: "global", riderEarningRate: 0.8 },
+  });
+}
+
+export async function updatePlatformSettings(data: { riderEarningRate?: number }) {
+  if (data.riderEarningRate !== undefined) {
+    if (data.riderEarningRate < 0 || data.riderEarningRate > 1) {
+      throw new Error("riderEarningRate must be between 0 and 1");
+    }
+  }
+  return prisma.platformSettings.upsert({
+    where: { id: "global" },
+    update: data,
+    create: { id: "global", riderEarningRate: data.riderEarningRate ?? 0.8 },
+  });
+}
+
 export async function getAdminSettings(adminId: string) {
   const admin = await prisma.admin.findUniqueOrThrow({ where: { id: adminId }, select: { settings: true } });
   return { ...DEFAULT_SYSTEM_SETTINGS, ...(admin.settings as object | null ?? {}) };

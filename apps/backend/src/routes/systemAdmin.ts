@@ -64,6 +64,9 @@ router.patch(
 router.get("/me/settings", ctrl.getSettings);
 router.patch("/me/settings", validate(updateAdminSettingsSchema), ctrl.updateSettings);
 
+router.get("/platform-settings", requireSystemRole("ADMIN"), ctrl.getPlatformSettings);
+router.patch("/platform-settings", requireSystemRole("ADMIN"), ctrl.updatePlatformSettings);
+
 // ─── Admin Management (SUPER_ADMIN only) ─────────────────────
 router.get(
   "/admins",

@@ -60,6 +60,25 @@ export async function updateSettings(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function getPlatformSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const settings = await svc.getPlatformSettings();
+    return ok(res, { data: settings });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updatePlatformSettings(req: Request, res: Response, next: NextFunction) {
+  try {
+    const settings = await svc.updatePlatformSettings(req.body);
+    return ok(res, { data: settings });
+  } catch (err: any) {
+    if (err.message?.includes("between 0 and 1")) return fail(res, err.message, 400);
+    next(err);
+  }
+}
+
 // ─── System Admin Management ──────────────────────────────────
 
 export async function listAdmins(req: Request, res: Response, next: NextFunction) {

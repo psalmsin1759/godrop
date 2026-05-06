@@ -4,6 +4,7 @@ import { generateTrackingCode } from "../utils/generateTrackingCode";
 import { paginate } from "../utils/pagination";
 import * as pricingService from "./pricingService";
 import * as fcmService from "./fcmService";
+import { broadcastNewOrder } from "../index";
 
 export async function listOrders(
   customerId: string,
@@ -62,7 +63,35 @@ export async function cancelOrder(id: string, customerId: string, reason?: strin
     },
   });
 
+  // Notify the assigned rider if there was one
+  if (order.riderId) {
+    notifyRiderOrderCancelled(order.riderId, order).catch(() => {});
+  }
+
   return updated;
+}
+
+async function notifyRiderOrderCancelled(
+  riderId: string,
+  order: { id: string; trackingCode: string }
+) {
+  const title = "Order Cancelled";
+  const body = `Order #${order.trackingCode} was cancelled by the customer.`;
+  const data = { type: "ORDER_CANCELLED", orderId: order.id, trackingCode: order.trackingCode };
+
+  const tokens = await prisma.riderPushToken.findMany({
+    where: { riderId },
+    select: { token: true },
+  });
+
+  await Promise.all([
+    tokens.length > 0
+      ? fcmService.sendToRiderTokens(tokens.map((t) => t.token), { title, body }, data)
+      : Promise.resolve(),
+    prisma.riderNotification.create({
+      data: { riderId, title, body, data },
+    }),
+  ]);
 }
 
 export async function rateOrder(
@@ -143,13 +172,15 @@ export async function placeParcelOrder(
     vehicleType ?? undefined
   );
   const trackingCode = generateTrackingCode();
+  const confirmationCode = String(Math.floor(1000 + Math.random() * 9000));
 
   const order = await prisma.order.create({
     data: {
       trackingCode,
+      confirmationCode,
       customerId,
       type: OrderType.PARCEL,
-      status: OrderStatus.PENDING,
+      status: OrderStatus.READY_FOR_PICKUP,
       pickupAddress: data.pickup.address,
       pickupLat: data.pickup.lat,
       pickupLng: data.pickup.lng,
@@ -168,19 +199,43 @@ export async function placeParcelOrder(
       totalKobo: priceBreakdown.totalKobo,
       estimatedMinutes,
       scheduledAt: data.scheduleAt ? new Date(data.scheduleAt) : undefined,
-      events: { create: { status: OrderStatus.PENDING, description: "Parcel order placed" } },
+      events: { create: { status: OrderStatus.READY_FOR_PICKUP, description: "Parcel order placed" } },
     },
     include: { parcelVehicleType: { select: { id: true, name: true } } },
   });
 
-  // Notify all online riders via FCM (fire-and-forget)
-  fcmService.notifyOnlineRidersNewParcel({
+  // Notify all online riders via FCM + WebSocket (fire-and-forget)
+  const fcmPayload = {
     id: order.id,
     trackingCode: order.trackingCode,
     pickupAddress: order.pickupAddress,
     dropoffAddress: order.dropoffAddress,
     totalKobo: order.totalKobo,
-  }).catch((err) => console.error("FCM notify failed:", err));
+  };
+  fcmService.notifyOnlineRidersNewParcel(fcmPayload).catch((err) =>
+    console.error("FCM notify failed:", err)
+  );
+
+  // WebSocket payload must match the RiderOrder model on the mobile app
+  broadcastNewOrder({
+    id: order.id,
+    trackingCode: order.trackingCode,
+    type: order.type,
+    status: order.status,
+    pickupAddress: order.pickupAddress,
+    pickupLat: order.pickupLat,
+    pickupLng: order.pickupLng,
+    dropoffAddress: order.dropoffAddress,
+    dropoffLat: order.dropoffLat,
+    dropoffLng: order.dropoffLng,
+    deliveryFeeKobo: order.deliveryFeeKobo,
+    totalKobo: order.totalKobo,
+    paymentMethod: order.paymentMethod,
+    recipientName: order.recipientName ?? null,
+    recipientPhone: order.recipientPhone ?? null,
+    vendor: null,
+    createdAt: order.createdAt.toISOString(),
+  });
 
   return order;
 }
@@ -206,12 +261,14 @@ export async function placeTruckOrder(
   }
 ) {
   const trackingCode = generateTrackingCode();
+  const confirmationCode = String(Math.floor(1000 + Math.random() * 9000));
   return prisma.order.create({
     data: {
       trackingCode,
+      confirmationCode,
       customerId,
       type: OrderType.TRUCK,
-      status: OrderStatus.PENDING,
+      status: OrderStatus.READY_FOR_PICKUP,
       apartmentTypeId: data.apartmentTypeId,
       numLoaders: data.numLoaders,
       pickupAddress: data.pickup.address,
@@ -228,7 +285,7 @@ export async function placeTruckOrder(
       estimatedMinutes: data.estimatedMinutes,
       scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : undefined,
       notes: data.notes,
-      events: { create: { status: OrderStatus.PENDING, description: "Truck booking placed" } },
+      events: { create: { status: OrderStatus.READY_FOR_PICKUP, description: "Truck booking placed" } },
     },
     include: { apartmentType: true },
   });
@@ -347,6 +404,7 @@ export async function getTracking(orderId: string, customerId: string) {
   return {
     status: order.status,
     estimatedMinutes: order.estimatedMinutes,
+    confirmationCode: order.confirmationCode,
     riderLat: order.rider?.lat ?? null,
     riderLng: order.rider?.lng ?? null,
   };

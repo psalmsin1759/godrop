@@ -10,11 +10,8 @@ function generateCode(): string {
 export async function sendOtp(phone: string): Promise<{ expiresIn: number }> {
   const code = generateCode();
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-  // Invalidate previous OTPs for this phone
-  await prisma.otp.updateMany({
-    where: { phone, used: false },
-    data: { used: true },
-  });
+  // Remove any previous OTPs for this phone before issuing a new one
+  await prisma.otp.deleteMany({ where: { phone } });
 
   await prisma.otp.create({ data: { phone, code, expiresAt } });
   // Log after DB write so the code is guaranteed to be stored
@@ -48,15 +45,12 @@ export async function verifyOtp(phone: string, code: string): Promise<boolean> {
     console.log(`[OTP verify] No OTP found for phone=${phone}`);
     return false;
   }
-  if (otp.used) {
-    console.log(`[OTP verify] OTP already used for phone=${phone}`);
-    return false;
-  }
   if (otp.expiresAt <= new Date()) {
     console.log(`[OTP verify] OTP expired for phone=${phone}, expired at ${otp.expiresAt.toISOString()}`);
+    await prisma.otp.delete({ where: { id: otp.id } });
     return false;
   }
 
-  await prisma.otp.update({ where: { id: otp.id }, data: { used: true } });
+  await prisma.otp.delete({ where: { id: otp.id } });
   return true;
 }

@@ -185,6 +185,7 @@ export async function getOrder(req: Request, res: Response, next: NextFunction) 
     return ok(res, { data: order });
   } catch (err: any) {
     if (err.message === "Order not found") return fail(res, err.message, 404);
+    if (err.message === "Order no longer available") return fail(res, err.message, 410);
     next(err);
   }
 }
@@ -197,6 +198,7 @@ export async function acceptOrder(req: Request, res: Response, next: NextFunctio
     if (err.message === "Order not found") return fail(res, err.message, 404);
     if (err.message === "Order is not available for acceptance") return fail(res, err.message, 400);
     if (err.message === "Order has already been accepted by another rider") return fail(res, err.message, 409);
+    if (err.message?.includes("already have an active order")) return fail(res, err.message, 409);
     next(err);
   }
 }
@@ -236,11 +238,19 @@ export async function markInTransit(req: Request, res: Response, next: NextFunct
 
 export async function markDelivered(req: Request, res: Response, next: NextFunction) {
   try {
-    const order = await riderOrderService.markDelivered(req.rider!.id, req.params.id, req.body.proofNote);
+    if (!req.body.confirmationCode) return fail(res, "Confirmation code is required", 400);
+    const order = await riderOrderService.markDelivered(
+      req.rider!.id,
+      req.params.id,
+      req.body.confirmationCode,
+      req.body.proofNote
+    );
     return ok(res, { data: order });
   } catch (err: any) {
     if (err.message === "Order not found") return fail(res, err.message, 404);
-    if (err.message?.includes("must be")) return fail(res, err.message, 400);
+    if (err.message?.includes("must be") || err.message?.includes("Invalid confirmation")) {
+      return fail(res, err.message, 400);
+    }
     next(err);
   }
 }

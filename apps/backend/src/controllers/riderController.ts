@@ -137,6 +137,7 @@ export async function listAvailableRiders(req: Request, res: Response, next: Nex
   }
 }
 
+
 export async function processWithdrawal(req: Request, res: Response, next: NextFunction) {
   try {
     const withdrawal = await svc.processWithdrawal(req.params.withdrawalId, req.body.action, req.body.notes);

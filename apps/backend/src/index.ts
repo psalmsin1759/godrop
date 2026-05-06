@@ -37,13 +37,13 @@ app.use(helmet());
 app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(",") || "*" }));
 app.use(express.json());
 app.use(morgan("dev"));
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 200,
-    message: { success: false, error: "Too many requests, slow down." },
-  })
-);
+// app.use(
+//   rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 200,
+//     message: { success: false, error: "Too many requests, slow down." },
+//   })
+// );
 
 // ─── Routes ───────────────────────────────────────────────────
 app.use("/api/v1/auth", authRouter);
@@ -87,26 +87,35 @@ app.use(errorHandler);
 // ─── HTTP + WebSocket server ──────────────────────────────────
 const server = http.createServer(app);
 
-const wss = new WebSocketServer({ server, path: "/ws" });
+const wss = new WebSocketServer({ server });
 
-// Map of orderId → Set of connected clients
+// Map of orderId → Set of connected clients (customer order tracking)
 const trackingClients = new Map<string, Set<WebSocket>>();
 
+// Set of rider clients listening for new available orders
+const jobClients = new Set<WebSocket>();
+
 wss.on("connection", (ws, req) => {
-  // URL pattern: /ws/orders/:orderId/tracking
-  const match = req.url?.match(/^\/orders\/([^/]+)\/tracking/);
-  if (!match) {
-    ws.close(1008, "Invalid path");
+  const url = req.url ?? "";
+
+  // /ws/orders/:orderId/tracking — customer live tracking
+  const trackingMatch = url.match(/^\/ws\/orders\/([^/]+)\/tracking/);
+  if (trackingMatch) {
+    const orderId = trackingMatch[1];
+    if (!trackingClients.has(orderId)) trackingClients.set(orderId, new Set());
+    trackingClients.get(orderId)!.add(ws);
+    ws.on("close", () => trackingClients.get(orderId)?.delete(ws));
     return;
   }
 
-  const orderId = match[1];
-  if (!trackingClients.has(orderId)) trackingClients.set(orderId, new Set());
-  trackingClients.get(orderId)!.add(ws);
+  // /ws/rider/jobs — rider new-order stream
+  if (url === "/ws/rider/jobs") {
+    jobClients.add(ws);
+    ws.on("close", () => jobClients.delete(ws));
+    return;
+  }
 
-  ws.on("close", () => {
-    trackingClients.get(orderId)?.delete(ws);
-  });
+  ws.close(1008, "Invalid path");
 });
 
 // Export so internal services can push updates
@@ -115,6 +124,13 @@ export function broadcastTracking(orderId: string, payload: object) {
   if (!clients) return;
   const msg = JSON.stringify(payload);
   for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) client.send(msg);
+  }
+}
+
+export function broadcastNewOrder(order: object) {
+  const msg = JSON.stringify({ type: "NEW_ORDER", order });
+  for (const client of jobClients) {
     if (client.readyState === WebSocket.OPEN) client.send(msg);
   }
 }

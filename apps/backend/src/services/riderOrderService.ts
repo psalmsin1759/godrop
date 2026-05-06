@@ -17,7 +17,7 @@ export async function listAvailableOrders(opts: { page: number; limit: number; t
       where,
       skip,
       take: opts.limit,
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         trackingCode: true,

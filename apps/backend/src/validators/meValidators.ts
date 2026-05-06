@@ -22,6 +22,10 @@ export const pushTokenSchema = z.object({
   platform: z.enum(["android", "ios"]),
 });
 
+export const removePushTokenSchema = z.object({
+  token: z.string().min(1),
+});
+
 export const markNotificationsReadSchema = z.object({
   ids: z.array(z.string()).optional(),
 });

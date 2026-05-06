@@ -16,6 +16,7 @@ import {
   pushTokenSchema,
   removePushTokenSchema,
   riderOrderQuerySchema,
+  availableOrdersQuerySchema,
   rejectOrderSchema,
   markDeliveredSchema,
   markFailedSchema,
@@ -48,6 +49,7 @@ router.post("/me/push-token", validate(pushTokenSchema), ctrl.registerPushToken)
 router.delete("/me/push-token", validate(removePushTokenSchema), ctrl.removePushToken);
 
 // Orders
+router.get("/orders/available", validate(availableOrdersQuerySchema, "query"), ctrl.listAvailableOrders);
 router.get("/orders", validate(riderOrderQuerySchema, "query"), ctrl.listOrders);
 router.get("/orders/active", ctrl.getActiveOrder);
 router.get("/orders/:id", ctrl.getOrder);

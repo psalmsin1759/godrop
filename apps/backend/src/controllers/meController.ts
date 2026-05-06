@@ -167,6 +167,18 @@ export async function registerPushToken(req: Request, res: Response, next: NextF
   }
 }
 
+export async function removePushToken(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { token } = req.body;
+    await prisma.pushToken.deleteMany({
+      where: { userId: req.user!.id, token },
+    });
+    ok(res, { message: "Push token removed" });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ─── Notifications ────────────────────────────────────────────
 
 export async function listNotifications(req: Request, res: Response, next: NextFunction) {

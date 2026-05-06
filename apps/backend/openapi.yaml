@@ -61,6 +61,30 @@ components:
         success: { type: boolean, example: false }
         error: { type: string }
 
+    PushNotificationPayload:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+          example: "Order Update"
+        body:
+          type: string
+          example: "Your order has been picked up."
+        data:
+          type: object
+          additionalProperties: { type: string }
+          description: Optional key-value pairs delivered as FCM data payload (string values only)
+          example: { type: "ORDER_UPDATE", orderId: "clxxx" }
+
+    PushSendResult:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string, example: "Notification sent" }
+        successCount: { type: integer, example: 42, description: "Number of tokens that received the message" }
+        failureCount: { type: integer, example: 2, description: "Number of tokens that failed (stale tokens are auto-removed)" }
+
     # ─ Customer Auth ──────────────────────────────────────────
     TokenPair:
       type: object
@@ -2884,6 +2908,29 @@ paths:
       responses:
         "200":
           description: Token registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+    delete:
+      tags: [Notifications]
+      summary: Remove FCM push token (on logout)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200":
+          description: Token removed
           content:
             application/json:
               schema:
@@ -6173,6 +6220,156 @@ paths:
         "404":
           description: Withdrawal not found
 
+  # ─── System Admin — Push Notifications ───────────────────────
+
+  /admin/push/customers/broadcast:
+    post:
+      summary: Broadcast push notification to all customers
+      tags: [System Admin — Push Notifications]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushNotificationPayload"
+      responses:
+        "200":
+          description: Broadcast queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushSendResult"
+
+  /admin/push/customers/batch:
+    post:
+      summary: Send push notification to a list of customers
+      tags: [System Admin — Push Notifications]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/PushNotificationPayload"
+                - type: object
+                  required: [customerIds]
+                  properties:
+                    customerIds:
+                      type: array
+                      items: { type: string }
+                      minItems: 1
+                      description: Array of customer (user) IDs to notify
+      responses:
+        "200":
+          description: Notifications sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushSendResult"
+
+  /admin/push/customers/{id}:
+    post:
+      summary: Send push notification to a single customer
+      tags: [System Admin — Push Notifications]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+          description: Customer (user) ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushNotificationPayload"
+      responses:
+        "200":
+          description: Notification sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushSendResult"
+        "404":
+          description: Customer not found
+
+  /admin/push/riders/broadcast:
+    post:
+      summary: Broadcast push notification to all riders
+      tags: [System Admin — Push Notifications]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushNotificationPayload"
+      responses:
+        "200":
+          description: Broadcast queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushSendResult"
+
+  /admin/push/riders/batch:
+    post:
+      summary: Send push notification to a list of riders
+      tags: [System Admin — Push Notifications]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/PushNotificationPayload"
+                - type: object
+                  required: [riderIds]
+                  properties:
+                    riderIds:
+                      type: array
+                      items: { type: string }
+                      minItems: 1
+                      description: Array of rider IDs to notify
+      responses:
+        "200":
+          description: Notifications sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushSendResult"
+
+  /admin/push/riders/{id}:
+    post:
+      summary: Send push notification to a single rider
+      tags: [System Admin — Push Notifications]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+          description: Rider ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushNotificationPayload"
+      responses:
+        "200":
+          description: Notification sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushSendResult"
+        "404":
+          description: Rider not found
+
 # ─── WebSocket ────────────────────────────────────────────────
 # Connect to: ws://host/ws/orders/:orderId/tracking
 # The server broadcasts JSON payloads whenever the rider's location changes.
@@ -6258,3 +6455,5 @@ tags:
   # System Admin Riders
   - name: System Admin — Riders
     description: "Rider account management, KYC review, manual order dispatch, earnings overview, and withdrawal processing. Minimum role: ADMIN."
+  - name: System Admin — Push Notifications
+    description: "Send FCM push notifications to individual customers or riders, a batch by IDs, or broadcast to all. Minimum role: ADMIN."

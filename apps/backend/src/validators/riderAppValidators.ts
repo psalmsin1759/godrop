@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, OrderType } from "@prisma/client";
 
 const guarantorSchema = z.object({
   name: z.string().min(1),
@@ -88,6 +88,12 @@ export const removePushTokenSchema = z.object({
 
 export const riderOrderQuerySchema = z.object({
   status: z.nativeEnum(OrderStatus).optional(),
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().positive().max(100).optional().default(20),
+});
+
+export const availableOrdersQuerySchema = z.object({
+  type: z.nativeEnum(OrderType).optional(),
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(100).optional().default(20),
 });

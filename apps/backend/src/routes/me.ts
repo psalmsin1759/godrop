@@ -8,6 +8,7 @@ import {
   addAddressSchema,
   updateAddressSchema,
   pushTokenSchema,
+  removePushTokenSchema,
   markNotificationsReadSchema,
   topUpSchema,
   verifyTopUpSchema,
@@ -32,6 +33,7 @@ router.post("/wallet/topup", validate(topUpSchema), meController.initTopUp);
 router.post("/wallet/topup/verify", validate(verifyTopUpSchema), meController.verifyTopUp);
 
 router.post("/push-token", validate(pushTokenSchema), meController.registerPushToken);
+router.delete("/push-token", validate(removePushTokenSchema), meController.removePushToken);
 
 router.get("/notifications", meController.listNotifications);
 router.patch("/notifications/read", validate(markNotificationsReadSchema), meController.markNotificationsRead);

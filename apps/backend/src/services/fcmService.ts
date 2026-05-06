@@ -22,16 +22,20 @@ function getMessaging(): admin.messaging.Messaging | null {
   return messaging;
 }
 
-export async function sendToTokens(
+interface SendResult {
+  successCount: number;
+  failureCount: number;
+}
+
+async function dispatch(
   tokens: string[],
   notification: { title: string; body: string },
   data?: Record<string, string>
-): Promise<void> {
-  if (tokens.length === 0) return;
+): Promise<{ successCount: number; failureCount: number; staleTokens: string[] }> {
   const fcm = getMessaging();
   if (!fcm) {
     console.warn("FCM not configured — skipping push notification");
-    return;
+    return { successCount: 0, failureCount: tokens.length, staleTokens: [] };
   }
 
   const response = await fcm.sendEachForMulticast({
@@ -42,17 +46,108 @@ export async function sendToTokens(
     apns: { payload: { aps: { contentAvailable: true } } },
   });
 
-  // Remove stale tokens that are no longer valid
   const staleTokens: string[] = [];
   response.responses.forEach((res, i) => {
     if (!res.success && res.error?.code === "messaging/registration-token-not-registered") {
       staleTokens.push(tokens[i]);
     }
   });
+
+  return {
+    successCount: response.successCount,
+    failureCount: response.failureCount,
+    staleTokens,
+  };
+}
+
+// ─── Rider token dispatch ──────────────────────────────────────
+
+export async function sendToRiderTokens(
+  tokens: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  if (tokens.length === 0) return { successCount: 0, failureCount: 0 };
+
+  const { successCount, failureCount, staleTokens } = await dispatch(tokens, notification, data);
+
   if (staleTokens.length > 0) {
     await prisma.riderPushToken.deleteMany({ where: { token: { in: staleTokens } } });
   }
+
+  return { successCount, failureCount };
 }
+
+// Backward-compat alias used by notifyOnlineRidersNewParcel and internal callers
+export async function sendToTokens(
+  tokens: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<void> {
+  await sendToRiderTokens(tokens, notification, data);
+}
+
+// ─── Customer token dispatch ───────────────────────────────────
+
+export async function sendToCustomerTokens(
+  tokens: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  if (tokens.length === 0) return { successCount: 0, failureCount: 0 };
+
+  const { successCount, failureCount, staleTokens } = await dispatch(tokens, notification, data);
+
+  if (staleTokens.length > 0) {
+    await prisma.pushToken.deleteMany({ where: { token: { in: staleTokens } } });
+  }
+
+  return { successCount, failureCount };
+}
+
+// ─── Admin helpers ─────────────────────────────────────────────
+
+export async function sendToCustomers(
+  customerIds: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  const records = await prisma.pushToken.findMany({
+    where: { userId: { in: customerIds } },
+    select: { token: true },
+  });
+  return sendToCustomerTokens(records.map((r) => r.token), notification, data);
+}
+
+export async function sendToAllCustomers(
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  const records = await prisma.pushToken.findMany({ select: { token: true } });
+  return sendToCustomerTokens(records.map((r) => r.token), notification, data);
+}
+
+export async function sendToRiders(
+  riderIds: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  const records = await prisma.riderPushToken.findMany({
+    where: { riderId: { in: riderIds } },
+    select: { token: true },
+  });
+  return sendToRiderTokens(records.map((r) => r.token), notification, data);
+}
+
+export async function sendToAllRiders(
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  const records = await prisma.riderPushToken.findMany({ select: { token: true } });
+  return sendToRiderTokens(records.map((r) => r.token), notification, data);
+}
+
+// ─── Internal notification helpers ────────────────────────────
 
 export async function notifyOnlineRidersNewParcel(order: {
   id: string;

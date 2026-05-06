@@ -144,6 +144,17 @@ export async function removePushToken(req: Request, res: Response, next: NextFun
 
 // ─── Orders ────────────────────────────────────────────────────
 
+export async function listAvailableOrders(req: Request, res: Response, next: NextFunction) {
+  try {
+    const q = req.query as any;
+    const { page, limit } = paginate(q.page, q.limit);
+    const result = await riderOrderService.listAvailableOrders({ type: q.type, page, limit });
+    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function listOrders(req: Request, res: Response, next: NextFunction) {
   try {
     const q = req.query as any;
@@ -184,7 +195,8 @@ export async function acceptOrder(req: Request, res: Response, next: NextFunctio
     return ok(res, { data: order });
   } catch (err: any) {
     if (err.message === "Order not found") return fail(res, err.message, 404);
-    if (err.message?.includes("cannot be accepted")) return fail(res, err.message, 400);
+    if (err.message === "Order is not available for acceptance") return fail(res, err.message, 400);
+    if (err.message === "Order has already been accepted by another rider") return fail(res, err.message, 409);
     next(err);
   }
 }

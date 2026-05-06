@@ -23,6 +23,13 @@ import {
 import * as ctrl from "../controllers/systemAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
 import * as riderCtrl from "../controllers/riderController";
+import * as fcmCtrl from "../controllers/fcmController";
+import {
+  sendToSingleSchema,
+  sendToCustomerBatchSchema,
+  sendToRiderBatchSchema,
+  broadcastSchema,
+} from "../validators/fcmValidators";
 import {
   createRiderSchema,
   updateRiderSchema,
@@ -208,5 +215,14 @@ router.patch(
   auditSystemAction({ action: "PROCESS_RIDER_WITHDRAWAL", entity: "RiderWithdrawal", getEntityId: (r) => r.params.withdrawalId }),
   riderCtrl.processWithdrawal
 );
+
+// ─── Push Notifications (ADMIN+) ─────────────────────────────
+router.post("/push/customers/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToCustomers);
+router.post("/push/customers/batch", requireSystemRole("ADMIN"), validate(sendToCustomerBatchSchema), fcmCtrl.notifyCustomerBatch);
+router.post("/push/customers/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyCustomer);
+
+router.post("/push/riders/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToRiders);
+router.post("/push/riders/batch", requireSystemRole("ADMIN"), validate(sendToRiderBatchSchema), fcmCtrl.notifyRiderBatch);
+router.post("/push/riders/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyRider);
 
 export default router;

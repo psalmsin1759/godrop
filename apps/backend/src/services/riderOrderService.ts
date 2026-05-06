@@ -1,10 +1,48 @@
 import { prisma } from "../lib/prisma";
-import { OrderStatus } from "@prisma/client";
+import { Order, OrderStatus, OrderType } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { broadcastTracking } from "../index";
 import { createRiderEarning } from "./riderEarningService";
+import { sendToCustomerTokens } from "./fcmService";
 
 const RIDER_EARNING_RATE = parseFloat(process.env.RIDER_EARNING_RATE || "0.8");
+
+export async function listAvailableOrders(opts: { page: number; limit: number; type?: OrderType }) {
+  const { skip } = paginate(opts.page, opts.limit);
+  const where: any = { riderId: null, status: "READY_FOR_PICKUP" };
+  if (opts.type) where.type = opts.type;
+
+  const [data, total] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      skip,
+      take: opts.limit,
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        trackingCode: true,
+        type: true,
+        status: true,
+        pickupAddress: true,
+        dropoffAddress: true,
+        pickupLat: true,
+        pickupLng: true,
+        dropoffLat: true,
+        dropoffLng: true,
+        deliveryFeeKobo: true,
+        totalKobo: true,
+        paymentMethod: true,
+        recipientName: true,
+        recipientPhone: true,
+        createdAt: true,
+        vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
+      },
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return { data, total, page: opts.page, limit: opts.limit };
+}
 
 export async function listRiderOrders(
   riderId: string,
@@ -79,27 +117,58 @@ export async function getRiderOrderDetail(riderId: string, orderId: string) {
 }
 
 export async function acceptOrder(riderId: string, orderId: string) {
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order) throw new Error("Order not found");
-  if (order.riderId !== riderId) throw new Error("Order not found");
-  if (!["ACCEPTED", "READY_FOR_PICKUP"].includes(order.status)) {
-    throw new Error("Order cannot be accepted at this stage");
-  }
+  const order = await prisma.$transaction(async (tx) => {
+    const existing = await tx.order.findUnique({ where: { id: orderId } });
+    if (!existing) throw new Error("Order not found");
+    if (existing.status !== "READY_FOR_PICKUP") throw new Error("Order is not available for acceptance");
 
-  await prisma.orderEvent.create({
-    data: { orderId, status: order.status, description: "Rider accepted the order" },
+    // Atomic gate: only one rider wins — the WHERE filters riderId IS NULL so concurrent
+    // requests that pass the read above will get count=0 once another commits.
+    const result = await tx.order.updateMany({
+      where: { id: orderId, riderId: null, status: "READY_FOR_PICKUP" },
+      data: { riderId, status: "ACCEPTED" },
+    });
+
+    if (result.count === 0) throw new Error("Order has already been accepted by another rider");
+
+    await tx.orderEvent.create({
+      data: { orderId, status: "ACCEPTED", description: "Rider accepted the order" },
+    });
+
+    return tx.order.findUnique({ where: { id: orderId } });
   });
 
-  return prisma.order.findUnique({ where: { id: orderId } });
+  // Notify customer outside the transaction — don't block the response on FCM
+  notifyCustomerRiderAccepted(order!).catch(() => {});
+
+  return order;
+}
+
+async function notifyCustomerRiderAccepted(order: Order) {
+  const title = "Rider assigned";
+  const body = `A rider has accepted your order #${order.trackingCode} and is heading to pick it up.`;
+  const data = { type: "ORDER_ACCEPTED", orderId: order.id, trackingCode: order.trackingCode };
+
+  const tokens = await prisma.pushToken.findMany({
+    where: { userId: order.customerId },
+    select: { token: true },
+  });
+
+  await Promise.all([
+    tokens.length > 0
+      ? sendToCustomerTokens(tokens.map((t) => t.token), { title, body }, data)
+      : Promise.resolve(),
+    prisma.notification.create({
+      data: { userId: order.customerId, title, body, data },
+    }),
+  ]);
 }
 
 export async function rejectOrder(riderId: string, orderId: string, reason?: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new Error("Order not found");
   if (order.riderId !== riderId) throw new Error("Order not found");
-  if (!["ACCEPTED", "READY_FOR_PICKUP"].includes(order.status)) {
-    throw new Error("Order cannot be rejected at this stage");
-  }
+  if (order.status !== "ACCEPTED") throw new Error("Order cannot be rejected at this stage");
 
   await prisma.orderEvent.create({
     data: {
@@ -111,7 +180,7 @@ export async function rejectOrder(riderId: string, orderId: string, reason?: str
 
   return prisma.order.update({
     where: { id: orderId },
-    data: { riderId: null },
+    data: { riderId: null, status: "READY_FOR_PICKUP" },
   });
 }
 

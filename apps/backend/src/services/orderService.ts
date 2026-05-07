@@ -6,13 +6,23 @@ import * as pricingService from "./pricingService";
 import * as fcmService from "./fcmService";
 import { broadcastNewOrder } from "../index";
 
+const STATUS_ALIASES: Record<string, OrderStatus> = {
+  COMPLETED: OrderStatus.DELIVERED,
+  DONE:      OrderStatus.DELIVERED,
+};
+
+function normalizeStatus(raw: string): OrderStatus {
+  const upper = raw.toUpperCase() as OrderStatus;
+  return STATUS_ALIASES[upper] ?? upper;
+}
+
 export async function listOrders(
   customerId: string,
   opts: { status?: string; type?: string; page?: number; limit?: number }
 ) {
   const { page, limit, skip } = paginate(opts.page, opts.limit);
   const where: any = { customerId };
-  if (opts.status) where.status = opts.status.toUpperCase();
+  if (opts.status) where.status = normalizeStatus(opts.status);
   if (opts.type) where.type = opts.type.toUpperCase();
 
   const [data, total] = await prisma.$transaction([
@@ -301,7 +311,7 @@ export async function listAllOrders(opts: {
 }) {
   const { page, limit, skip } = paginate(opts.page, opts.limit);
   const where: any = {};
-  if (opts.status) where.status = opts.status.toUpperCase();
+  if (opts.status) where.status = normalizeStatus(opts.status);
   if (opts.type) where.type = opts.type.toUpperCase();
   if (opts.customerId) where.customerId = opts.customerId;
   if (opts.vendorId) where.vendorId = opts.vendorId;

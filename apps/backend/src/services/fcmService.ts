@@ -147,6 +147,33 @@ export async function sendToAllRiders(
   return sendToRiderTokens(records.map((r) => r.token), notification, data);
 }
 
+// ─── Customer order-status notification ───────────────────────
+
+export async function notifyCustomerOrderUpdate(
+  customerId: string,
+  orderId: string,
+  trackingCode: string,
+  title: string,
+  body: string,
+  type: string
+): Promise<void> {
+  const data = { type, orderId, trackingCode };
+
+  const tokens = await prisma.pushToken.findMany({
+    where: { userId: customerId },
+    select: { token: true },
+  });
+
+  await Promise.all([
+    tokens.length > 0
+      ? sendToCustomerTokens(tokens.map((t) => t.token), { title, body }, data)
+      : Promise.resolve(),
+    prisma.notification.create({
+      data: { userId: customerId, title, body, data },
+    }),
+  ]);
+}
+
 // ─── Internal notification helpers ────────────────────────────
 
 export async function notifyOnlineRidersNewParcel(order: {

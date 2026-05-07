@@ -3,7 +3,7 @@ import { Order, OrderStatus, OrderType } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { broadcastTracking } from "../index";
 import { createRiderEarning } from "./riderEarningService";
-import { sendToCustomerTokens } from "./fcmService";
+import { sendToCustomerTokens, notifyCustomerOrderUpdate } from "./fcmService";
 
 const RIDER_EARNING_RATE = parseFloat(process.env.RIDER_EARNING_RATE || "0.8");
 
@@ -221,6 +221,13 @@ export async function markPickedUp(riderId: string, orderId: string) {
     data: { orderId, status: "PICKED_UP", description: "Rider picked up the order" },
   });
 
+  notifyCustomerOrderUpdate(
+    order.customerId, orderId, order.trackingCode,
+    "Order picked up",
+    `Your order #${order.trackingCode} has been picked up and is on the way.`,
+    "ORDER_PICKED_UP"
+  ).catch(() => {});
+
   return updated;
 }
 
@@ -238,6 +245,13 @@ export async function markInTransit(riderId: string, orderId: string) {
   await prisma.orderEvent.create({
     data: { orderId, status: "IN_TRANSIT", description: "Rider is on the way" },
   });
+
+  notifyCustomerOrderUpdate(
+    order.customerId, orderId, order.trackingCode,
+    "Rider is on the way",
+    `Your order #${order.trackingCode} is in transit — the rider is heading to you.`,
+    "ORDER_IN_TRANSIT"
+  ).catch(() => {});
 
   return updated;
 }
@@ -277,6 +291,13 @@ export async function markDelivered(
   const earningKobo = Math.floor(order.deliveryFeeKobo * rate);
   await createRiderEarning(riderId, orderId, earningKobo);
 
+  notifyCustomerOrderUpdate(
+    order.customerId, orderId, order.trackingCode,
+    "Order delivered",
+    `Your order #${order.trackingCode} has been delivered. Enjoy!`,
+    "ORDER_DELIVERED"
+  ).catch(() => {});
+
   return updated;
 }
 
@@ -296,6 +317,13 @@ export async function markFailed(riderId: string, orderId: string, reason: strin
   await prisma.orderEvent.create({
     data: { orderId, status: "FAILED", description: `Delivery failed: ${reason}` },
   });
+
+  notifyCustomerOrderUpdate(
+    order.customerId, orderId, order.trackingCode,
+    "Delivery unsuccessful",
+    `We couldn't deliver your order #${order.trackingCode}. Reason: ${reason}`,
+    "ORDER_FAILED"
+  ).catch(() => {});
 
   return updated;
 }

@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma";
 import { AdminRole, AdminType, VendorType, OrderStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail } from "./emailService";
+import { notifyCustomerOrderUpdate } from "./fcmService";
 
 const SALT_ROUNDS = 12;
 
@@ -252,6 +253,13 @@ export async function getVendorOrder(orderId: string, vendorId: string) {
   return order;
 }
 
+const VENDOR_STATUS_NOTIFICATIONS: Partial<Record<OrderStatus, { title: string; body: (trackingCode: string) => string; type: string }>> = {
+  [OrderStatus.ACCEPTED]:        { title: "Order confirmed",    body: (t) => `Your order #${t} has been confirmed and will be prepared shortly.`, type: "ORDER_ACCEPTED" },
+  [OrderStatus.PREPARING]:       { title: "Order being prepared", body: (t) => `Your order #${t} is now being prepared.`, type: "ORDER_PREPARING" },
+  [OrderStatus.READY_FOR_PICKUP]:{ title: "Order ready",        body: (t) => `Your order #${t} is ready and a rider is being assigned.`, type: "ORDER_READY_FOR_PICKUP" },
+  [OrderStatus.CANCELLED]:       { title: "Order cancelled",    body: (t) => `Your order #${t} has been cancelled.`, type: "ORDER_CANCELLED" },
+};
+
 async function transitionOrder(
   orderId: string,
   vendorId: string,
@@ -264,10 +272,22 @@ async function transitionOrder(
   if (!allowedFromStatuses.includes(order.status)) {
     throw new Error(`Cannot transition order from ${order.status} to ${newStatus}`);
   }
-  return prisma.$transaction([
+  const result = await prisma.$transaction([
     prisma.order.update({ where: { id: orderId }, data: { status: newStatus } }),
     prisma.orderEvent.create({ data: { orderId, status: newStatus, description } }),
   ]);
+
+  const notif = VENDOR_STATUS_NOTIFICATIONS[newStatus];
+  if (notif) {
+    notifyCustomerOrderUpdate(
+      order.customerId, orderId, order.trackingCode,
+      notif.title,
+      notif.body(order.trackingCode),
+      notif.type
+    ).catch(() => {});
+  }
+
+  return result;
 }
 
 export async function acceptOrder(orderId: string, vendorId: string) {

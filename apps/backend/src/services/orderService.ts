@@ -11,6 +11,15 @@ const STATUS_ALIASES: Record<string, OrderStatus> = {
   DONE:      OrderStatus.DELIVERED,
 };
 
+const ACTIVE_STATUSES: OrderStatus[] = [
+  OrderStatus.PENDING,
+  OrderStatus.ACCEPTED,
+  OrderStatus.PREPARING,
+  OrderStatus.READY_FOR_PICKUP,
+  OrderStatus.PICKED_UP,
+  OrderStatus.IN_TRANSIT,
+];
+
 function normalizeStatus(raw: string): OrderStatus {
   const upper = raw.toUpperCase() as OrderStatus;
   return STATUS_ALIASES[upper] ?? upper;
@@ -22,7 +31,13 @@ export async function listOrders(
 ) {
   const { page, limit, skip } = paginate(opts.page, opts.limit);
   const where: any = { customerId };
-  if (opts.status) where.status = normalizeStatus(opts.status);
+  if (opts.status) {
+    if (opts.status.toUpperCase() === "ACTIVE") {
+      where.status = { in: ACTIVE_STATUSES };
+    } else {
+      where.status = normalizeStatus(opts.status);
+    }
+  }
   if (opts.type) where.type = opts.type.toUpperCase();
 
   const [data, total] = await prisma.$transaction([

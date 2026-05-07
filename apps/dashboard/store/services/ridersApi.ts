@@ -103,6 +103,7 @@ export const ridersApi = api.injectEndpoints({
       invalidatesTags: (_r, _e, { id }) => [{ type: 'Rider', id }, 'Rider'],
       transformResponse: (res: Wrap<RiderDetail>) => res.data,
     }),
+
   }),
   overrideExisting: false,
 })

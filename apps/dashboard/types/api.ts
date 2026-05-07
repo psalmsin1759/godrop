@@ -381,6 +381,12 @@ export interface ChangePasswordRequest {
   newPassword: string
 }
 
+export interface PlatformSettings {
+  id: string
+  riderEarningRate: number
+  updatedAt: string
+}
+
 export interface UpdateProfileRequest {
   firstName?: string
   lastName?: string
@@ -908,4 +914,18 @@ export interface NotificationsListParams {
   unreadOnly?: boolean
   page?: number
   limit?: number
+}
+
+// ─── Push Notifications ────────────────────────────────────────────────────────
+export interface PushNotificationPayload {
+  title: string
+  body: string
+  data?: Record<string, string>
+}
+
+export interface PushSendResult {
+  success: boolean
+  message: string
+  successCount: number
+  failureCount: number
 }

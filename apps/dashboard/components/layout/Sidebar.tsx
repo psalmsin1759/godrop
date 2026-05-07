@@ -19,6 +19,7 @@ import {
   LogOut,
   Tag,
   UserCog,
+  Bell,
 } from 'lucide-react'
 
 const systemNav = [
@@ -35,6 +36,7 @@ const systemReportsNav = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs', badge: 0 },
   { href: '/admins', icon: UserCog, label: 'Admins' },
+  { href: '/push', icon: Bell, label: 'Push Notifications' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
@@ -50,7 +52,7 @@ const vendorReportsNav = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname()
   const { data: session } = useSession()
 
@@ -75,7 +77,7 @@ export default function Sidebar() {
   }) {
     const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
     return (
-      <Link href={href} className={isActive ? 'sidebar-link-active' : 'sidebar-link'}>
+      <Link href={href} onClick={onClose} className={isActive ? 'sidebar-link-active' : 'sidebar-link'}>
         <Icon className="w-4 h-4 shrink-0" strokeWidth={isActive ? 2.5 : 2} />
         <span>{label}</span>
         {badge !== undefined && badge > 0 && !isActive && (
@@ -93,7 +95,9 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full z-30 flex flex-col"
+      className={`fixed left-0 top-0 h-full z-30 flex flex-col transition-transform duration-300 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}
       style={{ width: 'var(--sidebar-width)', backgroundColor: '#283c50' }}
     >
       {/* Logo */}

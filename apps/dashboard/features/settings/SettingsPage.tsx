@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { formatNaira } from '@/lib/utils'
 import {
-  Loader2, Save, ToggleLeft, ToggleRight, Bell, Store, User, Lock, CheckCircle2,
+  Loader2, Save, ToggleLeft, ToggleRight, Bell, Store, User, Lock, CheckCircle2, TrendingUp,
 } from 'lucide-react'
 import {
   useGetVendorSettingsQuery,
@@ -19,6 +19,8 @@ import {
   useUpdateSystemAdminSettingsMutation,
   useUpdateProfileMutation,
   useChangePasswordMutation,
+  useGetPlatformSettingsQuery,
+  useUpdatePlatformSettingsMutation,
 } from '@/store/services/adminApi'
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -677,20 +679,101 @@ function VendorSettingsPage({ role }: { role: string }) {
   )
 }
 
+// ─── System Admin: Platform Settings ─────────────────────────────────────────
+
+function SystemPlatformSettings() {
+  const { data: settings, isLoading } = useGetPlatformSettingsQuery()
+  const [update, { isLoading: saving }] = useUpdatePlatformSettingsMutation()
+  const { saved, flash } = useSavedFlash()
+  const [ratePct, setRatePct] = useState('')
+
+  useEffect(() => {
+    if (settings) setRatePct(String(Math.round(settings.riderEarningRate * 100)))
+  }, [settings])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const pct = parseFloat(ratePct)
+    if (isNaN(pct) || pct < 0 || pct > 100) return
+    await update({ riderEarningRate: pct / 100 }).unwrap()
+    flash()
+  }
+
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-32">
+      <Loader2 className="w-5 h-5 animate-spin text-[#17c666]" />
+    </div>
+  )
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <SectionCard title="Rider Earnings">
+        <p className="text-xs text-[#9ca3af]">
+          The percentage of each delivery fee credited to the rider's wallet after a successful delivery.
+          Applies to all riders platform-wide.
+        </p>
+        <div className="flex items-end gap-3 max-w-xs">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+              Rider cut (% of delivery fee)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={ratePct}
+                onChange={(e) => setRatePct(e.target.value)}
+                className={inputCls('pr-8')}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af] font-medium">%</span>
+            </div>
+          </div>
+          <SaveButton saving={saving} saved={saved} />
+        </div>
+        <p className="text-xs text-[#9ca3af]">
+          Current: <span className="font-semibold text-[#283c50]">{settings ? `${Math.round(settings.riderEarningRate * 100)}%` : '—'}</span>
+          {settings && ` — rider earns ₦${Math.round(settings.riderEarningRate * 1000) / 10} per ₦100 delivery fee`}
+        </p>
+      </SectionCard>
+    </form>
+  )
+}
+
 // ─── System Admin Settings Page ───────────────────────────────────────────────
 
-const SYSTEM_TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+type SystemTabId = 'platform' | 'profile' | 'notifications' | 'security'
+
+const SYSTEM_TABS: { id: SystemTabId; label: string; icon: React.ReactNode }[] = [
+  { id: 'platform', label: 'Platform', icon: <TrendingUp className="w-3.5 h-3.5" /> },
   { id: 'profile', label: 'Profile', icon: <User className="w-3.5 h-3.5" /> },
   { id: 'notifications', label: 'Notifications', icon: <Bell className="w-3.5 h-3.5" /> },
   { id: 'security', label: 'Security', icon: <Lock className="w-3.5 h-3.5" /> },
 ]
 
 function SystemSettingsPage() {
-  const [tab, setTab] = useState<TabId>('profile')
+  const [tab, setTab] = useState<SystemTabId>('platform')
 
   return (
     <>
-      <Tabs tabs={SYSTEM_TABS} active={tab} onChange={setTab} />
+      <div className="flex gap-1 border-b border-[#e5e7eb] mb-5">
+        {SYSTEM_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${
+              tab === t.id
+                ? 'border-[#17c666] text-[#17c666]'
+                : 'border-transparent text-[#6b7885] hover:text-[#283c50]'
+            }`}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'platform' && <SystemPlatformSettings />}
       {tab === 'profile' && <SystemProfileSettings />}
       {tab === 'notifications' && <SystemNotificationSettings />}
       {tab === 'security' && <SystemPasswordSettings />}

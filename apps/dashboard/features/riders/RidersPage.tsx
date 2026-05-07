@@ -275,6 +275,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+
 function RiderDetailContent({ rider }: { rider: RiderDetail }) {
   const kyc = kycConfig[rider.kycStatus]
   return (
@@ -343,6 +344,7 @@ function RiderDetailContent({ rider }: { rider: RiderDetail }) {
         <Field label="BVN" value={rider.bvn ? '•••••••' + rider.bvn.slice(-4) : null} />
         <Field label="NIN" value={rider.nin ? '•••••••' + rider.nin.slice(-4) : null} />
       </Section>
+
 
       {(rider.emergencyContactName || rider.emergencyContactPhone) && (
         <Section title="Emergency Contact">

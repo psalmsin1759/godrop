@@ -9,6 +9,7 @@ import type {
   UpdateSystemAdminSettingsRequest,
   UpdateProfileRequest,
   ChangePasswordRequest,
+  PlatformSettings,
 } from '@/types/api'
 
 
@@ -48,6 +49,18 @@ export const adminApi = api.injectEndpoints({
       transformResponse: (res: Wrap<SystemAdminSettings>) => res.data,
     }),
 
+    getPlatformSettings: build.query<PlatformSettings, void>({
+      query: () => '/admin/platform-settings',
+      providesTags: ['PlatformSettings'],
+      transformResponse: (res: Wrap<PlatformSettings>) => res.data,
+    }),
+
+    updatePlatformSettings: build.mutation<PlatformSettings, Partial<Pick<PlatformSettings, 'riderEarningRate'>>>({
+      query: (body) => ({ url: '/admin/platform-settings', method: 'PATCH', body }),
+      invalidatesTags: ['PlatformSettings'],
+      transformResponse: (res: Wrap<PlatformSettings>) => res.data,
+    }),
+
     getAdmins: build.query<{ data: AdminUser[]; total: number; page: number; limit: number }, { page?: number; limit?: number } | void>({
       query: (params) => ({ url: '/admin/admins', params: params ?? {} }),
       providesTags: ['Admin'],
@@ -84,4 +97,6 @@ export const {
   useGetAdminsQuery,
   useCreateAdminMutation,
   useUpdateAdminMutation,
+  useGetPlatformSettingsQuery,
+  useUpdatePlatformSettingsMutation,
 } = adminApi

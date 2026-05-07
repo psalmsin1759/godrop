@@ -1,14 +1,15 @@
 'use client'
 
-import { Search, ChevronRight, Calendar, LogOut } from 'lucide-react'
+import { Search, ChevronRight, Calendar, LogOut, Menu } from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
 import NotificationBell from './NotificationBell'
 
 interface TopbarProps {
   breadcrumb?: string[]
+  onMenuToggle?: () => void
 }
 
-export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'] }: TopbarProps) {
+export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'], onMenuToggle }: TopbarProps) {
   const { data: session } = useSession()
   const today = new Date()
   const dateStr = today.toLocaleDateString('en-NG', {
@@ -24,11 +25,20 @@ export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'] 
 
   return (
     <header
-      className="fixed top-0 right-0 z-20 bg-white border-b border-[#e5e7eb] flex items-center justify-between px-5 gap-4"
-      style={{ left: 'var(--sidebar-width)', height: 'var(--topbar-height)' }}
+      className="fixed top-0 left-0 right-0 lg:left-[220px] z-20 bg-white border-b border-[#e5e7eb] flex items-center justify-between px-5 gap-4"
+      style={{ height: 'var(--topbar-height)' }}
     >
+      {/* Hamburger — mobile only */}
+      <button
+        onClick={onMenuToggle}
+        className="lg:hidden w-8 h-8 flex items-center justify-center rounded hover:bg-[#f3f4f6] transition-colors shrink-0 mr-1"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5 text-[#283c50]" />
+      </button>
+
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-xs text-[#6b7885] min-w-0">
+      <div className="flex items-center gap-1.5 text-xs text-[#6b7885] min-w-0 flex-1">
         {breadcrumb.map((crumb, i) => (
           <span key={crumb} className="flex items-center gap-1.5">
             {i > 0 && <ChevronRight className="w-3 h-3 shrink-0 text-[#d1d5db]" />}

@@ -221,6 +221,7 @@ export async function markPickedUp(riderId: string, orderId: string) {
     data: { orderId, status: "PICKED_UP", description: "Rider picked up the order" },
   });
 
+  broadcastTracking(orderId, { type: "STATUS_UPDATE", status: "PICKED_UP" });
   notifyCustomerOrderUpdate(
     order.customerId, orderId, order.trackingCode,
     "Order picked up",
@@ -246,6 +247,7 @@ export async function markInTransit(riderId: string, orderId: string) {
     data: { orderId, status: "IN_TRANSIT", description: "Rider is on the way" },
   });
 
+  broadcastTracking(orderId, { type: "STATUS_UPDATE", status: "IN_TRANSIT" });
   notifyCustomerOrderUpdate(
     order.customerId, orderId, order.trackingCode,
     "Rider is on the way",
@@ -291,6 +293,7 @@ export async function markDelivered(
   const earningKobo = Math.floor(order.deliveryFeeKobo * rate);
   await createRiderEarning(riderId, orderId, earningKobo);
 
+  broadcastTracking(orderId, { type: "STATUS_UPDATE", status: "DELIVERED" });
   notifyCustomerOrderUpdate(
     order.customerId, orderId, order.trackingCode,
     "Order delivered",
@@ -318,6 +321,7 @@ export async function markFailed(riderId: string, orderId: string, reason: strin
     data: { orderId, status: "FAILED", description: `Delivery failed: ${reason}` },
   });
 
+  broadcastTracking(orderId, { type: "STATUS_UPDATE", status: "FAILED" });
   notifyCustomerOrderUpdate(
     order.customerId, orderId, order.trackingCode,
     "Delivery unsuccessful",

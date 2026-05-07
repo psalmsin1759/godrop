@@ -104,35 +104,50 @@ wss.on("connection", (ws, req) => {
     const orderId = trackingMatch[1];
     if (!trackingClients.has(orderId)) trackingClients.set(orderId, new Set());
     trackingClients.get(orderId)!.add(ws);
-    ws.on("close", () => trackingClients.get(orderId)?.delete(ws));
+    console.log("[WS] Customer connected | order=%s | clients=%d", orderId, trackingClients.get(orderId)!.size);
+    ws.on("close", () => {
+      trackingClients.get(orderId)?.delete(ws);
+      console.log("[WS] Customer disconnected | order=%s | clients=%d", orderId, trackingClients.get(orderId)?.size ?? 0);
+    });
     return;
   }
 
   // /ws/rider/jobs — rider new-order stream
   if (url === "/ws/rider/jobs") {
     jobClients.add(ws);
-    ws.on("close", () => jobClients.delete(ws));
+    console.log("[WS] Rider connected | jobClients=%d", jobClients.size);
+    ws.on("close", () => {
+      jobClients.delete(ws);
+      console.log("[WS] Rider disconnected | jobClients=%d", jobClients.size);
+    });
     return;
   }
 
+  console.warn("[WS] Unknown path rejected: %s", url);
   ws.close(1008, "Invalid path");
 });
 
 // Export so internal services can push updates
 export function broadcastTracking(orderId: string, payload: object) {
   const clients = trackingClients.get(orderId);
-  if (!clients) return;
+  if (!clients || clients.size === 0) return;
   const msg = JSON.stringify(payload);
+  const type = (payload as any).type ?? "location";
+  let sent = 0;
   for (const client of clients) {
-    if (client.readyState === WebSocket.OPEN) client.send(msg);
+    if (client.readyState === WebSocket.OPEN) { client.send(msg); sent++; }
   }
+  console.log("[WS] broadcastTracking | order=%s | type=%s | sent=%d/%d", orderId, type, sent, clients.size);
 }
 
 export function broadcastNewOrder(order: object) {
   const msg = JSON.stringify({ type: "NEW_ORDER", order });
+  const trackingCode = (order as any).trackingCode ?? "?";
+  let sent = 0;
   for (const client of jobClients) {
-    if (client.readyState === WebSocket.OPEN) client.send(msg);
+    if (client.readyState === WebSocket.OPEN) { client.send(msg); sent++; }
   }
+  console.log("[WS] broadcastNewOrder | order=%s | sent=%d/%d riders", trackingCode, sent, jobClients.size);
 }
 
 // ─── Start ────────────────────────────────────────────────────

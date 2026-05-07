@@ -34,9 +34,12 @@ async function dispatch(
 ): Promise<{ successCount: number; failureCount: number; staleTokens: string[] }> {
   const fcm = getMessaging();
   if (!fcm) {
-    console.warn("FCM not configured — skipping push notification");
+    console.warn("[FCM] Not configured — skipping push to %d token(s)", tokens.length);
     return { successCount: 0, failureCount: tokens.length, staleTokens: [] };
   }
+
+  const type = data?.type ?? "unknown";
+  console.log("[FCM] Sending | type=%s | tokens=%d | title=%s", type, tokens.length, notification.title);
 
   const response = await fcm.sendEachForMulticast({
     tokens,
@@ -48,10 +51,15 @@ async function dispatch(
 
   const staleTokens: string[] = [];
   response.responses.forEach((res, i) => {
-    if (!res.success && res.error?.code === "messaging/registration-token-not-registered") {
-      staleTokens.push(tokens[i]);
+    if (!res.success) {
+      const code = res.error?.code ?? "unknown";
+      console.warn("[FCM] Token failed | type=%s | code=%s", type, code);
+      if (code === "messaging/registration-token-not-registered") staleTokens.push(tokens[i]);
     }
   });
+
+  console.log("[FCM] Result | type=%s | success=%d | fail=%d | stale=%d",
+    type, response.successCount, response.failureCount, staleTokens.length);
 
   return {
     successCount: response.successCount,
@@ -157,6 +165,7 @@ export async function notifyCustomerOrderUpdate(
   body: string,
   type: string
 ): Promise<void> {
+  console.log("[PUSH] Customer update | type=%s | order=%s | customer=%s", type, trackingCode, customerId);
   const data = { type, orderId, trackingCode };
 
   const tokens = await prisma.pushToken.findMany({

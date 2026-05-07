@@ -152,7 +152,12 @@ export function broadcastNewOrder(order: object) {
 
 // ─── Start ────────────────────────────────────────────────────
 server.listen(PORT, () => {
-  console.log(`Godrop backend running on http://localhost:${PORT}`);
+  console.log(`Godrop backend running on port ${PORT}`);
+});
+
+// Validate FCM credentials at startup so a bad private key is caught immediately
+import("./services/fcmService").then(({ validateFcmCredentials }) => {
+  validateFcmCredentials();
 });
 
 export default app;

@@ -3,14 +3,33 @@ import { prisma } from "../lib/prisma";
 
 let messaging: admin.messaging.Messaging | null = null;
 
+function parsePrivateKey(raw: string): string {
+  // Railway and some CI systems store the key with literal \n sequences.
+  // Others store it with real newlines. Handle both, and strip surrounding
+  // quotes that some platforms add when the value contains special characters.
+  let key = raw.trim().replace(/^["']|["']$/g, ""); // strip wrapping quotes
+  key = key.replace(/\\n/g, "\n");                  // literal \n → real newline
+  return key;
+}
+
 function getMessaging(): admin.messaging.Messaging | null {
   if (messaging) return messaging;
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const rawKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  if (!projectId || !clientEmail || !privateKey) return null;
+  if (!projectId || !clientEmail || !rawKey) {
+    console.warn("[FCM] Missing credentials (FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY)");
+    return null;
+  }
+
+  const privateKey = parsePrivateKey(rawKey);
+
+  if (!privateKey.includes("-----BEGIN")) {
+    console.error("[FCM] FIREBASE_PRIVATE_KEY does not look like a PEM key — check Railway env var formatting");
+    return null;
+  }
 
   const app = admin.apps.length
     ? admin.apps[0]!
@@ -19,6 +38,7 @@ function getMessaging(): admin.messaging.Messaging | null {
       });
 
   messaging = admin.messaging(app);
+  console.log("[FCM] Initialized | project=%s | clientEmail=%s", projectId, clientEmail);
   return messaging;
 }
 
@@ -53,7 +73,12 @@ async function dispatch(
   response.responses.forEach((res, i) => {
     if (!res.success) {
       const code = res.error?.code ?? "unknown";
-      console.warn("[FCM] Token failed | type=%s | code=%s", type, code);
+      if (code === "app/invalid-credential") {
+        console.error("[FCM] INVALID CREDENTIAL — check FIREBASE_PRIVATE_KEY on Railway. Reset messaging instance.");
+        messaging = null; // force re-init on next call in case env var is fixed at runtime
+      } else {
+        console.warn("[FCM] Token failed | type=%s | code=%s", type, code);
+      }
       if (code === "messaging/registration-token-not-registered") staleTokens.push(tokens[i]);
     }
   });
@@ -153,6 +178,17 @@ export async function sendToAllRiders(
 ): Promise<SendResult> {
   const records = await prisma.riderPushToken.findMany({ select: { token: true } });
   return sendToRiderTokens(records.map((r) => r.token), notification, data);
+}
+
+// ─── Startup credential check ─────────────────────────────────
+
+export function validateFcmCredentials(): void {
+  const fcm = getMessaging();
+  if (!fcm) {
+    console.error("[FCM] Startup check FAILED — push notifications are disabled");
+  } else {
+    console.log("[FCM] Startup check OK — credentials loaded");
+  }
 }
 
 // ─── Customer order-status notification ───────────────────────

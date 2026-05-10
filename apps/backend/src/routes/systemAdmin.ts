@@ -87,6 +87,12 @@ router.patch(
   auditSystemAction({ action: "UPDATE_SYSTEM_ADMIN", entity: "SystemAdmin", getEntityId: (r) => r.params.id }),
   ctrl.updateAdmin
 );
+router.patch(
+  "/admins/:id/email-prefs",
+  requireSystemRole("SUPER_ADMIN"),
+  auditSystemAction({ action: "UPDATE_ADMIN_EMAIL_PREFS", entity: "SystemAdmin", getEntityId: (r) => r.params.id }),
+  ctrl.updateAdminEmailPrefs
+);
 
 // ─── Vendor Management (ADMIN+) ───────────────────────────────
 router.get("/vendors", requireSystemRole("ADMIN"), ctrl.listVendors);

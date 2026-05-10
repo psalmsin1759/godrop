@@ -9,7 +9,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  if (pathname === '/login') return <>{children}</>
+  if (pathname === '/login' || pathname.startsWith('/vendor-onboarding')) return <>{children}</>
 
   return (
     <>

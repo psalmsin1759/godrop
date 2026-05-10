@@ -28,11 +28,19 @@ class RiderPrefs {
     if (avatarUrl != null) await _prefs.setString('rider_avatar', avatarUrl);
   }
 
+  static String? get fcmToken => _prefs.getString('rider_fcm_token');
+
+  static Future<void> saveFcmToken(String token) =>
+      _prefs.setString('rider_fcm_token', token);
+
+  static Future<void> clearFcmToken() => _prefs.remove('rider_fcm_token');
+
   static Future<void> clear() async {
     await _prefs.remove('rider_onboarded');
     await _prefs.remove('rider_id');
     await _prefs.remove('rider_name');
     await _prefs.remove('rider_phone');
     await _prefs.remove('rider_avatar');
+    await _prefs.remove('rider_fcm_token');
   }
 }

@@ -7,6 +7,12 @@ part 'rider_orders_service.g.dart';
 abstract class RiderOrdersService {
   factory RiderOrdersService(Dio dio) = _RiderOrdersService;
 
+  @GET('/rider/orders/available')
+  Future<dynamic> listAvailableOrders({
+    @Query('page') int page = 1,
+    @Query('limit') int limit = 50,
+  });
+
   @GET('/rider/orders')
   Future<dynamic> listOrders({
     @Query('status') String? status,

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../../shared/models/rider_models.dart';
+import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/token_storage.dart';
 import '../../../shared/services/rider_prefs.dart';
 import 'auth_state.dart';
@@ -41,12 +42,14 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       emit(AuthAuthenticated(rider));
+      RiderPushNotificationService.init();
     } on DioException catch (e) {
       emit(AuthError(_parseError(e)));
     }
   }
 
   Future<void> logout() async {
+    await RiderPushNotificationService.removeToken();
     try {
       final refreshToken = await TokenStorage.getRefreshToken();
       if (refreshToken != null) {
@@ -67,7 +70,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (statusCode == 403) {
       return 'Your account has been deactivated. Contact support.';
     }
-    final message = e.response?.data?['message'];
+    final message = e.response?.data?['error'];
     if (message is String) return message;
     return 'Something went wrong. Please try again.';
   }

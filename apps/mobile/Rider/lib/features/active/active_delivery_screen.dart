@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../app/theme.dart';
@@ -21,6 +23,8 @@ class ActiveDeliveryScreen extends StatefulWidget {
 
 class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
     with AutomaticKeepAliveClientMixin {
+  StreamSubscription<RemoteMessage>? _fcmSub;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -28,6 +32,24 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
   void initState() {
     super.initState();
     context.read<ActiveCubit>().loadActiveOrder();
+    _fcmSub = FirebaseMessaging.onMessage.listen((message) {
+      if (message.data['type'] == 'ORDER_CANCELLED' && mounted) {
+        context.read<ActiveCubit>().loadActiveOrder();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The customer cancelled this order.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _fcmSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -41,6 +63,13 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
             if (state is ActiveError) {
               ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                 content: Text(state.message),
+                backgroundColor: GodropColors.error,
+                behavior: SnackBarBehavior.floating,
+              ));
+            }
+            if (state is ActiveLoaded && state.errorMessage != null) {
+              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                content: Text(state.errorMessage!),
                 backgroundColor: GodropColors.error,
                 behavior: SnackBarBehavior.floating,
               ));
@@ -59,6 +88,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
               final loading = state is ActiveActionLoading;
               return _buildActive(ctx, order, loading);
             }
+            if (state is ActiveError) return _buildNoActive(ctx);
             return const SizedBox.shrink();
           },
         ),
@@ -448,7 +478,10 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
   }
 
   void _showDeliveredDialog(BuildContext ctx) {
-    final controller = TextEditingController();
+    final codeController = TextEditingController();
+    final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -459,47 +492,81 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
       builder: (bctx) => Padding(
         padding: EdgeInsets.fromLTRB(
             24, 24, 24, MediaQuery.of(bctx).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Confirm Delivery',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: GodropColors.ink)),
-            const SizedBox(height: 8),
-            const Text('Add a delivery note (optional)',
-                style: TextStyle(color: GodropColors.slate, fontSize: 14)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'e.g. Left with security',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: GodropColors.border),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Confirm Delivery',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: GodropColors.ink)),
+              const SizedBox(height: 4),
+              const Text(
+                'Ask the customer for their 4-digit confirmation code.',
+                style: TextStyle(color: GodropColors.slate, fontSize: 13),
               ),
-            ),
-            const SizedBox(height: 20),
-            GodropButton(
-              label: 'Confirm Delivered',
-              gradientColors: [
-                GodropColors.success,
-                const Color(0xFF16A34A)
-              ],
-              onTap: () {
-                Navigator.pop(bctx);
-                ctx.read<ActiveCubit>().markDelivered(
-                    proofNote: controller.text.isNotEmpty
-                        ? controller.text
-                        : null);
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: codeController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 10,
+                  color: GodropColors.ink,
+                ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '••••',
+                  hintStyle: const TextStyle(letterSpacing: 10, fontSize: 28, color: GodropColors.border),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: GodropColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: GodropColors.blue, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                validator: (v) {
+                  if (v == null || v.length != 4) return 'Enter the 4-digit code';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: noteController,
+                decoration: InputDecoration(
+                  hintText: 'Delivery note (optional)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: GodropColors.border),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 20),
+              GodropButton(
+                label: 'Confirm Delivered',
+                gradientColors: const [GodropColors.success, Color(0xFF16A34A)],
+                onTap: () {
+                  if (!formKey.currentState!.validate()) return;
+                  Navigator.pop(bctx);
+                  ctx.read<ActiveCubit>().markDelivered(
+                    confirmationCode: codeController.text,
+                    proofNote: noteController.text.isNotEmpty ? noteController.text : null,
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

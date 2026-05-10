@@ -141,7 +141,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   }
 
   Widget _buildDetail(BuildContext ctx, RiderOrderDetail order) {
-    final isPending = order.status == 'PENDING';
+    final isPending = order.status == 'READY_FOR_PICKUP';
     return Scaffold(
       backgroundColor: GodropColors.background,
       appBar: AppBar(

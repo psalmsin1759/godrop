@@ -8,3 +8,14 @@ export const upload = multer({
     else cb(new Error("Only image files are allowed"));
   },
 });
+
+// Accepts images and PDFs — used for KYC / vendor compliance documents
+export const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = file.mimetype.startsWith("image/") || file.mimetype === "application/pdf";
+    if (allowed) cb(null, true);
+    else cb(new Error("Only image or PDF files are allowed"));
+  },
+});

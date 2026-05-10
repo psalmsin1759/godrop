@@ -111,6 +111,16 @@ export async function updateAdmin(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function updateAdminEmailPrefs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const admin = await svc.updateAdminEmailPrefs(req.params.id, req.body);
+    return ok(res, { data: admin });
+  } catch (err: any) {
+    if (err.code === "P2025") return fail(res, "Admin not found", 404);
+    next(err);
+  }
+}
+
 // ─── Vendor Management ────────────────────────────────────────
 
 export async function listVendors(req: Request, res: Response, next: NextFunction) {

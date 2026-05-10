@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import Link from 'next/link'
+import { Loader2, AlertCircle, Eye, EyeOff, Store } from 'lucide-react'
 
 function MiniBarChart({ color, bars }: { color: string; bars: number[] }) {
   const maxH = 28
@@ -240,11 +241,26 @@ export default function LoginPage() {
             </button>
           </form>
 
-         
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-[#f3f4f6]" />
+            <span className="text-[11px] text-[#c4c9cf] font-medium uppercase tracking-wider">or</span>
+            <div className="flex-1 h-px bg-[#f3f4f6]" />
+          </div>
 
-          
+          {/* Vendor onboarding CTA */}
+          <Link
+            href="/vendor-onboarding"
+            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-lg text-sm font-bold border-2 border-[#3454d1] text-[#3454d1] hover:bg-[#eef1fb] transition-colors"
+          >
+            <Store className="w-4 h-4" />
+            Register as a Vendor
+          </Link>
 
-         
+          <p className="text-[11px] text-[#9ca3af] text-center mt-3 leading-relaxed">
+            Own a restaurant, grocery store, or retail shop?<br />
+            Apply to sell on Godrop in minutes.
+          </p>
         </div>
       </div>
 

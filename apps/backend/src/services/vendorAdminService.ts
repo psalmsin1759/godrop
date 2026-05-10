@@ -3,14 +3,21 @@ import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
 import { AdminRole, AdminType, VendorType, OrderStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
-import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail } from "./emailService";
+import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApplicationEmail } from "./emailService";
 import { notifyCustomerOrderUpdate } from "./fcmService";
+import { uploadDocument } from "./cloudinaryService";
 
 const SALT_ROUNDS = 12;
 
 type VendorRole = Extract<AdminRole, "OWNER" | "MANAGER" | "STAFF">;
 
 // ─── Onboarding ───────────────────────────────────────────────
+
+const VENDOR_DOC_FOLDERS = {
+  businessRegistration: "godrop/vendor-docs/business-registration",
+  governmentId: "godrop/vendor-docs/government-id",
+  utilityBill: "godrop/vendor-docs/utility-bill",
+} as const;
 
 export async function onboardVendor(data: {
   name: string;
@@ -26,9 +33,21 @@ export async function onboardVendor(data: {
   ownerFirstName: string;
   ownerLastName: string;
   ownerPassword: string;
+  documentBuffers: {
+    businessRegistration: Buffer;
+    governmentId: Buffer;
+    utilityBill: Buffer;
+  };
 }) {
   const existingAdmin = await prisma.admin.findUnique({ where: { email: data.email } });
   if (existingAdmin) throw new Error("An account with this email already exists");
+
+  // Upload all three documents to Cloudinary in parallel
+  const [businessRegistrationUrl, governmentIdUrl, utilityBillUrl] = await Promise.all([
+    uploadDocument(data.documentBuffers.businessRegistration, VENDOR_DOC_FOLDERS.businessRegistration),
+    uploadDocument(data.documentBuffers.governmentId, VENDOR_DOC_FOLDERS.governmentId),
+    uploadDocument(data.documentBuffers.utilityBill, VENDOR_DOC_FOLDERS.utilityBill),
+  ]);
 
   const hashedPassword = await bcrypt.hash(data.ownerPassword, SALT_ROUNDS);
 
@@ -44,6 +63,7 @@ export async function onboardVendor(data: {
       email: data.email,
       cuisines: data.cuisines ?? [],
       openingHours: data.openingHours,
+      documents: { businessRegistrationUrl, governmentIdUrl, utilityBillUrl },
       admins: {
         create: {
           type: AdminType.VENDOR,
@@ -58,12 +78,46 @@ export async function onboardVendor(data: {
     include: { admins: true },
   });
 
+  const dashboardUrl = process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng";
+  const reviewUrl = `${dashboardUrl}/vendors/${vendor.id}`;
+  const submittedAt = new Date().toLocaleString("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Lagos",
+  });
+
+  // Email to vendor owner
   await sendEmail(
     vendorWelcomeEmail({
       firstName: data.ownerFirstName,
       vendorName: data.name,
       email: data.email,
     })
+  );
+
+  // Emails to all active system admins opted in to vendor notifications
+  const adminRecipients = await prisma.admin.findMany({
+    where: { type: AdminType.SYSTEM, isActive: true, receiveVendorEmails: true },
+    select: { id: true, firstName: true, email: true },
+  });
+
+  await Promise.allSettled(
+    adminRecipients.map((admin) =>
+      sendEmail(
+        adminNewVendorApplicationEmail({
+          adminFirstName: admin.firstName,
+          adminEmail: admin.email,
+          vendorName: data.name,
+          vendorType: data.type,
+          ownerName: `${data.ownerFirstName} ${data.ownerLastName}`,
+          ownerEmail: data.email,
+          vendorAddress: data.address,
+          submittedAt,
+          reviewUrl,
+          documents: { businessRegistration: true, governmentId: true, utilityBill: true },
+        })
+      )
+    )
   );
 
   const { admins, ...vendorSafe } = vendor;

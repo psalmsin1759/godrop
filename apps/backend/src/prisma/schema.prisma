@@ -132,6 +132,7 @@ model Vendor {
   isActive         Boolean      @default(true)
   openingHours     Json?
   rejectionReason  String?
+  documents        Json?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -183,9 +184,11 @@ model Admin {
   lastName  String
   password  String
   settings  Json?
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isActive            Boolean   @default(true)
+  receiveVendorEmails Boolean   @default(false)
+  receiveRiderEmails  Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   auditLogs     AuditLog[]
   notifications AdminNotification[]

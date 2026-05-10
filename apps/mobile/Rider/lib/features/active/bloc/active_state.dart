@@ -21,9 +21,10 @@ class ActiveNone extends ActiveState {
 
 class ActiveLoaded extends ActiveState {
   final RiderOrderDetail order;
-  const ActiveLoaded(this.order);
+  final String? errorMessage;
+  const ActiveLoaded(this.order, {this.errorMessage});
   @override
-  List<Object?> get props => [order];
+  List<Object?> get props => [order, errorMessage];
 }
 
 class ActiveError extends ActiveState {

@@ -20,6 +20,8 @@ export interface AdminUser {
   type: AdminType
   vendorId?: string
   isActive: boolean
+  receiveVendorEmails: boolean
+  receiveRiderEmails: boolean
   createdAt: string
   updatedAt: string
 }
@@ -91,6 +93,11 @@ export interface UpdateAdminRequest {
   lastName?: string
   isActive?: boolean
   role?: SystemAdminRole
+}
+
+export interface UpdateAdminEmailPrefsRequest {
+  receiveVendorEmails?: boolean
+  receiveRiderEmails?: boolean
 }
 
 export interface AuditLogFilters {

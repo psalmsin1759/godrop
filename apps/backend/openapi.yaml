@@ -321,6 +321,13 @@ components:
         isActive: { type: boolean }
         openingHours: { type: object }
         rejectionReason: { type: string }
+        documents:
+          type: object
+          description: Cloudinary URLs of uploaded compliance documents (only present for vendors that submitted them)
+          properties:
+            businessRegistrationUrl: { type: string, format: uri }
+            governmentIdUrl: { type: string, format: uri }
+            utilityBillUrl: { type: string, format: uri }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
@@ -626,6 +633,8 @@ components:
         lastName: { type: string }
         role: { type: string, enum: [SUPER_ADMIN, ADMIN] }
         isActive: { type: boolean }
+        receiveVendorEmails: { type: boolean, description: "Receives email when new vendor applications are submitted" }
+        receiveRiderEmails: { type: boolean, description: "Receives email when new riders register for KYC approval" }
         createdAt: { type: string, format: date-time }
 
     VendorSummary:
@@ -3054,18 +3063,32 @@ paths:
   /vendor:
     post:
       tags: [Vendor Onboarding]
-      summary: Apply as a vendor
+      summary: Apply as a vendor (multipart/form-data with documents)
       description: |
         Creates a vendor and an OWNER account in one step. The vendor starts in `PENDING` status
         and must be approved by a system admin before it is visible to customers.
-        A welcome email is sent to the owner's email address upon submission.
+
+        **Request format:** `multipart/form-data`. All text fields are included as form fields.
+        Three document files are required (image or PDF, max 10 MB each):
+        - `businessRegistration` — Nigerian business registration certificate (CAC)
+        - `governmentId` — Government-issued ID of the business owner (NIN, international passport, driver's licence)
+        - `utilityBill` — Recent utility bill showing business address
+
+        **Documents** are uploaded to Cloudinary with the following folder structure:
+        - `godrop/vendor-docs/business-registration/`
+        - `godrop/vendor-docs/government-id/`
+        - `godrop/vendor-docs/utility-bill/`
+
+        **Emails sent on success:**
+        1. Confirmation email to vendor owner — states admin will review within 1–2 business days.
+        2. Notification email to all system admins opted in to `receiveVendorEmails`.
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required: [name, type, address, lat, lng, phone, email, ownerFirstName, ownerLastName, ownerPassword]
+              required: [name, type, address, lat, lng, phone, email, ownerFirstName, ownerLastName, ownerPassword, businessRegistration, governmentId, utilityBill]
               properties:
                 name:
                   type: string
@@ -3092,23 +3115,33 @@ paths:
                   format: email
                   example: "owner@mamaskitchen.ng"
                 cuisines:
-                  type: array
-                  items: { type: string }
-                  example: ["Nigerian", "Soups"]
+                  type: string
+                  description: JSON-encoded array of strings, e.g. '["Nigerian","Soups"]'
+                  example: '["Nigerian","Soups"]'
                 openingHours:
-                  type: object
-                  example:
-                    monday: { open: "08:00", close: "22:00" }
-                    friday: { open: "08:00", close: "23:00" }
+                  type: string
+                  description: JSON-encoded object, e.g. '{"monday":{"open":"08:00","close":"22:00"}}'
                 ownerFirstName: { type: string, example: "Mama" }
                 ownerLastName: { type: string, example: "Ngozi" }
                 ownerPassword:
                   type: string
                   minLength: 8
                   example: "SecurePass123!"
+                businessRegistration:
+                  type: string
+                  format: binary
+                  description: Nigerian CAC certificate (image or PDF, max 10 MB)
+                governmentId:
+                  type: string
+                  format: binary
+                  description: Government-issued ID of the business owner (image or PDF, max 10 MB)
+                utilityBill:
+                  type: string
+                  format: binary
+                  description: Recent utility bill showing business address (image or PDF, max 10 MB)
       responses:
         "201":
-          description: Vendor application submitted. Welcome email sent.
+          description: Vendor application submitted. Confirmation email sent to owner; notification sent to admin recipients.
           content:
             application/json:
               schema:
@@ -3121,6 +3154,11 @@ paths:
                       - $ref: "#/components/schemas/VendorAdminProfile"
                       - type: object
                         description: Password excluded from response
+        "400":
+          description: Missing required documents
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
         "409":
           description: Email already registered
           content:
@@ -4119,7 +4157,7 @@ paths:
     patch:
       tags: [System Admin — Admins]
       summary: Update system admin (SUPER_ADMIN only)
-      description: Can update name, active status, and role.
+      description: Can update name, active status, role, and email notification preferences.
       security: [{ BearerAuth: [] }]
       parameters:
         - in: path
@@ -4136,6 +4174,8 @@ paths:
                 lastName: { type: string, maxLength: 50 }
                 isActive: { type: boolean }
                 role: { type: string, enum: [SUPER_ADMIN, ADMIN] }
+                receiveVendorEmails: { type: boolean, description: "Receive email when new vendor applications are submitted" }
+                receiveRiderEmails: { type: boolean, description: "Receive email when new riders register" }
       responses:
         "200":
           description: Updated admin profile
@@ -4148,6 +4188,48 @@ paths:
                   data: { $ref: "#/components/schemas/SystemAdminProfile" }
         "403":
           description: Forbidden — requires SUPER_ADMIN role
+
+  /admin/admins/{id}/email-prefs:
+    patch:
+      tags: [System Admin — Admins]
+      summary: Update admin email notification preferences (SUPER_ADMIN only)
+      description: |
+        Toggle which automated email notifications an admin receives.
+        - `receiveVendorEmails`: notified when a new vendor submits an application.
+        - `receiveRiderEmails`: notified when a new rider registers (for KYC approval).
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                receiveVendorEmails:
+                  type: boolean
+                  description: Receive email when new vendor applications are submitted
+                receiveRiderEmails:
+                  type: boolean
+                  description: Receive email when new riders register for KYC approval
+      responses:
+        "200":
+          description: Updated admin preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/SystemAdminProfile" }
+        "403":
+          description: Forbidden — requires SUPER_ADMIN role
+        "404":
+          description: Admin not found
 
   # ─ Vendor Management (ADMIN+) ─────────────────────────────────
   /admin/vendors:

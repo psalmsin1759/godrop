@@ -5,6 +5,7 @@ import type {
   LoginResponse,
   CreateAdminRequest,
   UpdateAdminRequest,
+  UpdateAdminEmailPrefsRequest,
   SystemAdminSettings,
   UpdateSystemAdminSettingsRequest,
   UpdateProfileRequest,
@@ -83,6 +84,12 @@ export const adminApi = api.injectEndpoints({
       invalidatesTags: ['Admin'],
       transformResponse: (res: Wrap<AdminUser>) => res.data,
     }),
+
+    updateAdminEmailPrefs: build.mutation<AdminUser, { id: string; body: UpdateAdminEmailPrefsRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/admins/${id}/email-prefs`, method: 'PATCH', body }),
+      invalidatesTags: ['Admin'],
+      transformResponse: (res: Wrap<AdminUser>) => res.data,
+    }),
   }),
   overrideExisting: false,
 })
@@ -97,6 +104,7 @@ export const {
   useGetAdminsQuery,
   useCreateAdminMutation,
   useUpdateAdminMutation,
+  useUpdateAdminEmailPrefsMutation,
   useGetPlatformSettingsQuery,
   useUpdatePlatformSettingsMutation,
 } = adminApi

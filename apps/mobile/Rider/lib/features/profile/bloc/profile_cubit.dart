@@ -80,7 +80,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   String _parseError(DioException e) {
-    final message = e.response?.data?['message'];
+    final message = e.response?.data?['error'];
     if (message is String) return message;
     return 'Something went wrong. Please try again.';
   }

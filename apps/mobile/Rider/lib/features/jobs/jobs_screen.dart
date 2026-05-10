@@ -23,10 +23,23 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
   @override
   bool get wantKeepAlive => true;
 
+  late final AppLifecycleListener _lifecycleListener;
+
   @override
   void initState() {
     super.initState();
-    context.read<JobsCubit>().loadJobs();
+    context.read<JobsCubit>()
+      ..loadJobs()
+      ..connectJobStream();
+    _lifecycleListener = AppLifecycleListener(
+      onResume: () => context.read<JobsCubit>().loadJobs(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    super.dispose();
   }
 
   @override

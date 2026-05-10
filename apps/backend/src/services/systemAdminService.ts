@@ -138,6 +138,8 @@ export async function listSystemAdmins(page: number, limit: number) {
         lastName: true,
         role: true,
         isActive: true,
+        receiveVendorEmails: true,
+        receiveRiderEmails: true,
         createdAt: true,
       },
     }),
@@ -153,6 +155,8 @@ export async function updateSystemAdmin(
     lastName?: string;
     isActive?: boolean;
     role?: Extract<AdminRole, "SUPER_ADMIN" | "ADMIN">;
+    receiveVendorEmails?: boolean;
+    receiveRiderEmails?: boolean;
   }
 ) {
   return prisma.admin.update({
@@ -166,6 +170,28 @@ export async function updateSystemAdmin(
       lastName: true,
       role: true,
       isActive: true,
+      receiveVendorEmails: true,
+      receiveRiderEmails: true,
+    },
+  });
+}
+
+export async function updateAdminEmailPrefs(
+  id: string,
+  data: { receiveVendorEmails?: boolean; receiveRiderEmails?: boolean }
+) {
+  return prisma.admin.update({
+    where: { id, type: AdminType.SYSTEM },
+    data,
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      receiveVendorEmails: true,
+      receiveRiderEmails: true,
     },
   });
 }

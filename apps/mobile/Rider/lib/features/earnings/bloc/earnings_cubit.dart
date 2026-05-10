@@ -61,7 +61,7 @@ class EarningsCubit extends Cubit<EarningsState> {
   String _parseError(DioException e) {
     final statusCode = e.response?.statusCode;
     if (statusCode == 400) {
-      final msg = e.response?.data?['message'];
+      final msg = e.response?.data?['error'];
       if (msg is String) return msg;
       return 'Insufficient balance or below minimum withdrawal (₦100).';
     }

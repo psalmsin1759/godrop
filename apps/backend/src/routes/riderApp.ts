@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { validate } from "../middleware/validate";
 import { requireRiderAuth } from "../middleware/riderAuth";
+import { documentUpload } from "../middleware/upload";
 import * as ctrl from "../controllers/riderAppController";
 import {
   riderRequestOtpSchema,
@@ -8,7 +9,6 @@ import {
   riderRefreshTokenSchema,
   riderLogoutSchema,
   updateRiderProfileSchema,
-  submitKycSchema,
   updateBankAccountSchema,
   updateAvatarSchema,
   setAvailabilitySchema,
@@ -28,6 +28,17 @@ import {
 
 const router = Router();
 
+// ─── Onboarding (public) ───────────────────────────────────────
+router.post(
+  "/onboard",
+  documentUpload.fields([
+    { name: "vehiclePapers", maxCount: 5 },
+    { name: "governmentId", maxCount: 1 },
+    { name: "guarantorGovernmentId", maxCount: 1 },
+  ]),
+  ctrl.onboardRider
+);
+
 // ─── Auth (public) ─────────────────────────────────────────────
 router.post("/auth/request-otp", validate(riderRequestOtpSchema), ctrl.requestOtp);
 router.post("/auth/verify-otp", validate(riderVerifyOtpSchema), ctrl.verifyOtp);
@@ -41,7 +52,15 @@ router.use(requireRiderAuth);
 router.get("/me", ctrl.getMe);
 router.patch("/me", validate(updateRiderProfileSchema), ctrl.updateMe);
 router.patch("/me/avatar", validate(updateAvatarSchema), ctrl.updateAvatar);
-router.post("/me/kyc", validate(submitKycSchema), ctrl.submitKyc);
+router.post(
+  "/me/kyc",
+  documentUpload.fields([
+    { name: "vehiclePapers", maxCount: 5 },
+    { name: "governmentId", maxCount: 1 },
+    { name: "guarantorGovernmentId", maxCount: 1 },
+  ]),
+  ctrl.submitKyc
+);
 router.patch("/me/bank", validate(updateBankAccountSchema), ctrl.updateBankAccount);
 router.patch("/me/availability", validate(setAvailabilitySchema), ctrl.setAvailability);
 router.post("/me/location", validate(updateLocationSchema), ctrl.updateLocation);

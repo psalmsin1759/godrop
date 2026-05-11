@@ -9,21 +9,30 @@ interface AuditLogsRaw {
   limit: number
 }
 
+function transform(res: AuditLogsRaw): PaginatedResponse<AuditLog> {
+  return {
+    items: res.data,
+    total: res.total,
+    page: res.page,
+    limit: res.limit,
+    pages: Math.ceil(res.total / res.limit),
+  }
+}
+
 export const auditApi = api.injectEndpoints({
   endpoints: (build) => ({
     getAuditLogs: build.query<PaginatedResponse<AuditLog>, AuditLogFilters>({
       query: (params) => ({ url: '/admin/audit-logs', params }),
       providesTags: ['AuditLog'],
-      transformResponse: (res: AuditLogsRaw): PaginatedResponse<AuditLog> => ({
-        items: res.data,
-        total: res.total,
-        page: res.page,
-        limit: res.limit,
-        pages: Math.ceil(res.total / res.limit),
-      }),
+      transformResponse: transform,
+    }),
+    getVendorAuditLogs: build.query<PaginatedResponse<AuditLog>, Omit<AuditLogFilters, 'vendorId'>>({
+      query: (params) => ({ url: '/vendor-admin/audit-logs', params }),
+      providesTags: ['AuditLog'],
+      transformResponse: transform,
     }),
   }),
   overrideExisting: false,
 })
 
-export const { useGetAuditLogsQuery } = auditApi
+export const { useGetAuditLogsQuery, useGetVendorAuditLogsQuery } = auditApi

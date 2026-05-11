@@ -8,11 +8,12 @@ import * as Dialog from '@radix-ui/react-dialog'
 import * as Label from '@radix-ui/react-label'
 import { Loader2, X } from 'lucide-react'
 import type { ProductCategory } from '@/types/api'
+import ImageUploader from './ImageUploader'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   description: z.string().max(500).optional(),
-  imageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  imageUrl: z.string().optional(),
   isActive: z.boolean(),
   sortOrder: z.coerce.number().int().min(0),
 })
@@ -34,11 +35,15 @@ export default function CategoryFormDialog({ open, onOpenChange, category, onSub
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', description: '', imageUrl: '', isActive: true, sortOrder: 0 },
   })
+
+  const imageUrl = watch('imageUrl') ?? ''
 
   useEffect(() => {
     if (open) {
@@ -56,10 +61,6 @@ export default function CategoryFormDialog({ open, onOpenChange, category, onSub
     }
   }, [open, category, reset])
 
-  async function handleFormSubmit(values: FormValues) {
-    await onSubmit(values)
-  }
-
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -76,7 +77,7 @@ export default function CategoryFormDialog({ open, onOpenChange, category, onSub
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(handleFormSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="px-6 py-5 space-y-4">
               <div className="space-y-1.5">
                 <Label.Root className="text-xs font-medium text-[#4b5563]" htmlFor="cat-name">
@@ -99,23 +100,18 @@ export default function CategoryFormDialog({ open, onOpenChange, category, onSub
                   id="cat-desc"
                   {...register('description')}
                   placeholder="Short description for this category…"
-                  rows={3}
+                  rows={2}
                   className="w-full text-xs border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#283c50] placeholder:text-[#9ca3af] resize-none focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
                 />
-                {errors.description && <p className="text-[11px] text-[#ea4d4d]">{errors.description.message}</p>}
               </div>
 
               <div className="space-y-1.5">
-                <Label.Root className="text-xs font-medium text-[#4b5563]" htmlFor="cat-image">
-                  Image URL
-                </Label.Root>
-                <input
-                  id="cat-image"
-                  {...register('imageUrl')}
-                  placeholder="https://…"
-                  className="w-full text-xs border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#283c50] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
+                <Label.Root className="text-xs font-medium text-[#4b5563]">Image</Label.Root>
+                <ImageUploader
+                  value={imageUrl}
+                  onChange={(url) => setValue('imageUrl', url)}
+                  onClear={() => setValue('imageUrl', '')}
                 />
-                {errors.imageUrl && <p className="text-[11px] text-[#ea4d4d]">{errors.imageUrl.message}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

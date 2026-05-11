@@ -48,7 +48,17 @@ const vendorNav = [
 
 const vendorReportsNav = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs' },
   { href: '/team', icon: UserCog, label: 'Team' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
+]
+
+const vendorStaffNav = [
+  { href: '/orders', icon: ShoppingBag, label: 'Orders' },
+  { href: '/catalog', icon: Tag, label: 'Catalogue' },
+]
+
+const vendorStaffReportsNav = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
@@ -57,8 +67,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
   const { data: session } = useSession()
 
   const isVendor = session?.admin?.type === 'VENDOR'
-  const mainNav = isVendor ? vendorNav : systemNav
-  const reportsNav = isVendor ? vendorReportsNav : systemReportsNav
+  const isVendorStaff = isVendor && session?.admin?.role === 'STAFF'
+  const mainNav = isVendorStaff ? vendorStaffNav : isVendor ? vendorNav : systemNav
+  const reportsNav = isVendorStaff ? vendorStaffReportsNav : isVendor ? vendorReportsNav : systemReportsNav
 
   const adminInitials = session?.admin
     ? `${session.admin.firstName[0]}${session.admin.lastName[0]}`

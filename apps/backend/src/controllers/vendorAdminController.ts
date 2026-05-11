@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { ok, fail } from "../utils/response";
 import * as svc from "../services/vendorAdminService";
+import * as systemSvc from "../services/systemAdminService";
+import { uploadBuffer } from "../services/cloudinaryService";
 import * as notifSvc from "../services/notificationService";
 import { paginate, buildMeta } from "../utils/pagination";
 
@@ -362,6 +364,33 @@ export async function markAllNotificationsRead(req: Request, res: Response, next
   try {
     await notifSvc.markAllNotificationsRead(req.admin!.id);
     return ok(res, { message: "All notifications marked as read" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function uploadCatalogImage(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) return fail(res, "No file uploaded", 400);
+    const url = await uploadBuffer(req.file.buffer, "godrop/catalog");
+    return ok(res, { data: { url } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listVendorAuditLogs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await systemSvc.listAuditLogs({
+      vendorId: req.admin!.vendorId!,
+      action: req.query.action as string | undefined,
+      entity: req.query.entity as string | undefined,
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined,
+      page: Number(req.query.page ?? 1),
+      limit: Number(req.query.limit ?? 15),
+    });
+    return ok(res, result);
   } catch (err) {
     next(err);
   }

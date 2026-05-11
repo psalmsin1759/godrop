@@ -33,6 +33,56 @@ export async function updateRiderProfile(
   });
 }
 
+export interface RiderDocuments {
+  governmentIdUrl?: string;
+  vehiclePaperUrls?: string[];
+}
+
+export async function onboardRider(
+  data: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    streetAddress?: string;
+    city?: string;
+    state?: string;
+    vehicleType: string;
+    vehiclePlate?: string;
+    vehicleColor?: string;
+    vehicleModel?: string;
+    vehicleYear?: number;
+    driverLicenseNumber?: string;
+    driverLicenseExpiry?: string;
+    vehicleInsuranceExpiry?: string;
+    bvn?: string;
+    nin?: string;
+  },
+  guarantors: RiderGuarantor[],
+  documents: RiderDocuments
+) {
+  const existing = await prisma.rider.findUnique({ where: { phone: data.phone } });
+  if (existing) throw new Error("A rider with this phone number already exists");
+  if (data.email) {
+    const emailConflict = await prisma.rider.findUnique({ where: { email: data.email } });
+    if (emailConflict) throw new Error("A rider with this email already exists");
+  }
+
+  return prisma.rider.create({
+    data: {
+      ...data,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+      driverLicenseExpiry: data.driverLicenseExpiry ? new Date(data.driverLicenseExpiry) : undefined,
+      vehicleInsuranceExpiry: data.vehicleInsuranceExpiry ? new Date(data.vehicleInsuranceExpiry) : undefined,
+      guarantors: guarantors.length > 0 ? (guarantors as any) : undefined,
+      documents: Object.keys(documents).length > 0 ? (documents as any) : undefined,
+      kycStatus: "SUBMITTED",
+    },
+  });
+}
+
 export async function submitKyc(
   riderId: string,
   data: {
@@ -47,13 +97,20 @@ export async function submitKyc(
     bvn?: string;
     nin?: string;
     guarantors?: RiderGuarantor[];
-    documents?: Record<string, string>;
+    documents?: RiderDocuments;
   }
 ) {
   return prisma.rider.update({
     where: { id: riderId },
     data: {
-      ...data,
+      vehicleType: data.vehicleType,
+      vehiclePlate: data.vehiclePlate,
+      vehicleColor: data.vehicleColor,
+      vehicleModel: data.vehicleModel,
+      vehicleYear: data.vehicleYear,
+      driverLicenseNumber: data.driverLicenseNumber,
+      bvn: data.bvn,
+      nin: data.nin,
       driverLicenseExpiry: data.driverLicenseExpiry ? new Date(data.driverLicenseExpiry) : undefined,
       vehicleInsuranceExpiry: data.vehicleInsuranceExpiry ? new Date(data.vehicleInsuranceExpiry) : undefined,
       guarantors: data.guarantors ? (data.guarantors as any) : undefined,

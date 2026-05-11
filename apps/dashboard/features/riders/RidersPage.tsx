@@ -30,6 +30,9 @@ import {
   Package,
   Users,
   Wallet,
+  FileText,
+  ExternalLink,
+  FileCheck,
 } from 'lucide-react'
 
 function formatNaira(kobo: number) {
@@ -359,15 +362,102 @@ function RiderDetailContent({ rider }: { rider: RiderDetail }) {
           <p className="text-[11px] font-bold text-[#3454d1] uppercase tracking-wider mb-3">Guarantors</p>
           <div className="space-y-3">
             {rider.guarantors.map((g, i) => (
-              <div key={i} className="bg-[#f9fafb] rounded-lg p-3 space-y-1">
+              <div key={i} className="bg-[#f9fafb] rounded-lg p-3 space-y-1.5">
                 <p className="text-xs font-semibold text-[#283c50]">{g.name}</p>
-                <p className="text-[11px] text-[#6b7885]">{g.phone} · {g.relationship}</p>
-                {g.address && <p className="text-[11px] text-[#9ca3af]">{g.address}</p>}
+                <p className="text-[11px] text-[#6b7885] font-mono">{g.phone}</p>
+                <p className="text-[11px] text-[#9ca3af]">{g.address}</p>
+                {g.governmentIdUrl && (
+                  <a
+                    href={g.governmentIdUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#3454d1] hover:underline mt-0.5"
+                  >
+                    <FileText className="w-3 h-3" /> View Gov. ID <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                )}
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Documents */}
+      <div className="px-5 py-4 border-b border-[#f9fafb]">
+        <p className="text-[11px] font-bold text-[#3454d1] uppercase tracking-wider mb-3">
+          <FileCheck className="w-3 h-3 inline mr-1" />Documents
+        </p>
+        <div className="space-y-2">
+          {/* Government ID */}
+          <div
+            className="flex items-center gap-3 p-2.5 rounded-lg border"
+            style={{
+              borderColor: rider.documents?.governmentIdUrl ? '#3454d1' : '#e5e7eb',
+              backgroundColor: rider.documents?.governmentIdUrl ? '#eef1fb' : '#fafafa',
+            }}
+          >
+            <div
+              className="w-7 h-7 rounded flex items-center justify-center shrink-0"
+              style={{ background: rider.documents?.governmentIdUrl ? '#3454d1' : '#e5e7eb' }}
+            >
+              <FileText className="w-3.5 h-3.5" style={{ color: rider.documents?.governmentIdUrl ? '#fff' : '#9ca3af' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-[#283c50]">Government-Issued ID</p>
+              {rider.documents?.governmentIdUrl ? (
+                <a
+                  href={rider.documents.governmentIdUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#3454d1] hover:underline"
+                >
+                  View <ExternalLink className="w-2.5 h-2.5" />
+                </a>
+              ) : (
+                <p className="text-[10px] text-[#ea4d4d] font-medium">Not uploaded</p>
+              )}
+            </div>
+          </div>
+
+          {/* Vehicle papers */}
+          {rider.documents?.vehiclePaperUrls && rider.documents.vehiclePaperUrls.length > 0 ? (
+            rider.documents.vehiclePaperUrls.map((url, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-2.5 rounded-lg border"
+                style={{ borderColor: '#3454d1', backgroundColor: '#eef1fb' }}
+              >
+                <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-[#3454d1]">
+                  <FileText className="w-3.5 h-3.5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-[#283c50]">Vehicle Paper {i + 1}</p>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#3454d1] hover:underline"
+                  >
+                    View <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div
+              className="flex items-center gap-3 p-2.5 rounded-lg border border-[#e5e7eb] bg-[#fafafa]"
+            >
+              <div className="w-7 h-7 rounded flex items-center justify-center shrink-0 bg-[#e5e7eb]">
+                <FileText className="w-3.5 h-3.5 text-[#9ca3af]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-[#283c50]">Vehicle Papers</p>
+                <p className="text-[10px] text-[#ea4d4d] font-medium">Not uploaded</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="px-5 py-4">
         <p className="text-[10px] text-[#9ca3af]">

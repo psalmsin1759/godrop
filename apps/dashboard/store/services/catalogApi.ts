@@ -95,6 +95,11 @@ export const catalogApi = api.injectEndpoints({
       invalidatesTags: (_r, _e, { id }) => [{ type: 'Product', id }, 'Product'],
       transformResponse: (res: Wrap<ProductAdmin>) => res.data,
     }),
+
+    uploadCatalogImage: build.mutation<{ url: string }, FormData>({
+      query: (body) => ({ url: '/vendor-admin/catalog/image', method: 'POST', body, formData: true }),
+      transformResponse: (res: Wrap<{ url: string }>) => res.data,
+    }),
   }),
   overrideExisting: false,
 })
@@ -112,4 +117,5 @@ export const {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useToggleProductAvailabilityMutation,
+  useUploadCatalogImageMutation,
 } = catalogApi

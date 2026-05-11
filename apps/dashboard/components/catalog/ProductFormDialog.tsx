@@ -8,13 +8,14 @@ import * as Dialog from '@radix-ui/react-dialog'
 import * as Label from '@radix-ui/react-label'
 import { Loader2, X } from 'lucide-react'
 import type { ProductAdmin, ProductCategory } from '@/types/api'
+import ImageUploader from './ImageUploader'
 
 const schema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   name: z.string().min(1, 'Name is required').max(200),
   description: z.string().max(1000).optional(),
   priceKobo: z.coerce.number().int().min(1, 'Price must be at least ₦0.01'),
-  imageUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  imageUrl: z.string().optional(),
   isAvailable: z.boolean(),
   stock: z.coerce.number().int().min(0).optional().nullable(),
 })
@@ -44,6 +45,8 @@ export default function ProductFormDialog({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -57,6 +60,8 @@ export default function ProductFormDialog({
       stock: null,
     },
   })
+
+  const imageUrl = watch('imageUrl') ?? ''
 
   useEffect(() => {
     if (open) {
@@ -174,23 +179,19 @@ export default function ProductFormDialog({
                     type="number"
                     min={0}
                     {...register('stock')}
-                    placeholder="Leave blank = unlimited"
+                    placeholder="Blank = unlimited"
                     className="w-full text-xs border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#283c50] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label.Root className="text-xs font-medium text-[#4b5563]" htmlFor="prod-image">
-                  Image URL
-                </Label.Root>
-                <input
-                  id="prod-image"
-                  {...register('imageUrl')}
-                  placeholder="https://…"
-                  className="w-full text-xs border border-[#e5e7eb] rounded-lg px-3 py-2 text-[#283c50] placeholder:text-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
+                <Label.Root className="text-xs font-medium text-[#4b5563]">Image</Label.Root>
+                <ImageUploader
+                  value={imageUrl}
+                  onChange={(url) => setValue('imageUrl', url)}
+                  onClear={() => setValue('imageUrl', '')}
                 />
-                {errors.imageUrl && <p className="text-[11px] text-[#ea4d4d]">{errors.imageUrl.message}</p>}
               </div>
 
               <div>

@@ -26,6 +26,12 @@ export interface AdminUser {
   updatedAt: string
 }
 
+export interface VendorDocuments {
+  businessRegistrationUrl?: string
+  governmentIdUrl?: string
+  utilityBillUrl?: string
+}
+
 export interface Vendor {
   id: string
   name: string
@@ -39,12 +45,15 @@ export interface Vendor {
   status: VendorStatus
   rating?: number
   isOpen?: boolean
+  isActive?: boolean
   deliveryFeeKobo?: number
   estimatedMinutes?: number
   openingHours?: Record<string, { open: string; close: string }>
   cuisines?: string[]
   ownerFirstName?: string
   ownerLastName?: string
+  rejectionReason?: string | null
+  documents?: VendorDocuments | null
   createdAt: string
   updatedAt: string
 }
@@ -727,9 +736,13 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER'
 export interface RiderGuarantor {
   name: string
   phone: string
-  relationship: string
-  address?: string
-  occupation?: string
+  address: string
+  governmentIdUrl?: string
+}
+
+export interface RiderDocuments {
+  governmentIdUrl?: string
+  vehiclePaperUrls?: string[]
 }
 
 export interface Rider {
@@ -773,6 +786,7 @@ export interface RiderDetail extends Omit<Rider, '_count'> {
   emergencyContactPhone?: string | null
   emergencyContactRelationship?: string | null
   guarantors?: RiderGuarantor[] | null
+  documents?: RiderDocuments | null
   updatedAt: string
 }
 

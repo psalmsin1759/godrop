@@ -5,7 +5,7 @@ import { AdminRole, AdminType, VendorType, OrderStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApplicationEmail } from "./emailService";
 import { notifyCustomerOrderUpdate } from "./fcmService";
-import { uploadDocument } from "./cloudinaryService";
+import { uploadDocument, deleteImageByUrl } from "./cloudinaryService";
 
 const SALT_ROUNDS = 12;
 
@@ -150,6 +150,9 @@ export async function updateCategory(
 ) {
   const cat = await prisma.productCategory.findFirst({ where: { id, vendorId } });
   if (!cat) throw new Error("Category not found");
+  if (cat.imageUrl && data.imageUrl !== undefined && data.imageUrl !== cat.imageUrl) {
+    await deleteImageByUrl(cat.imageUrl);
+  }
   return prisma.productCategory.update({ where: { id }, data });
 }
 
@@ -164,6 +167,7 @@ export async function deleteCategory(id: string, vendorId: string) {
   if (!cat) throw new Error("Category not found");
   const productCount = await prisma.product.count({ where: { categoryId: id } });
   if (productCount > 0) throw new Error("Cannot delete a category that has products");
+  if (cat.imageUrl) await deleteImageByUrl(cat.imageUrl);
   await prisma.productCategory.delete({ where: { id } });
 }
 
@@ -228,6 +232,10 @@ export async function updateProduct(
     if (!cat) throw new Error("Category not found");
   }
 
+  if (product.imageUrl && data.imageUrl !== undefined && data.imageUrl !== product.imageUrl) {
+    await deleteImageByUrl(product.imageUrl);
+  }
+
   return prisma.product.update({ where: { id }, data });
 }
 
@@ -236,6 +244,7 @@ export async function deleteProduct(id: string, vendorId: string) {
     where: { id, category: { vendorId } },
   });
   if (!product) throw new Error("Product not found");
+  if (product.imageUrl) await deleteImageByUrl(product.imageUrl);
   await prisma.product.delete({ where: { id } });
 }
 

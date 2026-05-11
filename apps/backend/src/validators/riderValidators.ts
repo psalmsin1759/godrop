@@ -4,9 +4,8 @@ import { RiderKycStatus } from "@prisma/client";
 const guarantorSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(7),
-  relationship: z.string().min(1),
-  address: z.string().optional(),
-  occupation: z.string().optional(),
+  address: z.string().min(1),
+  governmentIdUrl: z.string().url().optional(),
 });
 
 const riderBaseSchema = z.object({

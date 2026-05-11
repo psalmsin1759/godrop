@@ -39,7 +39,7 @@ function inputCls() {
 
 function CreateAdminDialog({ onClose }: { onClose: () => void }) {
   const [createAdmin, { isLoading }] = useCreateAdminMutation()
-  const [form, setForm] = useState({ email: '', firstName: '', lastName: '', password: '', role: 'ADMIN' as SystemAdminRole })
+  const [form, setForm] = useState({ email: '', firstName: '', lastName: '', role: 'ADMIN' as SystemAdminRole })
   const [error, setError] = useState('')
 
   function set<K extends keyof typeof form>(field: K, value: typeof form[K]) {
@@ -85,12 +85,6 @@ function CreateAdminDialog({ onClose }: { onClose: () => void }) {
             <label className="block text-[11px] font-medium text-[#6b7885] mb-1">Email *</label>
             <input required type="email" value={form.email}
               onChange={(e) => set('email', e.target.value)}
-              className={inputCls()} />
-          </div>
-          <div>
-            <label className="block text-[11px] font-medium text-[#6b7885] mb-1">Password * (min. 8 chars)</label>
-            <input required type="password" minLength={8} value={form.password}
-              onChange={(e) => set('password', e.target.value)}
               className={inputCls()} />
           </div>
           <div>

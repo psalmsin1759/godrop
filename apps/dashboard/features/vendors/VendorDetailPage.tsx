@@ -7,6 +7,7 @@ import { formatDate } from '@/lib/utils'
 import {
   ArrowLeft, Loader2, Store, MapPin, Phone, Mail, Star,
   Clock, CheckCircle, XCircle, PauseCircle, RefreshCw,
+  FileText, ExternalLink, FileCheck,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -355,6 +356,67 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                   </span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Documents */}
+        <div className="card overflow-hidden">
+          <div className="card-header">
+            <h3 className="card-title flex items-center gap-1.5">
+              <FileCheck className="w-3.5 h-3.5 text-[#9ca3af]" /> Submitted Documents
+            </h3>
+          </div>
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { key: 'businessRegistrationUrl', label: 'Business Registration (CAC)', hint: 'Certificate of incorporation' },
+              { key: 'governmentIdUrl', label: 'Government-Issued ID', hint: 'NIN, passport, driver\'s licence' },
+              { key: 'utilityBillUrl', label: 'Utility Bill', hint: 'Proof of business address' },
+            ].map(({ key, label, hint }) => {
+              const url = vendor.documents?.[key as keyof typeof vendor.documents]
+              return (
+                <div
+                  key={key}
+                  className="flex items-start gap-3 p-3 rounded-lg border"
+                  style={{ borderColor: url ? '#3454d1' : '#e5e7eb', backgroundColor: url ? '#eef1fb' : '#fafafa' }}
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: url ? '#3454d1' : '#e5e7eb' }}
+                  >
+                    <FileText className="w-4 h-4" style={{ color: url ? '#fff' : '#9ca3af' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-[#283c50] leading-snug">{label}</p>
+                    <p className="text-[11px] text-[#9ca3af] mt-0.5">{hint}</p>
+                    {url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#3454d1] hover:underline mt-1.5"
+                      >
+                        View document <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <p className="text-[11px] text-[#ea4d4d] font-medium mt-1.5">Not uploaded</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Rejection / suspension reason */}
+        {vendor.rejectionReason && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-[#fca5a5] bg-[#fdf0f0] px-4 py-3">
+            <XCircle className="w-4 h-4 text-[#ea4d4d] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-[#ea4d4d]">
+                {vendor.status === 'REJECTED' ? 'Rejection reason' : 'Suspension reason'}
+              </p>
+              <p className="text-xs text-[#4b5563] mt-0.5">{vendor.rejectionReason}</p>
             </div>
           </div>
         )}

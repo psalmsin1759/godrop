@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { useGetAuditLogsQuery } from './store/auditApi'
-import type { AuditLogFilters } from '@/types/api'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useGetAuditLogsQuery, useGetVendorAuditLogsQuery } from './store/auditApi'
 import { Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertTriangle, RefreshCw } from 'lucide-react'
 
 const actionColors: Record<string, { bg: string; text: string }> = {
@@ -21,13 +22,29 @@ function actionStyle(action: string) {
 }
 
 export default function DisputesPage() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const admin = session?.admin
+  const isVendor = admin?.type === 'VENDOR'
+  const isVendorStaff = isVendor && admin?.role === 'STAFF'
+
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [entity, setEntity] = useState('')
 
-  const filters: AuditLogFilters = { page, limit: 15, ...(entity ? { entity } : {}) }
+  useEffect(() => {
+    if (isVendorStaff) router.replace('/orders')
+  }, [isVendorStaff, router])
 
-  const { data, isLoading, isError, refetch } = useGetAuditLogsQuery(filters)
+  if (isVendorStaff) return null
+
+  const vendorFilters = { page, limit: 15, ...(entity ? { entity } : {}) }
+  const systemFilters = { page, limit: 15, ...(entity ? { entity } : {}) }
+
+  const vendorQuery = useGetVendorAuditLogsQuery(vendorFilters, { skip: !isVendor || isVendorStaff })
+  const systemQuery = useGetAuditLogsQuery(systemFilters, { skip: isVendor })
+
+  const { data, isLoading, isError, refetch } = isVendor ? vendorQuery : systemQuery
 
   const logs = data?.items ?? []
   const totalPages = data?.pages ?? 1
@@ -50,7 +67,9 @@ export default function DisputesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-[#283c50]">Audit Log</h1>
-          <p className="text-xs text-[#9ca3af] mt-0.5">Track all admin actions across the platform</p>
+          <p className="text-xs text-[#9ca3af] mt-0.5">
+            {isVendor ? 'Activity log for your store' : 'Track all admin actions across the platform'}
+          </p>
         </div>
         <button
           onClick={() => refetch()}

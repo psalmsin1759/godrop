@@ -5,9 +5,8 @@ import { RiderKycStatus } from "@prisma/client";
 export interface RiderGuarantor {
   name: string;
   phone: string;
-  relationship: string;
-  address?: string;
-  occupation?: string;
+  address: string;
+  governmentIdUrl?: string;
 }
 
 export async function listRiders(opts: {

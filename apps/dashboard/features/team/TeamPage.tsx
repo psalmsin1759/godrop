@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import {
   useGetTeamMembersQuery,
   useInviteTeamMemberMutation,
@@ -172,9 +174,18 @@ function MemberActions({ member, onClose }: { member: TeamMember; onClose: () =>
 }
 
 export default function TeamPage() {
+  const { data: session } = useSession()
+  const router = useRouter()
   const { data: members = [], isLoading, isError } = useGetTeamMembersQuery()
   const [showInvite, setShowInvite] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const isStaff = session?.admin?.role === 'STAFF'
+
+  useEffect(() => {
+    if (isStaff) router.replace('/orders')
+  }, [isStaff, router])
+
+  if (isStaff) return null
 
   return (
     <div className="space-y-5" onClick={() => setOpenMenu(null)}>
@@ -185,13 +196,15 @@ export default function TeamPage() {
           <h1 className="text-lg font-bold text-[#283c50]">Team</h1>
           <p className="text-xs text-[#9ca3af] mt-0.5">Manage your store staff and permissions</p>
         </div>
-        <button
-          onClick={() => setShowInvite(true)}
-          className="flex items-center gap-1.5 text-xs text-white font-semibold px-3 py-1.5 rounded"
-          style={{ backgroundColor: '#283c50' }}
-        >
-          <Plus className="w-3.5 h-3.5" /> Invite Member
-        </button>
+        {!isStaff && (
+          <button
+            onClick={() => setShowInvite(true)}
+            className="flex items-center gap-1.5 text-xs text-white font-semibold px-3 py-1.5 rounded"
+            style={{ backgroundColor: '#283c50' }}
+          >
+            <Plus className="w-3.5 h-3.5" /> Invite Member
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-4">

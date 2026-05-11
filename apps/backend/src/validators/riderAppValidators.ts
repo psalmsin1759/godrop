@@ -4,9 +4,8 @@ import { OrderStatus, OrderType } from "@prisma/client";
 const guarantorSchema = z.object({
   name: z.string().min(1),
   phone: z.string().min(7),
-  relationship: z.string().min(1),
-  address: z.string().optional(),
-  occupation: z.string().optional(),
+  address: z.string().min(1),
+  governmentIdUrl: z.string().url().optional(),
 });
 
 export const riderRequestOtpSchema = z.object({
@@ -42,19 +41,18 @@ export const updateRiderProfileSchema = z.object({
   guarantors: z.array(guarantorSchema).max(3).nullish(),
 });
 
-export const submitKycSchema = z.object({
+// Used to parse JSON fields from multipart/form-data body
+export const submitKycBodySchema = z.object({
   vehicleType: z.enum(["BICYCLE", "MOTORCYCLE", "CAR", "VAN"]).optional(),
   vehiclePlate: z.string().optional(),
   vehicleColor: z.string().optional(),
   vehicleModel: z.string().optional(),
-  vehicleYear: z.number().int().min(1990).max(2030).optional(),
+  vehicleYear: z.coerce.number().int().min(1990).max(2030).optional(),
   driverLicenseNumber: z.string().optional(),
   driverLicenseExpiry: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   vehicleInsuranceExpiry: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   bvn: z.string().length(11).optional(),
   nin: z.string().length(11).optional(),
-  guarantors: z.array(guarantorSchema).max(3).optional(),
-  documents: z.record(z.string()).optional(),
 });
 
 export const updateBankAccountSchema = z.object({

@@ -409,7 +409,7 @@ export default function VendorOnboardingPage() {
           </p>
 
           {[
-            { icon: Store, text: 'Reach thousands of customers across Lagos' },
+            { icon: Store, text: 'Reach thousands of customers across your location' },
             { icon: ArrowRight, text: 'Same-day delivery powered by our rider network' },
             { icon: Building2, text: 'Simple, transparent earnings — paid weekly' },
             { icon: Phone, text: 'Dedicated vendor support team' },

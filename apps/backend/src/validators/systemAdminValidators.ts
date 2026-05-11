@@ -16,7 +16,6 @@ export const createSystemAdminSchema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
-  password: z.string().min(8),
   role: z.enum([AdminRole.SUPER_ADMIN, AdminRole.ADMIN]).optional().default(AdminRole.ADMIN),
 });
 

@@ -1,9 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
 import { AdminRole, AdminType, UserStatus, VendorStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
-import { sendEmail, vendorApprovedEmail, vendorRejectedEmail } from "./emailService";
+import { sendEmail, systemAdminInviteEmail, vendorApprovedEmail, vendorRejectedEmail } from "./emailService";
 
 const SALT_ROUNDS = 12;
 
@@ -101,13 +102,13 @@ export async function createSystemAdmin(data: {
   email: string;
   firstName: string;
   lastName: string;
-  password: string;
   role?: Extract<AdminRole, "SUPER_ADMIN" | "ADMIN">;
 }) {
   const existing = await prisma.admin.findUnique({ where: { email: data.email } });
   if (existing) throw new Error("An admin with this email already exists");
 
-  const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const tempPassword = nanoid(12);
+  const hashed = await bcrypt.hash(tempPassword, SALT_ROUNDS);
   const admin = await prisma.admin.create({
     data: {
       type: AdminType.SYSTEM,
@@ -118,6 +119,14 @@ export async function createSystemAdmin(data: {
       role: data.role ?? AdminRole.ADMIN,
     },
   });
+
+  await sendEmail(systemAdminInviteEmail({
+    firstName: data.firstName,
+    email: data.email,
+    role: admin.role,
+    temporaryPassword: tempPassword,
+  }));
+
   const { password: _pw, ...safe } = admin;
   return safe;
 }

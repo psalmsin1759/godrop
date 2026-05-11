@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validate } from "../middleware/validate";
 import { requireVendorAuth, requireVendorRole } from "../middleware/vendorAuth";
 import { auditVendorAction } from "../middleware/auditLog";
+import { catalogImageUpload } from "../middleware/upload";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -20,6 +21,7 @@ import {
 } from "../validators/vendorAdminValidators";
 import * as ctrl from "../controllers/vendorAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
+import { auditLogQuerySchema } from "../validators/systemAdminValidators";
 
 const router = Router();
 
@@ -43,63 +45,66 @@ router.patch(
 router.get("/me/settings", ctrl.getProfileSettings);
 router.patch("/me/settings", validate(updateVendorAdminSettingsSchema), ctrl.updateProfileSettings);
 
-// Categories (MANAGER+)
-router.get("/categories", requireVendorRole("MANAGER"), ctrl.listCategories);
+// ─── Catalog image upload (STAFF+) ───────────────────────────
+router.post("/catalog/image", requireVendorRole("STAFF"), catalogImageUpload.single("file"), ctrl.uploadCatalogImage);
+
+// Categories (STAFF+)
+router.get("/categories", requireVendorRole("STAFF"), ctrl.listCategories);
 router.post(
   "/categories",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   validate(createCategorySchema),
   auditVendorAction({ action: "CREATE_CATEGORY", entity: "ProductCategory" }),
   ctrl.createCategory
 );
-router.get("/categories/:id", requireVendorRole("MANAGER"), ctrl.getCategory);
+router.get("/categories/:id", requireVendorRole("STAFF"), ctrl.getCategory);
 router.put(
   "/categories/:id",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   validate(updateCategorySchema),
   auditVendorAction({ action: "UPDATE_CATEGORY", entity: "ProductCategory", getEntityId: (r) => r.params.id }),
   ctrl.updateCategory
 );
 router.patch(
   "/categories/:id/active",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   validate(toggleCategoryActiveSchema),
   auditVendorAction({ action: "TOGGLE_CATEGORY_ACTIVE", entity: "ProductCategory", getEntityId: (r) => r.params.id }),
   ctrl.toggleCategoryActive
 );
 router.delete(
   "/categories/:id",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   auditVendorAction({ action: "DELETE_CATEGORY", entity: "ProductCategory", getEntityId: (r) => r.params.id }),
   ctrl.deleteCategory
 );
 
-// Products (MANAGER+)
-router.get("/products", requireVendorRole("MANAGER"), ctrl.listProducts);
-router.get("/products/:id", requireVendorRole("MANAGER"), ctrl.getProduct);
+// Products (STAFF+)
+router.get("/products", requireVendorRole("STAFF"), ctrl.listProducts);
+router.get("/products/:id", requireVendorRole("STAFF"), ctrl.getProduct);
 router.post(
   "/products",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   validate(createProductSchema),
   auditVendorAction({ action: "CREATE_PRODUCT", entity: "Product" }),
   ctrl.createProduct
 );
 router.put(
   "/products/:id",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   validate(updateProductSchema),
   auditVendorAction({ action: "UPDATE_PRODUCT", entity: "Product", getEntityId: (r) => r.params.id }),
   ctrl.updateProduct
 );
 router.delete(
   "/products/:id",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   auditVendorAction({ action: "DELETE_PRODUCT", entity: "Product", getEntityId: (r) => r.params.id }),
   ctrl.deleteProduct
 );
 router.patch(
   "/products/:id/availability",
-  requireVendorRole("MANAGER"),
+  requireVendorRole("STAFF"),
   validate(toggleAvailabilitySchema),
   auditVendorAction({ action: "TOGGLE_PRODUCT_AVAILABILITY", entity: "Product", getEntityId: (r) => r.params.id }),
   ctrl.toggleProductAvailability
@@ -174,6 +179,14 @@ router.delete(
   requireVendorRole("OWNER"),
   auditVendorAction({ action: "REMOVE_TEAM_MEMBER", entity: "VendorAdmin", getEntityId: (r) => r.params.memberId }),
   ctrl.removeTeamMember
+);
+
+// ─── Audit Logs (MANAGER+) ───────────────────────────────────
+router.get(
+  "/audit-logs",
+  requireVendorRole("MANAGER"),
+  validate(auditLogQuerySchema, "query"),
+  ctrl.listVendorAuditLogs
 );
 
 // ─── Notifications ────────────────────────────────────────────

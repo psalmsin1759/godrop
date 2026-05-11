@@ -6,8 +6,58 @@ import * as riderAuthService from "../services/riderAuthService";
 import * as riderAppService from "../services/riderAppService";
 import * as riderOrderService from "../services/riderOrderService";
 import * as riderEarningService from "../services/riderEarningService";
+import { uploadDocument } from "../services/cloudinaryService";
+import { submitKycBodySchema } from "../validators/riderAppValidators";
+import { onboardRiderSchema } from "../validators/riderOnboardingValidators";
 import { prisma } from "../lib/prisma";
 import { OrderStatus } from "@prisma/client";
+
+// ─── Onboarding (public) ──────────────────────────────────────
+
+export async function onboardRider(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = onboardRiderSchema.safeParse(req.body);
+    if (!parsed.success) return fail(res, parsed.error.errors[0].message, 400);
+
+    const files = (req.files ?? {}) as Record<string, Express.Multer.File[]>;
+
+    let guarantors: any[] = [];
+    if (req.body.guarantors) {
+      try {
+        guarantors = JSON.parse(req.body.guarantors);
+        if (!Array.isArray(guarantors)) return fail(res, "guarantors must be a JSON array", 400);
+      } catch {
+        return fail(res, "Invalid guarantors JSON", 400);
+      }
+    }
+
+    const vehiclePaperUrls: string[] = [];
+    for (const file of files.vehiclePapers ?? []) {
+      const url = await uploadDocument(file.buffer, "godrop/rider-docs/vehicle-papers");
+      vehiclePaperUrls.push(url);
+    }
+
+    let governmentIdUrl: string | undefined;
+    if (files.governmentId?.[0]) {
+      governmentIdUrl = await uploadDocument(files.governmentId[0].buffer, "godrop/rider-docs/government-id");
+    }
+
+    if (files.guarantorGovernmentId?.[0] && guarantors.length > 0) {
+      const url = await uploadDocument(files.guarantorGovernmentId[0].buffer, "godrop/rider-docs/guarantor-id");
+      guarantors[0].governmentIdUrl = url;
+    }
+
+    const documents: riderAppService.RiderDocuments = {};
+    if (governmentIdUrl) documents.governmentIdUrl = governmentIdUrl;
+    if (vehiclePaperUrls.length > 0) documents.vehiclePaperUrls = vehiclePaperUrls;
+
+    const rider = await riderAppService.onboardRider(parsed.data, guarantors, documents);
+    return ok(res, { data: rider });
+  } catch (err: any) {
+    if (err.message?.includes("already exists")) return fail(res, err.message, 409);
+    next(err);
+  }
+}
 
 // ─── Auth ──────────────────────────────────────────────────────
 
@@ -90,7 +140,51 @@ export async function updateAvatar(req: Request, res: Response, next: NextFuncti
 
 export async function submitKyc(req: Request, res: Response, next: NextFunction) {
   try {
-    const rider = await riderAppService.submitKyc(req.rider!.id, req.body);
+    const parsed = submitKycBodySchema.safeParse(req.body);
+    if (!parsed.success) return fail(res, parsed.error.errors[0].message, 400);
+
+    const files = (req.files ?? {}) as Record<string, Express.Multer.File[]>;
+
+    // Parse guarantors from JSON string in form body
+    let guarantors: any[] = [];
+    if (req.body.guarantors) {
+      try {
+        guarantors = JSON.parse(req.body.guarantors);
+        if (!Array.isArray(guarantors)) return fail(res, "guarantors must be a JSON array", 400);
+      } catch {
+        return fail(res, "Invalid guarantors JSON", 400);
+      }
+    }
+
+    // Upload vehicle papers (multiple)
+    const vehiclePaperUrls: string[] = [];
+    for (const file of files.vehiclePapers ?? []) {
+      const url = await uploadDocument(file.buffer, "godrop/rider-docs/vehicle-papers");
+      vehiclePaperUrls.push(url);
+    }
+
+    // Upload government ID
+    let governmentIdUrl: string | undefined;
+    if (files.governmentId?.[0]) {
+      governmentIdUrl = await uploadDocument(files.governmentId[0].buffer, "godrop/rider-docs/government-id");
+    }
+
+    // Upload guarantor government ID and attach to first guarantor
+    if (files.guarantorGovernmentId?.[0] && guarantors.length > 0) {
+      const url = await uploadDocument(files.guarantorGovernmentId[0].buffer, "godrop/rider-docs/guarantor-id");
+      guarantors[0].governmentIdUrl = url;
+    }
+
+    const documents: riderAppService.RiderDocuments = {};
+    if (governmentIdUrl) documents.governmentIdUrl = governmentIdUrl;
+    if (vehiclePaperUrls.length > 0) documents.vehiclePaperUrls = vehiclePaperUrls;
+
+    const rider = await riderAppService.submitKyc(req.rider!.id, {
+      ...parsed.data,
+      guarantors: guarantors.length > 0 ? guarantors : undefined,
+      documents: Object.keys(documents).length > 0 ? documents : undefined,
+    });
+
     return ok(res, { data: rider });
   } catch (err) {
     next(err);
@@ -146,6 +240,9 @@ export async function removePushToken(req: Request, res: Response, next: NextFun
 
 export async function listAvailableOrders(req: Request, res: Response, next: NextFunction) {
   try {
+    if (req.rider!.kycStatus !== "VERIFIED") {
+      return fail(res, "Your account must be verified before you can receive orders", 403);
+    }
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await riderOrderService.listAvailableOrders({ type: q.type, page, limit });
@@ -192,6 +289,9 @@ export async function getOrder(req: Request, res: Response, next: NextFunction) 
 
 export async function acceptOrder(req: Request, res: Response, next: NextFunction) {
   try {
+    if (req.rider!.kycStatus !== "VERIFIED") {
+      return fail(res, "Your account must be verified before you can accept orders", 403);
+    }
     const order = await riderOrderService.acceptOrder(req.rider!.id, req.params.id);
     return ok(res, { data: order });
   } catch (err: any) {

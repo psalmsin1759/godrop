@@ -287,6 +287,41 @@ export function vendorTeamInviteEmail(opts: {
   };
 }
 
+export function systemAdminInviteEmail(opts: {
+  firstName: string;
+  email: string;
+  role: string;
+  temporaryPassword: string;
+}): EmailOptions {
+  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/admin/login`;
+  const html = emailLayout(
+    cardHeader("You've been added as a Godrop Admin") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        You have been added as a <strong>${opts.role.replace("_", " ")}</strong> on the Godrop Operations Dashboard.
+        Use the credentials below to log in for the first time.
+      </p>
+      ${infoTable([
+        ["Email", opts.email],
+        ["Role", opts.role.replace("_", " ")],
+        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">${opts.temporaryPassword}</code>`],
+      ])}
+      <p style="margin:16px 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Please log in and change your password immediately.
+      </p>
+      ${ctaButton("Log In to Dashboard", loginUrl)}
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: "You've been added to Godrop Admin Dashboard",
+    html,
+    text: `Hi ${opts.firstName}, you've been added as ${opts.role} on the Godrop Operations Dashboard. Login at ${loginUrl} with password: ${opts.temporaryPassword}. Please change your password after logging in.`,
+  };
+}
+
 export function adminNewVendorApplicationEmail(opts: {
   adminFirstName: string;
   adminEmail: string;

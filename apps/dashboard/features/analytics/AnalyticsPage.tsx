@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -609,7 +610,16 @@ function VendorAnalyticsView() {
 
 export default function AnalyticsPage() {
   const { data: session } = useSession()
-  const isVendor = session?.admin?.type === 'VENDOR'
+  const router = useRouter()
+  const admin = session?.admin
+  const isVendor = admin?.type === 'VENDOR'
+  const isVendorStaff = isVendor && admin?.role === 'STAFF'
+
+  useEffect(() => {
+    if (isVendorStaff) router.replace('/orders')
+  }, [isVendorStaff, router])
+
+  if (isVendorStaff) return null
 
   return (
     <div className="space-y-5">

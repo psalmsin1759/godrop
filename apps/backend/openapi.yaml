@@ -1042,8 +1042,14 @@ components:
         emergencyContactName: { type: string, nullable: true }
         emergencyContactPhone: { type: string, nullable: true }
         emergencyContactRelationship: { type: string, nullable: true }
-        guarantors: { type: array, items: { type: object }, nullable: true }
-        documents: { type: object, nullable: true }
+        guarantors:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/RiderGuarantor"
+        documents:
+          $ref: "#/components/schemas/RiderDocuments"
+          nullable: true
         lat: { type: number, nullable: true }
         lng: { type: number, nullable: true }
         isAvailable: { type: boolean }
@@ -1052,6 +1058,26 @@ components:
         ratingCount: { type: integer }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+
+    RiderGuarantor:
+      type: object
+      required: [name, phone, address]
+      properties:
+        name: { type: string, example: "Chukwuemeka Obi" }
+        phone: { type: string, example: "+2348012345678" }
+        address: { type: string, example: "14 Admiralty Way, Lekki Phase 1, Lagos" }
+        governmentIdUrl: { type: string, format: uri, description: "Cloudinary URL of guarantor's government-issued ID", nullable: true }
+
+    RiderDocuments:
+      type: object
+      description: Compliance documents uploaded during KYC submission
+      properties:
+        governmentIdUrl: { type: string, format: uri, description: "Rider's government-issued ID (NIN, passport, or driver's licence)", nullable: true }
+        vehiclePaperUrls:
+          type: array
+          description: "Vehicle registration / roadworthiness papers (up to 5)"
+          items: { type: string, format: uri }
+          nullable: true
 
     RiderStats:
       type: object
@@ -4121,6 +4147,7 @@ paths:
     post:
       tags: [System Admin — Admins]
       summary: Create system admin (SUPER_ADMIN only)
+      description: Creates a new system admin and sends them an email with their login credentials and a temporary password.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
@@ -4128,19 +4155,18 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, firstName, lastName, password]
+              required: [email, firstName, lastName]
               properties:
                 email: { type: string, format: email }
                 firstName: { type: string, maxLength: 50 }
                 lastName: { type: string, maxLength: 50 }
-                password: { type: string, minLength: 8 }
                 role:
                   type: string
                   enum: [SUPER_ADMIN, ADMIN]
                   default: ADMIN
       responses:
         "201":
-          description: Admin created (password excluded)
+          description: Admin created — invite email sent with temporary password
           content:
             application/json:
               schema:
@@ -5068,6 +5094,83 @@ paths:
   # RIDER APP API
   # ══════════════════════════════════════════════════════════════
 
+  # ─ Rider Onboarding ──────────────────────────────────────────
+  /rider/onboard:
+    post:
+      tags: [Rider App — Onboarding]
+      summary: Apply as a rider (multipart/form-data with documents)
+      description: |
+        Public endpoint — no authentication required.
+
+        A rider submits their personal details, vehicle information, guarantor info,
+        and compliance documents in a single multipart/form-data request.
+
+        **Required fields:** `firstName`, `lastName`, `phone`, `vehicleType`
+
+        **File fields:**
+        - `vehiclePapers` — Vehicle registration / roadworthiness papers. Up to **5 files** (images or PDF, max 10 MB each).
+        - `governmentId` — Rider's government-issued ID (NIN slip, passport, driver's licence). **1 file**.
+        - `guarantorGovernmentId` — Guarantor's government-issued ID. **1 file**. Automatically attached to the first guarantor entry.
+
+        On success, the rider record is created with `kycStatus: SUBMITTED`.
+        A system admin reviews and sets it to `VERIFIED` before the rider can accept orders.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [firstName, lastName, phone, vehicleType]
+              properties:
+                firstName: { type: string, maxLength: 50, example: "Emeka" }
+                lastName: { type: string, maxLength: 50, example: "Okafor" }
+                phone: { type: string, example: "+2348012345678", description: "Nigerian phone in E.164 format: +234XXXXXXXXXX" }
+                email: { type: string, format: email }
+                dateOfBirth: { type: string, example: "1995-06-15", description: "YYYY-MM-DD" }
+                gender: { type: string, enum: [MALE, FEMALE, OTHER] }
+                streetAddress: { type: string }
+                city: { type: string, example: "Lagos" }
+                state: { type: string, example: "Lagos" }
+                vehicleType: { type: string, enum: [BICYCLE, MOTORCYCLE, CAR, VAN] }
+                vehiclePlate: { type: string, example: "LND-234AB" }
+                vehicleColor: { type: string, example: "Red" }
+                vehicleModel: { type: string, example: "Bajaj Boxer" }
+                vehicleYear: { type: integer, minimum: 1990, maximum: 2030 }
+                driverLicenseNumber: { type: string }
+                driverLicenseExpiry: { type: string, example: "2028-05-01", description: "YYYY-MM-DD" }
+                vehicleInsuranceExpiry: { type: string, example: "2026-12-31", description: "YYYY-MM-DD" }
+                bvn: { type: string, minLength: 11, maxLength: 11 }
+                nin: { type: string, minLength: 11, maxLength: 11 }
+                guarantors:
+                  type: string
+                  description: |
+                    JSON-encoded array of RiderGuarantor objects (max 3).
+                    Example: [{"name":"Chukwuemeka Obi","phone":"+2348012345678","address":"14 Admiralty Way, Lagos"}]
+                vehiclePapers:
+                  type: array
+                  items: { type: string, format: binary }
+                  description: "Vehicle papers (up to 5 files)"
+                governmentId:
+                  type: string
+                  format: binary
+                  description: "Rider's government-issued ID"
+                guarantorGovernmentId:
+                  type: string
+                  format: binary
+                  description: "Guarantor's government-issued ID"
+      responses:
+        "200":
+          description: Application submitted — rider record created with kycStatus SUBMITTED
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/AdminRiderDetail" }
+        "409":
+          description: Phone number or email already registered
+
   # ─ Rider Auth ────────────────────────────────────────────────
   /rider/auth/request-otp:
     post:
@@ -5215,14 +5318,7 @@ paths:
                   type: array
                   maxItems: 3
                   items:
-                    type: object
-                    required: [name, phone, relationship]
-                    properties:
-                      name: { type: string }
-                      phone: { type: string }
-                      relationship: { type: string }
-                      address: { type: string }
-                      occupation: { type: string }
+                    $ref: "#/components/schemas/RiderGuarantor"
       responses:
         "200":
           description: Profile updated
@@ -5263,15 +5359,29 @@ paths:
   /rider/me/kyc:
     post:
       tags: [Rider App — Profile]
-      summary: Submit KYC documents
+      summary: Submit KYC documents and onboarding info
       description: |
-        Rider submits vehicle, license, insurance, BVN/NIN, and guarantor info.
-        Sets `kycStatus` to `SUBMITTED`. A system admin then reviews and sets it to `VERIFIED` or `REJECTED`.
+        Rider submits vehicle details, license, insurance, BVN/NIN, guarantor info, and compliance documents.
+        The request must be sent as **`multipart/form-data`**.
+
+        **File fields:**
+        - `vehiclePapers` — Vehicle registration / roadworthiness papers. Up to **5 files** (images or PDF, max 10 MB each).
+        - `governmentId` — Rider's government-issued ID (NIN slip, passport, driver's licence). **1 file**.
+        - `guarantorGovernmentId` — Guarantor's government-issued ID. **1 file**. Automatically attached to the first guarantor entry.
+
+        **Text fields** (all optional):
+        - `vehicleType`, `vehiclePlate`, `vehicleColor`, `vehicleModel`, `vehicleYear`
+        - `driverLicenseNumber`, `driverLicenseExpiry` (YYYY-MM-DD), `vehicleInsuranceExpiry` (YYYY-MM-DD)
+        - `bvn` (11 digits), `nin` (11 digits)
+        - `guarantors` — JSON-encoded array of `RiderGuarantor` objects (max 3)
+
+        Files are uploaded to Cloudinary by the server. On success, `kycStatus` is set to `SUBMITTED`.
+        A system admin then reviews and sets it to `VERIFIED` or `REJECTED`.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               properties:
@@ -5286,21 +5396,20 @@ paths:
                 bvn: { type: string, minLength: 11, maxLength: 11 }
                 nin: { type: string, minLength: 11, maxLength: 11 }
                 guarantors:
+                  type: string
+                  description: "JSON-encoded array of RiderGuarantor objects. Example: [{\"name\":\"Emeka Obi\",\"phone\":\"+2348012345678\",\"address\":\"14 Admiralty Way, Lagos\"}]"
+                vehiclePapers:
                   type: array
-                  maxItems: 3
-                  items:
-                    type: object
-                    required: [name, phone, relationship]
-                    properties:
-                      name: { type: string }
-                      phone: { type: string }
-                      relationship: { type: string }
-                      address: { type: string }
-                      occupation: { type: string }
-                documents:
-                  type: object
-                  description: "Key-value map of document type to Cloudinary URL. e.g. { \"driverLicense\": \"https://...\", \"vehicleInsurance\": \"https://...\" }"
-                  additionalProperties: { type: string }
+                  items: { type: string, format: binary }
+                  description: "Vehicle papers (up to 5 files — images or PDF, max 10 MB each)"
+                governmentId:
+                  type: string
+                  format: binary
+                  description: "Rider's government-issued ID (NIN slip, passport, driver's licence)"
+                guarantorGovernmentId:
+                  type: string
+                  format: binary
+                  description: "Guarantor's government-issued ID — attached to the first guarantor in the array"
       responses:
         "200":
           description: KYC submitted successfully

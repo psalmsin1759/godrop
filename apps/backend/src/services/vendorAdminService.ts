@@ -5,6 +5,7 @@ import { AdminRole, AdminType, VendorType, OrderStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApplicationEmail } from "./emailService";
 import { notifyCustomerOrderUpdate } from "./fcmService";
+import { broadcastTracking } from "../index";
 import { uploadDocument, deleteImageByUrl } from "./cloudinaryService";
 
 const SALT_ROUNDS = 12;
@@ -339,6 +340,8 @@ async function transitionOrder(
     prisma.order.update({ where: { id: orderId }, data: { status: newStatus } }),
     prisma.orderEvent.create({ data: { orderId, status: newStatus, description } }),
   ]);
+
+  broadcastTracking(orderId, { type: "STATUS_UPDATE", status: newStatus });
 
   const notif = VENDOR_STATUS_NOTIFICATIONS[newStatus];
   if (notif) {

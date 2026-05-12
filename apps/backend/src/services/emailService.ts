@@ -422,3 +422,76 @@ export function adminNewVendorApplicationEmail(opts: {
     text: `New vendor application from ${opts.vendorName} (${opts.vendorType}). Owner: ${opts.ownerName} <${opts.ownerEmail}>. Submitted: ${opts.submittedAt}. Review at: ${opts.reviewUrl}`,
   };
 }
+
+export function vendorNewOrderEmail(opts: {
+  ownerFirstName: string;
+  ownerEmail: string;
+  vendorName: string;
+  trackingCode: string;
+  orderType: string;
+  totalKobo: number;
+  paymentMethod: string;
+  deliveryAddress: string;
+  items: Array<{ name: string; quantity: number; unitPriceKobo: number; totalKobo: number }>;
+  dashboardOrderUrl: string;
+}): EmailOptions {
+  const fmt = (kobo: number) =>
+    `₦${(kobo / 100).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+  const itemRows = opts.items
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding:9px 12px;font-size:13px;color:#111827;">${item.name}</td>
+      <td style="padding:9px 12px;font-size:13px;color:#6b7280;text-align:center;">${item.quantity}</td>
+      <td style="padding:9px 12px;font-size:13px;color:#111827;text-align:right;white-space:nowrap;">${fmt(item.totalKobo)}</td>
+    </tr>`
+    )
+    .join("");
+
+  const html = emailLayout(
+    cardHeader("New Order Received", "#1e5fff") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.ownerFirstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        A new <strong>${opts.orderType}</strong> order has been placed at <strong>${opts.vendorName}</strong>.
+        Please review and accept it promptly.
+      </p>
+      ${infoTable([
+        ["Order #", `<strong style="font-family:monospace;letter-spacing:1px;">${opts.trackingCode}</strong>`],
+        ["Payment", opts.paymentMethod === "cash" ? "Cash on delivery" : "Card / Online"],
+        ["Delivery to", opts.deliveryAddress],
+      ])}
+      <p style="margin:20px 0 8px;font-size:13px;font-weight:600;color:#374151;">Order Items</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f9fafb;">
+            <th style="padding:9px 12px;font-size:12px;font-weight:600;color:#6b7280;text-align:left;">Item</th>
+            <th style="padding:9px 12px;font-size:12px;font-weight:600;color:#6b7280;text-align:center;">Qty</th>
+            <th style="padding:9px 12px;font-size:12px;font-weight:600;color:#6b7280;text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #e5e7eb;">
+            <td colspan="2" style="padding:10px 12px;font-size:14px;font-weight:700;color:#111827;">Total</td>
+            <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#1e5fff;text-align:right;white-space:nowrap;">${fmt(opts.totalKobo)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      ${ctaButton("View & Accept Order", opts.dashboardOrderUrl, "#1e5fff")}
+      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
+        Accept or reject this order from your vendor dashboard. Orders left unattended for too long
+        may be automatically cancelled.
+      </p>
+    `)
+  );
+
+  const itemText = opts.items.map((i) => `  - ${i.name} x${i.quantity} = ${fmt(i.totalKobo)}`).join("\n");
+  return {
+    to: opts.ownerEmail,
+    subject: `New order #${opts.trackingCode} — ${opts.vendorName}`,
+    html,
+    text: `Hi ${opts.ownerFirstName}, a new ${opts.orderType} order #${opts.trackingCode} has been placed at ${opts.vendorName}.\n\nItems:\n${itemText}\n\nTotal: ${fmt(opts.totalKobo)}\nPayment: ${opts.paymentMethod}\nDeliver to: ${opts.deliveryAddress}\n\nView order: ${opts.dashboardOrderUrl}`,
+  };
+}

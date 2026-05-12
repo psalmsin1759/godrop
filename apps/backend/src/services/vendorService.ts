@@ -3,6 +3,7 @@ import { VendorType, VendorStatus, OrderType, PaymentMethod } from "@prisma/clie
 import { haversineKm } from "../utils/distance";
 import { paginate } from "../utils/pagination";
 import { generateTrackingCode } from "../utils/generateTrackingCode";
+import { sendEmail, vendorNewOrderEmail } from "./emailService";
 
 async function getCoverageRadiusKm(): Promise<number> {
   const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
@@ -207,7 +208,56 @@ async function createVendorOrder(
     },
   });
 
+  notifyVendorOwnerNewOrder({
+    vendorId,
+    vendorName: vendor.name,
+    trackingCode: order.trackingCode,
+    orderId: order.id,
+    orderType: type,
+    totalKobo: order.totalKobo,
+    paymentMethod,
+    deliveryAddress,
+    items: orderItemsData,
+  }).catch((err) => console.error("[email] vendorNewOrder notify failed:", err));
+
   return order;
+}
+
+async function notifyVendorOwnerNewOrder(opts: {
+  vendorId: string;
+  vendorName: string;
+  trackingCode: string;
+  orderId: string;
+  orderType: OrderType;
+  totalKobo: number;
+  paymentMethod: string;
+  deliveryAddress: string;
+  items: Array<{ name: string; quantity: number; unitPriceKobo: number; totalKobo: number }>;
+}) {
+  const owner = await prisma.admin.findFirst({
+    where: { vendorId: opts.vendorId, role: "OWNER", isActive: true },
+    select: { firstName: true, email: true },
+  });
+  if (!owner) return;
+
+  const dashboardUrl = process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng";
+  const orderUrl = `${dashboardUrl}/vendor/orders/${opts.orderId}`;
+  const orderTypeLabel = opts.orderType.charAt(0) + opts.orderType.slice(1).toLowerCase();
+
+  await sendEmail(
+    vendorNewOrderEmail({
+      ownerFirstName: owner.firstName,
+      ownerEmail: owner.email,
+      vendorName: opts.vendorName,
+      trackingCode: opts.trackingCode,
+      orderType: orderTypeLabel,
+      totalKobo: opts.totalKobo,
+      paymentMethod: opts.paymentMethod,
+      deliveryAddress: opts.deliveryAddress,
+      items: opts.items,
+      dashboardOrderUrl: orderUrl,
+    })
+  );
 }
 
 export async function createFoodOrder(input: FoodOrderInput) {

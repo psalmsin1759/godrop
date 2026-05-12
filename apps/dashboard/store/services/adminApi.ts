@@ -56,7 +56,7 @@ export const adminApi = api.injectEndpoints({
       transformResponse: (res: Wrap<PlatformSettings>) => res.data,
     }),
 
-    updatePlatformSettings: build.mutation<PlatformSettings, Partial<Pick<PlatformSettings, 'riderEarningRate'>>>({
+    updatePlatformSettings: build.mutation<PlatformSettings, Partial<Pick<PlatformSettings, 'riderEarningRate' | 'coverageRadiusKm'>>>({
       query: (body) => ({ url: '/admin/platform-settings', method: 'PATCH', body }),
       invalidatesTags: ['PlatformSettings'],
       transformResponse: (res: Wrap<PlatformSettings>) => res.data,

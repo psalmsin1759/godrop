@@ -136,6 +136,48 @@ function infoTable(rows: Array<[string, string]>): string {
 
 // ─── Templates ────────────────────────────────────────────────
 
+export function customerWelcomeEmail(opts: {
+  firstName: string;
+  email: string;
+}): EmailOptions {
+  const appUrl = process.env.CUSTOMER_APP_URL ?? "https://godrop.ng";
+  const html = emailLayout(
+    cardHeader("Welcome to Godrop! 🎉", "#f97316") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        Welcome to <strong>Godrop</strong> — your on-demand delivery platform for food, groceries, retail,
+        and parcels in Lagos, Nigeria.
+      </p>
+      <div style="background:#fff7ed;border-left:4px solid #f97316;border-radius:4px;padding:14px 16px;margin:20px 0;">
+        <p style="margin:0;font-size:14px;color:#92400e;font-weight:600;">What you can do with Godrop</p>
+        <ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:#92400e;line-height:1.8;">
+          <li>Order food from top restaurants nearby</li>
+          <li>Get groceries and medications delivered fast</li>
+          <li>Send parcels across Lagos</li>
+          <li>Book trucks for relocation</li>
+        </ul>
+      </div>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        Your account is ready. Download the Godrop app and start your first order today!
+      </p>
+      ${ctaButton("Open Godrop App", appUrl)}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Need help? Reach us at
+        <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>
+        — we're always happy to assist.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: "Welcome to Godrop — Let's get your first order started!",
+    html,
+    text: `Hi ${opts.firstName}, welcome to Godrop! Order food, groceries, medications, and more — delivered fast across Lagos. Visit ${appUrl} to get started. Need help? support@godrop.ng`,
+  };
+}
+
 export function vendorWelcomeEmail(opts: {
   firstName: string;
   vendorName: string;

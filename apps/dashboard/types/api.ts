@@ -400,6 +400,7 @@ export interface ChangePasswordRequest {
 export interface PlatformSettings {
   id: string
   riderEarningRate: number
+  coverageRadiusKm: number
   updatedAt: string
 }
 

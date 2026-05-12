@@ -3,7 +3,10 @@ import { VendorType, VendorStatus } from "@prisma/client";
 import { haversineKm } from "../utils/distance";
 import { paginate } from "../utils/pagination";
 
-const NEARBY_RADIUS_KM = 15;
+async function getCoverageRadiusKm(): Promise<number> {
+  const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
+  return settings?.coverageRadiusKm ?? 15;
+}
 
 async function listByType(
   type: VendorType,
@@ -26,11 +29,12 @@ async function listByType(
     prisma.vendor.count({ where }),
   ]);
 
-  // Sort by distance if coordinates provided
+  // Filter and sort by distance if coordinates provided
   if (opts.lat !== undefined && opts.lng !== undefined) {
+    const radiusKm = await getCoverageRadiusKm();
     vendors = vendors
       .map((v) => ({ ...v, distanceKm: haversineKm(opts.lat!, opts.lng!, v.lat, v.lng) }))
-      .filter((v) => v.distanceKm <= NEARBY_RADIUS_KM)
+      .filter((v) => v.distanceKm <= radiusKm)
       .sort((a, b) => a.distanceKm - b.distanceKm);
     total = vendors.length;
   }

@@ -170,6 +170,7 @@ enum RiderKycStatus {
 model PlatformSettings {
   id               String @id @default("global")
   riderEarningRate Float  @default(0.8) // fraction of delivery fee paid to rider (0–1)
+  coverageRadiusKm Float  @default(15)  // max km radius for vendor/rider discovery
   updatedAt        DateTime @updatedAt
 }
 

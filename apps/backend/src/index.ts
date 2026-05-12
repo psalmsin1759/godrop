@@ -12,6 +12,7 @@ import swaggerUi from "swagger-ui-express";
 import YAML from "js-yaml";
 
 import authRouter from "./routes/auth";
+import configRouter from "./routes/config";
 import meRouter from "./routes/me";
 import foodRouter from "./routes/food";
 import groceryRouter from "./routes/grocery";
@@ -47,6 +48,7 @@ app.use(morgan("dev"));
 
 // ─── Routes ───────────────────────────────────────────────────
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/config", configRouter);
 app.use("/api/v1/me", meRouter);
 app.use("/api/v1/food", foodRouter);
 app.use("/api/v1/grocery", groceryRouter);

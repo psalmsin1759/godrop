@@ -3,6 +3,7 @@ import * as otpService from "../services/otpService";
 import * as authService from "../services/authService";
 import { ok, fail } from "../utils/response";
 import { logAction } from "../services/auditLogService";
+import { sendEmail, customerWelcomeEmail } from "../services/emailService";
 
 export async function requestOtp(req: Request, res: Response, next: NextFunction) {
   try {
@@ -63,6 +64,10 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
     });
+
+    if (user.email && user.firstName) {
+      sendEmail(customerWelcomeEmail({ firstName: user.firstName, email: user.email })).catch(() => {});
+    }
 
     ok(res, { user, ...tokens }, 201);
   } catch (err) {

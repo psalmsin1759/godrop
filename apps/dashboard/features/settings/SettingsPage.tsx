@@ -686,16 +686,22 @@ function SystemPlatformSettings() {
   const [update, { isLoading: saving }] = useUpdatePlatformSettingsMutation()
   const { saved, flash } = useSavedFlash()
   const [ratePct, setRatePct] = useState('')
+  const [coverageKm, setCoverageKm] = useState('')
 
   useEffect(() => {
-    if (settings) setRatePct(String(Math.round(settings.riderEarningRate * 100)))
+    if (settings) {
+      setRatePct(String(Math.round(settings.riderEarningRate * 100)))
+      setCoverageKm(String(settings.coverageRadiusKm ?? 15))
+    }
   }, [settings])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const pct = parseFloat(ratePct)
+    const km = parseFloat(coverageKm)
     if (isNaN(pct) || pct < 0 || pct > 100) return
-    await update({ riderEarningRate: pct / 100 }).unwrap()
+    if (isNaN(km) || km < 1 || km > 500) return
+    await update({ riderEarningRate: pct / 100, coverageRadiusKm: km }).unwrap()
     flash()
   }
 
@@ -730,13 +736,47 @@ function SystemPlatformSettings() {
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af] font-medium">%</span>
             </div>
           </div>
-          <SaveButton saving={saving} saved={saved} />
         </div>
         <p className="text-xs text-[#9ca3af]">
           Current: <span className="font-semibold text-[#283c50]">{settings ? `${Math.round(settings.riderEarningRate * 100)}%` : '—'}</span>
           {settings && ` — rider earns ₦${Math.round(settings.riderEarningRate * 1000) / 10} per ₦100 delivery fee`}
         </p>
       </SectionCard>
+
+      <SectionCard title="Coverage Radius">
+        <p className="text-xs text-[#9ca3af]">
+          The maximum distance (in kilometres) within which customers can see restaurants, pharmacies, and grocery stores.
+          Riders within this radius of an order pickup will also be notified.
+          A larger radius means more options but potentially longer delivery times.
+        </p>
+        <div className="flex items-end gap-3 max-w-xs">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+              Coverage radius (km)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min={1}
+                max={500}
+                step={1}
+                value={coverageKm}
+                onChange={(e) => setCoverageKm(e.target.value)}
+                className={inputCls('pr-10')}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af] font-medium">km</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-[#9ca3af]">
+          Current: <span className="font-semibold text-[#283c50]">{settings ? `${settings.coverageRadiusKm} km` : '—'}</span>
+          {settings && ` — vendors within ${settings.coverageRadiusKm} km of a customer are shown`}
+        </p>
+      </SectionCard>
+
+      <div className="flex justify-end">
+        <SaveButton saving={saving} saved={saved} />
+      </div>
     </form>
   )
 }

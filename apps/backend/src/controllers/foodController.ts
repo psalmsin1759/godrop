@@ -71,3 +71,20 @@ export async function getRestaurantReviews(req: Request, res: Response, next: Ne
     next(err);
   }
 }
+
+export async function checkout(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { vendorId, items, deliveryAddress, paymentMethod } = req.body;
+    const userId = req.user!.id;
+    const order = await vendorService.createFoodOrder({
+      userId,
+      vendorId,
+      items,
+      deliveryAddress,
+      paymentMethod,
+    });
+    ok(res, { success: true, order });
+  } catch (err) {
+    next(err);
+  }
+}

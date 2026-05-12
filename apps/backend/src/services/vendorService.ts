@@ -1,7 +1,8 @@
 import { prisma } from "../lib/prisma";
-import { VendorType, VendorStatus } from "@prisma/client";
+import { VendorType, VendorStatus, OrderType, PaymentMethod } from "@prisma/client";
 import { haversineKm } from "../utils/distance";
 import { paginate } from "../utils/pagination";
+import { generateTrackingCode } from "../utils/generateTrackingCode";
 
 async function getCoverageRadiusKm(): Promise<number> {
   const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
@@ -126,4 +127,82 @@ export async function listRetailCategories() {
   const vendors = await prisma.vendor.findMany({ where: { type: VendorType.RETAIL, isActive: true } });
   const categoryNames = [...new Set(vendors.flatMap((v) => v.cuisines))];
   return categoryNames.map((name, i) => ({ id: String(i + 1), name }));
+}
+
+interface FoodOrderInput {
+  userId: string;
+  vendorId: string;
+  items: Array<{ productId: string; quantity: number }>;
+  deliveryAddress: string;
+  paymentMethod: string;
+}
+
+export async function createFoodOrder(input: FoodOrderInput) {
+  const { userId, vendorId, items, deliveryAddress, paymentMethod } = input;
+
+  // Fetch the vendor to use as pickup address
+  const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+  if (!vendor) throw new Error("Vendor not found");
+
+  // Fetch all products to compute prices
+  const productIds = items.map((i) => i.productId);
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+  });
+
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  let subtotalKobo = 0;
+  const orderItemsData = items.map((i) => {
+    const product = productMap.get(i.productId);
+    if (!product) throw new Error(`Product ${i.productId} not found`);
+    const totalKobo = product.priceKobo * i.quantity;
+    subtotalKobo += totalKobo;
+    return {
+      productId: product.id,
+      name: product.name,
+      unitPriceKobo: product.priceKobo,
+      quantity: i.quantity,
+      totalKobo,
+    };
+  });
+
+  const deliveryFeeKobo = vendor.deliveryFeeKobo ?? 75000;
+  const serviceFeeKobo = 25000;
+  const totalKobo = subtotalKobo + deliveryFeeKobo + serviceFeeKobo;
+
+  // Map payment method string to enum
+  const paymentMethodEnum: PaymentMethod =
+    paymentMethod === "cash" ? PaymentMethod.CASH : PaymentMethod.CARD;
+
+  const order = await prisma.order.create({
+    data: {
+      trackingCode: generateTrackingCode(),
+      customerId: userId,
+      vendorId,
+      type: OrderType.FOOD,
+      paymentMethod: paymentMethodEnum,
+      pickupAddress: vendor.address,
+      pickupLat: vendor.lat,
+      pickupLng: vendor.lng,
+      dropoffAddress: deliveryAddress,
+      dropoffLat: 0,
+      dropoffLng: 0,
+      subtotalKobo,
+      deliveryFeeKobo,
+      serviceFeeKobo,
+      totalKobo,
+      items: {
+        create: orderItemsData,
+      },
+    },
+    select: {
+      id: true,
+      status: true,
+      totalKobo: true,
+      trackingCode: true,
+    },
+  });
+
+  return order;
 }

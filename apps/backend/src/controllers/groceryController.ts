@@ -42,6 +42,22 @@ export async function getProducts(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function checkout(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { vendorId, items, deliveryAddress, paymentMethod } = req.body;
+    const order = await vendorService.createGroceryOrder({
+      userId: req.user!.id,
+      vendorId,
+      items,
+      deliveryAddress,
+      paymentMethod,
+    });
+    ok(res, { success: true, order });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function searchGrocery(req: Request, res: Response, next: NextFunction) {
   try {
     const { q, lat, lng } = req.query as any;

@@ -6,6 +6,7 @@ export const listStoresSchema = z.object({
   page: z.coerce.number().optional(),
   limit: z.coerce.number().optional(),
   search: z.string().optional(),
+  isOpen: z.coerce.boolean().optional(),
 });
 
 export const productsQuerySchema = z.object({

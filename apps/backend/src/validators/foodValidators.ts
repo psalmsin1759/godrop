@@ -23,3 +23,17 @@ export const reviewsQuerySchema = z.object({
   page: z.coerce.number().optional(),
   limit: z.coerce.number().optional(),
 });
+
+export const checkoutSchema = z.object({
+  vendorId: z.string().min(1),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1),
+        quantity: z.number().int().positive(),
+      })
+    )
+    .min(1),
+  deliveryAddress: z.string().min(1),
+  paymentMethod: z.enum(["cash", "card"]),
+});

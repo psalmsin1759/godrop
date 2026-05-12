@@ -137,7 +137,10 @@ interface FoodOrderInput {
   paymentMethod: string;
 }
 
-export async function createFoodOrder(input: FoodOrderInput) {
+async function createVendorOrder(
+  input: FoodOrderInput,
+  type: OrderType
+) {
   const { userId, vendorId, items, deliveryAddress, paymentMethod } = input;
 
   // Fetch the vendor to use as pickup address
@@ -180,7 +183,7 @@ export async function createFoodOrder(input: FoodOrderInput) {
       trackingCode: generateTrackingCode(),
       customerId: userId,
       vendorId,
-      type: OrderType.FOOD,
+      type,
       paymentMethod: paymentMethodEnum,
       pickupAddress: vendor.address,
       pickupLat: vendor.lat,
@@ -205,4 +208,20 @@ export async function createFoodOrder(input: FoodOrderInput) {
   });
 
   return order;
+}
+
+export async function createFoodOrder(input: FoodOrderInput) {
+  return createVendorOrder(input, OrderType.FOOD);
+}
+
+export async function createGroceryOrder(input: FoodOrderInput) {
+  return createVendorOrder(input, OrderType.GROCERY);
+}
+
+export async function createRetailOrder(input: FoodOrderInput) {
+  return createVendorOrder(input, OrderType.RETAIL);
+}
+
+export async function createPharmacyOrder(input: FoodOrderInput) {
+  return createVendorOrder(input, OrderType.PHARMACY);
 }

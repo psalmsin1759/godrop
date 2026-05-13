@@ -4,6 +4,7 @@ import * as authService from "../services/authService";
 import { ok, fail } from "../utils/response";
 import { logAction } from "../services/auditLogService";
 import { sendEmail, customerWelcomeEmail } from "../services/emailService";
+import { prisma } from "../lib/prisma";
 
 export async function requestOtp(req: Request, res: Response, next: NextFunction) {
   try {
@@ -96,6 +97,60 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
       userAgent: req.headers["user-agent"],
     });
     ok(res, { message: "Logged out" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function passwordLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { identifier, password } = req.body;
+    const result = await authService.loginWithPassword(identifier, password);
+    if (!result) return fail(res, "Invalid credentials", 401);
+    const tokens = await authService.issueTokens(result);
+    ok(res, { ...tokens, isNewUser: false });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email } = req.body;
+    await authService.sendPasswordReset(email);
+    // Always return success to avoid email enumeration
+    ok(res, { message: "If an account exists with that email, a reset link has been sent." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { token, password } = req.body;
+    const success = await authService.resetPassword(token, password);
+    if (!success) return fail(res, "Invalid or expired reset token", 400);
+    ok(res, { message: "Password reset successful" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function changePassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    await authService.changePassword(req.user!.id, currentPassword, newPassword);
+    ok(res, { message: "Password changed successfully" });
+  } catch (err: any) {
+    if (err.message === "WRONG_PASSWORD") return fail(res, "Current password is incorrect", 400);
+    next(err);
+  }
+}
+
+export async function deleteAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    await authService.deactivateAccount(req.user!.id);
+    ok(res, { message: "Account deactivated" });
   } catch (err) {
     next(err);
   }

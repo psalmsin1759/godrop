@@ -93,7 +93,7 @@ export interface CreateAdminRequest {
   email: string
   firstName: string
   lastName: string
-  password: string
+  password?: string
   role?: SystemAdminRole
 }
 
@@ -401,6 +401,9 @@ export interface PlatformSettings {
   id: string
   riderEarningRate: number
   coverageRadiusKm: number
+  vendorPlatformFeeRate?: number
+  paystackPublicKey?: string
+  paystackSecretKey?: string
   updatedAt: string
 }
 

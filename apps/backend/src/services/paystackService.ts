@@ -1,9 +1,15 @@
 import axios from "axios";
+import { prisma } from "../lib/prisma";
 
 const baseURL = "https://api.paystack.co";
 
-function headers() {
-  return { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` };
+async function secretKey(): Promise<string> {
+  const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
+  return settings?.paystackSecretKey ?? process.env.PAYSTACK_SECRET_KEY ?? "";
+}
+
+async function headers() {
+  return { Authorization: `Bearer ${await secretKey()}` };
 }
 
 export async function initializeTransaction(params: {
@@ -22,7 +28,7 @@ export async function initializeTransaction(params: {
       callback_url: params.callbackUrl,
       metadata: params.metadata,
     },
-    { headers: headers() }
+    { headers: await headers() }
   );
   return {
     authorizationUrl: data.data.authorization_url,
@@ -34,13 +40,81 @@ export async function verifyTransaction(reference: string): Promise<{
   status: string;
   amountKobo: number;
   reference: string;
+  authorization?: {
+    authorization_code: string;
+    card_type: string;
+    last4: string;
+    exp_month: string;
+    exp_year: string;
+    bank: string;
+    email: string;
+    reusable: boolean;
+  };
 }> {
   const { data } = await axios.get(`${baseURL}/transaction/verify/${reference}`, {
-    headers: headers(),
+    headers: await headers(),
   });
   return {
     status: data.data.status,
     amountKobo: data.data.amount,
     reference: data.data.reference,
+    authorization: data.data.authorization,
   };
+}
+
+export async function chargeAuthorization(params: {
+  authorizationCode: string;
+  email: string;
+  amountKobo: number;
+  reference: string;
+  metadata?: Record<string, unknown>;
+}): Promise<{ status: string; reference: string }> {
+  const { data } = await axios.post(
+    `${baseURL}/transaction/charge_authorization`,
+    {
+      authorization_code: params.authorizationCode,
+      email: params.email,
+      amount: params.amountKobo,
+      reference: params.reference,
+      metadata: params.metadata,
+    },
+    { headers: await headers() }
+  );
+  return {
+    status: data.data.status,
+    reference: data.data.reference,
+  };
+}
+
+export async function initiateTransfer(params: {
+  amountKobo: number;
+  recipient: string;
+  reference: string;
+  reason?: string;
+}): Promise<{ status: string; reference: string }> {
+  const { data } = await axios.post(
+    `${baseURL}/transfer`,
+    {
+      source: "balance",
+      amount: params.amountKobo,
+      recipient: params.recipient,
+      reference: params.reference,
+      reason: params.reason,
+    },
+    { headers: await headers() }
+  );
+  return { status: data.data.status, reference: data.data.reference };
+}
+
+export async function createTransferRecipient(params: {
+  name: string;
+  accountNumber: string;
+  bankCode: string;
+}): Promise<string> {
+  const { data } = await axios.post(
+    `${baseURL}/transferrecipient`,
+    { type: "nuban", name: params.name, account_number: params.accountNumber, bank_code: params.bankCode, currency: "NGN" },
+    { headers: await headers() }
+  );
+  return data.data.recipient_code;
 }

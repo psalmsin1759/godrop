@@ -37,5 +37,11 @@ router.delete("/push-token", validate(removePushTokenSchema), meController.remov
 
 router.get("/notifications", meController.listNotifications);
 router.patch("/notifications/read", validate(markNotificationsReadSchema), meController.markNotificationsRead);
+router.delete("/notifications/all", meController.deleteAllNotifications);
+router.delete("/notifications/:id", meController.deleteNotification);
+
+router.get("/cards", meController.listCards);
+router.delete("/cards/:id", meController.deleteCard);
+router.patch("/cards/:id/default", meController.setDefaultCard);
 
 export default router;

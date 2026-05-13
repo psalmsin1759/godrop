@@ -1,10 +1,28 @@
 import { prisma } from "../lib/prisma";
-import { PaymentMethod, PaymentStatus } from "@prisma/client";
+import { PaymentMethod, PaymentStatus, VendorWalletTxType } from "@prisma/client";
 import * as paystackService from "./paystackService";
 import * as walletService from "./walletService";
 import { nanoid } from "nanoid";
 
-export async function initializePayment(userId: string, orderId: string, method: string) {
+async function fundVendorWallet(orderId: string, amountKobo: number) {
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { vendorId: true } });
+  if (!order?.vendorId) return;
+  const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
+  const feeRate = settings?.vendorPlatformFeeRate ?? 0.2;
+  const vendorShare = Math.floor(amountKobo * (1 - feeRate));
+  let wallet = await prisma.vendorWallet.findUnique({ where: { vendorId: order.vendorId } });
+  if (!wallet) {
+    wallet = await prisma.vendorWallet.create({ data: { vendorId: order.vendorId } });
+  }
+  await prisma.$transaction([
+    prisma.vendorWallet.update({ where: { id: wallet.id }, data: { balanceKobo: { increment: vendorShare } } }),
+    prisma.vendorWalletTransaction.create({
+      data: { walletId: wallet.id, type: VendorWalletTxType.CREDIT, amountKobo: vendorShare, reference: `ORD-${orderId}`, description: `Order payment` },
+    }),
+  ]);
+}
+
+export async function initializePayment(userId: string, orderId: string, method: string, savedCardId?: string) {
   const order = await prisma.order.findFirst({ where: { id: orderId, customerId: userId } });
   if (!order) throw new Error("Order not found");
   if (order.paymentStatus === PaymentStatus.PAID) throw new Error("Order already paid");
@@ -17,22 +35,40 @@ export async function initializePayment(userId: string, orderId: string, method:
       where: { id: orderId },
       data: { paymentStatus: PaymentStatus.PAID, paymentMethod: m },
     });
-    return { method: "wallet", reference: orderId };
+    await fundVendorWallet(orderId, order.totalKobo).catch(() => {});
+    return { method: "wallet", reference: orderId, paid: true };
   }
 
   if (m === PaymentMethod.CASH) {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { paymentMethod: m },
-    });
-    return { method: "cash", reference: null };
+    await prisma.order.update({ where: { id: orderId }, data: { paymentMethod: m } });
+    return { method: "cash", reference: null, paid: false };
   }
 
-  // Card — initialize Paystack
+  // Card — check for saved card charge
   const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  const email = user.email ?? `${user.phone.replace("+", "")}@pay.godrop.ng`;
   const reference = `GDO-${nanoid(16)}`;
+
+  if (savedCardId) {
+    const savedCard = await prisma.savedCard.findFirst({ where: { id: savedCardId, userId } });
+    if (savedCard) {
+      const result = await paystackService.chargeAuthorization({
+        authorizationCode: savedCard.authorizationCode,
+        email: savedCard.email,
+        amountKobo: order.totalKobo,
+        reference,
+        metadata: { orderId, userId, type: "order_payment" },
+      });
+      if (result.status === "success") {
+        await prisma.order.update({ where: { id: orderId }, data: { paystackRef: reference, paymentStatus: PaymentStatus.PAID, paymentMethod: PaymentMethod.CARD } });
+        await fundVendorWallet(orderId, order.totalKobo).catch(() => {});
+        return { method: "card", reference, paid: true };
+      }
+    }
+  }
+
   const result = await paystackService.initializeTransaction({
-    email: user.email ?? `${user.phone.replace("+", "")}@pay.godrop.ng`,
+    email,
     amountKobo: order.totalKobo,
     reference,
     metadata: { orderId, userId, type: "order_payment" },
@@ -40,10 +76,14 @@ export async function initializePayment(userId: string, orderId: string, method:
 
   await prisma.order.update({ where: { id: orderId }, data: { paystackRef: reference } });
 
-  return { paystackAuthUrl: result.authorizationUrl, reference, method: "card" };
+  return { paystackAuthUrl: result.authorizationUrl, reference, method: "card", paid: false };
 }
 
-export async function verifyPayment(reference: string) {
+export async function verifyPayment(reference: string, userId?: string) {
+  // Idempotency: already processed?
+  const existingOrder = await prisma.order.findFirst({ where: { paystackRef: reference, paymentStatus: PaymentStatus.PAID } });
+  if (existingOrder) return { status: "paid", order: existingOrder };
+
   const tx = await paystackService.verifyTransaction(reference);
   if (tx.status !== "success") throw new Error("Payment not successful");
 
@@ -54,6 +94,22 @@ export async function verifyPayment(reference: string) {
     where: { id: order.id },
     data: { paymentStatus: PaymentStatus.PAID },
   });
+
+  await fundVendorWallet(order.id, order.totalKobo).catch(() => {});
+
+  // Save card authorization if reusable
+  if (tx.authorization?.reusable && userId) {
+    const auth = tx.authorization;
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, phone: true } });
+    const email = user?.email ?? `${user?.phone?.replace("+", "")}@pay.godrop.ng`;
+    const existing = await prisma.savedCard.findFirst({ where: { userId, last4: auth.last4, expMonth: auth.exp_month, expYear: auth.exp_year } });
+    if (!existing) {
+      const isDefault = (await prisma.savedCard.count({ where: { userId } })) === 0;
+      await prisma.savedCard.create({
+        data: { userId, authorizationCode: auth.authorization_code, cardType: auth.card_type, last4: auth.last4, expMonth: auth.exp_month, expYear: auth.exp_year, bank: auth.bank, email, isDefault },
+      });
+    }
+  }
 
   return { status: "paid", order: updated };
 }

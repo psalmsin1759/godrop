@@ -219,3 +219,60 @@ export async function markNotificationsRead(req: Request, res: Response, next: N
     next(err);
   }
 }
+
+export async function deleteNotification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    await prisma.notification.deleteMany({ where: { id, userId: req.user!.id } });
+    ok(res, { message: "Notification deleted" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteAllNotifications(req: Request, res: Response, next: NextFunction) {
+  try {
+    await prisma.notification.deleteMany({ where: { userId: req.user!.id } });
+    ok(res, { message: "All notifications deleted" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── Saved Cards ──────────────────────────────────────────────
+
+export async function listCards(req: Request, res: Response, next: NextFunction) {
+  try {
+    const cards = await prisma.savedCard.findMany({
+      where: { userId: req.user!.id },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+      select: { id: true, cardType: true, last4: true, expMonth: true, expYear: true, bank: true, isDefault: true, createdAt: true },
+    });
+    ok(res, { cards });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteCard(req: Request, res: Response, next: NextFunction) {
+  try {
+    await prisma.savedCard.deleteMany({ where: { id: req.params.id, userId: req.user!.id } });
+    ok(res, { message: "Card removed" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function setDefaultCard(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    await prisma.$transaction([
+      prisma.savedCard.updateMany({ where: { userId }, data: { isDefault: false } }),
+      prisma.savedCard.updateMany({ where: { id, userId }, data: { isDefault: true } }),
+    ]);
+    ok(res, { message: "Default card updated" });
+  } catch (err) {
+    next(err);
+  }
+}

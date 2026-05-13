@@ -10,17 +10,20 @@ datasource db {
 // ─── Auth ─────────────────────────────────────────────────────
 
 model User {
-  id           String     @id @default(cuid())
-  phone        String     @unique
-  firstName    String?
-  lastName     String?
-  email        String?    @unique
-  avatarUrl    String?
-  referralCode String?    @unique
-  isVerified   Boolean    @default(false)
-  status       UserStatus @default(ACTIVE)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id                   String     @id @default(cuid())
+  phone                String     @unique
+  firstName            String?
+  lastName             String?
+  email                String?    @unique
+  avatarUrl            String?
+  referralCode         String?    @unique
+  isVerified           Boolean    @default(false)
+  status               UserStatus @default(ACTIVE)
+  passwordHash         String?
+  passwordResetToken   String?    @unique
+  passwordResetExpiry  DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
   wallet        Wallet?
   addresses     SavedAddress[]
@@ -30,6 +33,7 @@ model User {
   pushTokens    PushToken[]
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
+  savedCards    SavedCard[]
 }
 
 enum UserStatus {
@@ -108,6 +112,25 @@ enum WalletTxType {
   REFUND
 }
 
+// ─── Saved Cards (Paystack tokenisation) ─────────────────────
+
+model SavedCard {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  authorizationCode  String
+  cardType           String?
+  last4              String?
+  expMonth           String?
+  expYear            String?
+  bank               String?
+  email              String
+  isDefault          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([userId])
+}
+
 // ─── Vendors ──────────────────────────────────────────────────
 
 model Vendor {
@@ -136,11 +159,13 @@ model Vendor {
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
-  categories ProductCategory[]
-  orders     Order[]
-  reviews    Review[]
-  admins     Admin[]
-  auditLogs  AuditLog[]
+  categories   ProductCategory[]
+  orders       Order[]
+  reviews      Review[]
+  admins       Admin[]
+  auditLogs    AuditLog[]
+  wallet       VendorWallet?
+  bankAccount  VendorBankAccount?
 }
 
 enum VendorType {
@@ -164,14 +189,84 @@ enum RiderKycStatus {
   REJECTED
 }
 
+// ─── Vendor Wallet ────────────────────────────────────────────
+
+model VendorWallet {
+  id           String                  @id @default(cuid())
+  vendorId     String                  @unique
+  vendor       Vendor                  @relation(fields: [vendorId], references: [id])
+  balanceKobo  Int                     @default(0)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  transactions VendorWalletTransaction[]
+}
+
+model VendorWalletTransaction {
+  id           String   @id @default(cuid())
+  walletId     String
+  wallet       VendorWallet @relation(fields: [walletId], references: [id])
+  type         VendorWalletTxType
+  amountKobo   Int
+  reference    String?  @unique
+  description  String?
+  createdAt    DateTime @default(now())
+
+  @@index([walletId])
+}
+
+enum VendorWalletTxType {
+  CREDIT
+  WITHDRAWAL
+}
+
+model VendorBankAccount {
+  id            String   @id @default(cuid())
+  vendorId      String   @unique
+  vendor        Vendor   @relation(fields: [vendorId], references: [id])
+  bankName      String
+  bankCode      String
+  accountNumber String
+  accountName   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model VendorWithdrawal {
+  id            String                  @id @default(cuid())
+  vendorId      String
+  amountKobo    Int
+  bankName      String
+  bankCode      String
+  accountNumber String
+  accountName   String
+  reference     String?                 @unique
+  status        VendorWithdrawalStatus  @default(PENDING)
+  notes         String?
+  processedAt   DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@index([vendorId])
+}
+
+enum VendorWithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 // ─── Admin ────────────────────────────────────────────────────
 
 // Singleton row (id = "global") — platform-wide configuration set by admins
 model PlatformSettings {
-  id               String @id @default("global")
-  riderEarningRate Float  @default(0.8) // fraction of delivery fee paid to rider (0–1)
-  coverageRadiusKm Float  @default(15)  // max km radius for vendor/rider discovery
-  updatedAt        DateTime @updatedAt
+  id                     String  @id @default("global")
+  riderEarningRate       Float   @default(0.8)
+  coverageRadiusKm       Float   @default(15)
+  vendorPlatformFeeRate  Float   @default(0.2)  // fraction platform keeps from vendor orders (0–1)
+  paystackPublicKey      String?
+  paystackSecretKey      String?
+  updatedAt              DateTime @updatedAt
 }
 
 model Admin {
@@ -373,6 +468,7 @@ model Order {
   estimatedMinutes Int?
 
   confirmationCode   String?
+  idempotencyKey     String?    @unique
 
   notes              String?
   cancellationReason String?

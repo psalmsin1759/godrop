@@ -14,6 +14,8 @@ import YAML from "js-yaml";
 import authRouter from "./routes/auth";
 import configRouter from "./routes/config";
 import meRouter from "./routes/me";
+import searchRouter from "./routes/search";
+import vendorWalletRouter from "./routes/vendorWallet";
 import foodRouter from "./routes/food";
 import groceryRouter from "./routes/grocery";
 import retailRouter from "./routes/retail";
@@ -61,6 +63,8 @@ app.use("/api/v1/payments", paymentsRouter);
 app.use("/api/v1/promotions", promotionsRouter);
 app.use("/api/v1/vendor", vendorOnboardingRouter);
 app.use("/api/v1/vendor-admin", vendorAdminRouter);
+app.use("/api/v1/search", searchRouter);
+app.use("/api/v1/vendor-wallet", vendorWalletRouter);
 app.use("/api/v1/admin", systemAdminRouter);
 app.use("/api/v1/rider", riderAppRouter);
 

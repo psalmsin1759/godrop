@@ -687,11 +687,18 @@ function SystemPlatformSettings() {
   const { saved, flash } = useSavedFlash()
   const [ratePct, setRatePct] = useState('')
   const [coverageKm, setCoverageKm] = useState('')
+  const [vendorFeePct, setVendorFeePct] = useState('')
+  const [paystackPublicKey, setPaystackPublicKey] = useState('')
+  const [paystackSecretKey, setPaystackSecretKey] = useState('')
+  const [showSecret, setShowSecret] = useState(false)
 
   useEffect(() => {
     if (settings) {
       setRatePct(String(Math.round(settings.riderEarningRate * 100)))
       setCoverageKm(String(settings.coverageRadiusKm ?? 15))
+      setVendorFeePct(String(Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)))
+      setPaystackPublicKey(settings.paystackPublicKey ?? '')
+      setPaystackSecretKey(settings.paystackSecretKey ?? '')
     }
   }, [settings])
 
@@ -699,9 +706,17 @@ function SystemPlatformSettings() {
     e.preventDefault()
     const pct = parseFloat(ratePct)
     const km = parseFloat(coverageKm)
+    const feePct = parseFloat(vendorFeePct)
     if (isNaN(pct) || pct < 0 || pct > 100) return
     if (isNaN(km) || km < 1 || km > 500) return
-    await update({ riderEarningRate: pct / 100, coverageRadiusKm: km }).unwrap()
+    if (isNaN(feePct) || feePct < 0 || feePct > 100) return
+    await update({
+      riderEarningRate: pct / 100,
+      coverageRadiusKm: km,
+      vendorPlatformFeeRate: feePct / 100,
+      paystackPublicKey: paystackPublicKey || undefined,
+      paystackSecretKey: paystackSecretKey || undefined,
+    }).unwrap()
     flash()
   }
 
@@ -715,7 +730,7 @@ function SystemPlatformSettings() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <SectionCard title="Rider Earnings">
         <p className="text-xs text-[#9ca3af]">
-          The percentage of each delivery fee credited to the rider's wallet after a successful delivery.
+          The percentage of each delivery fee credited to the rider&apos;s wallet after a successful delivery.
           Applies to all riders platform-wide.
         </p>
         <div className="flex items-end gap-3 max-w-xs">
@@ -743,11 +758,38 @@ function SystemPlatformSettings() {
         </p>
       </SectionCard>
 
+      <SectionCard title="Vendor Platform Fee">
+        <p className="text-xs text-[#9ca3af]">
+          The percentage of each vendor order that the platform retains. The remainder is credited to the vendor&apos;s wallet.
+        </p>
+        <div className="flex items-end gap-3 max-w-xs">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+              Platform fee (% of order value)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={vendorFeePct}
+                onChange={(e) => setVendorFeePct(e.target.value)}
+                className={inputCls('pr-8')}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af] font-medium">%</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-[#9ca3af]">
+          Current: <span className="font-semibold text-[#283c50]">{settings ? `${Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)}%` : '—'}</span>
+          {settings && ` — vendor receives ${100 - Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)}% of order value`}
+        </p>
+      </SectionCard>
+
       <SectionCard title="Coverage Radius">
         <p className="text-xs text-[#9ca3af]">
           The maximum distance (in kilometres) within which customers can see restaurants, pharmacies, and grocery stores.
-          Riders within this radius of an order pickup will also be notified.
-          A larger radius means more options but potentially longer delivery times.
         </p>
         <div className="flex items-end gap-3 max-w-xs">
           <div className="flex-1">
@@ -772,6 +814,44 @@ function SystemPlatformSettings() {
           Current: <span className="font-semibold text-[#283c50]">{settings ? `${settings.coverageRadiusKm} km` : '—'}</span>
           {settings && ` — vendors within ${settings.coverageRadiusKm} km of a customer are shown`}
         </p>
+      </SectionCard>
+
+      <SectionCard title="Paystack Payment Keys">
+        <p className="text-xs text-[#9ca3af]">
+          Configure your Paystack API keys. The public key is shared with the mobile app; the secret key is kept server-side only.
+        </p>
+        <div className="space-y-3 max-w-md">
+          <div>
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">Public Key</label>
+            <input
+              type="text"
+              value={paystackPublicKey}
+              onChange={(e) => setPaystackPublicKey(e.target.value)}
+              placeholder="pk_live_..."
+              className={inputCls()}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">Secret Key</label>
+            <div className="relative">
+              <input
+                type={showSecret ? 'text' : 'password'}
+                value={paystackSecretKey}
+                onChange={(e) => setPaystackSecretKey(e.target.value)}
+                placeholder="sk_live_..."
+                className={inputCls('pr-10')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSecret(!showSecret)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#4b5563]"
+              >
+                {showSecret ? '🙈' : '👁'}
+              </button>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-amber-600">⚠️ Never share your secret key. It is stored encrypted and only used server-side.</p>
       </SectionCard>
 
       <div className="flex justify-end">

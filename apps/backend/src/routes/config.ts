@@ -10,6 +10,7 @@ router.get("/", async (_req: Request, res: Response) => {
   ok(res, {
     data: {
       coverageRadiusKm: settings?.coverageRadiusKm ?? 15,
+      paystackPublicKey: settings?.paystackPublicKey ?? process.env.PAYSTACK_PUBLIC_KEY ?? "",
     },
   });
 });

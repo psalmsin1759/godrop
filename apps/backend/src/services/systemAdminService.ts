@@ -68,16 +68,21 @@ export async function getPlatformSettings() {
   });
 }
 
-export async function updatePlatformSettings(data: { riderEarningRate?: number; coverageRadiusKm?: number }) {
-  if (data.riderEarningRate !== undefined) {
-    if (data.riderEarningRate < 0 || data.riderEarningRate > 1) {
-      throw new Error("riderEarningRate must be between 0 and 1");
-    }
+export async function updatePlatformSettings(data: {
+  riderEarningRate?: number;
+  coverageRadiusKm?: number;
+  vendorPlatformFeeRate?: number;
+  paystackPublicKey?: string;
+  paystackSecretKey?: string;
+}) {
+  if (data.riderEarningRate !== undefined && (data.riderEarningRate < 0 || data.riderEarningRate > 1)) {
+    throw new Error("riderEarningRate must be between 0 and 1");
   }
-  if (data.coverageRadiusKm !== undefined) {
-    if (data.coverageRadiusKm < 1 || data.coverageRadiusKm > 500) {
-      throw new Error("coverageRadiusKm must be between 1 and 500");
-    }
+  if (data.coverageRadiusKm !== undefined && (data.coverageRadiusKm < 1 || data.coverageRadiusKm > 500)) {
+    throw new Error("coverageRadiusKm must be between 1 and 500");
+  }
+  if (data.vendorPlatformFeeRate !== undefined && (data.vendorPlatformFeeRate < 0 || data.vendorPlatformFeeRate > 1)) {
+    throw new Error("vendorPlatformFeeRate must be between 0 and 1");
   }
   return prisma.platformSettings.upsert({
     where: { id: "global" },

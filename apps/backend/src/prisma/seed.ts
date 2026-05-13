@@ -1,4 +1,4 @@
-import {
+/* import {
   PrismaClient,
   VendorType,
   VendorStatus,
@@ -768,3 +768,4 @@ main()
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
+ */

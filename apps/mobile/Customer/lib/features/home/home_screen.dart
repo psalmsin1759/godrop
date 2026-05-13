@@ -706,6 +706,8 @@ class _CartSummarySheet extends StatelessWidget {
   }
 }
 
+//
+
 // ── Address bottom sheet (Feature 4: uses DeliveryAddressCubit) ───────────────
 
 class _AddressBottomSheet extends StatefulWidget {

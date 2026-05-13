@@ -1,0 +1,75 @@
+name: GoDrop
+description: GoDrop Customer App — on-demand delivery for Nigeria.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  go_router: ^13.2.0
+  google_fonts: ^6.2.1
+  equatable: ^2.0.5
+  cupertino_icons: ^1.0.6
+  intl_phone_number_input: ^0.7.4
+  geolocator: ^13.0.0
+  image_picker: ^1.1.2
+  google_maps_flutter: ^2.9.0
+  http: ^1.2.1
+  google_places_flutter: ^2.1.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  dio: ^5.4.3
+  retrofit: '>=4.4.1 <4.9.0'
+  flutter_secure_storage: ^9.2.2
+  json_annotation: ^4.9.0
+  shimmer: ^3.0.0
+  firebase_core: ^3.0.0
+  firebase_messaging: ^15.0.0
+  flutter_local_notifications: ^18.0.0
+  web_socket_channel: ^3.0.0
+  url_launcher: ^6.3.1
+  webview_flutter: ^4.10.0
+  shared_preferences: ^2.3.3
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_native_splash: ^2.4.3
+  flutter_launcher_icons: ^0.14.1
+  build_runner: '>=2.4.9 <2.14.0'
+  retrofit_generator: '>=9.1.4 <10.0.0'
+  json_serializable: ^6.8.0
+
+flutter_native_splash:
+  color: "#1A3CCC"
+  image: assets/images/logo.png
+  color_dark: "#0D1F6E"
+  image_dark: assets/images/logo.png
+  android_12:
+    image: assets/images/logo.png
+    color: "#1A3CCC"
+    color_dark: "#0D1F6E"
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/launchicon.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/images/splash.png
+    - assets/images/slide1.png
+    - assets/images/slide2.png
+    - assets/images/slide3.png
+    - assets/images/launchicon.png
+    - assets/images/user.png
+    - screenshots/logo/godrop-mark-512.png

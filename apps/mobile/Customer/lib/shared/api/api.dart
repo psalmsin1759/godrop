@@ -1,0 +1,14 @@
+export 'client/dio_client.dart';
+export 'services/auth_service.dart';
+export 'services/food_service.dart';
+export 'services/grocery_service.dart';
+export 'services/notifications_service.dart';
+export 'services/orders_service.dart';
+export 'services/parcel_service.dart';
+export 'services/payment_service.dart';
+export 'services/pharmacy_service.dart';
+export 'services/profile_service.dart';
+export 'services/promotions_service.dart';
+export 'services/retail_service.dart';
+export 'services/truck_service.dart';
+export 'services/wallet_service.dart';

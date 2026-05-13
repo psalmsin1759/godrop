@@ -424,7 +424,7 @@ export default function VendorOnboardingPage() {
         </div>
 
         <p className="text-[11px] text-white/30 tracking-widest uppercase">
-          © {new Date().getFullYear()} Godrop Technologies
+          © {new Date().getFullYear()} Godrop 
         </p>
       </div>
 

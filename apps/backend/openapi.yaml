@@ -7299,7 +7299,7 @@ paths:
     get:
       tags: [System Admin — Heroes]
       summary: List all heroes
-      description: Returns all hero slides (active and inactive) ordered by sortOrder. Minimum role: ADMIN.
+      description: "Returns all hero slides (active and inactive) ordered by sortOrder. Minimum role: ADMIN."
       security: [{ bearerAuth: [] }]
       responses:
         "200":
@@ -7317,7 +7317,7 @@ paths:
     post:
       tags: [System Admin — Heroes]
       summary: Create a hero slide
-      description: Creates a new hero slide. Upload the image separately via POST /admin/heroes/{id}/image. Minimum role: ADMIN.
+      description: "Creates a new hero slide. Upload the image separately via POST /admin/heroes/{id}/image. Minimum role: ADMIN."
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true

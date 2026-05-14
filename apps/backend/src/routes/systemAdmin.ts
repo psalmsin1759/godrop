@@ -25,6 +25,8 @@ import * as analyticsCtrl from "../controllers/analyticsController";
 import * as riderCtrl from "../controllers/riderController";
 import * as fcmCtrl from "../controllers/fcmController";
 import * as messagingCtrl from "../controllers/messagingController";
+import * as heroCtrl from "../controllers/heroController";
+import { upload } from "../middleware/upload";
 import {
   sendEmailSingleSchema,
   sendEmailBatchSchema,
@@ -246,5 +248,13 @@ router.post("/push/customers/:id", requireSystemRole("ADMIN"), validate(sendToSi
 router.post("/push/riders/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToRiders);
 router.post("/push/riders/batch", requireSystemRole("ADMIN"), validate(sendToRiderBatchSchema), fcmCtrl.notifyRiderBatch);
 router.post("/push/riders/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyRider);
+
+// ─── Heroes (ADMIN+) ──────────────────────────────────────────
+router.get("/heroes", requireSystemRole("ADMIN"), heroCtrl.listHeroes);
+router.post("/heroes", requireSystemRole("ADMIN"), heroCtrl.createHero);
+router.get("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.getHero);
+router.patch("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.updateHero);
+router.post("/heroes/:id/image", requireSystemRole("ADMIN"), upload.single("image"), heroCtrl.uploadHeroImage);
+router.delete("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.deleteHero);
 
 export default router;

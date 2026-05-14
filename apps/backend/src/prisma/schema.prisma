@@ -614,6 +614,23 @@ model Rider {
   withdrawals   RiderWithdrawal[]
 }
 
+// ─── Heroes ───────────────────────────────────────────────────
+
+model Hero {
+  id         String   @id @default(cuid())
+  badge      String?
+  heading    String
+  subheading String
+  imageUrl   String?
+  align      String   @default("left")
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  ctaLabel   String?
+  ctaLink    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 // ─── Contact Messages ─────────────────────────────────────────
 
 model ContactMessage {

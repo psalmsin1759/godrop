@@ -6,81 +6,72 @@ import gsap from "gsap";
 
 const ease = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
-const slides = [
-  {
-    image: "/images/delivery-collage.png",
-    badge: null,
-    heading: "GODROP",
-    sub: "Nigeria's On-Demand Delivery Platform",
-    align: "center" as const,
-    kenBurns: "scale-[1.08] translate-x-0 translate-y-0",
-  },
-  {
-    image: "/images/delivery-collage.png",
-    badge: "🍔  FOOD DELIVERY",
-    heading: "Hot Meals,\nFast Drops",
-    sub: "Restaurant favourites at your doorstep in minutes",
-    align: "left" as const,
-    kenBurns: "scale-[1.3] translate-x-[-8%]",
-  },
-  {
-    image: "/images/delivery-collage.png",
-    badge: "🛒  GROCERY DELIVERY",
-    heading: "Fresh Picks,\nDelivered",
-    sub: "Markets & supermarkets, straight to your kitchen",
-    align: "left" as const,
-    kenBurns: "scale-[1.4] translate-x-[4%] translate-y-[4%]",
-  },
-  {
-    image: "/images/delivery-hero.png",
-    badge: "📦  PARCEL & RETAIL",
-    heading: "Any Package.\nAnywhere.",
-    sub: "From small parcels to large retail orders",
-    align: "left" as const,
-    kenBurns: "scale-[1.2] translate-x-[6%]",
-  },
-  {
-    image: "/images/delivery-collage.png",
-    badge: "🚛  TRUCK BOOKING",
-    heading: "Move Homes.\nMove Offices.",
-    sub: "Book a truck for relocation across Lagos & beyond",
-    align: "left" as const,
-    kenBurns: "scale-[1.35] translate-x-[10%] translate-y-[8%]",
-  },
-  {
-    image: "/images/delivery-hero.png",
-    badge: null,
-    heading: "Lagos Runs on\nGodrop",
-    sub: "Food  •  Groceries  •  Parcels  •  Retail  •  Trucks",
-    align: "center" as const,
-    kenBurns: "scale-[1.15] translate-x-[3%]",
-  },
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://godrop-backend-production.up.railway.app";
+
+// Ken Burns classes cycle by slide index — presentation logic lives here
+const KEN_BURNS = [
+  "scale-[1.08] translate-x-0 translate-y-0",
+  "scale-[1.3] translate-x-[-8%]",
+  "scale-[1.4] translate-x-[4%] translate-y-[4%]",
+  "scale-[1.2] translate-x-[6%]",
+  "scale-[1.35] translate-x-[10%] translate-y-[8%]",
+  "scale-[1.15] translate-x-[3%]",
 ];
 
-const SLIDE_DURATION = 4000; // ms
+interface HeroSlide {
+  id: string;
+  badge: string | null;
+  heading: string;
+  subheading: string;
+  imageUrl: string | null;
+  align: "left" | "center";
+  ctaLabel: string | null;
+  ctaLink: string | null;
+  sortOrder: number;
+}
+
+// Static fallback used while loading or if API fails
+const FALLBACK: HeroSlide[] = [
+  { id: "f0", badge: null, heading: "GODROP", subheading: "Nigeria's On-Demand Delivery Platform", imageUrl: "/images/delivery-collage.png", align: "center", ctaLabel: null, ctaLink: null, sortOrder: 0 },
+  { id: "f1", badge: "🍔  FOOD DELIVERY", heading: "Hot Meals,\nFast Drops", subheading: "Restaurant favourites at your doorstep in minutes", imageUrl: "/images/delivery-collage.png", align: "left", ctaLabel: null, ctaLink: null, sortOrder: 1 },
+  { id: "f2", badge: "🛒  GROCERY DELIVERY", heading: "Fresh Picks,\nDelivered", subheading: "Markets & supermarkets, straight to your kitchen", imageUrl: "/images/delivery-collage.png", align: "left", ctaLabel: null, ctaLink: null, sortOrder: 2 },
+  { id: "f3", badge: "📦  PARCEL & RETAIL", heading: "Any Package.\nAnywhere.", subheading: "From small parcels to large retail orders", imageUrl: "/images/delivery-hero.png", align: "left", ctaLabel: null, ctaLink: null, sortOrder: 3 },
+  { id: "f4", badge: "🚛  TRUCK BOOKING", heading: "Move Homes.\nMove Offices.", subheading: "Book a truck for relocation across Lagos & beyond", imageUrl: "/images/delivery-collage.png", align: "left", ctaLabel: null, ctaLink: null, sortOrder: 4 },
+];
+
+const SLIDE_DURATION = 4000;
 
 export default function HeroSection() {
+  const [slides, setSlides] = useState<HeroSlide[]>(FALLBACK);
   const [current, setCurrent] = useState(0);
-  const sectionRef = useRef<HTMLElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Auto-advance slides
+  // Fetch live heroes from API, swap in silently when ready
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/v1/heroes`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((json) => {
+        if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+          setSlides(json.data);
+          setCurrent(0);
+        }
+      })
+      .catch(() => { /* keep fallback */ });
+  }, []);
+
+  // Auto-advance
   useEffect(() => {
     const id = setInterval(() => {
       setCurrent((c) => (c + 1) % slides.length);
     }, SLIDE_DURATION);
     return () => clearInterval(id);
-  }, []);
+  }, [slides.length]);
 
   // GSAP parallax on scroll
   useEffect(() => {
     const handleScroll = () => {
       if (overlayRef.current) {
-        gsap.to(overlayRef.current, {
-          y: window.scrollY * 0.25,
-          ease: "none",
-          duration: 0,
-        });
+        gsap.to(overlayRef.current, { y: window.scrollY * 0.25, ease: "none", duration: 0 });
       }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -88,13 +79,12 @@ export default function HeroSection() {
   }, []);
 
   const slide = slides[current];
+  const kenBurns = KEN_BURNS[current % KEN_BURNS.length];
+  const bgImage = slide.imageUrl ?? "/images/delivery-collage.png";
+  const isLast = current === slides.length - 1;
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative w-full overflow-hidden"
-      style={{ height: "100svh" }}
-    >
+    <section className="relative w-full overflow-hidden" style={{ height: "100svh" }}>
       {/* Background image with Ken Burns per slide */}
       <AnimatePresence mode="sync">
         <motion.div
@@ -106,8 +96,8 @@ export default function HeroSection() {
           transition={{ duration: 1.2, ease: "easeInOut" }}
         >
           <div
-            className={`w-full h-full bg-cover bg-center transition-transform duration-[6000ms] ease-out ${slide.kenBurns}`}
-            style={{ backgroundImage: `url(${slide.image})` }}
+            className={`w-full h-full bg-cover bg-center transition-transform duration-[6000ms] ease-out ${kenBurns}`}
+            style={{ backgroundImage: `url(${bgImage})` }}
           />
         </motion.div>
       </AnimatePresence>
@@ -116,10 +106,7 @@ export default function HeroSection() {
       <div
         ref={overlayRef}
         className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(6,6,6,0.95) 0%, rgba(6,6,6,0.45) 50%, rgba(6,6,6,0.55) 100%)",
-        }}
+        style={{ background: "linear-gradient(to top, rgba(6,6,6,0.95) 0%, rgba(6,6,6,0.45) 50%, rgba(6,6,6,0.55) 100%)" }}
       />
 
       {/* Slide text */}
@@ -160,7 +147,7 @@ export default function HeroSection() {
               {slide.heading}
             </motion.h1>
 
-            {/* Sub */}
+            {/* Subheading */}
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -168,11 +155,26 @@ export default function HeroSection() {
               className="text-white/70 font-light leading-relaxed"
               style={{ fontSize: "clamp(0.95rem, 2.2vw, 1.25rem)" }}
             >
-              {slide.sub}
+              {slide.subheading}
             </motion.p>
 
-            {/* CTA buttons on last slide */}
-            {current === slides.length - 1 && (
+            {/* CTA — slide-level (from DB) or last-slide app store buttons */}
+            {slide.ctaLabel && slide.ctaLink ? (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease, delay: 0.5 }}
+                className={`flex flex-wrap gap-3 mt-8 ${slide.align === "center" ? "justify-center" : ""}`}
+              >
+                <a
+                  href={slide.ctaLink}
+                  className="flex items-center gap-2 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: "#1E5FFF" }}
+                >
+                  {slide.ctaLabel}
+                </a>
+              </motion.div>
+            ) : isLast ? (
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -200,7 +202,7 @@ export default function HeroSection() {
                   Google Play
                 </a>
               </motion.div>
-            )}
+            ) : null}
           </motion.div>
         </AnimatePresence>
 
@@ -210,16 +212,14 @@ export default function HeroSection() {
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`h-1 rounded-full transition-all duration-300 ${
-                i === current ? "w-8 bg-white" : "w-2 bg-white/30"
-              }`}
+              className={`h-1 rounded-full transition-all duration-300 ${i === current ? "w-8 bg-white" : "w-2 bg-white/30"}`}
               aria-label={`Slide ${i + 1}`}
             />
           ))}
         </div>
       </div>
 
-      {/* Bottom fade to next section */}
+      {/* Bottom fade */}
       <div className="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-[#060606] to-transparent pointer-events-none z-10" />
     </section>
   );

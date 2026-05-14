@@ -22,6 +22,7 @@ import {
   Bell,
   Wallet,
   Mail,
+  ImagePlay,
 } from 'lucide-react'
 
 const systemNav = [
@@ -38,6 +39,7 @@ const systemReportsNav = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs', badge: 0 },
   { href: '/admins', icon: UserCog, label: 'Admins' },
+  { href: '/heroes', icon: ImagePlay, label: 'Hero Slides' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 

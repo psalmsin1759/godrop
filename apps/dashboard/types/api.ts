@@ -941,6 +941,48 @@ export interface NotificationsListParams {
   limit?: number
 }
 
+// ─── Heroes ────────────────────────────────────────────────────────────────────
+export type HeroAlign = 'left' | 'center'
+
+export interface Hero {
+  id: string
+  badge: string | null
+  heading: string
+  subheading: string
+  imageUrl: string | null
+  align: HeroAlign
+  isActive: boolean
+  sortOrder: number
+  ctaLabel: string | null
+  ctaLink: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateHeroRequest {
+  badge?: string | null
+  heading: string
+  subheading: string
+  imageUrl?: string | null
+  align?: HeroAlign
+  isActive?: boolean
+  sortOrder?: number
+  ctaLabel?: string | null
+  ctaLink?: string | null
+}
+
+export interface UpdateHeroRequest {
+  badge?: string | null
+  heading?: string
+  subheading?: string
+  imageUrl?: string | null
+  align?: HeroAlign
+  isActive?: boolean
+  sortOrder?: number
+  ctaLabel?: string | null
+  ctaLink?: string | null
+}
+
 // ─── Push Notifications ────────────────────────────────────────────────────────
 export interface PushNotificationPayload {
   title: string

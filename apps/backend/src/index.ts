@@ -30,6 +30,7 @@ import vendorAdminRouter from "./routes/vendorAdmin";
 import systemAdminRouter from "./routes/systemAdmin";
 import riderAppRouter from "./routes/riderApp";
 import contactRouter from "./routes/contact";
+import heroesRouter from "./routes/heroes";
 import { errorHandler } from "./middleware/errorHandler";
 import * as orderService from "./services/orderService";
 
@@ -69,6 +70,7 @@ app.use("/api/v1/vendor-admin/wallet", vendorWalletRouter);
 app.use("/api/v1/admin", systemAdminRouter);
 app.use("/api/v1/rider", riderAppRouter);
 app.use("/api/v1/contact", contactRouter);
+app.use("/api/v1/heroes", heroesRouter);
 
 // ─── Docs ─────────────────────────────────────────────────────
 const openApiSpec = YAML.load(

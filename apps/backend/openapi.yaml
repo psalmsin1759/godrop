@@ -277,6 +277,50 @@ components:
         loadersCostKobo: { type: integer, description: "Loaders cost (numLoaders × perLoaderKobo)" }
         totalKobo: { type: integer }
 
+    # ─ Heroes ─────────────────────────────────────────────────
+    Hero:
+      type: object
+      properties:
+        id: { type: string }
+        badge: { type: string, nullable: true, example: "🍔  FOOD DELIVERY" }
+        heading: { type: string, example: "Hot Meals,\nFast Drops" }
+        subheading: { type: string, example: "Restaurant favourites at your doorstep in minutes" }
+        imageUrl: { type: string, nullable: true }
+        align: { type: string, enum: [left, center], example: left }
+        isActive: { type: boolean }
+        sortOrder: { type: integer, example: 1 }
+        ctaLabel: { type: string, nullable: true, example: "Order Now" }
+        ctaLink: { type: string, nullable: true, example: "/food" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateHeroRequest:
+      type: object
+      required: [heading, subheading]
+      properties:
+        badge: { type: string, maxLength: 100 }
+        heading: { type: string, minLength: 1, maxLength: 200 }
+        subheading: { type: string, minLength: 1, maxLength: 500 }
+        imageUrl: { type: string, format: uri }
+        align: { type: string, enum: [left, center], default: left }
+        isActive: { type: boolean, default: true }
+        sortOrder: { type: integer, minimum: 0, default: 0 }
+        ctaLabel: { type: string, maxLength: 80 }
+        ctaLink: { type: string, maxLength: 500 }
+
+    UpdateHeroRequest:
+      type: object
+      properties:
+        badge: { type: string, maxLength: 100, nullable: true }
+        heading: { type: string, minLength: 1, maxLength: 200 }
+        subheading: { type: string, minLength: 1, maxLength: 500 }
+        imageUrl: { type: string, format: uri, nullable: true }
+        align: { type: string, enum: [left, center] }
+        isActive: { type: boolean }
+        sortOrder: { type: integer, minimum: 0 }
+        ctaLabel: { type: string, maxLength: 80, nullable: true }
+        ctaLink: { type: string, maxLength: 500, nullable: true }
+
     # ─ Vendor Onboarding / Admin ──────────────────────────────
     VendorAdminProfile:
       type: object
@@ -1095,6 +1139,28 @@ components:
 
 # ─── Paths ────────────────────────────────────────────────────
 paths:
+
+  # ══════════════════════════════════════════════════════════════
+  # PUBLIC — HEROES
+  # ══════════════════════════════════════════════════════════════
+
+  /heroes:
+    get:
+      tags: [Heroes — Public]
+      summary: List active heroes
+      description: Returns all active hero slides ordered by sortOrder. Used by the landing page to render the hero carousel.
+      responses:
+        "200":
+          description: List of active heroes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Hero" }
 
   # ══════════════════════════════════════════════════════════════
   # PUBLIC CONFIG
@@ -7225,6 +7291,146 @@ paths:
         "404":
           description: Rider not found
 
+  # ══════════════════════════════════════════════════════════════
+  # SYSTEM ADMIN — HEROES
+  # ══════════════════════════════════════════════════════════════
+
+  /admin/heroes:
+    get:
+      tags: [System Admin — Heroes]
+      summary: List all heroes
+      description: Returns all hero slides (active and inactive) ordered by sortOrder. Minimum role: ADMIN.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Hero list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Hero" }
+
+    post:
+      tags: [System Admin — Heroes]
+      summary: Create a hero slide
+      description: Creates a new hero slide. Upload the image separately via POST /admin/heroes/{id}/image. Minimum role: ADMIN.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateHeroRequest" }
+      responses:
+        "201":
+          description: Hero created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Hero" }
+        "400":
+          description: Validation error
+
+  /admin/heroes/{id}:
+    get:
+      tags: [System Admin — Heroes]
+      summary: Get a hero slide
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Hero detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Hero" }
+        "404":
+          description: Hero not found
+
+    patch:
+      tags: [System Admin — Heroes]
+      summary: Update a hero slide
+      description: Partial update — only include fields to change. To update image use the dedicated image endpoint.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateHeroRequest" }
+      responses:
+        "200":
+          description: Updated hero
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Hero" }
+        "400":
+          description: Validation error
+        "404":
+          description: Hero not found
+
+    delete:
+      tags: [System Admin — Heroes]
+      summary: Delete a hero slide
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Hero deleted
+        "404":
+          description: Hero not found
+
+  /admin/heroes/{id}/image:
+    post:
+      tags: [System Admin — Heroes]
+      summary: Upload hero background image
+      description: Uploads an image to Cloudinary and sets it as the hero's imageUrl. Accepts images up to 5 MB.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Hero background image (JPG, PNG, WebP — max 5 MB)
+      responses:
+        "200":
+          description: Image uploaded and hero updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Hero" }
+        "400":
+          description: No file provided
+        "404":
+          description: Hero not found
+
 # ─── WebSocket ────────────────────────────────────────────────
 # Connect to: ws://host/ws/orders/:orderId/tracking
 # The server broadcasts JSON payloads whenever the rider's location changes.
@@ -7317,3 +7523,9 @@ tags:
     description: "Rider account management, KYC review, manual order dispatch, earnings overview, and withdrawal processing. Minimum role: ADMIN."
   - name: System Admin — Push Notifications
     description: "Send FCM push notifications to individual customers or riders, a batch by IDs, or broadcast to all. Minimum role: ADMIN."
+  # Public
+  - name: Heroes — Public
+    description: "Public hero carousel endpoint — returns active hero slides for the landing page. No authentication required."
+  # System Admin
+  - name: System Admin — Heroes
+    description: "Hero slide management — create, update, reorder, upload images, and delete hero carousel slides displayed on the landing page. Minimum role: ADMIN."

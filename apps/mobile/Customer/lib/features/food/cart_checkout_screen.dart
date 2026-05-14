@@ -148,7 +148,12 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     setState(() => _placing = true);
 
     try {
-      // Step 1: Create order via checkout endpoint
+      // Step 1: Create order via checkout endpoint.
+      // The checkout API only accepts 'card' or 'cash' — wallet/wallet_card are
+      // resolved later by /payments/initialize, so we map them to 'card' here.
+      final String checkoutPaymentMethod =
+          _paymentMethod == 'cash' ? 'cash' : 'card';
+
       final String orderId;
       final int orderTotalKobo;
 
@@ -161,7 +166,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
             vendorId: cart.partnerId,
             items: items,
             deliveryAddress: deliveryAddress,
-            paymentMethod: _paymentMethod,
+            paymentMethod: checkoutPaymentMethod,
           ),
         );
         orderId = response.order.id;
@@ -174,7 +179,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
           vendorId: cart.partnerId,
           items: items,
           deliveryAddress: deliveryAddress,
-          paymentMethod: _paymentMethod,
+          paymentMethod: checkoutPaymentMethod,
         );
         final StoreOrderResponse response;
         switch (cart.partnerType) {

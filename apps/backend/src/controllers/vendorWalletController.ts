@@ -5,6 +5,7 @@ import { ok, fail, created } from "../utils/response";
 import { paginate, buildMeta } from "../utils/pagination";
 import { nanoid } from "nanoid";
 import { VendorWalletTxType } from "@prisma/client";
+import { logAction } from "../services/auditLogService";
 
 function vendorId(req: Request): string {
   return req.admin?.vendorId ?? "";
@@ -81,11 +82,26 @@ export async function saveBankAccount(req: Request, res: Response, next: NextFun
   try {
     const vid = vendorId(req);
     const { bankName, bankCode, accountNumber, accountName } = req.body;
+
+    const existing = await prisma.vendorBankAccount.findUnique({ where: { vendorId: vid } });
+
     const account = await prisma.vendorBankAccount.upsert({
       where: { vendorId: vid },
       update: { bankName, bankCode, accountNumber, accountName },
       create: { vendorId: vid, bankName, bankCode, accountNumber, accountName },
     });
+
+    logAction({
+      adminId: req.admin!.id,
+      vendorId: vid,
+      action: existing ? "UPDATE_BANK_ACCOUNT" : "ADD_BANK_ACCOUNT",
+      entity: "VendorBankAccount",
+      entityId: account.id,
+      newValues: { bankName, bankCode, accountNumber, accountName },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
     ok(res, { account });
   } catch (err) {
     next(err);

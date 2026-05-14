@@ -4254,9 +4254,28 @@ paths:
       responses:
         "200":
           description: Bank account details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  account:
+                    nullable: true
+                    type: object
+                    properties:
+                      id: { type: string }
+                      bankName: { type: string, example: Access Bank }
+                      bankCode: { type: string, example: "044" }
+                      accountNumber: { type: string, example: "0123456789" }
+                      accountName: { type: string, example: JOHN DOE }
     post:
       tags: [Vendor Admin — Wallet]
-      summary: Save / update bank account
+      summary: Add or update bank account (OWNER only)
+      description: |
+        Upserts the vendor's bank account used for withdrawals.
+        Audit-logged as `ADD_BANK_ACCOUNT` on first save, `UPDATE_BANK_ACCOUNT` on subsequent edits.
+        Account number must be exactly 10 digits. Use `/resolve-account` first to verify the account name.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
@@ -4266,21 +4285,39 @@ paths:
               type: object
               required: [bankName, bankCode, accountNumber, accountName]
               properties:
-                bankName: { type: string }
-                bankCode: { type: string }
-                accountNumber: { type: string }
-                accountName: { type: string }
+                bankName: { type: string, example: Access Bank }
+                bankCode: { type: string, example: "044" }
+                accountNumber: { type: string, minLength: 10, maxLength: 10, example: "0123456789" }
+                accountName: { type: string, example: JOHN DOE, description: "As returned by /resolve-account" }
       responses:
         "200":
-          description: Saved
+          description: Bank account saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  account:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      bankName: { type: string }
+                      bankCode: { type: string }
+                      accountNumber: { type: string }
+                      accountName: { type: string }
+        "422":
+          description: Validation error (e.g. account number not 10 digits)
 
   /vendor-admin/wallet/withdraw:
     post:
       tags: [Vendor Admin — Wallet]
-      summary: Request a wallet withdrawal
-      description: >
-        Creates a pending withdrawal record. Funds are disbursed by a system admin
-        via the rider withdrawal flow after bank account verification.
+      summary: Request a wallet withdrawal (OWNER only)
+      description: |
+        Initiates a Paystack single transfer to the vendor's saved bank account and debits the wallet immediately.
+        Requires the OWNER role — MANAGER and STAFF will receive 403.
+        Minimum withdrawal: ₦100 (10,000 kobo). Amount must not exceed current wallet balance.
+        Audit-logged as `WALLET_WITHDRAWAL`.
       security: [{ BearerAuth: [] }]
       requestBody:
         required: true
@@ -4293,9 +4330,19 @@ paths:
                 amountKobo: { type: integer, minimum: 10000, example: 50000 }
       responses:
         "200":
-          description: Withdrawal request created
+          description: Transfer initiated and wallet debited
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string, example: Transfer initiated }
+                  reference: { type: string, example: VWD-abc123 }
+        "403":
+          description: Forbidden — OWNER role required
         "422":
-          description: Insufficient balance
+          description: Insufficient wallet balance or no bank account on file
 
   # ─ Team (view MANAGER+, manage OWNER) ─────────────────────────
   /vendor-admin/team:

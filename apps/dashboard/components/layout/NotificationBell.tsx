@@ -42,8 +42,7 @@ export default function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null)
 
   const { data, isLoading } = useGetNotificationsQuery(
-    { page: 1, limit: 15 },
-    { pollingInterval: 30000 }
+    { page: 1, limit: 15 }
   )
   const [markRead] = useMarkNotificationReadMutation()
   const [markAll, { isLoading: markingAll }] = useMarkAllNotificationsReadMutation()

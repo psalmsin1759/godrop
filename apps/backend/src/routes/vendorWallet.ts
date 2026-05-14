@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireVendorAuth, requireVendorRole } from "../middleware/vendorAuth";
 import { validate } from "../middleware/validate";
+import { auditVendorAction } from "../middleware/auditLog";
 import * as vendorWalletController from "../controllers/vendorWalletController";
 import {
   saveBankAccountSchema,
@@ -18,6 +19,12 @@ router.get("/banks", vendorWalletController.getBanks);
 router.post("/resolve-account", validate(resolveAccountSchema), vendorWalletController.resolveAccount);
 router.get("/bank-account", vendorWalletController.getBankAccount);
 router.post("/bank-account", validate(saveBankAccountSchema), vendorWalletController.saveBankAccount);
-router.post("/withdraw", requireVendorRole("OWNER"), validate(withdrawSchema), vendorWalletController.withdraw);
+router.post(
+  "/withdraw",
+  requireVendorRole("OWNER"),
+  validate(withdrawSchema),
+  auditVendorAction({ action: "WALLET_WITHDRAWAL", entity: "VendorWallet" }),
+  vendorWalletController.withdraw
+);
 
 export default router;

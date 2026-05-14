@@ -29,6 +29,7 @@ const values = [
   },
 ];
 
+
 export default function AboutPage() {
   return (
     <PageShell>

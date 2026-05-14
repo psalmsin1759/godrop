@@ -244,8 +244,8 @@ export async function markOrderReady(req: Request, res: Response, next: NextFunc
 
 export async function rejectOrder(req: Request, res: Response, next: NextFunction) {
   try {
-    const [order] = await svc.rejectOrder(req.params.id, req.admin!.vendorId!, req.body.reason);
-    return ok(res, { data: order });
+    await svc.rejectOrder(req.params.id, req.admin!.vendorId!, req.body.reason);
+    return ok(res, { message: "Order rejected" });
   } catch (err: any) {
     if (err.message === "Order not found") return fail(res, err.message, 404);
     if (err.message?.includes("Cannot transition")) return fail(res, err.message, 409);

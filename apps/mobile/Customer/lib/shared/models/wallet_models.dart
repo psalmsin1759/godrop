@@ -20,6 +20,7 @@ class WalletTx {
   final String type;
   final int amountKobo;
   final String description;
+  @JsonKey(defaultValue: 'completed')
   final String status;
   final String createdAt;
 
@@ -28,7 +29,7 @@ class WalletTx {
     required this.type,
     required this.amountKobo,
     required this.description,
-    required this.status,
+    this.status = 'completed',
     required this.createdAt,
   });
 

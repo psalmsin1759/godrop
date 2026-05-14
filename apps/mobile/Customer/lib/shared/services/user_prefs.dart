@@ -17,6 +17,21 @@ class UserPrefs {
     await _box?.put('onboarded', true);
   }
 
+  static int get walletBalanceKobo => _box?.get('wallet_balance_kobo', defaultValue: 0) ?? 0;
+  static Future<void> saveWalletBalance(int kobo) async => _box?.put('wallet_balance_kobo', kobo);
+
+  static int get orderCount => _box?.get('order_count', defaultValue: 0) ?? 0;
+  static Future<void> saveOrderCount(int count) async => _box?.put('order_count', count);
+
+  static String? get avatarUrl => _box?.get('avatar_url');
+  static Future<void> saveAvatarUrl(String? url) async {
+    if (url != null) {
+      await _box?.put('avatar_url', url);
+    } else {
+      await _box?.delete('avatar_url');
+    }
+  }
+
   static String? get fcmToken => _box?.get('fcm_token');
 
   static Future<void> saveFcmToken(String token) async =>
@@ -30,11 +45,6 @@ class UserPrefs {
 
   static Future<void> saveDeliveryAddress(String address) async =>
       _box?.put('delivery_address', address);
-
-  static bool get isDarkMode => _box?.get('dark_mode', defaultValue: false) ?? false;
-
-  static Future<void> setDarkMode(bool value) async =>
-      _box?.put('dark_mode', value);
 
   static Future<void> clear() async => _box?.clear();
 }

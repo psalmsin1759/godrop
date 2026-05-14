@@ -186,6 +186,7 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
     deliveryFeeKobo: 0,
     estimatedMinutes: 30,
     isOpen: false,
+    cashOnDeliveryEnabled: false,
     openingHours: {} as OpeningHours,
   })
 
@@ -199,6 +200,7 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
         deliveryFeeKobo: settings.deliveryFeeKobo ?? 0,
         estimatedMinutes: settings.estimatedMinutes ?? 30,
         isOpen: settings.isOpen ?? false,
+        cashOnDeliveryEnabled: (settings as any).cashOnDeliveryEnabled ?? false,
         openingHours: settings.openingHours ?? {},
       })
     }
@@ -282,6 +284,14 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
             onChange={disabled ? () => {} : (v) => setForm((f) => ({ ...f, isOpen: v }))}
             label={`Store is currently ${form.isOpen ? 'Open' : 'Closed'}`}
           />
+        </div>
+        <div>
+          <Toggle
+            value={form.cashOnDeliveryEnabled}
+            onChange={disabled ? () => {} : (v) => setForm((f) => ({ ...f, cashOnDeliveryEnabled: v }))}
+            label="Accept cash on delivery"
+          />
+          <p className="text-xs text-[#9ca3af] mt-1 ml-9">Customers can choose to pay in cash when their order arrives.</p>
         </div>
       </SectionCard>
 
@@ -691,6 +701,10 @@ function SystemPlatformSettings() {
   const [paystackPublicKey, setPaystackPublicKey] = useState('')
   const [paystackSecretKey, setPaystackSecretKey] = useState('')
   const [showSecret, setShowSecret] = useState(false)
+  // New fee fields (stored in Kobo, displayed in Naira)
+  const [deliveryFeeNaira, setDeliveryFeeNaira] = useState('')
+  const [serviceChargeNaira, setServiceChargeNaira] = useState('')
+  const [costPerKmNaira, setCostPerKmNaira] = useState('')
 
   useEffect(() => {
     if (settings) {
@@ -699,6 +713,9 @@ function SystemPlatformSettings() {
       setVendorFeePct(String(Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)))
       setPaystackPublicKey(settings.paystackPublicKey ?? '')
       setPaystackSecretKey(settings.paystackSecretKey ?? '')
+      setDeliveryFeeNaira(String(((settings as any).standardDeliveryFeeKobo ?? 75000) / 100))
+      setServiceChargeNaira(String(((settings as any).serviceChargeKobo ?? 25000) / 100))
+      setCostPerKmNaira(String(((settings as any).costPerKmKobo ?? 10000) / 100))
     }
   }, [settings])
 
@@ -707,16 +724,25 @@ function SystemPlatformSettings() {
     const pct = parseFloat(ratePct)
     const km = parseFloat(coverageKm)
     const feePct = parseFloat(vendorFeePct)
+    const deliveryFee = parseFloat(deliveryFeeNaira)
+    const serviceCharge = parseFloat(serviceChargeNaira)
+    const costPerKm = parseFloat(costPerKmNaira)
     if (isNaN(pct) || pct < 0 || pct > 100) return
     if (isNaN(km) || km < 1 || km > 500) return
     if (isNaN(feePct) || feePct < 0 || feePct > 100) return
+    if (isNaN(deliveryFee) || deliveryFee < 0) return
+    if (isNaN(serviceCharge) || serviceCharge < 0) return
+    if (isNaN(costPerKm) || costPerKm < 0) return
     await update({
       riderEarningRate: pct / 100,
       coverageRadiusKm: km,
       vendorPlatformFeeRate: feePct / 100,
       paystackPublicKey: paystackPublicKey || undefined,
       paystackSecretKey: paystackSecretKey || undefined,
-    }).unwrap()
+      standardDeliveryFeeKobo: Math.round(deliveryFee * 100),
+      serviceChargeKobo: Math.round(serviceCharge * 100),
+      costPerKmKobo: Math.round(costPerKm * 100),
+    } as any).unwrap()
     flash()
   }
 
@@ -814,6 +840,59 @@ function SystemPlatformSettings() {
           Current: <span className="font-semibold text-[#283c50]">{settings ? `${settings.coverageRadiusKm} km` : '—'}</span>
           {settings && ` — vendors within ${settings.coverageRadiusKm} km of a customer are shown`}
         </p>
+      </SectionCard>
+
+      <SectionCard title="Delivery Fees">
+        <p className="text-xs text-[#9ca3af]">
+          Platform-wide fees charged to customers. These are fetched by the mobile app and shown on the cart checkout screen.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl">
+          <div>
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+              Standard Delivery Fee (₦)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={50}
+              value={deliveryFeeNaira}
+              onChange={(e) => setDeliveryFeeNaira(e.target.value)}
+              className={inputCls()}
+              placeholder="750"
+            />
+            <p className="text-xs text-[#9ca3af] mt-1">Base delivery charge per order</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+              Service Charge (₦)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={10}
+              value={serviceChargeNaira}
+              onChange={(e) => setServiceChargeNaira(e.target.value)}
+              className={inputCls()}
+              placeholder="250"
+            />
+            <p className="text-xs text-[#9ca3af] mt-1">Platform service fee per order</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+              Cost per km (₦)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={10}
+              value={costPerKmNaira}
+              onChange={(e) => setCostPerKmNaira(e.target.value)}
+              className={inputCls()}
+              placeholder="100"
+            />
+            <p className="text-xs text-[#9ca3af] mt-1">Added on top of delivery fee</p>
+          </div>
+        </div>
       </SectionCard>
 
       <SectionCard title="Paystack Payment Keys">

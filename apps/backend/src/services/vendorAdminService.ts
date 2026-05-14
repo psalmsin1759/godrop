@@ -389,6 +389,7 @@ export async function updateVendorSettings(
     estimatedMinutes?: number;
     isOpen?: boolean;
     openingHours?: object;
+    cashOnDeliveryEnabled?: boolean;
   }
 ) {
   return prisma.vendor.update({ where: { id: vendorId }, data });

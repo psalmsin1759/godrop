@@ -5,8 +5,6 @@ import '../../app/theme.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/services/user_prefs.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../orders/bloc/order_cubit.dart';
-import '../orders/bloc/order_state.dart';
 import '../orders/bloc/remote_orders_cubit.dart';
 import '../orders/bloc/remote_orders_state.dart';
 import '../food/bloc/cart_cubit.dart';
@@ -124,21 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Search bar
-                  GestureDetector(
-                    onTap: () => context.go('/search'),
-                    child: Container(
-                      height: 44,
-                      decoration: BoxDecoration(color: GodropColors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: GodropColors.border)),
-                      child: const Row(children: [
-                        SizedBox(width: 12),
-                        Icon(Icons.search_rounded, color: GodropColors.mute, size: 20),
-                        SizedBox(width: 8),
-                        Text('Search restaurants, groceries...', style: TextStyle(color: GodropColors.mute, fontSize: 14)),
-                      ]),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -537,7 +520,7 @@ class _HomeHeaderState extends State<_HomeHeader> {
                         Expanded(
                           child: TextField(
                             readOnly: true,
-                            onTap: () {},
+                            onTap: () => context.push('/search'),
                             decoration: InputDecoration(
                               hintText:
                                   'Search restaurants, shops, parcels...',
@@ -728,6 +711,8 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
   final FocusNode _focus = FocusNode();
   List<PlacesPrediction> _suggestions = [];
   bool _loading = false;
+  List<String> _popularAreas = [];
+  bool _loadingPopular = true;
 
   @override
   void initState() {
@@ -737,6 +722,12 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _focus.requestFocus();
     });
+    _loadPopularAreas();
+  }
+
+  void _loadPopularAreas() async {
+    final areas = await PlacesService.fetchPopularAreas();
+    if (mounted) setState(() { _popularAreas = areas; _loadingPopular = false; });
   }
 
   void _onTextChanged() async {
@@ -935,53 +926,53 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
     );
   }
 
-  static const _popularAreas = [
-    'Lekki Phase 1, Lagos',
-    'Victoria Island (VI), Lagos',
-    'Ikeja, Lagos',
-    'Yaba, Lagos',
-    'Surulere, Lagos',
-    'Ikoyi, Lagos',
-    'Ajah, Lagos',
-    'Maryland, Lagos',
-    'Gbagada, Lagos',
-    'Magodo, Lagos',
-    'Ojodu Berger, Lagos',
-    'Festac Town, Lagos',
-    'Isale Eko, Lagos Island',
-    'Oshodi, Lagos',
-    'Agege, Lagos',
-  ];
-
-  Widget _buildPopularList() => ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        itemCount: _popularAreas.length,
-        separatorBuilder: (_, __) => const Divider(height: 1, indent: 44),
-        itemBuilder: (_, i) {
-          final area = _popularAreas[i];
-          return ListTile(
-            leading: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: GodropColors.blue.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.location_on_rounded,
-                  color: GodropColors.blue, size: 16),
-            ),
-            title: Text(area,
-                style: const TextStyle(
-                    fontSize: 14,
-                    color: GodropColors.ink,
-                    fontWeight: FontWeight.w500)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            dense: true,
-            onTap: () => _select(area),
-          );
-        },
+  Widget _buildPopularList() {
+    if (_loadingPopular) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 32),
+          child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2),
+        ),
       );
+    }
+    if (_popularAreas.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 32),
+          child: Text('No areas found', style: TextStyle(fontSize: 14, color: GodropColors.mute)),
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      itemCount: _popularAreas.length,
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 44),
+      itemBuilder: (_, i) {
+        final area = _popularAreas[i];
+        return ListTile(
+          leading: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: GodropColors.blue.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.location_on_rounded,
+                color: GodropColors.blue, size: 16),
+          ),
+          title: Text(area,
+              style: const TextStyle(
+                  fontSize: 14,
+                  color: GodropColors.ink,
+                  fontWeight: FontWeight.w500)),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          dense: true,
+          onTap: () => _select(area),
+        );
+      },
+    );
+  }
 }
 
 // ── Category card ─────────────────────────────────────────────────────────────
@@ -1177,94 +1168,6 @@ class _RemoteOrderCard extends StatelessWidget {
             child: Text(_statusLabel(status), style: TextStyle(color: _statusColor(status), fontSize: 12, fontWeight: FontWeight.w600)),
           ),
         ]),
-      ),
-    );
-  }
-}
-
-// ── Active order card ─────────────────────────────────────────────────────────
-
-class _ActiveOrderCard extends StatelessWidget {
-  final String type;
-  final IconData icon;
-  final Color iconBg;
-  final String subtitle;
-  final String status;
-  final Color statusColor;
-  final String? confirmationCode;
-  final VoidCallback onTap;
-  const _ActiveOrderCard(
-      {required this.type,
-      required this.icon,
-      required this.iconBg,
-      required this.subtitle,
-      required this.status,
-      required this.statusColor,
-      this.confirmationCode,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-            color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
-        child: Row(
-          children: [
-            Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                    color: iconBg, borderRadius: BorderRadius.circular(10)),
-                child: Icon(icon, color: Colors.white, size: 20)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(type,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: GodropColors.ink,
-                          fontSize: 14)),
-                  const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: const TextStyle(
-                          fontSize: 12, color: GodropColors.slate)),
-                  if (confirmationCode != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.lock_rounded,
-                            size: 11, color: GodropColors.mute),
-                        const SizedBox(width: 3),
-                        Text('Code: $confirmationCode',
-                            style: const TextStyle(
-                                fontSize: 11,
-                                color: GodropColors.mute,
-                                fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20)),
-              child: Text(status,
-                  style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -10,7 +10,8 @@ class ProfileLoading extends ProfileState {}
 class ProfileLoaded extends ProfileState {
   final UserProfile profile;
   final List<SavedAddress> addresses;
-  ProfileLoaded({required this.profile, required this.addresses});
+  final int orderCount;
+  ProfileLoaded({required this.profile, required this.addresses, this.orderCount = 0});
 }
 
 class ProfileError extends ProfileState {

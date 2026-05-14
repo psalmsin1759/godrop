@@ -17,7 +17,6 @@ class PlacesPrediction {
 class PlacesService {
   static const _key = 'AIzaSyDQrymY31J4gl5ws6SStg42Vpk_AfWFt_U';
   static const _base = 'https://places.googleapis.com/v1';
-  static const _geocodeBase = 'https://maps.googleapis.com/maps/api/geocode/json';
 
   static Future<List<PlacesPrediction>> autocomplete(String input) async {
     if (input.trim().length < 2) return [];
@@ -73,6 +72,38 @@ class PlacesService {
       return results[0]['formatted_address'] as String;
     } catch (_) {}
     return null;
+  }
+
+  /// Returns popular neighbourhood names near Lagos from the Places Nearby Search API.
+  static Future<List<String>> fetchPopularAreas() async {
+    try {
+      final uri = Uri.parse('$_base/places:searchNearby');
+      final res = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': _key,
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress',
+        },
+        body: json.encode({
+          'includedTypes': ['sublocality'],
+          'locationRestriction': {
+            'circle': {
+              'center': {'latitude': 6.5244, 'longitude': 3.3792},
+              'radius': 80000.0,
+            },
+          },
+          'maxResultCount': 15,
+        }),
+      );
+      final data = json.decode(res.body) as Map<String, dynamic>;
+      final places = data['places'] as List? ?? [];
+      return places
+          .map((p) => p['formattedAddress'] as String? ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+    } catch (_) {}
+    return [];
   }
 
   static Future<ParcelLocation?> getDetails(String placeId, String name) async {

@@ -64,7 +64,7 @@ export async function getPlatformSettings() {
   return prisma.platformSettings.upsert({
     where: { id: "global" },
     update: {},
-    create: { id: "global", riderEarningRate: 0.8 },
+    create: { id: "global", riderEarningRate: 0.8, standardDeliveryFeeKobo: 75000, serviceChargeKobo: 25000, costPerKmKobo: 10000 },
   });
 }
 
@@ -74,6 +74,9 @@ export async function updatePlatformSettings(data: {
   vendorPlatformFeeRate?: number;
   paystackPublicKey?: string;
   paystackSecretKey?: string;
+  standardDeliveryFeeKobo?: number;
+  serviceChargeKobo?: number;
+  costPerKmKobo?: number;
 }) {
   if (data.riderEarningRate !== undefined && (data.riderEarningRate < 0 || data.riderEarningRate > 1)) {
     throw new Error("riderEarningRate must be between 0 and 1");
@@ -84,10 +87,26 @@ export async function updatePlatformSettings(data: {
   if (data.vendorPlatformFeeRate !== undefined && (data.vendorPlatformFeeRate < 0 || data.vendorPlatformFeeRate > 1)) {
     throw new Error("vendorPlatformFeeRate must be between 0 and 1");
   }
+  if (data.standardDeliveryFeeKobo !== undefined && data.standardDeliveryFeeKobo < 0) {
+    throw new Error("standardDeliveryFeeKobo must be >= 0");
+  }
+  if (data.serviceChargeKobo !== undefined && data.serviceChargeKobo < 0) {
+    throw new Error("serviceChargeKobo must be >= 0");
+  }
+  if (data.costPerKmKobo !== undefined && data.costPerKmKobo < 0) {
+    throw new Error("costPerKmKobo must be >= 0");
+  }
   return prisma.platformSettings.upsert({
     where: { id: "global" },
     update: data,
-    create: { id: "global", riderEarningRate: data.riderEarningRate ?? 0.8, coverageRadiusKm: data.coverageRadiusKm ?? 15 },
+    create: {
+      id: "global",
+      riderEarningRate: data.riderEarningRate ?? 0.8,
+      coverageRadiusKm: data.coverageRadiusKm ?? 15,
+      standardDeliveryFeeKobo: data.standardDeliveryFeeKobo ?? 75000,
+      serviceChargeKobo: data.serviceChargeKobo ?? 25000,
+      costPerKmKobo: data.costPerKmKobo ?? 10000,
+    },
   });
 }
 

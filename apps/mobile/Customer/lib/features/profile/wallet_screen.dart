@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../app/theme.dart';
 import '../../shared/models/wallet_models.dart';
 import 'bloc/wallet_cubit.dart';
@@ -71,7 +72,9 @@ class _WalletScreenState extends State<WalletScreen> {
     return BlocConsumer<WalletCubit, WalletState>(
       listener: (ctx, state) {
         if (state is WalletTopUpReady) {
-          _showPaystackSheet(ctx, state);
+          _showPaystackWebView(ctx, state);
+        } else if (state is WalletTopUpSuccess) {
+          _showSuccessSheet(ctx, state);
         } else if (state is WalletError && state.balanceKobo == null) {
           ScaffoldMessenger.of(ctx).showSnackBar(
             SnackBar(
@@ -91,6 +94,9 @@ class _WalletScreenState extends State<WalletScreen> {
         bool toppingUp = false;
 
         if (state is WalletLoaded) {
+          balanceKobo = state.balanceKobo;
+          transactions = state.transactions;
+        } else if (state is WalletTopUpSuccess) {
           balanceKobo = state.balanceKobo;
           transactions = state.transactions;
         } else if (state is WalletToppingUp) {
@@ -124,17 +130,17 @@ class _WalletScreenState extends State<WalletScreen> {
                       Row(
                         children: [
                           const Expanded(child: Text('Wallet', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700))),
-                          Icon(Icons.more_horiz_rounded, color: Colors.white.withOpacity(0.8)),
+                          Icon(Icons.more_horiz_rounded, color: Colors.white.withValues(alpha: 0.8)),
                         ],
                       ),
                       const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
-                        decoration: BoxDecoration(color: Colors.black.withOpacity(0.19), borderRadius: BorderRadius.circular(14)),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.19), borderRadius: BorderRadius.circular(14)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('GODROP WALLET BALANCE', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13, letterSpacing: 0.8, fontWeight: FontWeight.bold)),
+                            Text('GODROP WALLET BALANCE', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13, letterSpacing: 0.8, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 6),
                             loading
                                 ? const Padding(
@@ -155,7 +161,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                       ),
                                       Text(
                                         '.${balParts.length > 1 ? balParts[1] : '00'}',
-                                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 22, fontWeight: FontWeight.w400),
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 22, fontWeight: FontWeight.w400),
                                       ),
                                     ],
                                   ),
@@ -167,10 +173,6 @@ class _WalletScreenState extends State<WalletScreen> {
                                     label: toppingUp ? '...' : '↑ Top up',
                                     onTap: toppingUp || loading ? null : _showTopUpSheet,
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _WalletBtn(label: '↓ Withdraw', onTap: () {}, outlined: true),
                                 ),
                               ],
                             ),
@@ -217,7 +219,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               final tx = e.value;
                               final isCredit = tx.type == 'credit' || tx.amountKobo > 0 && tx.type != 'debit';
                               final sign = isCredit ? '+' : '-';
-                              final amtStr = '${sign}₦${_fmtKobo(tx.amountKobo.abs())}';
+                              final amtStr = '$sign₦${_fmtKobo(tx.amountKobo.abs())}';
                               return Column(
                                 children: [
                                   Padding(
@@ -228,7 +230,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                           width: 38,
                                           height: 38,
                                           decoration: BoxDecoration(
-                                            color: isCredit ? GodropColors.success.withOpacity(0.08) : GodropColors.background,
+                                            color: isCredit ? GodropColors.success.withValues(alpha: 0.08) : GodropColors.background,
                                             borderRadius: BorderRadius.circular(10),
                                           ),
                                           child: Icon(
@@ -289,18 +291,35 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  void _showPaystackSheet(BuildContext ctx, WalletTopUpReady state) {
+  void _showPaystackWebView(BuildContext ctx, WalletTopUpReady state) {
     showModalBottomSheet(
       context: ctx,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _PaystackSheet(
+      isDismissible: false,
+      enableDrag: false,
+      builder: (sheetCtx) => _PaystackWebViewSheet(
         url: state.paystackAuthUrl,
-        reference: state.reference,
-        onDone: () {
-          Navigator.pop(ctx);
-          ctx.read<WalletCubit>().verifyTopUp(state.reference);
+        onPaymentDone: () {
+          Navigator.pop(sheetCtx);
+          ctx.read<WalletCubit>().verifyTopUp(
+            state.reference,
+            topUpAmountKobo: ctx.read<WalletCubit>().pendingTopUpAmountKobo,
+          );
         },
+        onCancel: () => Navigator.pop(sheetCtx),
+      ),
+    );
+  }
+
+  void _showSuccessSheet(BuildContext ctx, WalletTopUpSuccess state) {
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => _TopUpSuccessSheet(
+        amountKobo: state.topUpAmountKobo,
+        newBalanceKobo: state.balanceKobo,
+        onDone: () => Navigator.pop(sheetCtx),
       ),
     );
   }
@@ -393,7 +412,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: GodropColors.blue.withOpacity(0.07),
+                    color: GodropColors.blue.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -423,11 +442,147 @@ class _TopUpSheetState extends State<_TopUpSheet> {
   }
 }
 
-class _PaystackSheet extends StatelessWidget {
+class _PaystackWebViewSheet extends StatefulWidget {
   final String url;
-  final String reference;
+  final VoidCallback onPaymentDone;
+  final VoidCallback onCancel;
+  const _PaystackWebViewSheet({
+    required this.url,
+    required this.onPaymentDone,
+    required this.onCancel,
+  });
+
+  @override
+  State<_PaystackWebViewSheet> createState() => _PaystackWebViewSheetState();
+}
+
+class _PaystackWebViewSheetState extends State<_PaystackWebViewSheet> {
+  late final WebViewController _ctrl;
+  bool _loading = true;
+  bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (_) {
+          if (mounted) setState(() => _loading = false);
+        },
+        onNavigationRequest: (req) {
+          // Paystack redirects to the callback URL when payment is done.
+          // Detect any navigation away from Paystack domains that has a
+          // trxref or reference query parameter — that signals completion.
+          final uri = Uri.tryParse(req.url);
+          final isPaystack = req.url.contains('paystack.co') ||
+              req.url.contains('paystack.com') ||
+              req.url.contains('checkout.paystack');
+          if (!isPaystack && uri != null &&
+              (uri.queryParameters.containsKey('trxref') ||
+                  uri.queryParameters.containsKey('reference'))) {
+            if (!_done) {
+              _done = true;
+              widget.onPaymentDone();
+            }
+            return NavigationDecision.prevent;
+          }
+          return NavigationDecision.navigate;
+        },
+      ))
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: widget.onCancel,
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(color: GodropColors.background, borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.close_rounded, size: 18, color: GodropColors.slate),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text('Complete Payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: GodropColors.ink)),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFE8F5EE), borderRadius: BorderRadius.circular(6)),
+                  child: const Text('Secured by Paystack', style: TextStyle(fontSize: 10, color: GodropColors.success, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: Stack(
+              children: [
+                WebViewWidget(controller: _ctrl),
+                if (_loading)
+                  const Center(
+                    child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2.5),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPad + 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _done ? null : () {
+                  if (!_done) {
+                    _done = true;
+                    widget.onPaymentDone();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GodropColors.blue,
+                  disabledBackgroundColor: GodropColors.border,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("I've paid — verify now", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopUpSuccessSheet extends StatelessWidget {
+  final int amountKobo;
+  final int newBalanceKobo;
   final VoidCallback onDone;
-  const _PaystackSheet({required this.url, required this.reference, required this.onDone});
+  const _TopUpSuccessSheet({
+    required this.amountKobo,
+    required this.newBalanceKobo,
+    required this.onDone,
+  });
+
+  String _fmt(int kobo) {
+    final n = (kobo / 100).toStringAsFixed(2);
+    final parts = n.split('.');
+    final intPart = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+    return '₦$intPart.${parts[1]}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -436,75 +591,50 @@ class _PaystackSheet extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).padding.bottom + 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Center(
-            child: Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: GodropColors.border, borderRadius: BorderRadius.circular(2)),
-            ),
-          ),
-          const SizedBox(height: 24),
           Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(color: GodropColors.blue.withOpacity(0.08), shape: BoxShape.circle),
-            child: const Icon(Icons.open_in_new_rounded, color: GodropColors.blue, size: 30),
+            width: 64, height: 64,
+            decoration: BoxDecoration(color: GodropColors.success.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: const Icon(Icons.check_circle_rounded, color: GodropColors.success, size: 36),
           ),
           const SizedBox(height: 16),
-          const Text('Complete payment on Paystack', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: GodropColors.ink)),
+          const Text('Payment successful!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: GodropColors.ink)),
           const SizedBox(height: 8),
-          const Text(
-            'Copy the link below and open it in your browser to complete payment.',
+          Text(
+            '${_fmt(amountKobo)} has been added\nto your Godrop wallet.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: GodropColors.slate),
+            style: const TextStyle(fontSize: 14, color: GodropColors.slate),
           ),
           const SizedBox(height: 20),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               color: GodropColors.background,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: GodropColors.border),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: Text(
-                    url,
-                    style: const TextStyle(fontSize: 12, color: GodropColors.blue),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: url));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Payment link copied!'), duration: Duration(seconds: 2)),
-                    );
-                  },
-                  child: const Icon(Icons.copy_rounded, size: 18, color: GodropColors.slate),
-                ),
+                const Text('New wallet balance', style: TextStyle(fontSize: 12, color: GodropColors.mute)),
+                const SizedBox(height: 4),
+                Text(_fmt(newBalanceKobo), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: GodropColors.ink)),
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text('Ref: $reference', style: const TextStyle(fontSize: 11, color: GodropColors.mute)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: onDone,
               style: ElevatedButton.styleFrom(
                 backgroundColor: GodropColors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("I've paid — verify payment", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+              child: const Text('Done', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
             ),
           ),
         ],
@@ -516,8 +646,7 @@ class _PaystackSheet extends StatelessWidget {
 class _WalletBtn extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
-  final bool outlined;
-  const _WalletBtn({required this.label, required this.onTap, this.outlined = false});
+  const _WalletBtn({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -526,9 +655,8 @@ class _WalletBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
-          color: outlined ? Colors.transparent : GodropColors.orange,
+          color: GodropColors.orange,
           borderRadius: BorderRadius.circular(20),
-          border: outlined ? Border.all(color: Colors.white.withOpacity(0.5)) : null,
         ),
         child: Text(
           label,

@@ -2,12 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../../shared/models/wallet_models.dart';
+import '../../../shared/services/user_prefs.dart';
 import 'wallet_state.dart';
 
 class WalletCubit extends Cubit<WalletState> {
   WalletCubit() : super(WalletInitial());
 
   final _service = WalletService(DioClient.instance);
+  int _pendingTopUpAmountKobo = 0;
+  int get pendingTopUpAmountKobo => _pendingTopUpAmountKobo;
 
   Future<void> load() async {
     if (state is WalletLoading) return;
@@ -15,6 +18,7 @@ class WalletCubit extends Cubit<WalletState> {
     try {
       final balance = await _service.getBalance();
       final txList = await _service.getTransactions();
+      await UserPrefs.saveWalletBalance(balance.balanceKobo);
       emit(WalletLoaded(
         balanceKobo: balance.balanceKobo,
         transactions: txList.data,
@@ -34,6 +38,7 @@ class WalletCubit extends Cubit<WalletState> {
       bal = current.balanceKobo;
       txs = current.transactions;
     }
+    _pendingTopUpAmountKobo = amountKobo;
     emit(WalletToppingUp(balanceKobo: bal, transactions: txs));
     try {
       final res = await _service.initTopUp(TopUpInitBody(amountKobo: amountKobo));
@@ -54,13 +59,15 @@ class WalletCubit extends Cubit<WalletState> {
     }
   }
 
-  Future<void> verifyTopUp(String reference) async {
+  Future<void> verifyTopUp(String reference, {int topUpAmountKobo = 0}) async {
     emit(WalletLoading());
     try {
       final res = await _service.verifyTopUp(TopUpVerifyBody(reference: reference));
       final txList = await _service.getTransactions();
-      emit(WalletLoaded(
+      await UserPrefs.saveWalletBalance(res.balanceKobo);
+      emit(WalletTopUpSuccess(
         balanceKobo: res.balanceKobo,
+        topUpAmountKobo: topUpAmountKobo > 0 ? topUpAmountKobo : res.transaction.amountKobo,
         transactions: txList.data,
       ));
     } on DioException catch (e) {

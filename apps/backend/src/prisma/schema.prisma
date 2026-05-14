@@ -151,13 +151,14 @@ model Vendor {
   ratingCount      Int          @default(0)
   deliveryFeeKobo  Int          @default(0)
   estimatedMinutes Int          @default(30)
-  isOpen           Boolean      @default(true)
-  isActive         Boolean      @default(true)
-  openingHours     Json?
-  rejectionReason  String?
-  documents        Json?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  isOpen                 Boolean      @default(true)
+  isActive               Boolean      @default(true)
+  openingHours           Json?
+  rejectionReason        String?
+  documents              Json?
+  cashOnDeliveryEnabled  Boolean      @default(false)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
   categories   ProductCategory[]
   orders       Order[]
@@ -260,13 +261,16 @@ enum VendorWithdrawalStatus {
 
 // Singleton row (id = "global") — platform-wide configuration set by admins
 model PlatformSettings {
-  id                     String  @id @default("global")
-  riderEarningRate       Float   @default(0.8)
-  coverageRadiusKm       Float   @default(15)
-  vendorPlatformFeeRate  Float   @default(0.2)  // fraction platform keeps from vendor orders (0–1)
-  paystackPublicKey      String?
-  paystackSecretKey      String?
-  updatedAt              DateTime @updatedAt
+  id                       String  @id @default("global")
+  riderEarningRate         Float   @default(0.8)
+  coverageRadiusKm         Float   @default(15)
+  vendorPlatformFeeRate    Float   @default(0.2)  // fraction platform keeps from vendor orders (0–1)
+  paystackPublicKey        String?
+  paystackSecretKey        String?
+  standardDeliveryFeeKobo  Int     @default(75000)   // ₦750 baseline delivery fee
+  serviceChargeKobo        Int     @default(25000)   // ₦250 platform service charge
+  costPerKmKobo            Int     @default(10000)   // ₦100 per km charged on top
+  updatedAt                DateTime @updatedAt
 }
 
 model Admin {
@@ -513,6 +517,7 @@ enum PaymentMethod {
   CARD
   WALLET
   CASH
+  WALLET_CARD
 }
 
 enum PaymentStatus {

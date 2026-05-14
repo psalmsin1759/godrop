@@ -21,7 +21,7 @@ WalletTx _$WalletTxFromJson(Map<String, dynamic> json) => WalletTx(
       type: json['type'] as String,
       amountKobo: (json['amountKobo'] as num).toInt(),
       description: json['description'] as String,
-      status: json['status'] as String,
+      status: json['status'] as String? ?? 'completed',
       createdAt: json['createdAt'] as String,
     );
 

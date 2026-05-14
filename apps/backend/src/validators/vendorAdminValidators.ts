@@ -59,6 +59,7 @@ export const updateVendorSettingsSchema = z.object({
   estimatedMinutes: z.number().int().min(1).max(300).optional(),
   isOpen: z.boolean().optional(),
   openingHours: z.record(z.any()).optional(),
+  cashOnDeliveryEnabled: z.boolean().optional(),
 });
 
 export const inviteTeamMemberSchema = z.object({

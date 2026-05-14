@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../app/customer_app.dart';
 import '../../shared/api/client/dio_client.dart';
 import '../../shared/services/user_prefs.dart';
 import '../auth/bloc/auth_cubit.dart';
@@ -16,14 +15,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkMode = UserPrefs.isDarkMode;
   bool _pushNotifications = true;
-
-  void _toggleDarkMode(bool v) {
-    setState(() => _darkMode = v);
-    UserPrefs.setDarkMode(v);
-    ThemeController.instance.setDarkMode(v);
-  }
 
   void _showChangePassword(BuildContext ctx) {
     showModalBottomSheet(
@@ -40,18 +32,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showDeleteAccount(BuildContext ctx) {
     showDialog(
       context: ctx,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete account?', style: TextStyle(fontWeight: FontWeight.w700, color: GodropColors.ink)),
         content: const Text('This will permanently deactivate your account. This action cannot be undone.', style: TextStyle(color: GodropColors.slate)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Cancel', style: TextStyle(color: GodropColors.slate)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Navigator.pop(dialogCtx);
               ctx.read<AuthCubit>().deleteAccount();
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
@@ -65,7 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (ctx, state) {
-        if (state is AuthInitial || state is AuthAccountDeleted) {
+        if (state is AuthLoggedOut || state is AuthAccountDeleted) {
           ctx.go('/onboarding');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(ctx).showSnackBar(
@@ -105,20 +97,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _SettingsTile(
                   label: 'Saved cards',
                   icon: Icons.credit_card_rounded,
-                  onTap: () => context.go('/cards'),
+                  onTap: () => context.push('/cards'),
                 ),
               ]),
               const SizedBox(height: 20),
               _SectionHeader('PREFERENCES'),
               const SizedBox(height: 8),
               _SettingsCard(children: [
-                _SettingsToggle(
-                  label: 'Dark mode',
-                  icon: Icons.dark_mode_outlined,
-                  value: _darkMode,
-                  onChanged: _toggleDarkMode,
-                ),
-                const Divider(height: 1, indent: 52),
                 _SettingsToggle(
                   label: 'Push notifications',
                   icon: Icons.notifications_outlined,
@@ -133,13 +118,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _SettingsTile(
                   label: 'Privacy policy',
                   icon: Icons.privacy_tip_outlined,
-                  onTap: () => context.go('/webview?url=${Uri.encodeComponent('https://naijagodrop.com/privacy-policy')}&title=Privacy+Policy'),
+                  onTap: () => context.push('/webview?url=${Uri.encodeComponent('https://naijagodrop.com/privacy-policy')}&title=Privacy+Policy'),
                 ),
                 const Divider(height: 1, indent: 52),
                 _SettingsTile(
                   label: 'Terms of service',
                   icon: Icons.article_outlined,
-                  onTap: () => context.go('/webview?url=${Uri.encodeComponent('https://naijagodrop.com/terms-of-service')}&title=Terms+of+Service'),
+                  onTap: () => context.push('/webview?url=${Uri.encodeComponent('https://naijagodrop.com/terms-of-service')}&title=Terms+of+Service'),
                 ),
               ]),
               const SizedBox(height: 20),
@@ -180,18 +165,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _confirmSignOut(BuildContext ctx) {
     showDialog(
       context: ctx,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Sign out?', style: TextStyle(fontWeight: FontWeight.w700, color: GodropColors.ink)),
         content: const Text('You will need to sign in again to access your account.', style: TextStyle(color: GodropColors.slate)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Cancel', style: TextStyle(color: GodropColors.slate)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Navigator.pop(dialogCtx);
               ctx.read<AuthCubit>().logout();
             },
             child: const Text('Sign out', style: TextStyle(color: GodropColors.error, fontWeight: FontWeight.w600)),

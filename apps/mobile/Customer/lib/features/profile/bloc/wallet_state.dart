@@ -31,6 +31,17 @@ class WalletTopUpReady extends WalletState {
   });
 }
 
+class WalletTopUpSuccess extends WalletState {
+  final int balanceKobo;
+  final int topUpAmountKobo;
+  final List<WalletTx> transactions;
+  WalletTopUpSuccess({
+    required this.balanceKobo,
+    required this.topUpAmountKobo,
+    required this.transactions,
+  });
+}
+
 class WalletError extends WalletState {
   final String message;
   final int? balanceKobo;

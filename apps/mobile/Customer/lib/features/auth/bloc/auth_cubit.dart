@@ -150,7 +150,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (_) {}
     await _clearLocalData();
-    emit(AuthInitial());
+    emit(AuthLoggedOut());
   }
 
   Future<void> _clearLocalData() async {

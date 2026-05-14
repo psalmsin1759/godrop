@@ -262,36 +262,34 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                   ),
                   const SizedBox(height: 16),
                   // Confirmation code
-                  if (order.confirmationCode != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: GodropColors.orange.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: GodropColors.orange.withValues(alpha: 0.3)),
-                      ),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'Give this code to your rider',
-                            style: TextStyle(fontSize: 12, color: GodropColors.slate),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            order.confirmationCode!,
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              color: GodropColors.orange,
-                              letterSpacing: 8,
-                            ),
-                          ),
-                        ],
-                      ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: GodropColors.orange.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: GodropColors.orange.withValues(alpha: 0.3)),
                     ),
-                    const SizedBox(height: 16),
-                  ],
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Give this code to your rider',
+                          style: TextStyle(fontSize: 12, color: GodropColors.slate),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          order.confirmationCode ?? '—',
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            color: GodropColors.orange,
+                            letterSpacing: 8,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   // Timeline
                   const _TimelineItem(label: 'Order placed', time: 'Just now', done: true),
                   const _TimelineItem(label: 'Rider assigned', time: 'Just now', done: true),

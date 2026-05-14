@@ -39,6 +39,43 @@ export async function initializePayment(userId: string, orderId: string, method:
     return { method: "wallet", reference: orderId, paid: true };
   }
 
+  if (m === "WALLET_CARD" as any) {
+    // Deduct whatever the user has in their wallet (partial), charge the rest via Paystack
+    const walletBalance = await walletService.getBalance(userId);
+    const walletDeduction = Math.min(walletBalance, order.totalKobo);
+    const cardAmountKobo = order.totalKobo - walletDeduction;
+
+    if (walletDeduction > 0) {
+      await walletService.debit(userId, walletDeduction, `Partial wallet payment for order ${order.trackingCode}`, orderId);
+    }
+
+    if (cardAmountKobo <= 0) {
+      // wallet covered the full amount
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: PaymentStatus.PAID, paymentMethod: PaymentMethod.WALLET },
+      });
+      await fundVendorWallet(orderId, order.totalKobo).catch(() => {});
+      return { method: "wallet", reference: orderId, paid: true };
+    }
+
+    // Need to charge the remaining cardAmountKobo via Paystack
+    const user2 = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const email2 = user2.email ?? `${user2.phone.replace("+", "")}@pay.godrop.ng`;
+    const reference2 = `GDO-${nanoid(16)}`;
+
+    const result2 = await paystackService.initializeTransaction({
+      email: email2,
+      amountKobo: cardAmountKobo,
+      reference: reference2,
+      metadata: { orderId, userId, type: "order_payment_partial", walletDeductedKobo: walletDeduction },
+    });
+
+    await prisma.order.update({ where: { id: orderId }, data: { paystackRef: reference2, paymentMethod: PaymentMethod.WALLET_CARD as any } });
+
+    return { paystackAuthUrl: result2.authorizationUrl, reference: reference2, method: "wallet_card", paid: false, walletDeductedKobo: walletDeduction, cardAmountKobo };
+  }
+
   if (m === PaymentMethod.CASH) {
     await prisma.order.update({ where: { id: orderId }, data: { paymentMethod: m } });
     return { method: "cash", reference: null, paid: false };

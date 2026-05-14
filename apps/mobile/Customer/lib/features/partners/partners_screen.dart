@@ -25,7 +25,6 @@ class PartnersScreen extends StatefulWidget {
 
 class _PartnersScreenState extends State<PartnersScreen> {
   late final PartnersCubit _cubit;
-  String _filter = 'All';
   final _searchCtrl = TextEditingController();
   String _searchQuery = '';
 
@@ -87,7 +86,6 @@ class _PartnersScreenState extends State<PartnersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filters = _type.filters;
     final color = _type.color;
 
     return BlocProvider.value(
@@ -213,42 +211,6 @@ class _PartnersScreenState extends State<PartnersScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: filters
-                                .map((f) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 8),
-                                      child: GestureDetector(
-                                        onTap: () =>
-                                            setState(() => _filter = f),
-                                        child: AnimatedContainer(
-                                          duration: const Duration(
-                                              milliseconds: 180),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 16, vertical: 8),
-                                          decoration: BoxDecoration(
-                                            color: _filter == f
-                                                ? GodropColors.ink
-                                                : GodropColors.background,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: Text(f,
-                                              style: TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: _filter == f
-                                                      ? Colors.white
-                                                      : GodropColors.slate)),
-                                        ),
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -357,11 +319,7 @@ class _PartnersScreenState extends State<PartnersScreen> {
                         );
                       }
 
-                      final results = _filter == 'All'
-                          ? state.items
-                          : state.items
-                              .where((p) => p.cuisines.contains(_filter))
-                              .toList();
+                      final results = state.items;
 
                       return SliverToBoxAdapter(
                         child: Column(
@@ -374,9 +332,7 @@ class _PartnersScreenState extends State<PartnersScreen> {
                                 Text(
                                   _searchQuery.isNotEmpty
                                       ? '${results.length} result${results.length == 1 ? '' : 's'}'
-                                      : (_filter == 'All'
-                                          ? 'Featured near you'
-                                          : '$_filter ${_type.label.toLowerCase()}s'),
+                                      : 'Featured near you',
                                   style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,

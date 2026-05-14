@@ -11,8 +11,18 @@ router.get("/", async (_req: Request, res: Response) => {
     data: {
       coverageRadiusKm: settings?.coverageRadiusKm ?? 15,
       paystackPublicKey: settings?.paystackPublicKey ?? process.env.PAYSTACK_PUBLIC_KEY ?? "",
+      standardDeliveryFeeKobo: settings?.standardDeliveryFeeKobo ?? 75000,
+      serviceChargeKobo: settings?.serviceChargeKobo ?? 25000,
+      costPerKmKobo: settings?.costPerKmKobo ?? 10000,
     },
   });
+});
+
+// Public endpoint — returns vendor-specific payment options for the customer app
+router.get("/vendor/:id/payment-options", async (req: Request, res: Response) => {
+  const vendor = await prisma.vendor.findUnique({ where: { id: req.params.id }, select: { cashOnDeliveryEnabled: true, isActive: true } });
+  if (!vendor || !vendor.isActive) return ok(res, { cashOnDeliveryEnabled: false });
+  ok(res, { cashOnDeliveryEnabled: vendor.cashOnDeliveryEnabled });
 });
 
 export default router;

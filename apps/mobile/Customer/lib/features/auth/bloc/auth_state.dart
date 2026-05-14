@@ -4,6 +4,8 @@ class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
+class AuthLoggedOut extends AuthState {}
+
 class AuthOtpSent extends AuthState {
   final String phone;
   AuthOtpSent(this.phone);

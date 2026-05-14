@@ -64,7 +64,7 @@ app.use("/api/v1/promotions", promotionsRouter);
 app.use("/api/v1/vendor", vendorOnboardingRouter);
 app.use("/api/v1/vendor-admin", vendorAdminRouter);
 app.use("/api/v1/search", searchRouter);
-app.use("/api/v1/vendor-wallet", vendorWalletRouter);
+app.use("/api/v1/vendor-admin/wallet", vendorWalletRouter);
 app.use("/api/v1/admin", systemAdminRouter);
 app.use("/api/v1/rider", riderAppRouter);
 

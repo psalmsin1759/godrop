@@ -419,7 +419,7 @@ export default function VendorOnboardingPage() {
                 <Icon className="w-3.5 h-3.5 text-white" />
               </div>
               <p className="text-sm text-white/80 leading-snug">{text}</p>
-            </div>
+            </div> 
           ))}
         </div>
 

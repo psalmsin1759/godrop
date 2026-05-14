@@ -21,7 +21,7 @@ async function main() {
     console.log(`  ✓ [${a.role}] ${a.email}  (password: password)`);
   }
 
-  console.log('\n✅ Done.');
+  console.log('\n✅ Done..');
 }
 
 main()

@@ -4192,6 +4192,60 @@ paths:
         "200":
           description: Paginated transactions
 
+  /vendor-admin/wallet/banks:
+    get:
+      tags: [Vendor Admin — Wallet]
+      summary: List Nigerian banks (from Paystack)
+      description: Returns a list of supported Nigerian banks with their codes for account setup.
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Bank list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  banks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string, example: Access Bank }
+                        code: { type: string, example: "044" }
+                        slug: { type: string, example: access-bank }
+
+  /vendor-admin/wallet/resolve-account:
+    post:
+      tags: [Vendor Admin — Wallet]
+      summary: Resolve / verify a bank account number
+      description: Calls Paystack to verify an account number and return the registered account name.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountNumber, bankCode]
+              properties:
+                accountNumber: { type: string, minLength: 10, maxLength: 10, example: "0123456789" }
+                bankCode: { type: string, example: "044" }
+      responses:
+        "200":
+          description: Account verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accountName: { type: string, example: JOHN DOE }
+                  accountNumber: { type: string, example: "0123456789" }
+        "422":
+          description: Could not verify account number
+
   /vendor-admin/wallet/bank-account:
     get:
       tags: [Vendor Admin — Wallet]
@@ -4843,6 +4897,79 @@ paths:
                 properties:
                   success: { type: boolean }
                   data: { $ref: "#/components/schemas/VendorFull" }
+
+  /admin/vendors/{id}/wallet:
+    get:
+      tags: [System Admin — Vendors]
+      summary: Get vendor wallet balance (ADMIN+)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Vendor wallet balance in Kobo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  balanceKobo: { type: integer, example: 150000 }
+        "404":
+          description: Vendor not found
+
+  /admin/vendors/{id}/withdrawals:
+    get:
+      tags: [System Admin — Vendors]
+      summary: List vendor withdrawal requests (ADMIN+)
+      description: Returns a paginated list of all withdrawal requests made by a vendor, most recent first.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        "200":
+          description: Vendor withdrawals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        vendorId: { type: string }
+                        amountKobo: { type: integer }
+                        bankName: { type: string }
+                        bankCode: { type: string }
+                        accountNumber: { type: string }
+                        accountName: { type: string }
+                        reference: { type: string, nullable: true }
+                        status:
+                          type: string
+                          enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+                        notes: { type: string, nullable: true }
+                        processedAt: { type: string, format: date-time, nullable: true }
+                        createdAt: { type: string, format: date-time }
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "404":
+          description: Vendor not found
 
   # ─ Audit Logs (ADMIN+) ────────────────────────────────────────
   /admin/audit-logs:
@@ -6813,6 +6940,93 @@ paths:
           description: Withdrawal is not in PENDING status
         "404":
           description: Withdrawal not found
+
+  # ─── System Admin — Email Messaging ─────────────────────────
+
+  /admin/messaging/email/single:
+    post:
+      summary: Send email to a single address (ADMIN+)
+      tags: [System Admin — Messaging]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, subject, html]
+              properties:
+                to: { type: string, format: email }
+                subject: { type: string, maxLength: 200 }
+                html: { type: string }
+                text: { type: string }
+      responses:
+        "200":
+          description: Email sent
+
+  /admin/messaging/email/batch:
+    post:
+      summary: Send email to multiple addresses (ADMIN+)
+      tags: [System Admin — Messaging]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [emails, subject, html]
+              properties:
+                emails:
+                  type: string
+                  description: Comma-separated list of email addresses (max 500)
+                  example: "a@example.com, b@example.com"
+                subject: { type: string, maxLength: 200 }
+                html: { type: string }
+                text: { type: string }
+      responses:
+        "200":
+          description: Batch complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  sent: { type: integer }
+                  failed: { type: integer }
+                  total: { type: integer }
+
+  /admin/messaging/email/all-customers:
+    post:
+      summary: Broadcast email to all active customers (ADMIN+)
+      tags: [System Admin — Messaging]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, html]
+              properties:
+                subject: { type: string, maxLength: 200 }
+                html: { type: string }
+                text: { type: string }
+      responses:
+        "200":
+          description: Broadcast complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  sent: { type: integer }
+                  failed: { type: integer }
+                  total: { type: integer }
 
   # ─── System Admin — Push Notifications ───────────────────────
 

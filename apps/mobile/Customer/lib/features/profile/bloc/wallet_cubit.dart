@@ -30,6 +30,19 @@ class WalletCubit extends Cubit<WalletState> {
     }
   }
 
+  /// Silent refresh — keeps current balance/transactions visible while reloading.
+  Future<void> refresh() async {
+    try {
+      final balance = await _service.getBalance();
+      final txList = await _service.getTransactions();
+      await UserPrefs.saveWalletBalance(balance.balanceKobo);
+      emit(WalletLoaded(
+        balanceKobo: balance.balanceKobo,
+        transactions: txList.data,
+      ));
+    } catch (_) {}
+  }
+
   Future<void> initTopUp(int amountKobo) async {
     int bal = 0;
     List<WalletTx> txs = [];

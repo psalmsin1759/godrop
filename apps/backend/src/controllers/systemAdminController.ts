@@ -4,6 +4,7 @@ import * as svc from "../services/systemAdminService";
 import * as orderService from "../services/orderService";
 import * as notifSvc from "../services/notificationService";
 import { paginate, buildMeta } from "../utils/pagination";
+import { prisma } from "../lib/prisma";
 
 // ─── Auth ─────────────────────────────────────────────────────
 
@@ -363,6 +364,42 @@ export async function markAllNotificationsRead(req: Request, res: Response, next
   try {
     await notifSvc.markAllNotificationsRead(req.admin!.id);
     return ok(res, { message: "All notifications marked as read" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── Vendor Withdrawals (ADMIN+) ──────────────────────────────
+
+export async function getVendorWithdrawals(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const { page, limit } = paginate((req.query as any).page, (req.query as any).limit);
+
+    const vendor = await prisma.vendor.findUnique({ where: { id }, select: { id: true } });
+    if (!vendor) return fail(res, "Vendor not found", 404);
+
+    const [data, total] = await prisma.$transaction([
+      prisma.vendorWithdrawal.findMany({
+        where: { vendorId: id },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.vendorWithdrawal.count({ where: { vendorId: id } }),
+    ]);
+
+    return ok(res, { data, meta: buildMeta(page, limit, total) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getVendorWalletBalance(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const wallet = await prisma.vendorWallet.findUnique({ where: { vendorId: id } });
+    return ok(res, { balanceKobo: wallet?.balanceKobo ?? 0 });
   } catch (err) {
     next(err);
   }

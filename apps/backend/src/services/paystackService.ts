@@ -118,3 +118,28 @@ export async function createTransferRecipient(params: {
   );
   return data.data.recipient_code;
 }
+
+export async function listBanks(): Promise<Array<{ name: string; code: string; slug: string }>> {
+  const { data } = await axios.get(`${baseURL}/bank?country=nigeria&use_cursor=false&perPage=200`, {
+    headers: await headers(),
+  });
+  return (data.data as Array<{ name: string; code: string; slug: string }>).map(({ name, code, slug }) => ({
+    name,
+    code,
+    slug,
+  }));
+}
+
+export async function resolveAccountNumber(params: {
+  accountNumber: string;
+  bankCode: string;
+}): Promise<{ accountName: string; accountNumber: string }> {
+  const { data } = await axios.get(
+    `${baseURL}/bank/resolve?account_number=${params.accountNumber}&bank_code=${params.bankCode}`,
+    { headers: await headers() }
+  );
+  return {
+    accountName: data.data.account_name,
+    accountNumber: data.data.account_number,
+  };
+}

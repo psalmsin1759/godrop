@@ -46,6 +46,28 @@ export async function getTransactions(req: Request, res: Response, next: NextFun
   }
 }
 
+export async function getBanks(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const banks = await paystackService.listBanks();
+    ok(res, { banks });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resolveAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { accountNumber, bankCode } = req.body;
+    const result = await paystackService.resolveAccountNumber({ accountNumber, bankCode });
+    ok(res, result);
+  } catch (err: any) {
+    if (err?.response?.status === 422 || err?.response?.data?.message?.toLowerCase().includes("account")) {
+      return fail(res, "Could not verify account number. Please check the details.", 422);
+    }
+    next(err);
+  }
+}
+
 export async function getBankAccount(req: Request, res: Response, next: NextFunction) {
   try {
     const account = await prisma.vendorBankAccount.findUnique({ where: { vendorId: vendorId(req) } });
@@ -76,14 +98,15 @@ export async function withdraw(req: Request, res: Response, next: NextFunction) 
     const { amountKobo } = req.body;
 
     const wallet = await prisma.vendorWallet.findUnique({ where: { vendorId: vid } });
-    if (!wallet || wallet.balanceKobo < amountKobo) return fail(res, "Insufficient wallet balance", 422);
+    if (!wallet || wallet.balanceKobo < amountKobo) {
+      return fail(res, "Insufficient wallet balance", 422);
+    }
 
     const account = await prisma.vendorBankAccount.findUnique({ where: { vendorId: vid } });
     if (!account) return fail(res, "No bank account on file. Please add a bank account first.", 422);
 
     const reference = `VWD-${nanoid(16)}`;
 
-    // Create Paystack transfer recipient and initiate transfer
     const recipientCode = await paystackService.createTransferRecipient({
       name: account.accountName,
       accountNumber: account.accountNumber,
@@ -97,7 +120,6 @@ export async function withdraw(req: Request, res: Response, next: NextFunction) 
       reason: "Vendor wallet withdrawal",
     });
 
-    // Debit wallet
     await prisma.$transaction([
       prisma.vendorWallet.update({ where: { id: wallet.id }, data: { balanceKobo: { decrement: amountKobo } } }),
       prisma.vendorWalletTransaction.create({

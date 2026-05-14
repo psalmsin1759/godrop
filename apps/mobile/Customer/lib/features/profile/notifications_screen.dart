@@ -14,23 +14,10 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  String _filter = 'All';
-  static const _filters = ['All', 'Orders', 'Promos', 'Wallet', 'System'];
-
   @override
   void initState() {
     super.initState();
     context.read<NotificationsCubit>().load();
-  }
-
-  List<AppNotification> _applyFilter(List<AppNotification> all) {
-    if (_filter == 'All') return all;
-    return all.where((n) {
-      final type = (n.data?['type'] as String?) ?? '';
-      return type.toLowerCase().contains(_filter.toLowerCase()) ||
-          n.title.toLowerCase().contains(_filter.toLowerCase()) ||
-          n.body.toLowerCase().contains(_filter.toLowerCase());
-    }).toList();
   }
 
   IconData _iconFor(AppNotification n) {
@@ -114,93 +101,63 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            color: GodropColors.white,
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _filters.map((f) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _filter = f),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _filter == f ? GodropColors.blue : GodropColors.background,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(f, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _filter == f ? Colors.white : GodropColors.slate)),
-                    ),
+      body: BlocBuilder<NotificationsCubit, NotificationsState>(
+        builder: (ctx, state) {
+          if (state is NotificationsLoading) {
+            return const Center(child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2));
+          }
+
+          if (state is NotificationsError) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: GodropColors.mute, size: 40),
+                  const SizedBox(height: 12),
+                  Text(state.message, style: const TextStyle(fontSize: 14, color: GodropColors.mute)),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => ctx.read<NotificationsCubit>().load(),
+                    child: const Text('Retry', style: TextStyle(color: GodropColors.blue)),
                   ),
-                )).toList(),
+                ],
+              ),
+            );
+          }
+
+          final notifications = state is NotificationsLoaded
+              ? state.notifications
+              : <AppNotification>[];
+
+          if (notifications.isEmpty) {
+            return const Center(
+              child: Text('No notifications yet', style: TextStyle(fontSize: 14, color: GodropColors.mute)),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: notifications.length,
+            itemBuilder: (_, i) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: GestureDetector(
+                onTap: () {
+                  final n = notifications[i];
+                  if (!n.isRead) {
+                    ctx.read<NotificationsCubit>().markRead([n.id]);
+                  }
+                },
+                child: _NotifCard(
+                  notif: notifications[i],
+                  icon: _iconFor(notifications[i]),
+                  iconBg: _iconBgFor(notifications[i]),
+                  iconColor: _iconColorFor(notifications[i]),
+                  timeStr: _fmtTime(notifications[i].createdAt),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: BlocBuilder<NotificationsCubit, NotificationsState>(
-              builder: (ctx, state) {
-                if (state is NotificationsLoading) {
-                  return const Center(child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2));
-                }
-
-                if (state is NotificationsError) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.error_outline_rounded, color: GodropColors.mute, size: 40),
-                        const SizedBox(height: 12),
-                        Text(state.message, style: const TextStyle(fontSize: 14, color: GodropColors.mute)),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: () => ctx.read<NotificationsCubit>().load(),
-                          child: const Text('Retry', style: TextStyle(color: GodropColors.blue)),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final notifications = state is NotificationsLoaded
-                    ? _applyFilter(state.notifications)
-                    : <AppNotification>[];
-
-                if (notifications.isEmpty) {
-                  return const Center(
-                    child: Text('No notifications yet', style: TextStyle(fontSize: 14, color: GodropColors.mute)),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: notifications.length,
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: GestureDetector(
-                      onTap: () {
-                        final n = notifications[i];
-                        if (!n.isRead) {
-                          ctx.read<NotificationsCubit>().markRead([n.id]);
-                        }
-                      },
-                      child: _NotifCard(
-                        notif: notifications[i],
-                        icon: _iconFor(notifications[i]),
-                        iconBg: _iconBgFor(notifications[i]),
-                        iconColor: _iconColorFor(notifications[i]),
-                        timeStr: _fmtTime(notifications[i].createdAt),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

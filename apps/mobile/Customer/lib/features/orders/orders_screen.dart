@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/order_models.dart';
 import '../../shared/widgets/animated_entrance.dart';
@@ -179,10 +180,62 @@ class _RemoteOrdersList extends StatelessWidget {
     }
   }
 
+  Widget _buildShimmer() {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFE8E6E1),
+      highlightColor: const Color(0xFFF5F4F2),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: 5,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (_, __) => Container(
+          height: 82,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(height: 12, width: 140, color: Colors.white),
+                    const SizedBox(height: 8),
+                    Container(height: 10, width: 90, color: Colors.white),
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(height: 12, width: 60, color: Colors.white),
+                  const SizedBox(height: 8),
+                  Container(height: 10, width: 48, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Center(child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2));
+      return _buildShimmer();
     }
     if (error != null) {
       return Center(

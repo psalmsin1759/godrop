@@ -1,14 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { Loader2, Wallet, ArrowUpRight, ArrowDownLeft, Building2, CheckCircle2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Loader2, Wallet, ArrowUpRight, ArrowDownLeft, Building2, CheckCircle2, Search } from 'lucide-react'
 import {
   useGetVendorWalletQuery,
   useGetVendorWalletTransactionsQuery,
   useGetVendorBankAccountQuery,
   useSaveVendorBankAccountMutation,
   useWithdrawVendorWalletMutation,
+  useGetPaystackBanksQuery,
+  useResolveAccountMutation,
   type VendorWalletTx,
+  type PaystackBank,
 } from '@/store/services/vendorWalletApi'
 import { formatNaira, formatDateTime } from '@/lib/utils'
 
@@ -48,19 +51,61 @@ function TxRow({ tx }: { tx: VendorWalletTx }) {
 
 function BankAccountSection() {
   const { data, isLoading } = useGetVendorBankAccountQuery()
+  const { data: banksData, isLoading: banksLoading } = useGetPaystackBanksQuery()
   const [save, { isLoading: saving }] = useSaveVendorBankAccountMutation()
-  const [saved, setSaved] = useState(false)
-  const [form, setForm] = useState({ bankName: '', bankCode: '', accountNumber: '', accountName: '' })
-  const [editing, setEditing] = useState(false)
+  const [resolve, { isLoading: resolving }] = useResolveAccountMutation()
 
+  const [saved, setSaved] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [bankSearch, setBankSearch] = useState('')
+  const [showBankList, setShowBankList] = useState(false)
+  const [selectedBank, setSelectedBank] = useState<PaystackBank | null>(null)
+  const [accountNumber, setAccountNumber] = useState('')
+  const [resolvedName, setResolvedName] = useState('')
+  const [resolveError, setResolveError] = useState('')
+  const [saveError, setSaveError] = useState('')
+
+  const banks = banksData?.banks ?? []
+  const filteredBanks = banks.filter((b) =>
+    b.name.toLowerCase().includes(bankSearch.toLowerCase())
+  )
   const account = data?.account
+
+  useEffect(() => {
+    setResolvedName('')
+    setResolveError('')
+  }, [selectedBank, accountNumber])
+
+  async function handleResolve() {
+    if (!selectedBank || accountNumber.length !== 10) return
+    setResolveError('')
+    setResolvedName('')
+    try {
+      const res = await resolve({ accountNumber, bankCode: selectedBank.code }).unwrap()
+      setResolvedName(res.accountName)
+    } catch {
+      setResolveError('Could not verify account. Check the number and try again.')
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    await save(form).unwrap()
-    setSaved(true)
-    setEditing(false)
-    setTimeout(() => setSaved(false), 2500)
+    setSaveError('')
+    if (!selectedBank) { setSaveError('Please select a bank'); return }
+    if (!resolvedName) { setSaveError('Please verify your account number first'); return }
+    try {
+      await save({
+        bankName: selectedBank.name,
+        bankCode: selectedBank.code,
+        accountNumber,
+        accountName: resolvedName,
+      }).unwrap()
+      setSaved(true)
+      setEditing(false)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err: any) {
+      setSaveError(err?.data?.error ?? 'Failed to save bank account')
+    }
   }
 
   if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-[#9ca3af]" /></div>
@@ -77,7 +122,15 @@ function BankAccountSection() {
           ))}
         </div>
         <button
-          onClick={() => { setForm({ bankName: account.bankName, bankCode: account.bankCode, accountNumber: account.accountNumber, accountName: account.accountName }); setEditing(true) }}
+          onClick={() => {
+            setEditing(true)
+            setSelectedBank(null)
+            setAccountNumber('')
+            setResolvedName('')
+            setResolveError('')
+            setSaveError('')
+            setBankSearch('')
+          }}
           className="text-xs text-[#3454d1] hover:underline"
         >
           Edit bank account
@@ -88,24 +141,91 @@ function BankAccountSection() {
 
   return (
     <form onSubmit={handleSave} className="space-y-3">
-      {[
-        { key: 'bankName', label: 'Bank Name', placeholder: 'e.g. Access Bank' },
-        { key: 'bankCode', label: 'Bank Code', placeholder: 'e.g. 044' },
-        { key: 'accountNumber', label: 'Account Number', placeholder: '10-digit NUBAN' },
-        { key: 'accountName', label: 'Account Name', placeholder: 'As on bank records' },
-      ].map(({ key, label, placeholder }) => (
-        <div key={key}>
-          <label className="block text-xs font-medium text-[#4b5563] mb-1">{label}</label>
+      {saveError && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{saveError}</p>}
+
+      {/* Bank picker */}
+      <div className="relative">
+        <label className="block text-xs font-medium text-[#4b5563] mb-1">Bank <span className="text-[#ea4d4d]">*</span></label>
+        <button
+          type="button"
+          onClick={() => setShowBankList((v) => !v)}
+          className="w-full px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-left flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+        >
+          <span className={selectedBank ? 'text-[#283c50]' : 'text-[#9ca3af]'}>
+            {selectedBank?.name ?? 'Select a bank…'}
+          </span>
+          <Search className="w-3 h-3 text-[#9ca3af]" />
+        </button>
+        {showBankList && (
+          <div className="absolute z-20 mt-1 w-full bg-white border border-[#e5e7eb] rounded-lg shadow-lg">
+            <div className="p-2 border-b border-[#f3f4f6]">
+              <input
+                autoFocus
+                type="text"
+                value={bankSearch}
+                onChange={(e) => setBankSearch(e.target.value)}
+                placeholder="Search banks…"
+                className="w-full px-2 py-1.5 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+              />
+            </div>
+            <ul className="max-h-44 overflow-y-auto py-1">
+              {banksLoading ? (
+                <li className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-[#9ca3af]" /></li>
+              ) : filteredBanks.length === 0 ? (
+                <li className="text-xs text-[#9ca3af] px-3 py-2">No banks found</li>
+              ) : filteredBanks.map((bank) => (
+                <li key={bank.code}>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedBank(bank); setShowBankList(false); setBankSearch('') }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-[#f9fafb] transition-colors ${selectedBank?.code === bank.code ? 'text-[#17c666] font-semibold' : 'text-[#283c50]'}`}
+                  >
+                    {bank.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Account number + verify */}
+      <div>
+        <label className="block text-xs font-medium text-[#4b5563] mb-1">Account Number <span className="text-[#ea4d4d]">*</span></label>
+        <div className="flex gap-2">
           <input
-            required
             type="text"
-            placeholder={placeholder}
-            value={form[key as keyof typeof form]}
-            onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-            className="w-full px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+            inputMode="numeric"
+            maxLength={10}
+            value={accountNumber}
+            onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+            placeholder="10-digit NUBAN"
+            className="flex-1 px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] font-mono focus:outline-none focus:ring-1 focus:ring-[#17c666]"
           />
+          <button
+            type="button"
+            onClick={handleResolve}
+            disabled={!selectedBank || accountNumber.length !== 10 || resolving}
+            className="px-3 py-2 text-xs rounded border border-[#e5e7eb] text-[#283c50] font-medium disabled:opacity-40 hover:bg-[#f9fafb] transition-colors whitespace-nowrap flex items-center gap-1.5"
+          >
+            {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            Verify
+          </button>
         </div>
-      ))}
+        {resolveError && <p className="text-[11px] text-red-600 mt-1">{resolveError}</p>}
+      </div>
+
+      {/* Resolved account name */}
+      {resolvedName && (
+        <div className="flex items-center gap-2 bg-[#f0fdf4] border border-[#86efac] rounded-lg px-3 py-2.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-[#16a34a] shrink-0" />
+          <div>
+            <p className="text-[11px] text-[#166534]">Account verified</p>
+            <p className="text-xs font-semibold text-[#166534]">{resolvedName}</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2">
         {editing && (
           <button type="button" onClick={() => setEditing(false)} className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885]">
@@ -114,7 +234,7 @@ function BankAccountSection() {
         )}
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || !resolvedName}
           className="flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded text-white font-medium disabled:opacity-60"
           style={{ backgroundColor: saved ? '#17c666' : '#283c50' }}
         >
@@ -138,7 +258,7 @@ function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
     const naira = parseFloat(amountNaira)
     if (isNaN(naira) || naira < 100) { setError('Minimum withdrawal is ₦100'); return }
     const kobo = Math.round(naira * 100)
-    if (kobo > balanceKobo) { setError('Insufficient balance'); return }
+    if (kobo > balanceKobo) { setError(`Insufficient balance. Available: ${formatNaira(balanceKobo)}`); return }
     try {
       await withdraw({ amountKobo: kobo }).unwrap()
       setDone(true)
@@ -159,6 +279,7 @@ function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
           type="number"
           min={100}
           step={50}
+          max={balanceKobo / 100}
           value={amountNaira}
           onChange={(e) => setAmountNaira(e.target.value)}
           placeholder="Enter amount in Naira"
@@ -168,7 +289,7 @@ function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
       </div>
       <button
         type="submit"
-        disabled={isLoading || !amountNaira}
+        disabled={isLoading || !amountNaira || balanceKobo === 0}
         className="w-full flex items-center justify-center gap-1.5 text-xs py-2.5 rounded text-white font-medium disabled:opacity-60 bg-[#283c50]"
       >
         {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowUpRight className="w-3.5 h-3.5" />}

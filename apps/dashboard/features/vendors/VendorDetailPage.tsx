@@ -1,15 +1,74 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useGetVendorQuery, useApproveVendorMutation, useRejectVendorMutation, useSuspendVendorMutation, useReinstateVendorMutation } from './store/vendorsApi'
+import { useGetVendorQuery, useApproveVendorMutation, useRejectVendorMutation, useSuspendVendorMutation, useReinstateVendorMutation, useGetVendorWithdrawalsQuery, useGetVendorWalletBalanceQuery, type VendorWithdrawal } from './store/vendorsApi'
 import type { VendorStatus } from '@/types/api'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatDateTime, formatNaira } from '@/lib/utils'
 import {
   ArrowLeft, Loader2, Store, MapPin, Phone, Mail, Star,
   Clock, CheckCircle, XCircle, PauseCircle, RefreshCw,
-  FileText, ExternalLink, FileCheck,
+  FileText, ExternalLink, FileCheck, Wallet, ArrowUpRight,
 } from 'lucide-react'
 import { useState } from 'react'
+
+const withdrawalStatusConfig: Record<VendorWithdrawal['status'], { bg: string; text: string; label: string }> = {
+  PENDING:    { bg: '#fff6e8', text: '#ffa21d', label: 'Pending' },
+  PROCESSING: { bg: '#eef1fb', text: '#3454d1', label: 'Processing' },
+  COMPLETED:  { bg: '#e8faf2', text: '#17c666', label: 'Completed' },
+  FAILED:     { bg: '#fdf0f0', text: '#ea4d4d', label: 'Failed' },
+}
+
+function WithdrawalsSection({ vendorId }: { vendorId: string }) {
+  const { data: walletData } = useGetVendorWalletBalanceQuery(vendorId)
+  const { data, isLoading } = useGetVendorWithdrawalsQuery({ id: vendorId })
+  const withdrawals = data?.data ?? []
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="card-header flex items-center justify-between">
+        <h3 className="card-title flex items-center gap-1.5">
+          <Wallet className="w-3.5 h-3.5 text-[#9ca3af]" /> Wallet &amp; Withdrawals
+        </h3>
+        {walletData && (
+          <span className="text-xs font-semibold text-[#17c666]">
+            Balance: {formatNaira(walletData.balanceKobo)}
+          </span>
+        )}
+      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-4 h-4 animate-spin text-[#9ca3af]" /></div>
+      ) : withdrawals.length === 0 ? (
+        <p className="text-xs text-[#9ca3af] px-4 py-6 text-center">No withdrawal requests yet</p>
+      ) : (
+        <div className="divide-y divide-[#f9fafb]">
+          {withdrawals.map((w) => {
+            const s = withdrawalStatusConfig[w.status]
+            return (
+              <div key={w.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#fdf0f0] shrink-0">
+                  <ArrowUpRight className="w-4 h-4 text-[#ea4d4d]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-[#283c50]">{formatNaira(w.amountKobo)}</p>
+                  <p className="text-[11px] text-[#9ca3af] truncate">
+                    {w.accountName} · {w.bankName} ···{w.accountNumber.slice(-4)}
+                  </p>
+                  <p className="text-[11px] text-[#9ca3af]">{formatDateTime(w.createdAt)}</p>
+                </div>
+                <span
+                  className="text-[11px] font-semibold rounded-full px-2.5 py-0.5 shrink-0"
+                  style={{ backgroundColor: s.bg, color: s.text }}
+                >
+                  {s.label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 const statusConfig: Record<VendorStatus, { bg: string; text: string; label: string }> = {
   APPROVED:  { bg: '#e8faf2', text: '#17c666', label: 'Approved' },
@@ -420,6 +479,9 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
             </div>
           </div>
         )}
+
+        {/* Withdrawals */}
+        <WithdrawalsSection vendorId={vendorId} />
       </div>
     </>
   )

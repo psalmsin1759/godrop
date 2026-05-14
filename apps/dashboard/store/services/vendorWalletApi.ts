@@ -17,6 +17,12 @@ export interface VendorBankAccount {
   accountName: string
 }
 
+export interface PaystackBank {
+  name: string
+  code: string
+  slug: string
+}
+
 interface Pagination {
   page: number
   limit: number
@@ -34,6 +40,14 @@ export const vendorWalletApi = api.injectEndpoints({
     getVendorWalletTransactions: build.query<{ data: VendorWalletTx[]; meta: Pagination }, { page?: number; limit?: number } | void>({
       query: (p) => ({ url: '/vendor-admin/wallet/transactions', params: { page: p?.page ?? 1, limit: p?.limit ?? 20 } }),
       providesTags: ['VendorWallet'],
+    }),
+
+    getPaystackBanks: build.query<{ banks: PaystackBank[] }, void>({
+      query: () => '/vendor-admin/wallet/banks',
+    }),
+
+    resolveAccount: build.mutation<{ accountName: string; accountNumber: string }, { accountNumber: string; bankCode: string }>({
+      query: (body) => ({ url: '/vendor-admin/wallet/resolve-account', method: 'POST', body }),
     }),
 
     getVendorBankAccount: build.query<{ account: VendorBankAccount | null }, void>({
@@ -57,6 +71,8 @@ export const vendorWalletApi = api.injectEndpoints({
 export const {
   useGetVendorWalletQuery,
   useGetVendorWalletTransactionsQuery,
+  useGetPaystackBanksQuery,
+  useResolveAccountMutation,
   useGetVendorBankAccountQuery,
   useSaveVendorBankAccountMutation,
   useWithdrawVendorWalletMutation,

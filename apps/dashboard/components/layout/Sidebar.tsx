@@ -21,6 +21,7 @@ import {
   UserCog,
   Bell,
   Wallet,
+  Mail,
 } from 'lucide-react'
 
 const systemNav = [
@@ -37,8 +38,12 @@ const systemReportsNav = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs', badge: 0 },
   { href: '/admins', icon: UserCog, label: 'Admins' },
-  { href: '/push', icon: Bell, label: 'Push Notifications' },
   { href: '/settings', icon: Settings, label: 'Settings' },
+]
+
+const systemMessagingNav = [
+  { href: '/messaging/email', icon: Mail, label: 'Email' },
+  { href: '/push', icon: Bell, label: 'Push Notifications' },
 ]
 
 const vendorNav = [
@@ -72,6 +77,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
   const isVendorStaff = isVendor && session?.admin?.role === 'STAFF'
   const mainNav = isVendorStaff ? vendorStaffNav : isVendor ? vendorNav : systemNav
   const reportsNav = isVendorStaff ? vendorStaffReportsNav : isVendor ? vendorReportsNav : systemReportsNav
+  const messagingNav = !isVendor ? systemMessagingNav : null
 
   const adminInitials = session?.admin
     ? `${session.admin.firstName[0]}${session.admin.lastName[0]}`
@@ -147,6 +153,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         {reportsNav.map((item) => (
           <NavItem key={item.href} {...item} />
         ))}
+
+        {messagingNav && (
+          <>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 px-3 mt-4 mb-2">
+              Messaging
+            </p>
+            {messagingNav.map((item) => (
+              <NavItem key={item.href} {...item} />
+            ))}
+          </>
+        )}
       </nav>
 
       {/* User footer */}

@@ -118,7 +118,10 @@ class _WalletScreenState extends State<WalletScreen> {
 
         return Scaffold(
           backgroundColor: GodropColors.background,
-          body: CustomScrollView(
+          body: RefreshIndicator(
+            onRefresh: () => ctx.read<WalletCubit>().refresh(),
+            color: GodropColors.blue,
+            child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: Container(
@@ -307,6 +310,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
               ),
             ],
+          ),
           ),
         );
       },

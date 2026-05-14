@@ -11,6 +11,28 @@ interface VendorListRaw {
 
 type Wrap<T> = { success: boolean; data: T }
 
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export interface VendorWithdrawal {
+  id: string
+  vendorId: string
+  amountKobo: number
+  bankName: string
+  bankCode: string
+  accountNumber: string
+  accountName: string
+  reference: string | null
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+  notes: string | null
+  processedAt: string | null
+  createdAt: string
+}
+
 export const vendorsApi = api.injectEndpoints({
   endpoints: (build) => ({
     getVendors: build.query<Vendor[], void>({
@@ -56,6 +78,17 @@ export const vendorsApi = api.injectEndpoints({
       invalidatesTags: ['Vendor'],
       transformResponse: (res: Wrap<Vendor>) => res.data,
     }),
+
+    getVendorWalletBalance: build.query<{ balanceKobo: number }, string>({
+      query: (id) => `/admin/vendors/${id}/wallet`,
+    }),
+
+    getVendorWithdrawals: build.query<{ data: VendorWithdrawal[]; meta: Pagination }, { id: string; page?: number; limit?: number }>({
+      query: ({ id, page = 1, limit = 20 }) => ({
+        url: `/admin/vendors/${id}/withdrawals`,
+        params: { page, limit },
+      }),
+    }),
   }),
   overrideExisting: false,
 })
@@ -67,4 +100,6 @@ export const {
   useRejectVendorMutation,
   useSuspendVendorMutation,
   useReinstateVendorMutation,
+  useGetVendorWalletBalanceQuery,
+  useGetVendorWithdrawalsQuery,
 } = vendorsApi

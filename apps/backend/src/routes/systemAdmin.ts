@@ -24,6 +24,12 @@ import * as ctrl from "../controllers/systemAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
 import * as riderCtrl from "../controllers/riderController";
 import * as fcmCtrl from "../controllers/fcmController";
+import * as messagingCtrl from "../controllers/messagingController";
+import {
+  sendEmailSingleSchema,
+  sendEmailBatchSchema,
+  sendEmailAllCustomersSchema,
+} from "../validators/messagingValidators";
 import {
   sendToSingleSchema,
   sendToCustomerBatchSchema,
@@ -123,6 +129,8 @@ router.patch(
   auditSystemAction({ action: "REINSTATE_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
   ctrl.reinstateVendor
 );
+router.get("/vendors/:id/wallet", requireSystemRole("ADMIN"), ctrl.getVendorWalletBalance);
+router.get("/vendors/:id/withdrawals", requireSystemRole("ADMIN"), ctrl.getVendorWithdrawals);
 
 // ─── Customer Management (ADMIN+) ────────────────────────────
 router.get(
@@ -224,6 +232,11 @@ router.patch(
   auditSystemAction({ action: "PROCESS_RIDER_WITHDRAWAL", entity: "RiderWithdrawal", getEntityId: (r) => r.params.withdrawalId }),
   riderCtrl.processWithdrawal
 );
+
+// ─── Email Messaging (ADMIN+) ─────────────────────────────────
+router.post("/messaging/email/single", requireSystemRole("ADMIN"), validate(sendEmailSingleSchema), messagingCtrl.sendEmailSingle);
+router.post("/messaging/email/batch", requireSystemRole("ADMIN"), validate(sendEmailBatchSchema), messagingCtrl.sendEmailBatch);
+router.post("/messaging/email/all-customers", requireSystemRole("ADMIN"), validate(sendEmailAllCustomersSchema), messagingCtrl.sendEmailAllCustomers);
 
 // ─── Push Notifications (ADMIN+) ─────────────────────────────
 router.post("/push/customers/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToCustomers);

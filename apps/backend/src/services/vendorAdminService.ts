@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
-import { AdminRole, AdminType, VendorType, OrderStatus } from "@prisma/client";
+import { AdminRole, AdminType, VendorType, OrderStatus, PaymentStatus } from "@prisma/client";
+import * as walletService from "./walletService";
 import { paginate } from "../utils/pagination";
 import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApplicationEmail } from "./emailService";
 import { notifyCustomerOrderUpdate } from "./fcmService";
@@ -369,7 +370,26 @@ export async function markOrderPreparing(orderId: string, vendorId: string) {
 }
 
 export async function rejectOrder(orderId: string, vendorId: string, reason?: string) {
-  return transitionOrder(orderId, vendorId, OrderStatus.CANCELLED, [OrderStatus.PENDING], reason ?? "Order rejected by vendor");
+  const order = await prisma.order.findFirst({ where: { id: orderId, vendorId } });
+  if (!order) throw new Error("Order not found");
+  await transitionOrder(orderId, vendorId, OrderStatus.CANCELLED, [OrderStatus.PENDING], reason ?? "Order rejected by vendor");
+  if (order.paymentStatus === PaymentStatus.PAID) {
+    await walletService.credit(order.customerId, order.totalKobo, `Refund for rejected order #${order.trackingCode}`, `REFUND-${orderId}`).catch(() => {});
+    await prisma.order.update({ where: { id: orderId }, data: { paymentStatus: PaymentStatus.REFUNDED } });
+  }
+}
+
+export async function cancelOrder(orderId: string, vendorId: string, reason?: string) {
+  const order = await prisma.order.findFirst({ where: { id: orderId, vendorId } });
+  if (!order) throw new Error("Order not found");
+  const terminal: OrderStatus[] = [OrderStatus.DELIVERED, OrderStatus.CANCELLED, OrderStatus.FAILED];
+  if (terminal.includes(order.status)) throw new Error(`Cannot cancel order in ${order.status} status`);
+  const cancellable: OrderStatus[] = [OrderStatus.PENDING, OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY_FOR_PICKUP];
+  await transitionOrder(orderId, vendorId, OrderStatus.CANCELLED, cancellable, reason ?? "Order cancelled by vendor");
+  if (order.paymentStatus === PaymentStatus.PAID) {
+    await walletService.credit(order.customerId, order.totalKobo, `Refund for cancelled order #${order.trackingCode}`, `REFUND-${orderId}`).catch(() => {});
+    await prisma.order.update({ where: { id: orderId }, data: { paymentStatus: PaymentStatus.REFUNDED } });
+  }
 }
 
 // ─── Settings ─────────────────────────────────────────────────

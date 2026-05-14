@@ -88,3 +88,16 @@ export async function debit(userId: string, amountKobo: number, description: str
     }),
   ]);
 }
+
+export async function credit(userId: string, amountKobo: number, description: string, reference?: string) {
+  let wallet = await prisma.wallet.findUnique({ where: { userId } });
+  if (!wallet) {
+    wallet = await prisma.wallet.create({ data: { userId } });
+  }
+  await prisma.$transaction([
+    prisma.wallet.update({ where: { id: wallet.id }, data: { balanceKobo: { increment: amountKobo } } }),
+    prisma.walletTransaction.create({
+      data: { walletId: wallet.id, type: WalletTxType.REFUND, amountKobo, reference, description },
+    }),
+  ]);
+}

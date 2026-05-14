@@ -82,6 +82,10 @@ export const rejectOrderSchema = z.object({
   reason: z.string().min(1).optional(),
 });
 
+export const cancelOrderSchema = z.object({
+  reason: z.string().min(1).optional(),
+});
+
 export const updateVendorAdminProfileSchema = z.object({
   firstName: z.string().min(1).max(50).optional(),
   lastName: z.string().min(1).max(50).optional(),

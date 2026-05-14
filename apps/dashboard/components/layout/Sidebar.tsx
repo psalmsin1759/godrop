@@ -20,6 +20,7 @@ import {
   Tag,
   UserCog,
   Bell,
+  Wallet,
 } from 'lucide-react'
 
 const systemNav = [
@@ -44,6 +45,7 @@ const vendorNav = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/orders', icon: ShoppingBag, label: 'Orders' },
   { href: '/catalog', icon: Tag, label: 'Catalogue' },
+  { href: '/wallet', icon: Wallet, label: 'Wallet' },
 ]
 
 const vendorReportsNav = [

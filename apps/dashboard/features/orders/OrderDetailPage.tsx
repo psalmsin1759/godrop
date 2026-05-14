@@ -13,6 +13,7 @@ import {
   useMarkPreparingVendorOrderMutation,
   useMarkReadyVendorOrderMutation,
   useRejectVendorOrderMutation,
+  useCancelVendorOrderMutation,
 } from '@/store/services/vendorOrdersApi'
 import type { AdminOrder, OrderStatus } from '@/types/api'
 import { formatNaira, formatDateTime } from '@/lib/utils'
@@ -109,14 +110,14 @@ function ItemsTable({ items }: { items: { name: string; quantity: number; unitPr
   )
 }
 
-function PriceBreakdown({ subtotalKobo, deliveryFeeKobo, serviceFeeKobo, discountKobo, totalKobo }: {
-  subtotalKobo: number; deliveryFeeKobo: number; serviceFeeKobo: number; discountKobo: number; totalKobo: number
+function PriceBreakdown({ subtotalKobo, deliveryFeeKobo, serviceFeeKobo, discountKobo, totalKobo, hideServiceFee = false }: {
+  subtotalKobo: number; deliveryFeeKobo: number; serviceFeeKobo: number; discountKobo: number; totalKobo: number; hideServiceFee?: boolean
 }) {
   return (
     <div className="divide-y divide-[#f9fafb]">
       {subtotalKobo > 0 && <InfoRow label="Subtotal" value={formatNaira(subtotalKobo)} />}
       {deliveryFeeKobo > 0 && <InfoRow label="Delivery Fee" value={formatNaira(deliveryFeeKobo)} />}
-      {serviceFeeKobo > 0 && <InfoRow label="Service Fee" value={formatNaira(serviceFeeKobo)} />}
+      {!hideServiceFee && serviceFeeKobo > 0 && <InfoRow label="Service Fee" value={formatNaira(serviceFeeKobo)} />}
       {discountKobo > 0 && <InfoRow label="Discount" value={`-${formatNaira(discountKobo)}`} />}
       <div className="flex items-center justify-between pt-2 mt-1">
         <span className="text-xs font-bold text-[#283c50]">Total</span>
@@ -207,6 +208,50 @@ function RejectOrderDialog({ orderId, onClose }: { orderId: string; onClose: () 
             style={{ backgroundColor: '#ea4d4d' }}
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Reject'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VendorCancelOrderDialog({ orderId, isPaid, onClose }: { orderId: string; isPaid: boolean; onClose: () => void }) {
+  const [cancel] = useCancelVendorOrderMutation()
+  const [reason, setReason] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleCancel() {
+    setLoading(true)
+    try { await cancel({ id: orderId, reason: reason || undefined }).unwrap(); onClose() }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-xl p-5 w-80 space-y-3">
+        <p className="text-sm font-semibold text-[#283c50]">Cancel order</p>
+        {isPaid && (
+          <div className="text-xs bg-[#fffbeb] border border-[#fde68a] text-[#92400e] rounded px-3 py-2">
+            ⚠️ This order was paid. The full amount will be refunded to the customer&apos;s wallet automatically.
+          </div>
+        )}
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Reason for cancellation (optional)…"
+          className="w-full text-xs border border-[#e5e7eb] rounded p-2 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-[#ea4d4d]"
+        />
+        <div className="flex gap-2">
+          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+            Go Back
+          </button>
+          <button
+            disabled={loading}
+            onClick={handleCancel}
+            className="flex-1 text-xs py-2 rounded text-white font-medium disabled:opacity-50"
+            style={{ backgroundColor: '#ea4d4d' }}
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Cancel Order'}
           </button>
         </div>
       </div>
@@ -529,7 +574,9 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
   const [accept] = useAcceptVendorOrderMutation()
   const [markPreparing] = useMarkPreparingVendorOrderMutation()
   const [markReady] = useMarkReadyVendorOrderMutation()
+  const [cancelOrder] = useCancelVendorOrderMutation()
   const [showReject, setShowReject] = useState(false)
+  const [showCancel, setShowCancel] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
 
   async function runAction(fn: () => Promise<unknown>) {
@@ -562,6 +609,13 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
   return (
     <div className="space-y-5">
       {showReject && <RejectOrderDialog orderId={order.id} onClose={() => setShowReject(false)} />}
+      {showCancel && (
+        <VendorCancelOrderDialog
+          orderId={order.id}
+          isPaid={order.paymentStatus === 'PAID'}
+          onClose={() => setShowCancel(false)}
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -630,6 +684,14 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
               Mark Ready
             </button>
           )}
+          {!['DELIVERED', 'CANCELLED', 'FAILED'].includes(order.status) && (
+            <button
+              onClick={() => setShowCancel(true)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#ea4d4d] text-[#ea4d4d] hover:bg-[#fdf0f0] font-medium"
+            >
+              <Ban className="w-3.5 h-3.5" /> Cancel Order
+            </button>
+          )}
         </div>
       </div>
 
@@ -687,6 +749,7 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
               serviceFeeKobo={order.serviceFeeKobo}
               discountKobo={order.discountKobo}
               totalKobo={order.totalKobo}
+              hideServiceFee
             />
           </Section>
 

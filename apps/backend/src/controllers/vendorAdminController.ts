@@ -253,6 +253,17 @@ export async function rejectOrder(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function cancelOrder(req: Request, res: Response, next: NextFunction) {
+  try {
+    await svc.cancelOrder(req.params.id, req.admin!.vendorId!, req.body.reason);
+    return ok(res, { message: "Order cancelled and customer refunded if applicable" });
+  } catch (err: any) {
+    if (err.message === "Order not found") return fail(res, err.message, 404);
+    if (err.message?.includes("Cannot cancel")) return fail(res, err.message, 409);
+    next(err);
+  }
+}
+
 // ─── Settings ─────────────────────────────────────────────────
 
 export async function getSettings(req: Request, res: Response, next: NextFunction) {

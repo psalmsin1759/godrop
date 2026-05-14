@@ -15,6 +15,7 @@ import {
   updateTeamMemberSchema,
   changePasswordSchema,
   rejectOrderSchema,
+  cancelOrderSchema,
   graphQuerySchema,
   updateVendorAdminProfileSchema,
   updateVendorAdminSettingsSchema,
@@ -137,6 +138,13 @@ router.patch(
   validate(rejectOrderSchema),
   auditVendorAction({ action: "REJECT_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.rejectOrder
+);
+router.patch(
+  "/orders/:id/cancel",
+  requireVendorRole("MANAGER"),
+  validate(cancelOrderSchema),
+  auditVendorAction({ action: "CANCEL_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
+  ctrl.cancelOrder
 );
 
 // Analytics (MANAGER+)

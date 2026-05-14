@@ -176,8 +176,12 @@ async function createVendorOrder(
   const totalKobo = subtotalKobo + deliveryFeeKobo + serviceFeeKobo;
 
   // Map payment method string to enum
+  const pmLower = paymentMethod.toLowerCase();
   const paymentMethodEnum: PaymentMethod =
-    paymentMethod === "cash" ? PaymentMethod.CASH : PaymentMethod.CARD;
+    pmLower === "cash" ? PaymentMethod.CASH :
+    pmLower === "wallet" ? PaymentMethod.WALLET :
+    pmLower === "wallet_card" ? PaymentMethod.WALLET_CARD :
+    PaymentMethod.CARD;
 
   const order = await prisma.order.create({
     data: {

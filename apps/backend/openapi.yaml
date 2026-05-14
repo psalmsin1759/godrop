@@ -4076,6 +4076,42 @@ paths:
         "409":
           description: Order is not in PENDING status
 
+  /vendor-admin/orders/{id}/cancel:
+    patch:
+      tags: [Vendor Admin — Orders]
+      summary: Cancel order — any active status → CANCELLED, refunds customer if paid (MANAGER+)
+      description: >
+        Cancels an order that hasn't reached a terminal state (DELIVERED, CANCELLED, FAILED).
+        If the customer had already paid (paymentStatus = PAID), the full `totalKobo` is automatically
+        credited to their Godrop wallet and the order's paymentStatus is set to REFUNDED.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Order cancelled. Refund issued to customer wallet if order was paid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string, example: "Order cancelled and customer refunded if applicable" }
+        "404":
+          description: Order not found
+        "409":
+          description: Order is already in a terminal state (DELIVERED, CANCELLED, FAILED)
+
   # ─ Settings (view MANAGER+, update OWNER) ─────────────────────
   /vendor-admin/settings:
     get:
@@ -4125,6 +4161,87 @@ paths:
                   data: { $ref: "#/components/schemas/VendorSettings" }
         "403":
           description: Forbidden — requires OWNER role
+
+  # ─ Vendor Wallet ──────────────────────────────────────────────
+
+  /vendor-admin/wallet:
+    get:
+      tags: [Vendor Admin — Wallet]
+      summary: Get vendor wallet balance
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Wallet balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  balanceKobo: { type: integer, example: 250000 }
+
+  /vendor-admin/wallet/transactions:
+    get:
+      tags: [Vendor Admin — Wallet]
+      summary: List wallet transactions (paginated)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Paginated transactions
+
+  /vendor-admin/wallet/bank-account:
+    get:
+      tags: [Vendor Admin — Wallet]
+      summary: Get saved bank account for withdrawals
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Bank account details
+    post:
+      tags: [Vendor Admin — Wallet]
+      summary: Save / update bank account
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bankName, bankCode, accountNumber, accountName]
+              properties:
+                bankName: { type: string }
+                bankCode: { type: string }
+                accountNumber: { type: string }
+                accountName: { type: string }
+      responses:
+        "200":
+          description: Saved
+
+  /vendor-admin/wallet/withdraw:
+    post:
+      tags: [Vendor Admin — Wallet]
+      summary: Request a wallet withdrawal
+      description: >
+        Creates a pending withdrawal record. Funds are disbursed by a system admin
+        via the rider withdrawal flow after bank account verification.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountKobo]
+              properties:
+                amountKobo: { type: integer, minimum: 10000, example: 50000 }
+      responses:
+        "200":
+          description: Withdrawal request created
+        "422":
+          description: Insufficient balance
 
   # ─ Team (view MANAGER+, manage OWNER) ─────────────────────────
   /vendor-admin/team:
@@ -6902,6 +7019,8 @@ tags:
     description: "Order acceptance and status updates. Minimum role: STAFF."
   - name: Vendor Admin — Settings
     description: "Vendor profile and operational settings. View: MANAGER+. Update: OWNER."
+  - name: Vendor Admin — Wallet
+    description: "Vendor wallet — balance, transaction history, bank account management, and withdrawal requests. All vendor admin roles."
   - name: Vendor Admin — Team
     description: "Team member management. View: MANAGER+. Invite/update/remove: OWNER."
   # System Admin

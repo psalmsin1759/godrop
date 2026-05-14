@@ -33,5 +33,5 @@ export const checkoutSchema = z.object({
     )
     .min(1),
   deliveryAddress: z.string().min(1),
-  paymentMethod: z.enum(["cash", "card"]),
+  paymentMethod: z.enum(["cash", "card", "wallet", "wallet_card"]),
 });

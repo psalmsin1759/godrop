@@ -131,7 +131,17 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
 
   Future<void> _placeOrder(VendorCart cart, String deliveryAddress) async {
     if (deliveryAddress.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please set a delivery address to continue.')),
+      );
       _showDeliverySheet();
+      return;
+    }
+    final total = cart.subtotalKobo + _config.standardDeliveryFeeKobo + _config.serviceChargeKobo;
+    if (_paymentMethod == 'wallet' && _walletBalanceKobo < total) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Insufficient wallet balance. You have ${_fmt(_walletBalanceKobo)} but need ${_fmt(total)}.')),
+      );
       return;
     }
 
@@ -619,28 +629,59 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                   ),
 
                   // Place order button
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                    color: GodropColors.white,
-                    child: _placing
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: CircularProgressIndicator(
-                                  color: GodropColors.blue, strokeWidth: 2.5),
+                  Builder(builder: (ctx) {
+                    // Wallet-only payment is disabled when balance is insufficient
+                    final walletInsufficient = _paymentMethod == 'wallet' && _walletBalanceKobo < total;
+                    final deliveryMissing = deliveryAddress.isEmpty;
+                    final blocked = walletInsufficient;
+
+                    String buttonLabel;
+                    if (_paymentMethod == 'cash') {
+                      buttonLabel = 'Place order · ${_fmt(total)}';
+                    } else if (_paymentMethod == 'wallet') {
+                      buttonLabel = walletInsufficient
+                          ? 'Insufficient wallet balance'
+                          : 'Pay from wallet · ${_fmt(total)}';
+                    } else if (_paymentMethod == 'wallet_card' && cardCovers > 0) {
+                      buttonLabel = 'Pay ${_fmt(cardCovers)} via card';
+                    } else {
+                      buttonLabel = 'Pay online · ${_fmt(total)}';
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                      color: GodropColors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (deliveryMissing && !_placing)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.info_outline_rounded, size: 14, color: GodropColors.orange),
+                                  const SizedBox(width: 6),
+                                  Text('Set a delivery address to continue', style: const TextStyle(fontSize: 12, color: GodropColors.orange)),
+                                ],
+                              ),
                             ),
-                          )
-                        : GodropButton(
-                            label: _paymentMethod == 'cash'
-                                ? 'Place order · ${_fmt(total)}'
-                                : _paymentMethod == 'wallet'
-                                    ? 'Pay from wallet · ${_fmt(total)}'
-                                    : _paymentMethod == 'wallet_card' && cardCovers > 0
-                                        ? 'Pay ${_fmt(cardCovers)} via card'
-                                        : 'Pay online · ${_fmt(total)}',
-                            onTap: () => _placeOrder(cart, deliveryAddress),
-                          ),
-                  ),
+                          _placing
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2.5),
+                                  ),
+                                )
+                              : GodropButton(
+                                  label: buttonLabel,
+                                  color: blocked ? GodropColors.border : null,
+                                  textColor: blocked ? GodropColors.mute : null,
+                                  onTap: blocked ? null : () => _placeOrder(cart, deliveryAddress),
+                                ),
+                        ],
+                      ),
+                    );
+                  }),
                 ],
               ),
             );

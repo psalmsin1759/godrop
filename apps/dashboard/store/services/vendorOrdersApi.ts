@@ -46,6 +46,15 @@ export const vendorOrdersApi = api.injectEndpoints({
       invalidatesTags: ['VendorOrder'],
       transformResponse: (res: Wrap<VendorOrder>) => res.data,
     }),
+
+    cancelVendorOrder: build.mutation<{ message: string }, { id: string; reason?: string }>({
+      query: ({ id, reason }) => ({
+        url: `/vendor-admin/orders/${id}/cancel`,
+        method: 'PATCH',
+        body: { reason },
+      }),
+      invalidatesTags: ['VendorOrder'],
+    }),
   }),
   overrideExisting: false,
 })
@@ -57,4 +66,5 @@ export const {
   useMarkPreparingVendorOrderMutation,
   useMarkReadyVendorOrderMutation,
   useRejectVendorOrderMutation,
+  useCancelVendorOrderMutation,
 } = vendorOrdersApi

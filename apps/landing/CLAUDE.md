@@ -1,64 +1,60 @@
-# CLAUDE.md — @godrop/landing
+# CLAUDE.md
 
-## What this app is
-The public marketing website for Godrop — an on-demand delivery and logistics platform in Nigeria.
-Its goal is to convert visitors into app downloads (customers) and sign-ups (vendors, riders).
+## Project Overview
 
-## Tech stack
-- **Framework**: Next.js 14 (App Router)
-- **Styling**: Tailwind CSS
-- **Animation**: Framer Motion
-- **Forms**: React Hook Form + Zod
-- **CMS**: (TBD — consider Contentlayer or Sanity for blog/press)
-- **Analytics**: Google Analytics 4 + Meta Pixel
-- **Deployment**: Vercel
+You are building a modern, high-performance landing page for Godrop, an on-demand delivery and logistics platform in Nigeria.
 
-## Pages to build
-```
-/                   # Hero + value props + how it works + app download CTAs
-/services           # Food, Grocery, Retail, Parcel, Truck — each with detail
-/for-riders         # Rider/driver signup and benefits
-/for-vendors        # Vendor onboarding info + waitlist
-/about              # Company story, team, mission
-/contact            # Contact form
-/blog               # (future) News and updates
-```
+Godrop enables:
 
-## Key conventions
-- App Router only — no `pages/` directory
-- All components go in `src/components/` and are server components by default
-- Mark client components explicitly with `"use client"` only when needed (event handlers, animations)
-- Tailwind only — no CSS modules, no styled-components
-- Images: use `next/image` for all images, lazy load, provide explicit width/height
-- All external links open in new tab with `rel="noopener noreferrer"`
+Food delivery
+Grocery delivery
+Retail product delivery
+Parcel delivery
+Truck booking for relocation
 
-## Brand
-- **Primary color**: `#00A651` (Godrop green)
-- **Accent**: `#FF6B00` (orange — used for CTAs)
-- **Font**: Inter (already in Tailwind default stack)
-- **Tone**: Energetic, trustworthy, local — speak like a Lagos startup, not a Silicon Valley corp
-- Use Nigerian English where appropriate ("dispatch", "logistics", not "shipping")
+Target audience:
 
-## API integration
-- Landing page is mostly static — no auth required
-- Only API call needed: vendor/rider waitlist form submission (`POST /api/v1/waitlist`)
-- Base URL: from `NEXT_PUBLIC_API_URL` env variable
+Urban Nigerians (especially Lagos)
+Mobile-first users
+Young professionals, families, SMEs
 
-## SEO
-- Every page needs: title, description, og:image, og:title
-- Target keywords: "food delivery Nigeria", "delivery app Lagos", "send parcel Lagos", "truck hire Nigeria"
-- Use structured data (JSON-LD) on the homepage
 
-## Environment
-```
-NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-NEXT_PUBLIC_META_PIXEL_ID=XXXXXXXXXX
-```
+## Tech Stack
+Framework: Next.js 16 (App Router)
+Language: TypeScript
+Styling: Tailwind CSS v4, shadcn/ui
+Animations: Framer Motion, GSAP
+Architecture: Component-based, modular, scalable
+Forms: React Hook Form + Zod
+data fetching: RTK Query
+Data fetching: SWR with auto-revalidation for live data panels
+Deployment: Vercel (separate from dashboard)
 
-## Running locally
+## Architecture
+app: contains routes and server components
+components/ui: contains reusable design-system
+lib: contains utilities, api helpers and shared config
+features: feature-specific business logic
+types: shared typescript types
+
+Rules
+- move repeated ui into reusable components
+- keep side effects out of UI components when possible
+- prefer server-side data fetching unless client interactivity is required
+
+## Commands
+
 ```bash
-pnpm dev     # starts on http://localhost:3000
-pnpm build
-pnpm start
+npm run dev      # Start development server at localhost:3000
+npm run build    # Production build
+npm run lint     # Run ESLint
 ```
+
+
+- `app/layout.tsx` — root layout; sets up Geist Sans/Mono fonts as CSS variables and a full-height flex column body
+- `app/page.tsx` — home page (currently the default scaffold)
+- `app/globals.css` — global styles; entry point for Tailwind
+
+Path alias `@/*` maps to the repo root, so `@/app/...`, `@/components/...`, etc. work without relative paths.
+
+ESLint uses `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript` (flat config via `eslint.config.mjs`).

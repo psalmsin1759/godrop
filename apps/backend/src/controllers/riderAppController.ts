@@ -21,6 +21,8 @@ export async function onboardRider(req: Request, res: Response, next: NextFuncti
 
     const files = (req.files ?? {}) as Record<string, Express.Multer.File[]>;
 
+    if (!files.avatar?.[0]) return fail(res, "A profile photo (avatar) is required for rider onboarding", 400);
+
     let guarantors: any[] = [];
     if (req.body.guarantors) {
       try {
@@ -30,6 +32,8 @@ export async function onboardRider(req: Request, res: Response, next: NextFuncti
         return fail(res, "Invalid guarantors JSON", 400);
       }
     }
+
+    const avatarUrl = await uploadDocument(files.avatar[0].buffer, "godrop/rider-avatars");
 
     const vehiclePaperUrls: string[] = [];
     for (const file of files.vehiclePapers ?? []) {
@@ -51,7 +55,7 @@ export async function onboardRider(req: Request, res: Response, next: NextFuncti
     if (governmentIdUrl) documents.governmentIdUrl = governmentIdUrl;
     if (vehiclePaperUrls.length > 0) documents.vehiclePaperUrls = vehiclePaperUrls;
 
-    const rider = await riderAppService.onboardRider(parsed.data, guarantors, documents);
+    const rider = await riderAppService.onboardRider(parsed.data, guarantors, documents, avatarUrl);
     return ok(res, { data: rider });
   } catch (err: any) {
     if (err.message?.includes("already exists")) return fail(res, err.message, 409);

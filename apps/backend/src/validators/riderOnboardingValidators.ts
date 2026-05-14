@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const VEHICLE_TYPES = ["BICYCLE", "MOTORCYCLE", "CAR", "VAN"] as const;
+export type VehicleType = (typeof VEHICLE_TYPES)[number];
+
 export const onboardRiderSchema = z.object({
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
@@ -10,7 +13,7 @@ export const onboardRiderSchema = z.object({
   streetAddress: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
-  vehicleType: z.enum(["BICYCLE", "MOTORCYCLE", "CAR", "VAN"]),
+  vehicleType: z.enum(VEHICLE_TYPES),
   vehiclePlate: z.string().optional(),
   vehicleColor: z.string().optional(),
   vehicleModel: z.string().optional(),

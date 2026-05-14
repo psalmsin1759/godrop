@@ -32,6 +32,7 @@ const router = Router();
 router.post(
   "/onboard",
   documentUpload.fields([
+    { name: "avatar", maxCount: 1 },
     { name: "vehiclePapers", maxCount: 5 },
     { name: "governmentId", maxCount: 1 },
     { name: "guarantorGovernmentId", maxCount: 1 },

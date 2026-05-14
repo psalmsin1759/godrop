@@ -61,7 +61,8 @@ export async function onboardRider(
     nin?: string;
   },
   guarantors: RiderGuarantor[],
-  documents: RiderDocuments
+  documents: RiderDocuments,
+  avatarUrl: string
 ) {
   const existing = await prisma.rider.findUnique({ where: { phone: data.phone } });
   if (existing) throw new Error("A rider with this phone number already exists");
@@ -73,6 +74,7 @@ export async function onboardRider(
   return prisma.rider.create({
     data: {
       ...data,
+      avatarUrl,
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
       driverLicenseExpiry: data.driverLicenseExpiry ? new Date(data.driverLicenseExpiry) : undefined,
       vehicleInsuranceExpiry: data.vehicleInsuranceExpiry ? new Date(data.vehicleInsuranceExpiry) : undefined,

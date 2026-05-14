@@ -171,8 +171,12 @@ async function createVendorOrder(
     };
   });
 
-  const deliveryFeeKobo = vendor.deliveryFeeKobo ?? 75000;
-  const serviceFeeKobo = 25000;
+  const platformSettings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
+  const standardDeliveryFeeKobo = platformSettings?.standardDeliveryFeeKobo ?? 75000;
+  const serviceChargeKobo = platformSettings?.serviceChargeKobo ?? 25000;
+  // Use the vendor's custom delivery fee if set; otherwise fall back to platform standard
+  const deliveryFeeKobo = vendor.deliveryFeeKobo > 0 ? vendor.deliveryFeeKobo : standardDeliveryFeeKobo;
+  const serviceFeeKobo = serviceChargeKobo;
   const totalKobo = subtotalKobo + deliveryFeeKobo + serviceFeeKobo;
 
   // Map payment method string to enum

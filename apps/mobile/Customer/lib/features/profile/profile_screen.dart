@@ -76,10 +76,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _fmtKobo(int kobo) {
     final naira = kobo / 100;
-    if (naira >= 1000) {
-      return '₦${(naira / 1000).toStringAsFixed(0)}k';
-    }
-    return '₦${naira.toStringAsFixed(0)}';
+    final formatted = naira.toStringAsFixed(0)
+        .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+    return '₦$formatted';
   }
 
   void _showEditProfile(BuildContext ctx) {

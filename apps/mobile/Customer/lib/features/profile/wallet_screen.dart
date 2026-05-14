@@ -217,9 +217,35 @@ class _WalletScreenState extends State<WalletScreen> {
                           child: Column(
                             children: transactions.asMap().entries.map((e) {
                               final tx = e.value;
-                              final isCredit = tx.type == 'credit' || tx.amountKobo > 0 && tx.type != 'debit';
+                              final typeUpper = tx.type.toUpperCase();
+                              // Determine credit/debit from the actual transaction type
+                              final isCredit = typeUpper == 'TOPUP' || typeUpper == 'REFUND';
                               final sign = isCredit ? '+' : '-';
                               final amtStr = '$sign₦${_fmtKobo(tx.amountKobo.abs())}';
+
+                              // Pick icon and colour by transaction type
+                              final IconData txIcon;
+                              final Color txIconColor;
+                              final Color txIconBg;
+                              switch (typeUpper) {
+                                case 'TOPUP':
+                                  txIcon = Icons.account_balance_wallet_rounded;
+                                  txIconColor = GodropColors.success;
+                                  txIconBg = GodropColors.success.withValues(alpha: 0.08);
+                                case 'REFUND':
+                                  txIcon = Icons.undo_rounded;
+                                  txIconColor = GodropColors.blue;
+                                  txIconBg = GodropColors.blue.withValues(alpha: 0.08);
+                                case 'PAYMENT':
+                                  txIcon = Icons.shopping_bag_outlined;
+                                  txIconColor = GodropColors.orange;
+                                  txIconBg = GodropColors.orange.withValues(alpha: 0.08);
+                                default:
+                                  txIcon = isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
+                                  txIconColor = isCredit ? GodropColors.success : GodropColors.slate;
+                                  txIconBg = isCredit ? GodropColors.success.withValues(alpha: 0.08) : GodropColors.background;
+                              }
+
                               return Column(
                                 children: [
                                   Padding(
@@ -230,14 +256,10 @@ class _WalletScreenState extends State<WalletScreen> {
                                           width: 38,
                                           height: 38,
                                           decoration: BoxDecoration(
-                                            color: isCredit ? GodropColors.success.withValues(alpha: 0.08) : GodropColors.background,
+                                            color: txIconBg,
                                             borderRadius: BorderRadius.circular(10),
                                           ),
-                                          child: Icon(
-                                            isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                                            size: 18,
-                                            color: isCredit ? GodropColors.success : GodropColors.slate,
-                                          ),
+                                          child: Icon(txIcon, size: 18, color: txIconColor),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(

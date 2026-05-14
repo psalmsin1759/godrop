@@ -376,6 +376,13 @@ export async function rejectOrder(orderId: string, vendorId: string, reason?: st
   if (order.paymentStatus === PaymentStatus.PAID) {
     await walletService.credit(order.customerId, order.totalKobo, `Refund for rejected order #${order.trackingCode}`, `REFUND-${orderId}`).catch(() => {});
     await prisma.order.update({ where: { id: orderId }, data: { paymentStatus: PaymentStatus.REFUNDED } });
+    const naira = (order.totalKobo / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    notifyCustomerOrderUpdate(
+      order.customerId, orderId, order.trackingCode,
+      "Order refunded",
+      `Your order #${order.trackingCode} was rejected. ₦${naira} has been refunded to your Godrop wallet.`,
+      "ORDER_REFUNDED"
+    ).catch(() => {});
   }
 }
 
@@ -389,6 +396,13 @@ export async function cancelOrder(orderId: string, vendorId: string, reason?: st
   if (order.paymentStatus === PaymentStatus.PAID) {
     await walletService.credit(order.customerId, order.totalKobo, `Refund for cancelled order #${order.trackingCode}`, `REFUND-${orderId}`).catch(() => {});
     await prisma.order.update({ where: { id: orderId }, data: { paymentStatus: PaymentStatus.REFUNDED } });
+    const naira = (order.totalKobo / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    notifyCustomerOrderUpdate(
+      order.customerId, orderId, order.trackingCode,
+      "Order refunded",
+      `Your order #${order.trackingCode} was cancelled. ₦${naira} has been refunded to your Godrop wallet.`,
+      "ORDER_REFUNDED"
+    ).catch(() => {});
   }
 }
 

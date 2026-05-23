@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 
-const SLIDE_DURATION = 10000;
+const SLIDE_DURATION = 8000;
 const CROSSFADE_DURATION = 0.7;
 const NAV_H = 58; // matches Navbar h-[58px]
 const spring = [0.16, 1, 0.3, 1] as [number, number, number, number];

@@ -8,9 +8,12 @@ async function getTransporter(): Promise<Transporter> {
   const provider = process.env.EMAIL_PROVIDER ?? "ethereal";
 
   if (provider === "mailtrap") {
+    const port = Number(process.env.MAILTRAP_PORT ?? 587);
     transporter = nodemailer.createTransport({
       host: process.env.MAILTRAP_HOST ?? "sandbox.smtp.mailtrap.io",
-      port: Number(process.env.MAILTRAP_PORT ?? 2525),
+      port,
+      secure: port === 465,
+      requireTLS: port !== 465,
       auth: {
         user: process.env.MAILTRAP_USER!,
         pass: process.env.MAILTRAP_PASS!,

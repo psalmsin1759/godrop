@@ -9,6 +9,7 @@ const navLinks = [
   { label: "For Vendors", href: "/vendors" },
   { label: "For Riders", href: "/riders" },
   { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function Navbar() {
@@ -41,6 +42,7 @@ export default function Navbar() {
               width={32}
               height={32}
               className="h-8 w-8"
+              loading="eager"
             />
             <span className="text-white font-bold text-lg tracking-tight">GoDrop</span>
           </Link>

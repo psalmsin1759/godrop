@@ -24,7 +24,7 @@ info:
     email: dev@godrop.ng
 
 servers:
-  - url: https://api.godrop.ng/v1
+  - url: https://api.naijagodrop.com/api/v1
     description: Production
   - url: https://godrop-production.up.railway.app/api/v1
     description: Staging

@@ -8,8 +8,11 @@ async function main() {
 
   // ─── Admins ──────────────────────────────────────────────────
   const admins = [
-    { email: 'superadmin@godrop.ng', firstName: 'Super',  lastName: 'Admin',  type: AdminType.SYSTEM, role: AdminRole.SUPER_ADMIN },
-    { email: 'admin@godrop.ng',      firstName: 'Tunde',  lastName: 'Okafor', type: AdminType.SYSTEM, role: AdminRole.ADMIN },
+    { email: 'superadmin@naijagodrop.com', firstName: 'Super',  lastName: 'Admin',  type: AdminType.SYSTEM, role: AdminRole.SUPER_ADMIN },
+    { email: 'admin@naijagodrop.com',      firstName: 'Admin',  lastName: 'Admin', type: AdminType.SYSTEM, role: AdminRole.ADMIN },
+    { email: 'samson@naijagodrop.com',      firstName: 'Samson',  lastName: 'Admin', type: AdminType.SYSTEM, role: AdminRole.ADMIN },
+    { email: 'harrison@naijagodrop.com',      firstName: 'Harrison',  lastName: 'Admin', type: AdminType.SYSTEM, role: AdminRole.ADMIN },
+    { email: 'iyke@naijagodrop.com',      firstName: 'Iyke',  lastName: 'Admin', type: AdminType.SYSTEM, role: AdminRole.ADMIN },
   ];
 
   for (const a of admins) {

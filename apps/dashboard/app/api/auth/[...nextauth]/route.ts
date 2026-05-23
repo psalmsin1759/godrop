@@ -14,7 +14,7 @@ const handler = NextAuth({
         if (!credentials?.email || !credentials?.password) return null;
 
         const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+          process.env.NEXT_PUBLIC_API_URL ?? "https://api.naijagodrop.com/api/v1";
 
         try {
           const res = await fetch(`${apiUrl}/admin/login`, {

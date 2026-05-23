@@ -390,7 +390,7 @@ export default function RiderOnboardingPage() {
       if (files.governmentId) fd.append('governmentId', files.governmentId)
       if (files.guarantorGovernmentId) fd.append('guarantorGovernmentId', files.guarantorGovernmentId)
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.naijagodrop.com/api/v1'
       const res = await fetch(`${apiUrl}/rider/onboard`, { method: 'POST', body: fd })
       const json = await res.json()
 

@@ -1,12 +1,17 @@
 import { prisma } from "../lib/prisma";
 import { paginate } from "../utils/pagination";
+import { creditBusinessWalletForEarning } from "./businessAdminService";
 
 export async function createRiderEarning(riderId: string, orderId: string, amountKobo: number) {
-  return prisma.riderEarning.upsert({
+  const earning = await prisma.riderEarning.upsert({
     where: { orderId },
     update: {},
     create: { riderId, orderId, amountKobo, status: "PENDING" },
   });
+
+  creditBusinessWalletForEarning(riderId, amountKobo, orderId).catch(() => {});
+
+  return earning;
 }
 
 export async function listEarnings(riderId: string, page: number, limit: number) {

@@ -6,10 +6,12 @@ export interface ApiResponse<T> {
 
 export type SystemAdminRole = 'SUPER_ADMIN' | 'ADMIN'
 export type VendorAdminRole = 'OWNER' | 'MANAGER' | 'STAFF'
-export type AdminRole = SystemAdminRole | VendorAdminRole
-export type AdminType = 'SYSTEM' | 'VENDOR'
+export type BusinessAdminRole = 'OWNER' | 'ADMIN'
+export type AdminRole = SystemAdminRole | VendorAdminRole | BusinessAdminRole
+export type AdminType = 'SYSTEM' | 'VENDOR' | 'BUSINESS'
 export type VendorStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
 export type VendorType = 'RESTAURANT' | 'GROCERY' | 'RETAIL' | 'PHARMACY'
+export type BusinessStatus = 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'
 
 export interface AdminUser {
   id: string
@@ -19,11 +21,125 @@ export interface AdminUser {
   role: AdminRole
   type: AdminType
   vendorId?: string
+  businessId?: string
   isActive: boolean
   receiveVendorEmails: boolean
   receiveRiderEmails: boolean
   createdAt: string
   updatedAt: string
+}
+
+// ─── Business ──────────────────────────────────────────────────────────────
+export interface Business {
+  id: string
+  name: string
+  status: BusinessStatus
+  // contact
+  email: string | null
+  phone: string | null
+  address: string | null
+  // registration
+  cacRegistrationNumber: string | null
+  tin: string | null
+  yearEstablished: number | null
+  // owner
+  ownerFullName: string | null
+  ownerPhoneNumber: string | null
+  ownerEmail: string | null
+  ownerNIN: string | null
+  ownerBVN: string | null
+  // operations
+  serviceAreas: string[]
+  // documents
+  cacCertificateUrl: string | null
+  driversLicenseUrl: string | null
+  insuranceDocumentUrl: string | null
+  utilityBillUrl: string | null
+  // banking
+  bankName: string | null
+  accountName: string | null
+  accountNumber: string | null
+  createdAt: string
+  updatedAt: string
+  wallet: { balanceKobo: number } | null
+  _count: { riders: number; admins: number }
+}
+
+export type BusinessWalletTxType = 'RIDER_EARNING' | 'WITHDRAWAL'
+
+export interface BusinessWalletTransaction {
+  id: string
+  walletId: string
+  riderId: string | null
+  type: BusinessWalletTxType
+  amountKobo: number
+  reference: string | null
+  description: string | null
+  createdAt: string
+}
+
+export interface BusinessMember {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: BusinessAdminRole
+  isActive: boolean
+  createdAt: string
+}
+
+export type BusinessDocumentField = 'cacCertificateUrl' | 'driversLicenseUrl' | 'insuranceDocumentUrl' | 'utilityBillUrl'
+
+export interface CreateBusinessRequest {
+  name: string
+  email?: string
+  phone?: string
+  address?: string
+  cacRegistrationNumber?: string
+  tin?: string
+  yearEstablished?: number
+  ownerFullName?: string
+  ownerPhoneNumber?: string
+  ownerEmail?: string
+  ownerNIN?: string
+  ownerBVN?: string
+  serviceAreas?: string[]
+  cacCertificateUrl?: string
+  driversLicenseUrl?: string
+  insuranceDocumentUrl?: string
+  utilityBillUrl?: string
+  bankName?: string
+  accountName?: string
+  accountNumber?: string
+}
+
+export type UpdateBusinessRequest = Partial<CreateBusinessRequest>
+
+export interface CreateBusinessOwnerRequest {
+  email: string
+  firstName: string
+  lastName: string
+  password: string
+}
+
+export interface CreateBusinessMemberRequest {
+  email: string
+  firstName: string
+  lastName: string
+  password: string
+}
+
+export interface UpdateBusinessMemberRequest {
+  firstName?: string
+  lastName?: string
+  isActive?: boolean
+}
+
+export interface BusinessesListParams {
+  search?: string
+  status?: BusinessStatus
+  page?: number
+  limit?: number
 }
 
 export interface VendorDocuments {

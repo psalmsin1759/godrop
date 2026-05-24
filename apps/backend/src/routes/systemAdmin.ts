@@ -23,6 +23,7 @@ import {
 import * as ctrl from "../controllers/systemAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
 import * as riderCtrl from "../controllers/riderController";
+import * as businessCtrl from "../controllers/businessAdminController";
 import * as fcmCtrl from "../controllers/fcmController";
 import * as messagingCtrl from "../controllers/messagingController";
 import * as heroCtrl from "../controllers/heroController";
@@ -248,6 +249,13 @@ router.post("/push/customers/:id", requireSystemRole("ADMIN"), validate(sendToSi
 router.post("/push/riders/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToRiders);
 router.post("/push/riders/batch", requireSystemRole("ADMIN"), validate(sendToRiderBatchSchema), fcmCtrl.notifyRiderBatch);
 router.post("/push/riders/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyRider);
+
+// ─── Business Management (ADMIN+) ────────────────────────────
+router.get("/businesses", requireSystemRole("ADMIN"), businessCtrl.listBusinesses);
+router.post("/businesses", requireSystemRole("ADMIN"), businessCtrl.createBusiness);
+router.get("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.getBusiness);
+router.patch("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.updateBusiness);
+router.post("/businesses/:id/owner", requireSystemRole("ADMIN"), businessCtrl.createBusinessOwner);
 
 // ─── Heroes (ADMIN+) ──────────────────────────────────────────
 router.get("/heroes", requireSystemRole("ADMIN"), heroCtrl.listHeroes);

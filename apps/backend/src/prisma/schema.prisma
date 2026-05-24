@@ -274,16 +274,18 @@ model PlatformSettings {
 }
 
 model Admin {
-  id        String    @id @default(cuid())
-  type      AdminType
-  role      AdminRole
-  vendorId  String?
-  vendor    Vendor?   @relation(fields: [vendorId], references: [id])
-  email     String    @unique
-  firstName String
-  lastName  String
-  password  String
-  settings  Json?
+  id         String    @id @default(cuid())
+  type       AdminType
+  role       AdminRole
+  vendorId   String?
+  vendor     Vendor?   @relation(fields: [vendorId], references: [id])
+  businessId String?
+  business   Business? @relation(fields: [businessId], references: [id])
+  email      String    @unique
+  firstName  String
+  lastName   String
+  password   String
+  settings   Json?
   isActive            Boolean   @default(true)
   receiveVendorEmails Boolean   @default(false)
   receiveRiderEmails  Boolean   @default(false)
@@ -294,11 +296,13 @@ model Admin {
   notifications AdminNotification[]
 
   @@index([vendorId])
+  @@index([businessId])
 }
 
 enum AdminType {
   SYSTEM
   VENDOR
+  BUSINESS
 }
 
 enum AdminRole {
@@ -603,6 +607,8 @@ model Rider {
   isActive    Boolean  @default(true)
   rating      Float    @default(0)
   ratingCount Int      @default(0)
+  businessId  String?
+  business    Business? @relation(fields: [businessId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -612,6 +618,8 @@ model Rider {
   notifications RiderNotification[]
   earnings      RiderEarning[]
   withdrawals   RiderWithdrawal[]
+
+  @@index([businessId])
 }
 
 // ─── Heroes ───────────────────────────────────────────────────
@@ -813,4 +821,85 @@ model Banner {
   isActive  Boolean  @default(true)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
+}
+
+// ─── Business (rider fleet operator) ─────────────────────────
+
+model Business {
+  id      String         @id @default(cuid())
+  name    String
+  status  BusinessStatus @default(ACTIVE)
+
+  // ── Contact ──────────────────────────────────────────────
+  email   String?  @unique
+  phone   String?
+  address String?
+
+  // ── Registration ─────────────────────────────────────────
+  cacRegistrationNumber String?
+  tin                   String?
+  yearEstablished       Int?
+
+  // ── Owner ────────────────────────────────────────────────
+  ownerFullName    String?
+  ownerPhoneNumber String?
+  ownerEmail       String?
+  ownerNIN         String?
+  ownerBVN         String?
+
+  // ── Operations ───────────────────────────────────────────
+  serviceAreas String[]
+
+  // ── Documents ─────────────────────────────────────────────
+  cacCertificateUrl    String?
+  driversLicenseUrl    String?
+  insuranceDocumentUrl String?
+  utilityBillUrl       String?
+
+  // ── Banking ──────────────────────────────────────────────
+  bankName      String?
+  accountName   String?
+  accountNumber String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  admins Admin[]
+  riders Rider[]
+  wallet BusinessWallet?
+}
+
+enum BusinessStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+model BusinessWallet {
+  id           String                      @id @default(cuid())
+  businessId   String                      @unique
+  business     Business                    @relation(fields: [businessId], references: [id])
+  balanceKobo  Int                         @default(0)
+  createdAt    DateTime                    @default(now())
+  updatedAt    DateTime                    @updatedAt
+  transactions BusinessWalletTransaction[]
+}
+
+model BusinessWalletTransaction {
+  id          String               @id @default(cuid())
+  walletId    String
+  wallet      BusinessWallet       @relation(fields: [walletId], references: [id])
+  riderId     String?
+  type        BusinessWalletTxType
+  amountKobo  Int
+  reference   String?              @unique
+  description String?
+  createdAt   DateTime             @default(now())
+
+  @@index([walletId])
+}
+
+enum BusinessWalletTxType {
+  RIDER_EARNING
+  WITHDRAWAL
 }

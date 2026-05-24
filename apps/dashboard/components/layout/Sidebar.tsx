@@ -23,6 +23,7 @@ import {
   Wallet,
   Mail,
   ImagePlay,
+  Building2,
 } from 'lucide-react'
 
 const systemNav = [
@@ -39,6 +40,7 @@ const systemReportsNav = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs', badge: 0 },
   { href: '/admins', icon: UserCog, label: 'Admins' },
+  { href: '/businesses', icon: Building2, label: 'Businesses' },
   { href: '/heroes', icon: ImagePlay, label: 'Hero Slides' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
@@ -71,15 +73,28 @@ const vendorStaffReportsNav = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
+const businessNav = [
+  { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/business/riders', icon: Bike, label: 'Riders' },
+  { href: '/business/wallet', icon: Wallet, label: 'Wallet' },
+]
+
+const businessReportsNav = [
+  { href: '/business/team', icon: UserCog, label: 'Team' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
+]
+
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname()
   const { data: session } = useSession()
 
+  const isBusiness = session?.admin?.type === 'BUSINESS'
   const isVendor = session?.admin?.type === 'VENDOR'
   const isVendorStaff = isVendor && session?.admin?.role === 'STAFF'
-  const mainNav = isVendorStaff ? vendorStaffNav : isVendor ? vendorNav : systemNav
-  const reportsNav = isVendorStaff ? vendorStaffReportsNav : isVendor ? vendorReportsNav : systemReportsNav
-  const messagingNav = !isVendor ? systemMessagingNav : null
+
+  const mainNav = isBusiness ? businessNav : isVendorStaff ? vendorStaffNav : isVendor ? vendorNav : systemNav
+  const reportsNav = isBusiness ? businessReportsNav : isVendorStaff ? vendorStaffReportsNav : isVendor ? vendorReportsNav : systemReportsNav
+  const messagingNav = !isVendor && !isBusiness ? systemMessagingNav : null
 
   const adminInitials = session?.admin
     ? `${session.admin.firstName[0]}${session.admin.lastName[0]}`
@@ -134,9 +149,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         </span>
         <span
           className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded"
-          style={{ backgroundColor: isVendor ? '#17c666' : '#3454d1', color: '#fff' }}
+          style={{
+            backgroundColor: isBusiness ? '#f59e0b' : isVendor ? '#17c666' : '#3454d1',
+            color: '#fff',
+          }}
         >
-          {isVendor ? 'VENDOR' : 'OPS'}
+          {isBusiness ? 'BIZZ' : isVendor ? 'VENDOR' : 'OPS'}
         </span>
       </div>
 
@@ -150,7 +168,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         ))}
 
         <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 px-3 mt-4 mb-2">
-          {isVendor ? 'Manage' : 'Reports'}
+          {isVendor || isBusiness ? 'Manage' : 'Reports'}
         </p>
         {reportsNav.map((item) => (
           <NavItem key={item.href} {...item} />

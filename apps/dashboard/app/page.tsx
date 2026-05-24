@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import SystemOverviewPage from '@/features/dashboard/SystemOverviewPage'
 import VendorOverviewPage from '@/features/dashboard/VendorOverviewPage'
+import BusinessOverviewPage from '@/features/business/BusinessOverviewPage'
 
 export default function HomePage() {
   const { data: session } = useSession()
@@ -17,6 +18,7 @@ export default function HomePage() {
     }
   }, [admin, router])
 
+  if (admin?.type === 'BUSINESS') return <BusinessOverviewPage />
   if (admin?.type === 'VENDOR') {
     if (admin?.role === 'STAFF') return null
     return <VendorOverviewPage />

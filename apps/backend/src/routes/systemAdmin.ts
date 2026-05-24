@@ -267,6 +267,9 @@ router.get("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.getBusine
 router.patch("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.updateBusiness);
 router.post("/businesses/:id/owner", requireSystemRole("ADMIN"), businessCtrl.createBusinessOwner);
 router.post("/businesses/:id/documents/:field", requireSystemRole("ADMIN"), documentUpload.single("file"), businessCtrl.uploadBusinessDocumentAsAdmin);
+router.get("/businesses/:id/riders", requireSystemRole("ADMIN"), businessCtrl.listBusinessRidersAsAdmin);
+router.get("/businesses/:id/wallet/transactions", requireSystemRole("ADMIN"), businessCtrl.listBusinessWalletTransactionsAsAdmin);
+router.get("/businesses/:id/team", requireSystemRole("ADMIN"), businessCtrl.listBusinessTeamAsAdmin);
 
 // ─── Heroes (ADMIN+) ──────────────────────────────────────────
 router.get("/heroes", requireSystemRole("ADMIN"), heroCtrl.listHeroes);

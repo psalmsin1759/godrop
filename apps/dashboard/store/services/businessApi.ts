@@ -54,6 +54,25 @@ export const businessApi = api.injectEndpoints({
       invalidatesTags: ['Business'],
     }),
 
+    // ─── System Admin: Business sub-resources ────────────────────
+    getBusinessRidersAsAdmin: build.query<{ data: Rider[]; meta: RidersListMeta }, { id: string; page?: number; limit?: number; search?: string }>({
+      query: ({ id, ...params }) => ({ url: `/admin/businesses/${id}/riders`, params }),
+      providesTags: (_r, _e, { id }) => [{ type: 'Business', id }],
+      transformResponse: (res: WrapMeta<Rider[]>) => ({ data: res.data ?? [], meta: res.meta }),
+    }),
+
+    getBusinessWalletTransactionsAsAdmin: build.query<{ data: BusinessWalletTransaction[]; meta: RidersListMeta }, { id: string; page?: number; limit?: number }>({
+      query: ({ id, ...params }) => ({ url: `/admin/businesses/${id}/wallet/transactions`, params }),
+      providesTags: (_r, _e, { id }) => [{ type: 'Business', id }],
+      transformResponse: (res: WrapMeta<BusinessWalletTransaction[]>) => ({ data: res.data ?? [], meta: res.meta }),
+    }),
+
+    getBusinessTeamAsAdmin: build.query<BusinessMember[], string>({
+      query: (id) => `/admin/businesses/${id}/team`,
+      providesTags: (_r, _e, id) => [{ type: 'Business', id }],
+      transformResponse: (res: Wrap<BusinessMember[]>) => res.data ?? [],
+    }),
+
     // ─── Business Admin: Riders ──────────────────────────────────
     getBusinessRiders: build.query<{ data: Rider[]; meta: RidersListMeta }, { search?: string; page?: number; limit?: number }>({
       query: (params = {}) => ({ url: '/business-admin/riders', params }),
@@ -151,4 +170,7 @@ export const {
   useGetMyBusinessQuery,
   useUpdateMyBusinessMutation,
   useUploadBusinessDocumentMutation,
+  useGetBusinessRidersAsAdminQuery,
+  useGetBusinessWalletTransactionsAsAdminQuery,
+  useGetBusinessTeamAsAdminQuery,
 } = businessApi

@@ -271,6 +271,38 @@ export async function createBusinessOwner(req: Request, res: Response, next: Nex
   }
 }
 
+export async function listBusinessRidersAsAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const q = req.query as any;
+    const { page, limit } = paginate(q.page, q.limit);
+    const result = await svc.listBusinessRiders(req.params.id, { page, limit, search: q.search });
+    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+  } catch (err: any) {
+    if (err.message === "Business not found") return fail(res, err.message, 404);
+    next(err);
+  }
+}
+
+export async function listBusinessWalletTransactionsAsAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const q = req.query as any;
+    const { page, limit } = paginate(q.page, q.limit);
+    const result = await svc.listWalletTransactions(req.params.id, { page, limit });
+    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listBusinessTeamAsAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const members = await svc.listBusinessAdmins(req.params.id);
+    return ok(res, { data: members });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function uploadBusinessDocumentAsAdmin(req: Request, res: Response, next: NextFunction) {
   try {
     const { id, field } = req.params;

@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Plus, X, Loader2, Building2, ChevronRight, ChevronLeft, Upload, CheckCircle, File as FileIcon } from 'lucide-react'
 import {
   useGetBusinessesQuery,
   useCreateBusinessMutation,
-  useCreateBusinessOwnerMutation,
 } from '@/store/services/businessApi'
 import { formatNaira } from '@/lib/utils'
 import type { BusinessDocumentField, CreateBusinessRequest } from '@/types/api'
@@ -389,71 +389,10 @@ function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCr
   )
 }
 
-// ─── Add owner modal ──────────────────────────────────────────
-
-function AddOwnerModal({ businessId, onClose }: { businessId: string; onClose: () => void }) {
-  const [form, setForm] = useState({ email: '', firstName: '', lastName: '', password: '' })
-  const [addOwner, { isLoading, error }] = useCreateBusinessOwnerMutation()
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    try {
-      await addOwner({ id: businessId, body: form }).unwrap()
-      onClose()
-    } catch {}
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-[#283c50]">Create Business Owner</h2>
-          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#283c50]"><X className="w-4 h-4" /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-[#283c50] mb-1.5">First Name *</label>
-              <input required value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#283c50] mb-1.5">Last Name *</label>
-              <input required value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
-                className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#283c50] mb-1.5">Email *</label>
-            <input required type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#283c50] mb-1.5">Password *</label>
-            <input required type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]" />
-          </div>
-          {error && <p className="text-xs text-[#ea4d4d]">{(error as any)?.data?.error ?? 'Failed to create owner'}</p>}
-          <div className="flex gap-2 justify-end pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-[#6b7885] hover:bg-[#f3f4f6] rounded-lg">Cancel</button>
-            <button type="submit" disabled={isLoading}
-              className="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-1.5 disabled:opacity-50"
-              style={{ backgroundColor: '#3454d1' }}>
-              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Create Owner
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
 // ─── Main page ────────────────────────────────────────────────
 
 export default function BusinessesPage() {
   const [showCreate, setShowCreate] = useState(false)
-  const [addOwnerFor, setAddOwnerFor] = useState<string | null>(null)
 
   const { data, isLoading } = useGetBusinessesQuery({})
   const businesses = data?.data ?? []
@@ -523,9 +462,9 @@ export default function BusinessesPage() {
                   <td className="px-5 py-3 text-right text-[#283c50] font-medium">{formatNaira(b.wallet?.balanceKobo ?? 0)}</td>
                   <td className="px-5 py-3 text-right text-[#283c50] font-medium">{b._count?.admins ?? 0}</td>
                   <td className="px-5 py-3 text-right">
-                    <button onClick={() => setAddOwnerFor(b.id)} className="text-xs text-[#3454d1] hover:underline">
-                      Add Owner
-                    </button>
+                    <Link href={`/businesses/${b.id}`} className="text-xs text-[#3454d1] hover:underline">
+                      Details →
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -535,7 +474,6 @@ export default function BusinessesPage() {
       </div>
 
       {showCreate && <CreateBusinessModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />}
-      {addOwnerFor && <AddOwnerModal businessId={addOwnerFor} onClose={() => setAddOwnerFor(null)} />}
     </div>
   )
 }

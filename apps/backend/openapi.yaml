@@ -7144,7 +7144,7 @@ paths:
     post:
       summary: Send email to a single address (ADMIN+)
       tags: [System Admin — Messaging]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7165,7 +7165,7 @@ paths:
     post:
       summary: Send email to multiple addresses (ADMIN+)
       tags: [System Admin — Messaging]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7199,7 +7199,7 @@ paths:
     post:
       summary: Broadcast email to all active customers (ADMIN+)
       tags: [System Admin — Messaging]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7231,7 +7231,7 @@ paths:
     post:
       summary: Broadcast push notification to all customers
       tags: [System Admin — Push Notifications]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7250,7 +7250,7 @@ paths:
     post:
       summary: Send push notification to a list of customers
       tags: [System Admin — Push Notifications]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7278,7 +7278,7 @@ paths:
     post:
       summary: Send push notification to a single customer
       tags: [System Admin — Push Notifications]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - in: path
           name: id
@@ -7305,7 +7305,7 @@ paths:
     post:
       summary: Broadcast push notification to all riders
       tags: [System Admin — Push Notifications]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7324,7 +7324,7 @@ paths:
     post:
       summary: Send push notification to a list of riders
       tags: [System Admin — Push Notifications]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7352,7 +7352,7 @@ paths:
     post:
       summary: Send push notification to a single rider
       tags: [System Admin — Push Notifications]
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - in: path
           name: id
@@ -7384,7 +7384,7 @@ paths:
       tags: [System Admin — Heroes]
       summary: List all heroes
       description: "Returns all hero slides (active and inactive) ordered by sortOrder. Minimum role: ADMIN."
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       responses:
         "200":
           description: Hero list
@@ -7402,7 +7402,7 @@ paths:
       tags: [System Admin — Heroes]
       summary: Create a hero slide
       description: "Creates a new hero slide. Upload the image separately via POST /admin/heroes/{id}/image. Minimum role: ADMIN."
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7425,7 +7425,7 @@ paths:
     get:
       tags: [System Admin — Heroes]
       summary: Get a hero slide
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
       responses:
@@ -7445,7 +7445,7 @@ paths:
       tags: [System Admin — Heroes]
       summary: Update a hero slide
       description: Partial update — only include fields to change. To update image use the dedicated image endpoint.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
       requestBody:
@@ -7471,7 +7471,7 @@ paths:
     delete:
       tags: [System Admin — Heroes]
       summary: Delete a hero slide
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
       responses:
@@ -7485,7 +7485,7 @@ paths:
       tags: [System Admin — Heroes]
       summary: Upload hero background image
       description: Uploads an image to Cloudinary and sets it as the hero's imageUrl. Accepts images up to 5 MB.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
       requestBody:
@@ -7524,7 +7524,7 @@ paths:
       tags: [System Admin — Businesses]
       summary: List businesses
       description: "Returns a paginated list of all businesses. Supports search by name, email, owner name, or owner phone. Minimum role: ADMIN."
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: query, name: page, schema: { type: integer, default: 1 } }
         - { in: query, name: limit, schema: { type: integer, default: 20 } }
@@ -7547,7 +7547,7 @@ paths:
       tags: [System Admin — Businesses]
       summary: Create business
       description: "Creates a new business with its wallet. Optionally uploads compliance documents to Cloudinary and creates the owner's dashboard login — all in a single request. Minimum role: ADMIN."
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7600,7 +7600,7 @@ paths:
       tags: [System Admin — Businesses]
       summary: Get business
       description: "Returns the full business record including wallet balance and counts of riders and admins. Minimum role: ADMIN."
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
       responses:
@@ -7619,7 +7619,7 @@ paths:
       tags: [System Admin — Businesses]
       summary: Update business
       description: "Updates any field on a business including status. Minimum role: ADMIN."
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
       requestBody:
@@ -7669,7 +7669,7 @@ paths:
         Creates a new BUSINESS + OWNER admin account linked to this business.
         Sends a welcome email to the owner with their temporary credentials.
         Minimum role: ADMIN.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
       requestBody:
@@ -7709,7 +7709,7 @@ paths:
         Accepts images (JPG, PNG, WebP) and PDFs up to 10 MB. Minimum role: ADMIN.
 
         **Valid `field` values:** `cacCertificateUrl`, `driversLicenseUrl`, `insuranceDocumentUrl`, `utilityBillUrl`
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: id, required: true, schema: { type: string } }
         - in: path
@@ -7761,7 +7761,7 @@ paths:
       tags: [Business Admin — Profile]
       summary: Get own admin profile
       description: Returns the authenticated business admin's profile (without password). Works for both OWNER and ADMIN roles.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       responses:
         "200":
           description: Business admin profile
@@ -7778,7 +7778,7 @@ paths:
       tags: [Business Admin — Profile]
       summary: Get own business
       description: Returns the full business record for the authenticated admin, including wallet balance and rider/admin counts.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       responses:
         "200":
           description: Business record
@@ -7795,7 +7795,7 @@ paths:
       tags: [Business Admin — Profile]
       summary: Update own business
       description: "Updates the business profile. OWNER role only. Cannot change status — use system admin for that."
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -7848,7 +7848,7 @@ paths:
         **Valid `field` values:** `cacCertificateUrl`, `driversLicenseUrl`, `insuranceDocumentUrl`, `utilityBillUrl`
 
         Accepts images (JPG, PNG, WebP) and PDFs up to 10 MB.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - in: path
           name: field
@@ -7895,7 +7895,7 @@ paths:
       tags: [Business Admin — Riders]
       summary: List business riders
       description: Returns paginated riders assigned to the authenticated admin's business. Supports search by name or phone.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: query, name: page, schema: { type: integer, default: 1 } }
         - { in: query, name: limit, schema: { type: integer, default: 20 } }
@@ -7919,7 +7919,7 @@ paths:
       tags: [Business Admin — Riders]
       summary: Assign rider to business
       description: Assigns an existing platform rider to this business. The rider must not already belong to another business. **OWNER role only.**
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: riderId, required: true, schema: { type: string } }
       responses:
@@ -7937,7 +7937,7 @@ paths:
       tags: [Business Admin — Riders]
       summary: Remove rider from business
       description: Unlinks a rider from this business (sets `businessId` to null). The rider account is not deleted. **OWNER role only.**
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: riderId, required: true, schema: { type: string } }
       responses:
@@ -7953,7 +7953,7 @@ paths:
       tags: [Business Admin — Riders]
       summary: Get rider order history
       description: Returns a paginated list of all orders completed by a specific rider under this business, including per-order earning amounts.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: riderId, required: true, schema: { type: string } }
         - { in: query, name: page, schema: { type: integer, default: 1 } }
@@ -7997,7 +7997,7 @@ paths:
       tags: [Business Admin — Wallet]
       summary: Get business wallet
       description: Returns the business wallet. If the wallet does not exist yet it is created with a zero balance on first call.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       responses:
         "200":
           description: Business wallet
@@ -8014,7 +8014,7 @@ paths:
       tags: [Business Admin — Wallet]
       summary: List wallet transactions
       description: Returns a paginated, reverse-chronological list of wallet transactions (rider earnings and withdrawals).
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: query, name: page, schema: { type: integer, default: 1 } }
         - { in: query, name: limit, schema: { type: integer, default: 20 } }
@@ -8037,7 +8037,7 @@ paths:
       tags: [Business Admin — Team]
       summary: List team members
       description: Returns all admins linked to the authenticated admin's business, ordered by creation date.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       responses:
         "200":
           description: List of team members
@@ -8054,7 +8054,7 @@ paths:
       tags: [Business Admin — Team]
       summary: Create team member
       description: Creates a new BUSINESS + ADMIN role account linked to this business. **OWNER role only.**
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       requestBody:
         required: true
         content:
@@ -8089,7 +8089,7 @@ paths:
       description: |
         Updates a team member's name or active status. **OWNER role only.**
         Cannot be used to modify the OWNER account — use the profile update endpoint for that.
-      security: [{ bearerAuth: [] }]
+      security: [{ BearerAuth: [] }]
       parameters:
         - { in: path, name: memberId, required: true, schema: { type: string } }
       requestBody:

@@ -79,7 +79,15 @@ const openApiSpec = YAML.load(
   fs.readFileSync(path.join(__dirname, "../openapi.yaml"), "utf8")
 ) as object;
 
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+// Swagger UI needs unsafe-inline for its bundled scripts; relax CSP only for /docs
+app.use("/docs", (_req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self';"
+  );
+  next();
+}, swaggerUi.serve, swaggerUi.setup(openApiSpec, { persistAuthorization: true }));
+
 app.get("/openapi.yaml", (_req, res) =>
   res.sendFile(path.join(__dirname, "../openapi.yaml"))
 );

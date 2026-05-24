@@ -160,7 +160,7 @@ export async function createBusiness(req: Request, res: Response, next: NextFunc
 
     if (!b.name) return fail(res, "Business name is required", 400);
 
-    // Upload any attached document files to Cloudinary
+    // Upload any attached document files to Cloudinary (documents are optional — skip failed uploads)
     const docUrls: Record<string, string> = {};
     if (req.files && typeof req.files === "object" && !Array.isArray(req.files)) {
       const files = req.files as Record<string, Express.Multer.File[]>;
@@ -172,7 +172,11 @@ export async function createBusiness(req: Request, res: Response, next: NextFunc
       };
       for (const [fileField, urlField] of Object.entries(docMap)) {
         if (files[fileField]?.[0]) {
-          docUrls[urlField] = await uploadDocument(files[fileField][0].buffer, "godrop/business-docs");
+          try {
+            docUrls[urlField] = await uploadDocument(files[fileField][0].buffer, "godrop/business-docs");
+          } catch (uploadErr) {
+            console.error(`[createBusiness] Cloudinary upload failed for field "${fileField}":`, uploadErr);
+          }
         }
       }
     }
@@ -213,8 +217,9 @@ export async function createBusiness(req: Request, res: Response, next: NextFunc
 
     return ok(res, { data: business }, 201);
   } catch (err: any) {
-    if (err.message?.includes("Unique constraint") || err.message === "Email already exists")
+    if (err.code === "P2002" || err.message?.includes("Unique constraint") || err.message === "Email already exists")
       return fail(res, "Email already in use", 409);
+    console.error("[createBusiness]", err);
     next(err);
   }
 }

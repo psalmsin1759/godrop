@@ -4,7 +4,6 @@ import type {
   BusinessMember,
   BusinessWalletTransaction,
   BusinessesListParams,
-  CreateBusinessRequest,
   UpdateBusinessRequest,
   CreateBusinessOwnerRequest,
   CreateBusinessMemberRequest,
@@ -28,10 +27,13 @@ export const businessApi = api.injectEndpoints({
       transformResponse: (res: WrapMeta<Business[]>) => ({ data: res.data ?? [], meta: res.meta }),
     }),
 
-    createBusiness: build.mutation<Business, CreateBusinessRequest>({
-      query: (body) => ({ url: '/admin/businesses', method: 'POST', body }),
+    createBusiness: build.mutation<Business, FormData>({
+      queryFn: async (formData, _api, _extraOptions, baseQuery) => {
+        const result = await baseQuery({ url: '/admin/businesses', method: 'POST', body: formData })
+        if (result.error) return { error: result.error }
+        return { data: (result.data as Wrap<Business>).data }
+      },
       invalidatesTags: ['Business'],
-      transformResponse: (res: Wrap<Business>) => res.data,
     }),
 
     getBusiness: build.query<Business, string>({
@@ -127,14 +129,6 @@ export const businessApi = api.injectEndpoints({
       invalidatesTags: ['Business'],
     }),
 
-    uploadBusinessDocumentAsAdmin: build.mutation<unknown, { id: string; field: BusinessDocumentField; file: File }>({
-      queryFn: async ({ id, field, file }, _api, _extraOptions, baseQuery) => {
-        const formData = new FormData()
-        formData.append('file', file)
-        return baseQuery({ url: `/admin/businesses/${id}/documents/${field}`, method: 'POST', body: formData })
-      },
-      invalidatesTags: (_r, _e, { id }) => ['Business', { type: 'Business', id }],
-    }),
   }),
 })
 
@@ -156,5 +150,4 @@ export const {
   useGetMyBusinessQuery,
   useUpdateMyBusinessMutation,
   useUploadBusinessDocumentMutation,
-  useUploadBusinessDocumentAsAdminMutation,
 } = businessApi

@@ -6,7 +6,6 @@ import {
   useGetBusinessesQuery,
   useCreateBusinessMutation,
   useCreateBusinessOwnerMutation,
-  useUploadBusinessDocumentAsAdminMutation,
 } from '@/store/services/businessApi'
 import { formatNaira } from '@/lib/utils'
 import type { BusinessDocumentField, CreateBusinessRequest } from '@/types/api'
@@ -91,8 +90,6 @@ function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCr
   const [docFiles, setDocFiles] = useState<DocFiles>(EMPTY_DOC_FILES)
   const [serviceAreaInput, setServiceAreaInput] = useState('')
   const [create, { isLoading: creating, error: createError }] = useCreateBusinessMutation()
-  const [addOwner, { isLoading: addingOwner, error: ownerError }] = useCreateBusinessOwnerMutation()
-  const [uploadDoc, { isLoading: uploadingDocs }] = useUploadBusinessDocumentAsAdminMutation()
 
   function set(field: keyof typeof form, val: any) {
     setForm((f) => ({ ...f, [field]: val }))
@@ -109,53 +106,47 @@ function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCr
     set('serviceAreas', form.serviceAreas?.filter((a) => a !== area))
   }
 
+  const docFieldMap: Record<BusinessDocumentField, string> = {
+    cacCertificateUrl: 'cacCertificate',
+    driversLicenseUrl: 'driversLicense',
+    insuranceDocumentUrl: 'insuranceDocument',
+    utilityBillUrl: 'utilityBill',
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      const { ownerFirstName, ownerLastName, ownerPassword, ...bizData } = form
-      const biz = await create({
-        ...bizData,
-        yearEstablished: bizData.yearEstablished ? Number(bizData.yearEstablished) : undefined,
-        email: bizData.email || undefined,
-        phone: bizData.phone || undefined,
-        address: bizData.address || undefined,
-        cacRegistrationNumber: bizData.cacRegistrationNumber || undefined,
-        tin: bizData.tin || undefined,
-        ownerFullName: bizData.ownerFullName || undefined,
-        ownerPhoneNumber: bizData.ownerPhoneNumber || undefined,
-        ownerEmail: bizData.ownerEmail || undefined,
-        ownerNIN: bizData.ownerNIN || undefined,
-        ownerBVN: bizData.ownerBVN || undefined,
-        bankName: bizData.bankName || undefined,
-        accountName: bizData.accountName || undefined,
-        accountNumber: bizData.accountNumber || undefined,
-      }).unwrap()
-
-      // Upload any selected documents to Cloudinary
-      await Promise.allSettled(
-        DOC_FIELDS
-          .filter(({ field }) => docFiles[field] !== null)
-          .map(({ field }) => uploadDoc({ id: biz.id, field, file: docFiles[field]! }))
-      )
-
-      if (ownerFirstName && ownerLastName && ownerPassword) {
-        await addOwner({
-          id: biz.id,
-          body: {
-            firstName: ownerFirstName,
-            lastName: ownerLastName,
-            email: form.ownerEmail || `owner@${form.name.toLowerCase().replace(/\s+/g, '')}.biz`,
-            password: ownerPassword,
-          },
-        }).unwrap()
-      }
-
+      const fd = new FormData()
+      fd.append('name', form.name)
+      if (form.email) fd.append('email', form.email)
+      if (form.phone) fd.append('phone', form.phone)
+      if (form.address) fd.append('address', form.address)
+      if (form.cacRegistrationNumber) fd.append('cacRegistrationNumber', form.cacRegistrationNumber)
+      if (form.tin) fd.append('tin', form.tin)
+      if (form.yearEstablished) fd.append('yearEstablished', String(form.yearEstablished))
+      if (form.ownerFullName) fd.append('ownerFullName', form.ownerFullName)
+      if (form.ownerPhoneNumber) fd.append('ownerPhoneNumber', form.ownerPhoneNumber)
+      if (form.ownerEmail) fd.append('ownerEmail', form.ownerEmail)
+      if (form.ownerNIN) fd.append('ownerNIN', form.ownerNIN)
+      if (form.ownerBVN) fd.append('ownerBVN', form.ownerBVN)
+      if (form.bankName) fd.append('bankName', form.bankName)
+      if (form.accountName) fd.append('accountName', form.accountName)
+      if (form.accountNumber) fd.append('accountNumber', form.accountNumber)
+      form.serviceAreas?.forEach((area) => fd.append('serviceAreas', area))
+      if (form.ownerFirstName) fd.append('ownerFirstName', form.ownerFirstName)
+      if (form.ownerLastName) fd.append('ownerLastName', form.ownerLastName)
+      if (form.ownerPassword) fd.append('ownerPassword', form.ownerPassword)
+      DOC_FIELDS.forEach(({ field }) => {
+        const file = docFiles[field]
+        if (file) fd.append(docFieldMap[field], file)
+      })
+      const biz = await create(fd).unwrap()
       onCreated(biz.id)
     } catch {}
   }
 
-  const isLoading = creating || addingOwner || uploadingDocs
-  const error = createError || ownerError
+  const isLoading = creating
+  const error = createError
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

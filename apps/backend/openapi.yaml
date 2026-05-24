@@ -7546,12 +7546,12 @@ paths:
     post:
       tags: [System Admin — Businesses]
       summary: Create business
-      description: "Creates a new business and its associated wallet. Documents can be uploaded separately after creation. Minimum role: ADMIN."
+      description: "Creates a new business with its wallet. Optionally uploads compliance documents to Cloudinary and creates the owner's dashboard login — all in a single request. Minimum role: ADMIN."
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required: [name]
@@ -7571,9 +7571,17 @@ paths:
                 serviceAreas:
                   type: array
                   items: { type: string }
+                  description: Repeat the field for each area
                 bankName: { type: string }
                 accountName: { type: string }
                 accountNumber: { type: string }
+                ownerFirstName: { type: string, description: "If provided together with ownerLastName and ownerPassword, creates a dashboard login for the owner" }
+                ownerLastName: { type: string }
+                ownerPassword: { type: string, format: password }
+                cacCertificate: { type: string, format: binary, description: "CAC certificate file (image or PDF, max 10 MB)" }
+                driversLicense: { type: string, format: binary, description: "Owner driver's licence file" }
+                insuranceDocument: { type: string, format: binary, description: "Insurance document file" }
+                utilityBill: { type: string, format: binary, description: "Utility bill file" }
       responses:
         "201":
           description: Business created

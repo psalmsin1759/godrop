@@ -156,10 +156,65 @@ export async function updateTeamMember(req: Request, res: Response, next: NextFu
 
 export async function createBusiness(req: Request, res: Response, next: NextFunction) {
   try {
-    const business = await svc.createBusiness(req.body);
+    const b = req.body;
+
+    if (!b.name) return fail(res, "Business name is required", 400);
+
+    // Upload any attached document files to Cloudinary
+    const docUrls: Record<string, string> = {};
+    if (req.files && typeof req.files === "object" && !Array.isArray(req.files)) {
+      const files = req.files as Record<string, Express.Multer.File[]>;
+      const docMap: Record<string, string> = {
+        cacCertificate: "cacCertificateUrl",
+        driversLicense: "driversLicenseUrl",
+        insuranceDocument: "insuranceDocumentUrl",
+        utilityBill: "utilityBillUrl",
+      };
+      for (const [fileField, urlField] of Object.entries(docMap)) {
+        if (files[fileField]?.[0]) {
+          docUrls[urlField] = await uploadDocument(files[fileField][0].buffer, "godrop/business-docs");
+        }
+      }
+    }
+
+    const toStr = (v: any) => (v && String(v).trim()) || undefined;
+
+    const business = await svc.createBusiness({
+      name: b.name,
+      email: toStr(b.email),
+      phone: toStr(b.phone),
+      address: toStr(b.address),
+      cacRegistrationNumber: toStr(b.cacRegistrationNumber),
+      tin: toStr(b.tin),
+      yearEstablished: b.yearEstablished ? Number(b.yearEstablished) : undefined,
+      ownerFullName: toStr(b.ownerFullName),
+      ownerPhoneNumber: toStr(b.ownerPhoneNumber),
+      ownerEmail: toStr(b.ownerEmail),
+      ownerNIN: toStr(b.ownerNIN),
+      ownerBVN: toStr(b.ownerBVN),
+      serviceAreas: b.serviceAreas
+        ? (Array.isArray(b.serviceAreas) ? b.serviceAreas : [b.serviceAreas])
+        : [],
+      bankName: toStr(b.bankName),
+      accountName: toStr(b.accountName),
+      accountNumber: toStr(b.accountNumber),
+      ...docUrls,
+    });
+
+    // Create owner if credentials supplied
+    if (b.ownerFirstName && b.ownerLastName && b.ownerPassword) {
+      await svc.createBusinessOwner(business.id, {
+        firstName: b.ownerFirstName,
+        lastName: b.ownerLastName,
+        email: toStr(b.ownerEmail) ?? `owner@${b.name.toLowerCase().replace(/\s+/g, "")}.biz`,
+        password: b.ownerPassword,
+      });
+    }
+
     return ok(res, { data: business }, 201);
   } catch (err: any) {
-    if (err.message?.includes("Unique constraint")) return fail(res, "Email already in use", 409);
+    if (err.message?.includes("Unique constraint") || err.message === "Email already exists")
+      return fail(res, "Email already in use", 409);
     next(err);
   }
 }

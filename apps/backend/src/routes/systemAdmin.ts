@@ -252,7 +252,17 @@ router.post("/push/riders/:id", requireSystemRole("ADMIN"), validate(sendToSingl
 
 // ─── Business Management (ADMIN+) ────────────────────────────
 router.get("/businesses", requireSystemRole("ADMIN"), businessCtrl.listBusinesses);
-router.post("/businesses", requireSystemRole("ADMIN"), businessCtrl.createBusiness);
+router.post(
+  "/businesses",
+  requireSystemRole("ADMIN"),
+  documentUpload.fields([
+    { name: "cacCertificate", maxCount: 1 },
+    { name: "driversLicense", maxCount: 1 },
+    { name: "insuranceDocument", maxCount: 1 },
+    { name: "utilityBill", maxCount: 1 },
+  ]),
+  businessCtrl.createBusiness
+);
 router.get("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.getBusiness);
 router.patch("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.updateBusiness);
 router.post("/businesses/:id/owner", requireSystemRole("ADMIN"), businessCtrl.createBusinessOwner);

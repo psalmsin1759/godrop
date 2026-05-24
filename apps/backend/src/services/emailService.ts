@@ -426,6 +426,49 @@ export function adminNewVendorApplicationEmail(opts: {
   };
 }
 
+export function businessOwnerWelcomeEmail(opts: {
+  firstName: string;
+  email: string;
+  businessName: string;
+  temporaryPassword: string;
+}): EmailOptions {
+  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/login`;
+  const html = emailLayout(
+    cardHeader("Your Business Account is Ready", "#f59e0b") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        Your Godrop Business account for <strong>${opts.businessName}</strong> has been set up successfully.
+        You now have full access to your business dashboard — manage your riders, track orders, and monitor your wallet.
+      </p>
+      ${infoTable([
+        ["Business", opts.businessName],
+        ["Email", opts.email],
+        ["Role", "Business Owner"],
+        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">${opts.temporaryPassword}</code>`],
+      ])}
+      <div style="background:#fffbeb;border-left:4px solid #f59e0b;border-radius:4px;padding:14px 16px;margin:20px 0;">
+        <p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">Action required</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#92400e;line-height:1.5;">
+          Please log in and <strong>change your password immediately</strong>. Do not share your credentials with anyone.
+        </p>
+      </div>
+      ${ctaButton("Log In to Dashboard", loginUrl, "#f59e0b")}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Need help getting started? Reach us at
+        <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: `Your Godrop Business account is ready — ${opts.businessName}`,
+    html,
+    text: `Hi ${opts.firstName}, your Godrop Business account for ${opts.businessName} is ready.\n\nEmail: ${opts.email}\nTemporary Password: ${opts.temporaryPassword}\n\nPlease log in at ${loginUrl} and change your password immediately.`,
+  };
+}
+
 export function vendorNewOrderEmail(opts: {
   ownerFirstName: string;
   ownerEmail: string;

@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { AdminRole, AdminType, BusinessStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
+import { sendEmail, businessOwnerWelcomeEmail } from "./emailService";
 
 const SALT_ROUNDS = 12;
 
@@ -117,14 +118,14 @@ export async function createBusinessOwner(
   businessId: string,
   data: { email: string; firstName: string; lastName: string; password: string }
 ) {
-  const exists = await prisma.business.findUnique({ where: { id: businessId } });
-  if (!exists) throw new Error("Business not found");
+  const business = await prisma.business.findUnique({ where: { id: businessId } });
+  if (!business) throw new Error("Business not found");
 
   const conflict = await prisma.admin.findUnique({ where: { email: data.email } });
   if (conflict) throw new Error("Email already exists");
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
-  return prisma.admin.create({
+  const admin = await prisma.admin.create({
     data: {
       type: AdminType.BUSINESS,
       role: AdminRole.OWNER,
@@ -136,6 +137,15 @@ export async function createBusinessOwner(
     },
     select: { id: true, type: true, role: true, email: true, firstName: true, lastName: true, businessId: true, isActive: true, createdAt: true },
   });
+
+  sendEmail(businessOwnerWelcomeEmail({
+    firstName: data.firstName,
+    email: data.email,
+    businessName: business.name,
+    temporaryPassword: data.password,
+  })).catch(() => {});
+
+  return admin;
 }
 
 // ─── Business Admin self-service ─────────────────────────────

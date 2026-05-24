@@ -10,6 +10,44 @@ import {
 import { formatNaira } from '@/lib/utils'
 import type { BusinessDocumentField, CreateBusinessRequest } from '@/types/api'
 
+// ─── Nigerian banks ───────────────────────────────────────────
+
+const NIGERIAN_BANKS = [
+  'Access Bank',
+  'Carbon (One Finance)',
+  'Citibank Nigeria',
+  'Ecobank Nigeria',
+  'Fidelity Bank',
+  'First Bank of Nigeria',
+  'First City Monument Bank (FCMB)',
+  'Globus Bank',
+  'Guaranty Trust Bank (GTBank)',
+  'Heritage Bank',
+  'Jaiz Bank',
+  'Keystone Bank',
+  'Kuda Bank',
+  'Lotus Bank',
+  'Moniepoint Microfinance Bank',
+  'Opay (OPay Digital Services)',
+  'Optimus Bank',
+  'Palmpay',
+  'Parallex Bank',
+  'Polaris Bank',
+  'Providus Bank',
+  'Rubies Microfinance Bank',
+  'Stanbic IBTC Bank',
+  'Standard Chartered Bank',
+  'Sterling Bank',
+  'SunTrust Bank',
+  'TAJ Bank',
+  'Union Bank of Nigeria',
+  'United Bank for Africa (UBA)',
+  'Unity Bank',
+  'VFD Microfinance Bank',
+  'Wema Bank',
+  'Zenith Bank',
+]
+
 // ─── Multi-step create modal ──────────────────────────────────
 
 const STEPS = ['Business Info', 'Owner Details', 'Banking & Docs']
@@ -273,7 +311,16 @@ function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCr
             <>
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Bank Name">
-                  <Input value={form.bankName} onChange={(v) => set('bankName', v)} placeholder="GTBank" />
+                  <select
+                    value={form.bankName ?? ''}
+                    onChange={(e) => set('bankName', e.target.value)}
+                    className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1] bg-white text-[#283c50]"
+                  >
+                    <option value="">Select bank…</option>
+                    {NIGERIAN_BANKS.map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
                 </Field>
                 <Field label="Account Name">
                   <Input value={form.accountName} onChange={(v) => set('accountName', v)} placeholder="Speedy Riders Ltd" />

@@ -620,15 +620,22 @@ const SLIDES = [Hero1, Hero2, Hero3] as const;
 
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);
+  const [tick, setTick] = useState(0);
 
-  const goTo = (next: number) => setCurrent(next);
+  const goTo = (next: number) => {
+    setCurrent(next);
+    setTick(t => t + 1);
+  };
+
+  const prev = () => goTo((current - 1 + SLIDES.length) % SLIDES.length);
+  const next = () => goTo((current + 1) % SLIDES.length);
 
   useEffect(() => {
     const id = setInterval(() => {
       setCurrent(c => (c + 1) % SLIDES.length);
     }, SLIDE_DURATION);
     return () => clearInterval(id);
-  }, []);
+  }, [tick]);
 
   const Slide = SLIDES[current];
 
@@ -656,31 +663,62 @@ export default function HeroSection() {
       {/* Bottom fade */}
       <div className="absolute inset-x-0 bottom-0 h-32 pointer-events-none z-30" style={{ background: "linear-gradient(to top, #060606, transparent)" }} />
 
-      {/* Navigation dots */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
-        {SLIDES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            aria-label={`Slide ${i + 1}`}
-            className="rounded-full"
-            style={{
-              height: 4,
-              width: i === current ? 28 : 8,
-              background: i === current ? "#fff" : "rgba(255,255,255,0.3)",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              transition: "width 0.3s ease, background 0.3s ease",
-            }}
-          />
-        ))}
+      {/* Prev / Dots / Next row */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4">
+        {/* Prev */}
+        <button
+          onClick={prev}
+          aria-label="Previous slide"
+          className="flex items-center justify-center rounded-full transition-colors"
+          style={{ width: 32, height: 32, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", cursor: "pointer" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </button>
+
+        {/* Dots */}
+        <div className="flex items-center gap-2">
+          {SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              aria-label={`Slide ${i + 1}`}
+              className="rounded-full"
+              style={{
+                height: 4,
+                width: i === current ? 28 : 8,
+                background: i === current ? "#fff" : "rgba(255,255,255,0.3)",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                transition: "width 0.3s ease, background 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Next */}
+        <button
+          onClick={next}
+          aria-label="Next slide"
+          className="flex items-center justify-center rounded-full transition-colors"
+          style={{ width: 32, height: 32, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", cursor: "pointer" }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
       </div>
 
       {/* Progress bar */}
       <div className="absolute bottom-0 left-0 right-0 h-px z-40" style={{ background: "rgba(255,255,255,0.1)" }}>
         <motion.div
-          key={current}
+          key={`${current}-${tick}`}
           className="h-full"
           style={{ background: "#FF6A2C" }}
           initial={{ width: "0%" }}

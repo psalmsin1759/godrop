@@ -9,6 +9,7 @@ info:
     - **Rider App API** — Phone OTP → JWT. Same header. Payload: `{ riderId, type: "rider" }`.
     - **Vendor Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
     - **System Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
+    - **Business Admin API** — Email + password → same `POST /admin/login` endpoint. Token payload contains `type: "admin"` and `adminType: "BUSINESS"`. Roles: `OWNER` (full control) and `ADMIN` (read + assign).
 
     **Currency:** All monetary amounts are in **Kobo** (₦ × 100). Never Naira floats.
     **Phone:** E.164 format, e.g. `+2348012345678`.
@@ -1136,6 +1137,89 @@ components:
             SUBMITTED: { type: integer }
             VERIFIED: { type: integer }
             REJECTED: { type: integer }
+
+    # ─ Business ───────────────────────────────────────────────
+    Business:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: "Speedy Riders Ltd" }
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED, DEACTIVATED]
+        email: { type: string, format: email, nullable: true }
+        phone: { type: string, nullable: true, example: "+2348012345678" }
+        address: { type: string, nullable: true }
+        cacRegistrationNumber: { type: string, nullable: true, example: "RC 1234567" }
+        tin: { type: string, nullable: true, example: "12345678-0001" }
+        yearEstablished: { type: integer, nullable: true, example: 2020 }
+        ownerFullName: { type: string, nullable: true }
+        ownerPhoneNumber: { type: string, nullable: true }
+        ownerEmail: { type: string, format: email, nullable: true }
+        ownerNIN: { type: string, nullable: true }
+        ownerBVN: { type: string, nullable: true }
+        serviceAreas:
+          type: array
+          items: { type: string }
+          example: ["Lagos Island", "Lekki", "Victoria Island"]
+        cacCertificateUrl: { type: string, format: uri, nullable: true }
+        driversLicenseUrl: { type: string, format: uri, nullable: true }
+        insuranceDocumentUrl: { type: string, format: uri, nullable: true }
+        utilityBillUrl: { type: string, format: uri, nullable: true }
+        bankName: { type: string, nullable: true }
+        accountName: { type: string, nullable: true }
+        accountNumber: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        wallet:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            balanceKobo: { type: integer, example: 150000 }
+        _count:
+          type: object
+          properties:
+            riders: { type: integer }
+            admins: { type: integer }
+
+    BusinessWallet:
+      type: object
+      properties:
+        id: { type: string }
+        businessId: { type: string }
+        balanceKobo: { type: integer, example: 150000 }
+
+    BusinessWalletTransaction:
+      type: object
+      properties:
+        id: { type: string }
+        walletId: { type: string }
+        riderId: { type: string, nullable: true }
+        type:
+          type: string
+          enum: [RIDER_EARNING, WITHDRAWAL]
+        amountKobo: { type: integer, example: 5000 }
+        reference: { type: string }
+        description: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    BusinessAdminProfile:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        type:
+          type: string
+          enum: [BUSINESS]
+        role:
+          type: string
+          enum: [OWNER, ADMIN]
+        businessId: { type: string }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
 
 # ─── Paths ────────────────────────────────────────────────────
 paths:
@@ -7431,6 +7515,600 @@ paths:
         "404":
           description: Hero not found
 
+  # ══════════════════════════════════════════════════════════════
+  # SYSTEM ADMIN — BUSINESS MANAGEMENT
+  # ══════════════════════════════════════════════════════════════
+
+  /admin/businesses:
+    get:
+      tags: [System Admin — Businesses]
+      summary: List businesses
+      description: "Returns a paginated list of all businesses. Supports search by name, email, owner name, or owner phone. Minimum role: ADMIN."
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, default: 20 } }
+        - { in: query, name: search, schema: { type: string }, description: "Search by name, email, ownerFullName, or ownerPhoneNumber" }
+        - { in: query, name: status, schema: { type: string, enum: [ACTIVE, SUSPENDED, DEACTIVATED] } }
+      responses:
+        "200":
+          description: Paginated list of businesses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Business" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+    post:
+      tags: [System Admin — Businesses]
+      summary: Create business
+      description: "Creates a new business and its associated wallet. Documents can be uploaded separately after creation. Minimum role: ADMIN."
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: "Speedy Riders Ltd" }
+                email: { type: string, format: email }
+                phone: { type: string, example: "+2348012345678" }
+                address: { type: string }
+                cacRegistrationNumber: { type: string, example: "RC 1234567" }
+                tin: { type: string, example: "12345678-0001" }
+                yearEstablished: { type: integer, example: 2020 }
+                ownerFullName: { type: string }
+                ownerPhoneNumber: { type: string, example: "+2348012345678" }
+                ownerEmail: { type: string, format: email }
+                ownerNIN: { type: string }
+                ownerBVN: { type: string }
+                serviceAreas:
+                  type: array
+                  items: { type: string }
+                bankName: { type: string }
+                accountName: { type: string }
+                accountNumber: { type: string }
+      responses:
+        "201":
+          description: Business created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Business" }
+        "409":
+          description: Email already in use
+
+  /admin/businesses/{id}:
+    get:
+      tags: [System Admin — Businesses]
+      summary: Get business
+      description: "Returns the full business record including wallet balance and counts of riders and admins. Minimum role: ADMIN."
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Business detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Business" }
+        "404":
+          description: Business not found
+    patch:
+      tags: [System Admin — Businesses]
+      summary: Update business
+      description: "Updates any field on a business including status. Minimum role: ADMIN."
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+                address: { type: string }
+                status: { type: string, enum: [ACTIVE, SUSPENDED, DEACTIVATED] }
+                cacRegistrationNumber: { type: string }
+                tin: { type: string }
+                yearEstablished: { type: integer }
+                ownerFullName: { type: string }
+                ownerPhoneNumber: { type: string }
+                ownerEmail: { type: string, format: email }
+                ownerNIN: { type: string }
+                ownerBVN: { type: string }
+                serviceAreas:
+                  type: array
+                  items: { type: string }
+                bankName: { type: string }
+                accountName: { type: string }
+                accountNumber: { type: string }
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Business" }
+        "404":
+          description: Business not found
+
+  /admin/businesses/{id}/owner:
+    post:
+      tags: [System Admin — Businesses]
+      summary: Create business owner
+      description: |
+        Creates a new BUSINESS + OWNER admin account linked to this business.
+        Sends a welcome email to the owner with their temporary credentials.
+        Minimum role: ADMIN.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, firstName, lastName, password]
+              properties:
+                email: { type: string, format: email }
+                firstName: { type: string }
+                lastName: { type: string }
+                password: { type: string, minLength: 8 }
+      responses:
+        "201":
+          description: Business owner created and welcome email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/BusinessAdminProfile" }
+        "404":
+          description: Business not found
+        "409":
+          description: Email already exists
+
+  /admin/businesses/{id}/documents/{field}:
+    post:
+      tags: [System Admin — Businesses]
+      summary: Upload business document (system admin)
+      description: |
+        Uploads a compliance document for any business. The file is stored in Cloudinary under
+        `godrop/business-docs/` and the resulting URL is saved to the specified field.
+        Accepts images (JPG, PNG, WebP) and PDFs up to 10 MB. Minimum role: ADMIN.
+
+        **Valid `field` values:** `cacCertificateUrl`, `driversLicenseUrl`, `insuranceDocumentUrl`, `utilityBillUrl`
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+        - in: path
+          name: field
+          required: true
+          schema:
+            type: string
+            enum: [cacCertificateUrl, driversLicenseUrl, insuranceDocumentUrl, utilityBillUrl]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image (JPG, PNG, WebP) or PDF — max 10 MB
+      responses:
+        "200":
+          description: Document uploaded and URL saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      cacCertificateUrl: { type: string, format: uri, nullable: true }
+                      driversLicenseUrl: { type: string, format: uri, nullable: true }
+                      insuranceDocumentUrl: { type: string, format: uri, nullable: true }
+                      utilityBillUrl: { type: string, format: uri, nullable: true }
+        "400":
+          description: No file provided or invalid field name
+        "404":
+          description: Business not found
+
+  # ══════════════════════════════════════════════════════════════
+  # BUSINESS ADMIN API
+  # ══════════════════════════════════════════════════════════════
+
+  /business-admin/me:
+    get:
+      tags: [Business Admin — Profile]
+      summary: Get own admin profile
+      description: Returns the authenticated business admin's profile (without password). Works for both OWNER and ADMIN roles.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Business admin profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/BusinessAdminProfile" }
+
+  /business-admin/business:
+    get:
+      tags: [Business Admin — Profile]
+      summary: Get own business
+      description: Returns the full business record for the authenticated admin, including wallet balance and rider/admin counts.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Business record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Business" }
+        "404":
+          description: Business not found
+    patch:
+      tags: [Business Admin — Profile]
+      summary: Update own business
+      description: "Updates the business profile. OWNER role only. Cannot change status — use system admin for that."
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string }
+                address: { type: string }
+                cacRegistrationNumber: { type: string }
+                tin: { type: string }
+                yearEstablished: { type: integer }
+                ownerFullName: { type: string }
+                ownerPhoneNumber: { type: string }
+                ownerEmail: { type: string, format: email }
+                ownerNIN: { type: string }
+                ownerBVN: { type: string }
+                serviceAreas:
+                  type: array
+                  items: { type: string }
+                bankName: { type: string }
+                accountName: { type: string }
+                accountNumber: { type: string }
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Business" }
+        "403":
+          description: OWNER role required
+        "404":
+          description: Business not found
+
+  /business-admin/business/documents/{field}:
+    post:
+      tags: [Business Admin — Profile]
+      summary: Upload own business document
+      description: |
+        Uploads a compliance document for the authenticated admin's business.
+        The file is stored in Cloudinary under `godrop/business-docs/` and the resulting URL
+        is saved to the specified field. **OWNER role only.**
+
+        **Valid `field` values:** `cacCertificateUrl`, `driversLicenseUrl`, `insuranceDocumentUrl`, `utilityBillUrl`
+
+        Accepts images (JPG, PNG, WebP) and PDFs up to 10 MB.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: field
+          required: true
+          schema:
+            type: string
+            enum: [cacCertificateUrl, driversLicenseUrl, insuranceDocumentUrl, utilityBillUrl]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image (JPG, PNG, WebP) or PDF — max 10 MB
+      responses:
+        "200":
+          description: Document uploaded and URL saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      cacCertificateUrl: { type: string, format: uri, nullable: true }
+                      driversLicenseUrl: { type: string, format: uri, nullable: true }
+                      insuranceDocumentUrl: { type: string, format: uri, nullable: true }
+                      utilityBillUrl: { type: string, format: uri, nullable: true }
+        "400":
+          description: No file provided or invalid field name
+        "403":
+          description: OWNER role required
+
+  /business-admin/riders:
+    get:
+      tags: [Business Admin — Riders]
+      summary: List business riders
+      description: Returns paginated riders assigned to the authenticated admin's business. Supports search by name or phone.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, default: 20 } }
+        - { in: query, name: search, schema: { type: string } }
+      responses:
+        "200":
+          description: Paginated rider list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/AdminRiderSummary" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /business-admin/riders/{riderId}/assign:
+    post:
+      tags: [Business Admin — Riders]
+      summary: Assign rider to business
+      description: Assigns an existing platform rider to this business. The rider must not already belong to another business. **OWNER role only.**
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: riderId, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Rider assigned
+        "404":
+          description: Rider not found
+        "409":
+          description: Rider already belongs to another business
+        "403":
+          description: OWNER role required
+
+  /business-admin/riders/{riderId}:
+    delete:
+      tags: [Business Admin — Riders]
+      summary: Remove rider from business
+      description: Unlinks a rider from this business (sets `businessId` to null). The rider account is not deleted. **OWNER role only.**
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: riderId, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Rider removed from business
+        "403":
+          description: Rider does not belong to this business, or OWNER role required
+        "404":
+          description: Rider not found
+
+  /business-admin/riders/{riderId}/orders:
+    get:
+      tags: [Business Admin — Riders]
+      summary: Get rider order history
+      description: Returns a paginated list of all orders completed by a specific rider under this business, including per-order earning amounts.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: riderId, required: true, schema: { type: string } }
+        - { in: query, name: page, schema: { type: integer, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Paginated order list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        trackingCode: { type: string }
+                        type: { type: string, enum: [FOOD, GROCERY, RETAIL, PHARMACY, PARCEL, TRUCK] }
+                        status: { type: string }
+                        pickupAddress: { type: string }
+                        dropoffAddress: { type: string }
+                        deliveryFeeKobo: { type: integer }
+                        totalKobo: { type: integer }
+                        paymentMethod: { type: string }
+                        createdAt: { type: string, format: date-time }
+                        earning:
+                          type: object
+                          nullable: true
+                          properties:
+                            amountKobo: { type: integer }
+                            status: { type: string }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+        "404":
+          description: Rider not found in this business
+
+  /business-admin/wallet:
+    get:
+      tags: [Business Admin — Wallet]
+      summary: Get business wallet
+      description: Returns the business wallet. If the wallet does not exist yet it is created with a zero balance on first call.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Business wallet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/BusinessWallet" }
+
+  /business-admin/wallet/transactions:
+    get:
+      tags: [Business Admin — Wallet]
+      summary: List wallet transactions
+      description: Returns a paginated, reverse-chronological list of wallet transactions (rider earnings and withdrawals).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: Paginated transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/BusinessWalletTransaction" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /business-admin/team:
+    get:
+      tags: [Business Admin — Team]
+      summary: List team members
+      description: Returns all admins linked to the authenticated admin's business, ordered by creation date.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: List of team members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/BusinessAdminProfile" }
+    post:
+      tags: [Business Admin — Team]
+      summary: Create team member
+      description: Creates a new BUSINESS + ADMIN role account linked to this business. **OWNER role only.**
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, firstName, lastName, password]
+              properties:
+                email: { type: string, format: email }
+                firstName: { type: string }
+                lastName: { type: string }
+                password: { type: string, minLength: 8 }
+      responses:
+        "201":
+          description: Team member created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/BusinessAdminProfile" }
+        "403":
+          description: OWNER role required
+        "409":
+          description: Email already exists
+
+  /business-admin/team/{memberId}:
+    patch:
+      tags: [Business Admin — Team]
+      summary: Update team member
+      description: |
+        Updates a team member's name or active status. **OWNER role only.**
+        Cannot be used to modify the OWNER account — use the profile update endpoint for that.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: memberId, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                isActive: { type: boolean }
+      responses:
+        "200":
+          description: Team member updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/BusinessAdminProfile" }
+        "403":
+          description: Cannot modify the business owner through this endpoint, or OWNER role required
+        "404":
+          description: Admin not found in this business
+
 # ─── WebSocket ────────────────────────────────────────────────
 # Connect to: ws://host/ws/orders/:orderId/tracking
 # The server broadcasts JSON payloads whenever the rider's location changes.
@@ -7529,3 +8207,20 @@ tags:
   # System Admin
   - name: System Admin — Heroes
     description: "Hero slide management — create, update, reorder, upload images, and delete hero carousel slides displayed on the landing page. Minimum role: ADMIN."
+  - name: System Admin — Businesses
+    description: |
+      Business account management. Create businesses, update their profile and status, upload compliance documents, and create business owner accounts.
+      All endpoints require the system admin token and minimum role: ADMIN.
+  - name: Business Admin — Profile
+    description: |
+      Business admin self-service profile and business management. Authenticate via `POST /admin/login` — the returned token includes `adminType: BUSINESS`.
+      Document uploads go to Cloudinary and the URL is stored on the business record.
+      Profile updates and document uploads are restricted to the **OWNER** role.
+  - name: Business Admin — Riders
+    description: |
+      Manage the rider fleet assigned to this business. Assign existing platform riders, remove them, and view their order history.
+      Assign and remove actions are restricted to the **OWNER** role.
+  - name: Business Admin — Wallet
+    description: "Business wallet — current balance and transaction history. All rider earnings aggregate here automatically. Both OWNER and ADMIN roles can view."
+  - name: Business Admin — Team
+    description: "Team member management within a business. View: all roles. Create/update: OWNER only. Cannot modify the OWNER account via this endpoint."

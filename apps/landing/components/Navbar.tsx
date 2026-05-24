@@ -71,7 +71,7 @@ export default function Navbar() {
           transition={{ duration: 0.5, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           <motion.a
-            href="https://godrop-dashboard.vercel.app/login"
+            href="https://dashboard.naijagodrop.com/login"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center px-5 py-2 rounded-full text-white text-sm font-semibold whitespace-nowrap"
@@ -111,7 +111,7 @@ export default function Navbar() {
                 {label}
               </Link>
             ))}
-            <a href="https://godrop-dashboard.vercel.app/login" target="_blank" rel="noopener noreferrer" className="text-sm text-white font-semibold rounded-full px-5 py-2 text-center" style={{ backgroundColor: "#1E5FFF" }}>Login</a>
+            <a href="https://dashboard.naijagodrop.com/login" target="_blank" rel="noopener noreferrer" className="text-sm text-white font-semibold rounded-full px-5 py-2 text-center" style={{ backgroundColor: "#1E5FFF" }}>Login</a>
           </motion.div>
         )}
       </div>

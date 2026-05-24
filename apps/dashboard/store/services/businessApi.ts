@@ -4,6 +4,7 @@ import type {
   BusinessMember,
   BusinessWalletTransaction,
   BusinessesListParams,
+  CreateBusinessRequest,
   UpdateBusinessRequest,
   CreateBusinessOwnerRequest,
   CreateBusinessMemberRequest,

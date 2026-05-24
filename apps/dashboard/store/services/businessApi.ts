@@ -126,6 +126,15 @@ export const businessApi = api.injectEndpoints({
       },
       invalidatesTags: ['Business'],
     }),
+
+    uploadBusinessDocumentAsAdmin: build.mutation<unknown, { id: string; field: BusinessDocumentField; file: File }>({
+      queryFn: async ({ id, field, file }, _api, _extraOptions, baseQuery) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        return baseQuery({ url: `/admin/businesses/${id}/documents/${field}`, method: 'POST', body: formData })
+      },
+      invalidatesTags: (_r, _e, { id }) => ['Business', { type: 'Business', id }],
+    }),
   }),
 })
 
@@ -147,4 +156,5 @@ export const {
   useGetMyBusinessQuery,
   useUpdateMyBusinessMutation,
   useUploadBusinessDocumentMutation,
+  useUploadBusinessDocumentAsAdminMutation,
 } = businessApi

@@ -1,25 +1,63 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Loader2, Building2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, X, Loader2, Building2, ChevronRight, ChevronLeft, Upload, CheckCircle, File as FileIcon } from 'lucide-react'
 import {
   useGetBusinessesQuery,
   useCreateBusinessMutation,
   useCreateBusinessOwnerMutation,
+  useUploadBusinessDocumentAsAdminMutation,
 } from '@/store/services/businessApi'
-import { formatNaira, formatDateTime } from '@/lib/utils'
-import type { CreateBusinessRequest } from '@/types/api'
+import { formatNaira } from '@/lib/utils'
+import type { BusinessDocumentField, CreateBusinessRequest } from '@/types/api'
 
 // ─── Multi-step create modal ──────────────────────────────────
 
 const STEPS = ['Business Info', 'Owner Details', 'Banking & Docs']
 
-const INITIAL_FORM: CreateBusinessRequest & { ownerPassword: string; ownerFirstName: string; ownerLastName: string } = {
+const DOC_FIELDS: { field: BusinessDocumentField; label: string }[] = [
+  { field: 'cacCertificateUrl', label: 'CAC Certificate' },
+  { field: 'driversLicenseUrl', label: "Driver's Licence" },
+  { field: 'insuranceDocumentUrl', label: 'Insurance Document' },
+  { field: 'utilityBillUrl', label: 'Utility Bill' },
+]
+
+type DocFiles = Record<BusinessDocumentField, File | null>
+const EMPTY_DOC_FILES: DocFiles = { cacCertificateUrl: null, driversLicenseUrl: null, insuranceDocumentUrl: null, utilityBillUrl: null }
+
+function DocFilePicker({ label, file, onChange }: { label: string; file: File | null; onChange: (f: File | null) => void }) {
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-[#f3f4f6] last:border-0">
+      <div className="flex items-center gap-2.5">
+        {file
+          ? <CheckCircle className="w-4 h-4 text-[#17c666] shrink-0" />
+          : <FileIcon className="w-4 h-4 text-[#d1d5db] shrink-0" />}
+        <div>
+          <p className="text-xs font-medium text-[#283c50]">{label}</p>
+          {file
+            ? <p className="text-[11px] text-[#6b7885] truncate max-w-[220px]">{file.name}</p>
+            : <p className="text-[11px] text-[#9ca3af]">No file chosen</p>}
+        </div>
+      </div>
+      <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#e5e7eb] text-xs text-[#6b7885] hover:bg-[#f9fafb] cursor-pointer shrink-0">
+        <Upload className="w-3 h-3" />
+        {file ? 'Change' : 'Choose'}
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          className="hidden"
+          onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+        />
+      </label>
+    </div>
+  )
+}
+
+const INITIAL_FORM: Omit<CreateBusinessRequest, 'cacCertificateUrl' | 'driversLicenseUrl' | 'insuranceDocumentUrl' | 'utilityBillUrl'> & { ownerPassword: string; ownerFirstName: string; ownerLastName: string } = {
   name: '', email: '', phone: '', address: '',
   cacRegistrationNumber: '', tin: '', yearEstablished: undefined,
   ownerFullName: '', ownerPhoneNumber: '', ownerEmail: '', ownerNIN: '', ownerBVN: '',
   serviceAreas: [],
-  cacCertificateUrl: '', driversLicenseUrl: '', insuranceDocumentUrl: '', utilityBillUrl: '',
   bankName: '', accountName: '', accountNumber: '',
   // owner login
   ownerFirstName: '', ownerLastName: '', ownerPassword: '',
@@ -50,9 +88,11 @@ function Input({ value, onChange, type = 'text', placeholder }: { value: string 
 function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(INITIAL_FORM)
+  const [docFiles, setDocFiles] = useState<DocFiles>(EMPTY_DOC_FILES)
   const [serviceAreaInput, setServiceAreaInput] = useState('')
   const [create, { isLoading: creating, error: createError }] = useCreateBusinessMutation()
   const [addOwner, { isLoading: addingOwner, error: ownerError }] = useCreateBusinessOwnerMutation()
+  const [uploadDoc, { isLoading: uploadingDocs }] = useUploadBusinessDocumentAsAdminMutation()
 
   function set(field: keyof typeof form, val: any) {
     setForm((f) => ({ ...f, [field]: val }))
@@ -86,14 +126,17 @@ function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCr
         ownerEmail: bizData.ownerEmail || undefined,
         ownerNIN: bizData.ownerNIN || undefined,
         ownerBVN: bizData.ownerBVN || undefined,
-        cacCertificateUrl: bizData.cacCertificateUrl || undefined,
-        driversLicenseUrl: bizData.driversLicenseUrl || undefined,
-        insuranceDocumentUrl: bizData.insuranceDocumentUrl || undefined,
-        utilityBillUrl: bizData.utilityBillUrl || undefined,
         bankName: bizData.bankName || undefined,
         accountName: bizData.accountName || undefined,
         accountNumber: bizData.accountNumber || undefined,
       }).unwrap()
+
+      // Upload any selected documents to Cloudinary
+      await Promise.allSettled(
+        DOC_FIELDS
+          .filter(({ field }) => docFiles[field] !== null)
+          .map(({ field }) => uploadDoc({ id: biz.id, field, file: docFiles[field]! }))
+      )
 
       if (ownerFirstName && ownerLastName && ownerPassword) {
         await addOwner({
@@ -111,7 +154,7 @@ function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCr
     } catch {}
   }
 
-  const isLoading = creating || addingOwner
+  const isLoading = creating || addingOwner || uploadingDocs
   const error = createError || ownerError
 
   return (
@@ -249,21 +292,17 @@ function CreateBusinessModal({ onClose, onCreated }: { onClose: () => void; onCr
                 </Field>
               </div>
               <div className="border-t border-[#e5e7eb] pt-4">
-                <p className="text-xs font-semibold text-[#283c50] mb-3">Document URLs</p>
-                <p className="text-xs text-[#6b7885] mb-3">Paste document URLs or leave blank — the business owner can upload from their dashboard.</p>
-                <div className="space-y-3">
-                  <Field label="CAC Certificate URL">
-                    <Input value={form.cacCertificateUrl} onChange={(v) => set('cacCertificateUrl', v)} placeholder="https://..." />
-                  </Field>
-                  <Field label="Driver's Licence URL">
-                    <Input value={form.driversLicenseUrl} onChange={(v) => set('driversLicenseUrl', v)} placeholder="https://..." />
-                  </Field>
-                  <Field label="Insurance Document URL">
-                    <Input value={form.insuranceDocumentUrl} onChange={(v) => set('insuranceDocumentUrl', v)} placeholder="https://..." />
-                  </Field>
-                  <Field label="Utility Bill URL">
-                    <Input value={form.utilityBillUrl} onChange={(v) => set('utilityBillUrl', v)} placeholder="https://..." />
-                  </Field>
+                <p className="text-xs font-semibold text-[#283c50] mb-1">Compliance Documents</p>
+                <p className="text-xs text-[#6b7885] mb-3">Optional — the business owner can also upload from their dashboard.</p>
+                <div>
+                  {DOC_FIELDS.map(({ field, label }) => (
+                    <DocFilePicker
+                      key={field}
+                      label={label}
+                      file={docFiles[field]}
+                      onChange={(f) => setDocFiles((d) => ({ ...d, [field]: f }))}
+                    />
+                  ))}
                 </div>
               </div>
             </>

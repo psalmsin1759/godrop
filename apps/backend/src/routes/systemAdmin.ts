@@ -27,7 +27,7 @@ import * as businessCtrl from "../controllers/businessAdminController";
 import * as fcmCtrl from "../controllers/fcmController";
 import * as messagingCtrl from "../controllers/messagingController";
 import * as heroCtrl from "../controllers/heroController";
-import { upload } from "../middleware/upload";
+import { upload, documentUpload } from "../middleware/upload";
 import {
   sendEmailSingleSchema,
   sendEmailBatchSchema,
@@ -256,6 +256,7 @@ router.post("/businesses", requireSystemRole("ADMIN"), businessCtrl.createBusine
 router.get("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.getBusiness);
 router.patch("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.updateBusiness);
 router.post("/businesses/:id/owner", requireSystemRole("ADMIN"), businessCtrl.createBusinessOwner);
+router.post("/businesses/:id/documents/:field", requireSystemRole("ADMIN"), documentUpload.single("file"), businessCtrl.uploadBusinessDocumentAsAdmin);
 
 // ─── Heroes (ADMIN+) ──────────────────────────────────────────
 router.get("/heroes", requireSystemRole("ADMIN"), heroCtrl.listHeroes);

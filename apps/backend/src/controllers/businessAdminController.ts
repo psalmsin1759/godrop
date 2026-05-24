@@ -210,3 +210,18 @@ export async function createBusinessOwner(req: Request, res: Response, next: Nex
     next(err);
   }
 }
+
+export async function uploadBusinessDocumentAsAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id, field } = req.params;
+    const allowed = ["cacCertificateUrl", "driversLicenseUrl", "insuranceDocumentUrl", "utilityBillUrl"] as const;
+    if (!allowed.includes(field as any)) return fail(res, "Invalid document field", 400);
+    if (!req.file) return fail(res, "No file uploaded", 400);
+    const url = await uploadDocument(req.file.buffer, "godrop/business-docs");
+    const result = await svc.uploadBusinessDocument(id, field as any, url);
+    return ok(res, { data: result });
+  } catch (err: any) {
+    if (err.message === "Business not found") return fail(res, err.message, 404);
+    next(err);
+  }
+}

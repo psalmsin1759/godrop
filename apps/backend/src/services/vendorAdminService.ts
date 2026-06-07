@@ -88,23 +88,27 @@ export async function onboardVendor(data: {
     timeZone: "Africa/Lagos",
   });
 
-  // Email to vendor owner
-  await sendEmail(
-    vendorWelcomeEmail({
-      firstName: data.ownerFirstName,
-      vendorName: data.name,
-      email: data.email,
-    })
-  );
-
-  // Emails to all active system admins opted in to vendor notifications
+  // Fire emails in the background — don't block the HTTP response on SMTP
   const adminRecipients = await prisma.admin.findMany({
     where: { type: AdminType.SYSTEM, isActive: true, receiveVendorEmails: true },
     select: { id: true, firstName: true, email: true },
   });
 
-  await Promise.allSettled(
-    adminRecipients.map((admin) =>
+  // Always notify the primary admin inbox; merge with any DB admin recipients
+  const adminNotificationList = [
+    { firstName: "Admin", email: "admin.naijagodrop@gmail.com" },
+    ...adminRecipients.filter((a) => a.email !== "admin.naijagodrop@gmail.com"),
+  ];
+
+  Promise.allSettled([
+    sendEmail(
+      vendorWelcomeEmail({
+        firstName: data.ownerFirstName,
+        vendorName: data.name,
+        email: data.email,
+      })
+    ),
+    ...adminNotificationList.map((admin) =>
       sendEmail(
         adminNewVendorApplicationEmail({
           adminFirstName: admin.firstName,
@@ -119,8 +123,8 @@ export async function onboardVendor(data: {
           documents: { businessRegistration: true, governmentId: true, utilityBill: true },
         })
       )
-    )
-  );
+    ),
+  ]).catch(() => {/* best-effort */});
 
   const { admins, ...vendorSafe } = vendor;
   const { password: _pw, ...ownerSafe } = admins[0];

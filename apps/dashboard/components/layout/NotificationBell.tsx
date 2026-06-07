@@ -22,16 +22,16 @@ function timeAgo(dateStr: string) {
 function NotificationItem({ notif, onRead }: { notif: AdminNotification; onRead: (id: string) => void }) {
   return (
     <div
-      className="px-4 py-3 hover:bg-[#f9fafb] transition-colors cursor-pointer flex gap-3"
+      className="px-4 py-3 hover:bg-[#F7F9FC] transition-colors cursor-pointer flex gap-3"
       onClick={() => { if (!notif.isRead) onRead(notif.id) }}
     >
       {!notif.isRead && (
-        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#3454d1] shrink-0" />
+        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#1E5FFF] shrink-0" />
       )}
       <div className={!notif.isRead ? '' : 'ml-[18px]'}>
-        <p className="text-xs font-semibold text-[#283c50] leading-snug">{notif.title}</p>
-        <p className="text-[11px] text-[#6b7885] mt-0.5 leading-snug">{notif.body}</p>
-        <p className="text-[10px] text-[#9ca3af] mt-1">{timeAgo(notif.createdAt)}</p>
+        <p className="text-xs font-semibold text-[#0D1426] leading-snug">{notif.title}</p>
+        <p className="text-[11px] text-[#525A72] mt-0.5 leading-snug">{notif.body}</p>
+        <p className="text-[10px] text-[#9AA1B4] mt-1 font-mono">{timeAgo(notif.createdAt)}</p>
       </div>
     </div>
   )
@@ -62,27 +62,25 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+        className="relative w-9 h-9 rounded-[10px] border border-[#E7EAF1] bg-white flex items-center justify-center hover:bg-[#F7F9FC] transition-colors"
       >
-        <Bell className="w-4 h-4 text-[#6b7885]" />
+        <Bell className="w-[17px] h-[17px] text-[#525A72]" />
         {unreadCount > 0 && (
           <span
-            className="absolute top-0.5 right-0.5 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white px-0.5"
-            style={{ backgroundColor: '#ea4d4d' }}
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+            className="absolute top-[9px] right-[9px] w-[7px] h-[7px] rounded-full border-2 border-white"
+            style={{ backgroundColor: '#FF6A2C' }}
+          />
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-80 bg-white rounded-xl border border-[#e5e7eb] shadow-lg overflow-hidden">
+        <div className="absolute right-0 top-11 z-50 w-80 bg-white rounded-2xl border border-[#E7EAF1] shadow-card-md overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#f3f4f6]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#E7EAF1]">
             <div className="flex items-center gap-2">
-              <p className="text-xs font-bold text-[#283c50]">Notifications</p>
+              <p className="text-xs font-extrabold text-[#0D1426]">Notifications</p>
               {unreadCount > 0 && (
-                <span className="text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-[#eef1fb] text-[#3454d1]">
+                <span className="text-[10px] font-bold rounded-full px-1.5 py-0.5 text-[#1E5FFF]" style={{ backgroundColor: 'rgba(30,95,255,.14)' }}>
                   {unreadCount} unread
                 </span>
               )}
@@ -91,7 +89,7 @@ export default function NotificationBell() {
               <button
                 onClick={() => markAll()}
                 disabled={markingAll}
-                className="flex items-center gap-1 text-[11px] text-[#3454d1] hover:underline disabled:opacity-50"
+                className="flex items-center gap-1 text-[11px] font-semibold text-[#1E5FFF] hover:underline disabled:opacity-50"
               >
                 {markingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                 Mark all read
@@ -100,15 +98,15 @@ export default function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-[#f9fafb]">
+          <div className="max-h-80 overflow-y-auto divide-y divide-[#EEF1F7]">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-4 h-4 animate-spin text-[#3454d1]" />
+                <Loader2 className="w-4 h-4 animate-spin text-[#1E5FFF]" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="text-center py-8">
-                <Bell className="w-6 h-6 text-[#d1d5db] mx-auto mb-2" />
-                <p className="text-xs text-[#9ca3af]">No notifications yet</p>
+                <Bell className="w-6 h-6 text-[#DDE2EC] mx-auto mb-2" />
+                <p className="text-xs text-[#9AA1B4]">No notifications yet</p>
               </div>
             ) : (
               notifications.map((n) => (

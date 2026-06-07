@@ -27,7 +27,7 @@ import {
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function inp(extra = '') {
-  return `w-full text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] px-3 py-1.5 text-[#283c50] focus:outline-none focus:ring-1 focus:ring-[#3454d1] ${extra}`
+  return `w-full text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] px-3 py-1.5 text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] ${extra}`
 }
 
 // ─── Hero form dialog ─────────────────────────────────────────────────────────
@@ -107,9 +107,9 @@ function HeroFormDialog({ initial, onClose }: HeroFormProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f0]">
-          <h2 className="text-sm font-semibold text-[#283c50]">{isEdit ? 'Edit Hero Slide' : 'New Hero Slide'}</h2>
-          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#283c50] transition-colors">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EEF1F7]">
+          <h2 className="text-sm font-semibold text-[#0D1426]">{isEdit ? 'Edit Hero Slide' : 'New Hero Slide'}</h2>
+          <button onClick={onClose} className="text-[#9AA1B4] hover:text-[#0D1426] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -117,16 +117,16 @@ function HeroFormDialog({ initial, onClose }: HeroFormProps) {
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Image upload */}
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] mb-2">Background Image</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] mb-2">Background Image</p>
             <div
               onClick={() => fileRef.current?.click()}
-              className="relative border-2 border-dashed border-[#e5e7eb] rounded-lg overflow-hidden cursor-pointer hover:border-[#3454d1] transition-colors"
+              className="relative border-2 border-dashed border-[#E7EAF1] rounded-lg overflow-hidden cursor-pointer hover:border-[#1E5FFF] transition-colors"
               style={{ height: 140 }}
             >
               {imagePreview ? (
                 <Image src={imagePreview} alt="preview" fill className="object-cover" />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-[#9ca3af]">
+                <div className="flex flex-col items-center justify-center h-full text-[#9AA1B4]">
                   <ImagePlus className="w-6 h-6 mb-1" />
                   <span className="text-xs">Click to upload image</span>
                   <span className="text-[10px] mt-0.5">JPG, PNG — max 5 MB</span>
@@ -140,32 +140,32 @@ function HeroFormDialog({ initial, onClose }: HeroFormProps) {
               )}
             </div>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-            {imageFile && <p className="text-[10px] text-[#6b7280] mt-1">{imageFile.name}</p>}
+            {imageFile && <p className="text-[10px] text-[#9AA1B4] mt-1">{imageFile.name}</p>}
           </div>
 
           {/* Badge */}
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] block mb-1">Badge <span className="text-[#9ca3af] normal-case">(optional)</span></label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] block mb-1">Badge <span className="text-[#9AA1B4] normal-case">(optional)</span></label>
             <input className={inp()} placeholder="🍔  FOOD DELIVERY" value={form.badge ?? ''} onChange={(e) => set('badge', e.target.value)} />
           </div>
 
           {/* Heading */}
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] block mb-1">Heading <span className="text-red-500">*</span></label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] block mb-1">Heading <span className="text-red-500">*</span></label>
             <textarea className={inp('resize-none')} rows={2} placeholder="Hot Meals,&#10;Fast Drops" value={form.heading} onChange={(e) => set('heading', e.target.value)} />
-            <p className="text-[10px] text-[#9ca3af] mt-0.5">Use a new line for line breaks in the hero display</p>
+            <p className="text-[10px] text-[#9AA1B4] mt-0.5">Use a new line for line breaks in the hero display</p>
           </div>
 
           {/* Subheading */}
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] block mb-1">Subheading <span className="text-red-500">*</span></label>
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] block mb-1">Subheading <span className="text-red-500">*</span></label>
             <input className={inp()} placeholder="Restaurant favourites at your doorstep in minutes" value={form.subheading} onChange={(e) => set('subheading', e.target.value)} />
           </div>
 
           {/* Align + Sort order */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] block mb-1">Text Alignment</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] block mb-1">Text Alignment</label>
               <div className="flex gap-2">
                 {(['left', 'center'] as HeroAlign[]).map((a) => (
                   <button
@@ -174,8 +174,8 @@ function HeroFormDialog({ initial, onClose }: HeroFormProps) {
                     onClick={() => set('align', a)}
                     className={`flex-1 flex items-center justify-center gap-1.5 border rounded py-1.5 text-xs font-medium transition-colors ${
                       form.align === a
-                        ? 'border-[#3454d1] bg-[#eef1fb] text-[#3454d1]'
-                        : 'border-[#e5e7eb] text-[#6b7280] hover:border-[#3454d1]'
+                        ? 'border-[#1E5FFF] bg-[#E7EEFF] text-[#1E5FFF]'
+                        : 'border-[#E7EAF1] text-[#9AA1B4] hover:border-[#1E5FFF]'
                     }`}
                   >
                     {a === 'left' ? <AlignLeft className="w-3 h-3" /> : <AlignCenter className="w-3 h-3" />}
@@ -185,7 +185,7 @@ function HeroFormDialog({ initial, onClose }: HeroFormProps) {
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] block mb-1">Sort Order</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] block mb-1">Sort Order</label>
               <input type="number" min={0} className={inp()} value={form.sortOrder} onChange={(e) => set('sortOrder', parseInt(e.target.value) || 0)} />
             </div>
           </div>
@@ -193,11 +193,11 @@ function HeroFormDialog({ initial, onClose }: HeroFormProps) {
           {/* CTA */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] block mb-1">CTA Label <span className="text-[#9ca3af] normal-case">(optional)</span></label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] block mb-1">CTA Label <span className="text-[#9AA1B4] normal-case">(optional)</span></label>
               <input className={inp()} placeholder="Order Now" value={form.ctaLabel ?? ''} onChange={(e) => set('ctaLabel', e.target.value)} />
             </div>
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#6b7280] block mb-1">CTA Link <span className="text-[#9ca3af] normal-case">(optional)</span></label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] block mb-1">CTA Link <span className="text-[#9AA1B4] normal-case">(optional)</span></label>
               <input className={inp()} placeholder="/food" value={form.ctaLink ?? ''} onChange={(e) => set('ctaLink', e.target.value)} />
             </div>
           </div>
@@ -207,23 +207,23 @@ function HeroFormDialog({ initial, onClose }: HeroFormProps) {
             <button
               type="button"
               onClick={() => set('isActive', !form.isActive)}
-              className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${form.isActive ? 'bg-[#3454d1]' : 'bg-[#e5e7eb]'}`}
+              className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${form.isActive ? 'bg-[#1E5FFF]' : 'bg-[#E7EAF1]'}`}
             >
               <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.isActive ? 'left-[18px]' : 'left-0.5'}`} />
             </button>
-            <span className="text-xs text-[#283c50]">{form.isActive ? 'Active — visible on landing page' : 'Inactive — hidden from landing page'}</span>
+            <span className="text-xs text-[#0D1426]">{form.isActive ? 'Active — visible on landing page' : 'Inactive — hidden from landing page'}</span>
           </div>
 
           {error && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded px-3 py-2">{error}</p>}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#f0f0f0]">
-            <button type="button" onClick={onClose} className="px-4 py-1.5 text-xs border border-[#e5e7eb] rounded text-[#6b7280] hover:border-[#283c50] transition-colors">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#EEF1F7]">
+            <button type="button" onClick={onClose} className="px-4 py-1.5 text-xs border border-[#E7EAF1] rounded text-[#9AA1B4] hover:border-[#0D1426] transition-colors">
               Cancel
             </button>
             <button
               type="submit"
               disabled={busy}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs bg-[#3454d1] text-white rounded hover:bg-[#2a43a8] disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs bg-[#1E5FFF] text-white rounded hover:bg-[#0A3FD1] disabled:opacity-50 transition-colors"
             >
               {busy && <Loader2 className="w-3 h-3 animate-spin" />}
               {isEdit ? 'Save Changes' : 'Create Hero'}
@@ -248,12 +248,12 @@ function DeleteDialog({ hero, onClose }: { hero: Hero; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
-        <h3 className="text-sm font-semibold text-[#283c50] mb-2">Delete hero slide?</h3>
-        <p className="text-xs text-[#6b7280] mb-5">
-          <strong className="text-[#283c50]">"{hero.heading.split('\n')[0]}"</strong> will be permanently removed from the landing page.
+        <h3 className="text-sm font-semibold text-[#0D1426] mb-2">Delete hero slide?</h3>
+        <p className="text-xs text-[#9AA1B4] mb-5">
+          <strong className="text-[#0D1426]">"{hero.heading.split('\n')[0]}"</strong> will be permanently removed from the landing page.
         </p>
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-1.5 text-xs border border-[#e5e7eb] rounded text-[#6b7280] hover:border-[#283c50] transition-colors">
+          <button onClick={onClose} className="px-4 py-1.5 text-xs border border-[#E7EAF1] rounded text-[#9AA1B4] hover:border-[#0D1426] transition-colors">
             Cancel
           </button>
           <button
@@ -302,18 +302,18 @@ function ImageUploadDialog({ hero, onClose }: { hero: Hero; onClose: () => void 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[#283c50]">Upload Background Image</h3>
-          <button onClick={onClose}><X className="w-4 h-4 text-[#9ca3af]" /></button>
+          <h3 className="text-sm font-semibold text-[#0D1426]">Upload Background Image</h3>
+          <button onClick={onClose}><X className="w-4 h-4 text-[#9AA1B4]" /></button>
         </div>
         <div
           onClick={() => fileRef.current?.click()}
-          className="relative border-2 border-dashed border-[#e5e7eb] rounded-lg overflow-hidden cursor-pointer hover:border-[#3454d1] transition-colors mb-4"
+          className="relative border-2 border-dashed border-[#E7EAF1] rounded-lg overflow-hidden cursor-pointer hover:border-[#1E5FFF] transition-colors mb-4"
           style={{ height: 180 }}
         >
           {preview ? (
             <Image src={preview} alt="preview" fill className="object-cover" />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-[#9ca3af]">
+            <div className="flex flex-col items-center justify-center h-full text-[#9AA1B4]">
               <ImagePlus className="w-8 h-8 mb-2" />
               <span className="text-xs">Click to choose image</span>
             </div>
@@ -322,11 +322,11 @@ function ImageUploadDialog({ hero, onClose }: { hero: Hero; onClose: () => void 
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
         {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-1.5 text-xs border border-[#e5e7eb] rounded text-[#6b7280]">Cancel</button>
+          <button onClick={onClose} className="px-4 py-1.5 text-xs border border-[#E7EAF1] rounded text-[#9AA1B4]">Cancel</button>
           <button
             onClick={upload}
             disabled={!file || isLoading}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs bg-[#3454d1] text-white rounded hover:bg-[#2a43a8] disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs bg-[#1E5FFF] text-white rounded hover:bg-[#0A3FD1] disabled:opacity-50"
           >
             {isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
             Upload
@@ -353,9 +353,9 @@ function HeroCard({
   onToggleActive: () => void
 }) {
   return (
-    <div className={`bg-white rounded-xl border overflow-hidden transition-colors ${hero.isActive ? 'border-[#e5e7eb]' : 'border-dashed border-[#e5e7eb] opacity-60'}`}>
+    <div className={`bg-white rounded-xl border overflow-hidden transition-colors ${hero.isActive ? 'border-[#E7EAF1]' : 'border-dashed border-[#E7EAF1] opacity-60'}`}>
       {/* Image strip */}
-      <div className="relative h-28 bg-gradient-to-br from-[#283c50] to-[#1a2535] overflow-hidden">
+      <div className="relative h-28 bg-gradient-to-br from-[#0D1426] to-[#0D1426] overflow-hidden">
         {hero.imageUrl ? (
           <Image src={hero.imageUrl} alt={hero.heading} fill className="object-cover opacity-80" />
         ) : (
@@ -393,18 +393,18 @@ function HeroCard({
 
       {/* Content */}
       <div className="p-3">
-        <p className="text-xs font-bold text-[#283c50] leading-tight mb-0.5 line-clamp-2" style={{ whiteSpace: 'pre-line' }}>
+        <p className="text-xs font-bold text-[#0D1426] leading-tight mb-0.5 line-clamp-2" style={{ whiteSpace: 'pre-line' }}>
           {hero.heading}
         </p>
-        <p className="text-[10px] text-[#6b7280] line-clamp-2 mb-3">{hero.subheading}</p>
+        <p className="text-[10px] text-[#9AA1B4] line-clamp-2 mb-3">{hero.subheading}</p>
 
-        <div className="flex items-center gap-2 flex-wrap text-[10px] text-[#9ca3af] mb-3">
+        <div className="flex items-center gap-2 flex-wrap text-[10px] text-[#9AA1B4] mb-3">
           <span className="flex items-center gap-0.5">
             {hero.align === 'left' ? <AlignLeft className="w-3 h-3" /> : <AlignCenter className="w-3 h-3" />}
             {hero.align}
           </span>
           {hero.ctaLabel && (
-            <span className="bg-[#eef1fb] text-[#3454d1] px-1.5 py-0.5 rounded font-medium">
+            <span className="bg-[#E7EEFF] text-[#1E5FFF] px-1.5 py-0.5 rounded font-medium">
               CTA: {hero.ctaLabel}
             </span>
           )}
@@ -417,17 +417,17 @@ function HeroCard({
             className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors ${
               hero.isActive
                 ? 'bg-green-50 text-green-600 hover:bg-green-100'
-                : 'bg-[#f9fafb] text-[#6b7280] hover:bg-[#f0f0f0]'
+                : 'bg-[#F7F9FC] text-[#9AA1B4] hover:bg-[#EEF1F7]'
             }`}
           >
             {hero.isActive ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
             {hero.isActive ? 'Active' : 'Inactive'}
           </button>
           <div className="ml-auto flex gap-1">
-            <button onClick={onEdit} className="p-1.5 rounded hover:bg-[#f0f0f0] text-[#6b7280] hover:text-[#3454d1] transition-colors" title="Edit">
+            <button onClick={onEdit} className="p-1.5 rounded hover:bg-[#EEF1F7] text-[#9AA1B4] hover:text-[#1E5FFF] transition-colors" title="Edit">
               <Pencil className="w-3.5 h-3.5" />
             </button>
-            <button onClick={onDelete} className="p-1.5 rounded hover:bg-red-50 text-[#6b7280] hover:text-red-500 transition-colors" title="Delete">
+            <button onClick={onDelete} className="p-1.5 rounded hover:bg-red-50 text-[#9AA1B4] hover:text-red-500 transition-colors" title="Delete">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -457,14 +457,14 @@ export default function HeroesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-[#283c50]">Hero Slides</h1>
-          <p className="text-xs text-[#6b7280] mt-0.5">
+          <h1 className="text-lg font-bold text-[#0D1426]">Hero Slides</h1>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">
             Manage the landing page hero carousel — {heroes.filter((h) => h.isActive).length} of {heroes.length} active
           </p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs bg-[#3454d1] text-white rounded-lg hover:bg-[#2a43a8] transition-colors font-medium"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs bg-[#1E5FFF] text-white rounded-lg hover:bg-[#0A3FD1] transition-colors font-medium"
         >
           <Plus className="w-3.5 h-3.5" />
           New Hero
@@ -472,23 +472,23 @@ export default function HeroesPage() {
       </div>
 
       {/* Info banner */}
-      <div className="bg-[#eef1fb] border border-[#c7d2f8] rounded-lg px-4 py-3 text-xs text-[#3454d1]">
+      <div className="bg-[#E7EEFF] border border-[#C7D9FF] rounded-lg px-4 py-3 text-xs text-[#1E5FFF]">
         <strong>Tip:</strong> Heroes are shown in order of their Sort Order number (lowest first). Set a hero to inactive to hide it from the landing page without deleting it. Upload a background image for each slide for the best visual impact.
       </div>
 
       {/* Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-[#3454d1]" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#1E5FFF]" />
         </div>
       ) : isError ? (
         <div className="text-center py-20 text-sm text-red-500">Failed to load heroes. Refresh to try again.</div>
       ) : heroes.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-sm text-[#6b7280] mb-4">No hero slides yet.</p>
+          <p className="text-sm text-[#9AA1B4] mb-4">No hero slides yet.</p>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs bg-[#3454d1] text-white rounded-lg hover:bg-[#2a43a8] mx-auto"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs bg-[#1E5FFF] text-white rounded-lg hover:bg-[#0A3FD1] mx-auto"
           >
             <Plus className="w-3.5 h-3.5" />
             Create your first hero

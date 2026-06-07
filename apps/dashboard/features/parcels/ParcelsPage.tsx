@@ -100,41 +100,41 @@ function VehicleTypeModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f3f4f6]">
-          <h2 className="text-sm font-bold text-[#283c50]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDF0F6]">
+          <h2 className="text-sm font-bold text-[#0D1426]">
             {editing ? 'Edit Vehicle Type' : 'New Vehicle Type'}
           </h2>
-          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#f3f4f6] transition-colors">
-            <X className="w-4 h-4 text-[#9ca3af]" />
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#EDF0F6] transition-colors">
+            <X className="w-4 h-4 text-[#9AA1B4]" />
           </button>
         </div>
 
         <form onSubmit={submit} className="p-5 space-y-3">
           <div>
-            <label className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">Name *</label>
+            <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Name *</label>
             <input
               required
               value={form.name}
               onChange={field('name')}
               placeholder="e.g. Motorcycle"
-              className="mt-1 w-full text-xs border border-[#e5e7eb] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3454d1] bg-[#f9fafb]"
+              className="mt-1 w-full text-xs border border-[#E7EAF1] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-[#F7F9FC]"
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">Description</label>
+            <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Description</label>
             <textarea
               value={form.description}
               onChange={field('description')}
               placeholder="e.g. Best for small parcels under 5 kg"
               rows={2}
-              className="mt-1 w-full text-xs border border-[#e5e7eb] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3454d1] bg-[#f9fafb] resize-none"
+              className="mt-1 w-full text-xs border border-[#E7EAF1] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-[#F7F9FC] resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">Base Fee (₦) *</label>
+              <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Base Fee (₦) *</label>
               <input
                 required
                 type="number"
@@ -143,11 +143,11 @@ function VehicleTypeModal({
                 value={form.baseFeeKobo}
                 onChange={field('baseFeeKobo')}
                 placeholder="500"
-                className="mt-1 w-full text-xs border border-[#e5e7eb] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3454d1] bg-[#f9fafb]"
+                className="mt-1 w-full text-xs border border-[#E7EAF1] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-[#F7F9FC]"
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">Per km (₦) *</label>
+              <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Per km (₦) *</label>
               <input
                 required
                 type="number"
@@ -156,29 +156,29 @@ function VehicleTypeModal({
                 value={form.perKmKobo}
                 onChange={field('perKmKobo')}
                 placeholder="80"
-                className="mt-1 w-full text-xs border border-[#e5e7eb] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3454d1] bg-[#f9fafb]"
+                className="mt-1 w-full text-xs border border-[#E7EAF1] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-[#F7F9FC]"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">Image URL</label>
+            <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Image URL</label>
             <input
               type="url"
               value={form.imageUrl}
               onChange={field('imageUrl')}
               placeholder="https://…"
-              className="mt-1 w-full text-xs border border-[#e5e7eb] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3454d1] bg-[#f9fafb]"
+              className="mt-1 w-full text-xs border border-[#E7EAF1] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-[#F7F9FC]"
             />
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <label className="text-xs font-medium text-[#283c50]">Active</label>
+            <label className="text-xs font-medium text-[#0D1426]">Active</label>
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
               className="flex items-center gap-1.5 text-xs"
-              style={{ color: form.isActive ? '#17c666' : '#9ca3af' }}
+              style={{ color: form.isActive ? '#1DB980' : '#9AA1B4' }}
             >
               {form.isActive
                 ? <ToggleRight className="w-5 h-5" />
@@ -187,13 +187,13 @@ function VehicleTypeModal({
             </button>
           </div>
 
-          {error && <p className="text-[11px] text-[#ea4d4d]">{error}</p>}
+          {error && <p className="text-[11px] text-[#FF3B30]">{error}</p>}
 
           <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb] transition-colors"
+              className="flex-1 text-xs py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC] transition-colors"
             >
               Cancel
             </button>
@@ -201,7 +201,7 @@ function VehicleTypeModal({
               type="submit"
               disabled={saving}
               className="flex-1 text-xs py-2 rounded text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors"
-              style={{ backgroundColor: '#3454d1' }}
+              style={{ backgroundColor: '#1E5FFF' }}
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
               {editing ? 'Save Changes' : 'Create Type'}
@@ -232,24 +232,24 @@ function DeleteVehicleTypeConfirm({ vehicleType, onClose }: { vehicleType: Parce
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-5 space-y-4">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#fdf0f0' }}>
-            <Trash2 className="w-4 h-4" style={{ color: '#ea4d4d' }} />
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFE3E1' }}>
+            <Trash2 className="w-4 h-4" style={{ color: '#FF3B30' }} />
           </div>
           <div>
-            <p className="text-sm font-bold text-[#283c50]">Delete "{vehicleType.name}"?</p>
-            <p className="text-xs text-[#6b7885] mt-1">This action cannot be undone. Customers will no longer see this option.</p>
+            <p className="text-sm font-bold text-[#0D1426]">Delete "{vehicleType.name}"?</p>
+            <p className="text-xs text-[#525A72] mt-1">This action cannot be undone. Customers will no longer see this option.</p>
           </div>
         </div>
-        {error && <p className="text-[11px] text-[#ea4d4d]">{error}</p>}
+        {error && <p className="text-[11px] text-[#FF3B30]">{error}</p>}
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]">
             Cancel
           </button>
           <button
             onClick={confirm}
             disabled={isLoading}
             className="flex-1 text-xs py-2 rounded text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
-            style={{ backgroundColor: '#ea4d4d' }}
+            style={{ backgroundColor: '#FF3B30' }}
           >
             {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Delete'}
           </button>
@@ -273,25 +273,25 @@ function VehicleTypesTab() {
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[
-          { label: 'Total Types', value: types.length, color: '#3454d1', bg: '#eef1fb' },
-          { label: 'Active', value: active, color: '#17c666', bg: '#e8faf2' },
-          { label: 'Inactive', value: types.length - active, color: '#9ca3af', bg: '#f3f4f6' },
+          { label: 'Total Types', value: types.length, color: '#1E5FFF', bg: '#E7EEFF' },
+          { label: 'Active', value: active, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Inactive', value: types.length - active, color: '#9AA1B4', bg: '#EDF0F6' },
         ].map((s) => (
           <div key={s.label} className="card p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: s.bg }}>
               <Package style={{ color: s.color, width: 18, height: 18 }} />
             </div>
             <div>
-              <p className="text-lg font-bold text-[#283c50] leading-none">{s.value}</p>
-              <p className="text-[11px] text-[#6b7885] mt-0.5">{s.label}</p>
+              <p className="text-lg font-bold text-[#0D1426] leading-none">{s.value}</p>
+              <p className="text-[11px] text-[#525A72] mt-0.5">{s.label}</p>
             </div>
           </div>
         ))}
       </div>
 
       <div className="card overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#f3f4f6]">
-          <h3 className="text-xs font-semibold text-[#283c50]">Vehicle Types</h3>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#EDF0F6]">
+          <h3 className="text-xs font-semibold text-[#0D1426]">Vehicle Types</h3>
           <button
             onClick={() => { setEditing(null); setShowForm(true) }}
             className="btn-primary flex items-center gap-1.5"
@@ -301,86 +301,86 @@ function VehicleTypesTab() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9ca3af]">
+          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9AA1B4]">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading…
           </div>
         ) : isError ? (
-          <div className="text-center py-16 text-xs text-[#ea4d4d]">Failed to load vehicle types.</div>
+          <div className="text-center py-16 text-xs text-[#FF3B30]">Failed to load vehicle types.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                   {['Type', 'Base Fee', 'Per km', 'Status', 'Last Updated', ''].map((h) => (
-                    <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                    <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f9fafb]">
+              <tbody className="divide-y divide-[#F7F9FC]">
                 {types.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-xs text-[#9ca3af]">
+                    <td colSpan={6} className="text-center py-12 text-xs text-[#9AA1B4]">
                       No vehicle types yet. Add one to get started.
                     </td>
                   </tr>
                 ) : (
                   types.map((t) => (
-                    <tr key={t.id} className="hover:bg-[#fafafa] transition-colors">
+                    <tr key={t.id} className="hover:bg-[#F7F9FC] transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           {t.imageUrl ? (
                             <img src={t.imageUrl} alt={t.name} className="w-8 h-8 rounded object-cover shrink-0" />
                           ) : (
-                            <div className="w-8 h-8 rounded bg-[#eef1fb] flex items-center justify-center shrink-0">
-                              <Package className="w-4 h-4 text-[#3454d1]" />
+                            <div className="w-8 h-8 rounded bg-[#E7EEFF] flex items-center justify-center shrink-0">
+                              <Package className="w-4 h-4 text-[#1E5FFF]" />
                             </div>
                           )}
                           <div>
-                            <p className="text-xs font-semibold text-[#283c50]">{t.name}</p>
+                            <p className="text-xs font-semibold text-[#0D1426]">{t.name}</p>
                             {t.description && (
-                              <p className="text-[11px] text-[#9ca3af] truncate max-w-[200px]">{t.description}</p>
+                              <p className="text-[11px] text-[#9AA1B4] truncate max-w-[200px]">{t.description}</p>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-semibold text-[#283c50]">{formatNaira(t.baseFeeKobo)}</span>
+                        <span className="text-xs font-semibold text-[#0D1426]">{formatNaira(t.baseFeeKobo)}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-semibold text-[#283c50]">{formatNaira(t.perKmKobo)}</span>
+                        <span className="text-xs font-semibold text-[#0D1426]">{formatNaira(t.perKmKobo)}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span
                           className="text-[11px] font-medium rounded-full px-2 py-0.5"
                           style={
                             t.isActive
-                              ? { backgroundColor: '#e8faf2', color: '#17c666' }
-                              : { backgroundColor: '#f3f4f6', color: '#9ca3af' }
+                              ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
+                              : { backgroundColor: '#EDF0F6', color: '#9AA1B4' }
                           }
                         >
                           {t.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-[11px] text-[#9ca3af]">{formatDateTime(t.updatedAt)}</span>
+                        <span className="text-[11px] text-[#9AA1B4]">{formatDateTime(t.updatedAt)}</span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => { setEditing(t); setShowForm(true) }}
-                            className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#eef1fb] transition-colors"
+                            className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#E7EEFF] transition-colors"
                             title="Edit"
                           >
-                            <Pencil className="w-3.5 h-3.5 text-[#3454d1]" />
+                            <Pencil className="w-3.5 h-3.5 text-[#1E5FFF]" />
                           </button>
                           <button
                             onClick={() => setDeleting(t)}
-                            className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#fdf0f0] transition-colors"
+                            className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#FFE3E1] transition-colors"
                             title="Delete"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-[#ea4d4d]" />
+                            <Trash2 className="w-3.5 h-3.5 text-[#FF3B30]" />
                           </button>
                         </div>
                       </td>
@@ -409,15 +409,15 @@ function VehicleTypesTab() {
 // ─── Orders Tab ────────────────────────────────────────────────────────────
 
 const ORDER_STATUS_CONFIG: Record<OrderStatus, { bg: string; text: string; label: string }> = {
-  PENDING: { bg: '#fff6e8', text: '#ffa21d', label: 'Pending' },
-  ACCEPTED: { bg: '#e0f9f7', text: '#3dc7be', label: 'Accepted' },
-  PREPARING: { bg: '#f3eeff', text: '#8b5cf6', label: 'Preparing' },
+  PENDING: { bg: '#FBEDD7', text: '#E8930C', label: 'Pending' },
+  ACCEPTED: { bg: '#FFEAE1', text: '#FF6A2C', label: 'Accepted' },
+  PREPARING: { bg: '#F0EAFA', text: '#7A5AE0', label: 'Preparing' },
   READY_FOR_PICKUP: { bg: '#e0f2fe', text: '#06b6d4', label: 'Ready' },
-  PICKED_UP: { bg: '#fef3c7', text: '#f59e0b', label: 'Picked Up' },
-  IN_TRANSIT: { bg: '#eef1fb', text: '#3454d1', label: 'In Transit' },
-  DELIVERED: { bg: '#e8faf2', text: '#17c666', label: 'Delivered' },
-  CANCELLED: { bg: '#fdf0f0', text: '#ea4d4d', label: 'Cancelled' },
-  FAILED: { bg: '#f3f4f6', text: '#6b7280', label: 'Failed' },
+  PICKED_UP: { bg: '#FBEDD7', text: '#E8930C', label: 'Picked Up' },
+  IN_TRANSIT: { bg: '#E7EEFF', text: '#1E5FFF', label: 'In Transit' },
+  DELIVERED: { bg: '#DFF5EC', text: '#1DB980', label: 'Delivered' },
+  CANCELLED: { bg: '#FFE3E1', text: '#FF3B30', label: 'Cancelled' },
+  FAILED: { bg: '#EDF0F6', text: '#9AA1B4', label: 'Failed' },
 }
 
 const STATUS_TABS: { value: OrderStatus | 'ALL'; label: string }[] = [
@@ -457,7 +457,7 @@ function OrdersTab() {
     <div className="space-y-4">
       <div className="card p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-0.5 p-1 bg-[#f3f4f6] rounded overflow-x-auto">
+          <div className="flex items-center gap-0.5 p-1 bg-[#EDF0F6] rounded overflow-x-auto">
             {STATUS_TABS.map((s) => (
               <button
                 key={s.value}
@@ -465,8 +465,8 @@ function OrdersTab() {
                 className="text-xs font-medium px-3 py-1.5 rounded transition-all whitespace-nowrap"
                 style={
                   statusFilter === s.value
-                    ? { backgroundColor: '#fff', color: '#3454d1', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }
-                    : { color: '#6b7885' }
+                    ? { backgroundColor: '#fff', color: '#1E5FFF', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }
+                    : { color: '#525A72' }
                 }
               >
                 {s.label}
@@ -475,13 +475,13 @@ function OrdersTab() {
           </div>
           <div className="flex-1" />
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9ca3af]" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9AA1B4]" />
             <input
               type="text"
               placeholder="Search tracking code…"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-              className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#4b5563] placeholder:text-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#3454d1] w-52"
+              className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] w-52"
             />
           </div>
         </div>
@@ -489,28 +489,28 @@ function OrdersTab() {
 
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9ca3af]">
+          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9AA1B4]">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading orders…
           </div>
         ) : isError ? (
-          <div className="text-center py-16 text-xs text-[#ea4d4d]">Failed to load parcel orders.</div>
+          <div className="text-center py-16 text-xs text-[#FF3B30]">Failed to load parcel orders.</div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                  <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                     {['Tracking Code', 'Status', 'Amount', 'Placed At', ''].map((h) => (
-                      <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                      <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f9fafb]">
+                <tbody className="divide-y divide-[#F7F9FC]">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-12 text-xs text-[#9ca3af]">
+                      <td colSpan={5} className="text-center py-12 text-xs text-[#9AA1B4]">
                         No parcel orders found.
                       </td>
                     </tr>
@@ -521,10 +521,10 @@ function OrdersTab() {
                         <tr
                           key={order.id}
                           onClick={() => router.push(`/orders/${order.id}`)}
-                          className="hover:bg-[#fafafa] transition-colors cursor-pointer"
+                          className="hover:bg-[#F7F9FC] transition-colors cursor-pointer"
                         >
                           <td className="px-4 py-3">
-                            <span className="font-mono text-xs font-semibold text-[#3454d1]">
+                            <span className="font-mono text-xs font-semibold text-[#1E5FFF]">
                               {order.trackingCode}
                             </span>
                           </td>
@@ -537,17 +537,17 @@ function OrdersTab() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-xs font-semibold text-[#283c50]">
+                            <span className="text-xs font-semibold text-[#0D1426]">
                               {formatNaira(order.totalKobo)}
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-[11px] text-[#9ca3af]">
+                            <span className="text-[11px] text-[#9AA1B4]">
                               {formatDateTime(order.createdAt)}
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <ExternalLink className="w-3.5 h-3.5 text-[#9ca3af]" />
+                            <ExternalLink className="w-3.5 h-3.5 text-[#9AA1B4]" />
                           </td>
                         </tr>
                       )
@@ -556,15 +556,15 @@ function OrdersTab() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[#f3f4f6]">
-              <p className="text-xs text-[#9ca3af]">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#EDF0F6]">
+              <p className="text-xs text-[#9AA1B4]">
                 {meta ? `${meta.total.toLocaleString()} total orders` : ''}
               </p>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="w-7 h-7 rounded flex items-center justify-center text-[#6b7885] hover:bg-[#f3f4f6] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-7 h-7 rounded flex items-center justify-center text-[#525A72] hover:bg-[#EDF0F6] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
@@ -575,8 +575,8 @@ function OrdersTab() {
                     className="w-7 h-7 rounded text-xs"
                     style={
                       page === n
-                        ? { backgroundColor: '#3454d1', color: '#fff', fontWeight: 600 }
-                        : { color: '#6b7885' }
+                        ? { backgroundColor: '#1E5FFF', color: '#fff', fontWeight: 600 }
+                        : { color: '#525A72' }
                     }
                   >
                     {n}
@@ -585,7 +585,7 @@ function OrdersTab() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="w-7 h-7 rounded flex items-center justify-center text-[#6b7885] hover:bg-[#f3f4f6] disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-7 h-7 rounded flex items-center justify-center text-[#525A72] hover:bg-[#EDF0F6] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -607,12 +607,12 @@ export default function ParcelsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-[#283c50]">Parcels</h1>
-          <p className="text-xs text-[#9ca3af] mt-0.5">Manage parcel vehicle types and delivery orders</p>
+          <h1 className="text-lg font-bold text-[#0D1426]">Parcels</h1>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">Manage parcel vehicle types and delivery orders</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-0.5 p-1 bg-[#f3f4f6] rounded w-fit">
+      <div className="flex items-center gap-0.5 p-1 bg-[#EDF0F6] rounded w-fit">
         {([
           { value: 'types', label: 'Vehicle Types' },
           { value: 'orders', label: 'Orders' },
@@ -623,8 +623,8 @@ export default function ParcelsPage() {
             className="text-xs font-medium px-4 py-1.5 rounded transition-all"
             style={
               tab === t.value
-                ? { backgroundColor: '#fff', color: '#3454d1', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }
-                : { color: '#6b7885' }
+                ? { backgroundColor: '#fff', color: '#1E5FFF', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }
+                : { color: '#525A72' }
             }
           >
             {t.label}

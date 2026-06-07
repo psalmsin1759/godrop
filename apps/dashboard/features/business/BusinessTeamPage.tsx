@@ -27,60 +27,60 @@ function AddMemberModal({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-[#283c50]">Add Admin</h2>
-          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#283c50]"><X className="w-4 h-4" /></button>
+          <h2 className="text-base font-bold text-[#0D1426]">Add Admin</h2>
+          <button onClick={onClose} className="text-[#9AA1B4] hover:text-[#0D1426]"><X className="w-4 h-4" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[#283c50] mb-1.5">First Name</label>
+              <label className="block text-xs font-medium text-[#0D1426] mb-1.5">First Name</label>
               <input
                 required
                 value={form.firstName}
                 onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
+                className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#283c50] mb-1.5">Last Name</label>
+              <label className="block text-xs font-medium text-[#0D1426] mb-1.5">Last Name</label>
               <input
                 required
                 value={form.lastName}
                 onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
-                className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
+                className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#283c50] mb-1.5">Email</label>
+            <label className="block text-xs font-medium text-[#0D1426] mb-1.5">Email</label>
             <input
               required
               type="email"
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
+              className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#283c50] mb-1.5">Password</label>
+            <label className="block text-xs font-medium text-[#0D1426] mb-1.5">Password</label>
             <input
               required
               type="password"
               value={form.password}
               onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]"
+              className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
             />
           </div>
           {error && (
-            <p className="text-xs text-[#ea4d4d]">{(error as any)?.data?.error ?? 'Failed to create admin'}</p>
+            <p className="text-xs text-[#FF3B30]">{(error as any)?.data?.error ?? 'Failed to create admin'}</p>
           )}
           <div className="flex gap-2 justify-end pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-[#6b7885] hover:bg-[#f3f4f6] rounded-lg">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-[#525A72] hover:bg-[#EDF0F6] rounded-lg">Cancel</button>
             <button
               type="submit"
               disabled={isLoading}
               className="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-1.5 disabled:opacity-50"
-              style={{ backgroundColor: '#3454d1' }}
+              style={{ backgroundColor: '#1E5FFF' }}
             >
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Add Admin
@@ -106,31 +106,31 @@ function MemberRow({ member }: { member: BusinessMember }) {
   return (
     <div className="px-5 py-4 flex items-center gap-4">
       <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-        style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}>
+        style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}>
         {member.firstName[0]}{member.lastName[0]}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-[#283c50]">{member.firstName} {member.lastName}</p>
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${member.role === 'OWNER' ? 'bg-[#fef9ec] text-[#f59e0b]' : 'bg-[#eef0fb] text-[#3454d1]'}`}>
+          <p className="text-sm font-medium text-[#0D1426]">{member.firstName} {member.lastName}</p>
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${member.role === 'OWNER' ? 'bg-[#FBEDD7] text-[#E8930C]' : 'bg-[#E7EEFF] text-[#1E5FFF]'}`}>
             {member.role}
           </span>
-          {isSelf && <span className="text-[9px] text-[#9ca3af]">(you)</span>}
+          {isSelf && <span className="text-[9px] text-[#9AA1B4]">(you)</span>}
         </div>
-        <p className="text-xs text-[#6b7885] truncate">{member.email}</p>
-        <p className="text-[11px] text-[#9ca3af] mt-0.5">Added {formatDateTime(member.createdAt)}</p>
+        <p className="text-xs text-[#525A72] truncate">{member.email}</p>
+        <p className="text-[11px] text-[#9AA1B4] mt-0.5">Added {formatDateTime(member.createdAt)}</p>
       </div>
       <div className="flex items-center gap-2">
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${member.isActive ? 'bg-[#e8faf0] text-[#17c666]' : 'bg-[#fef2f2] text-[#ea4d4d]'}`}>
+        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${member.isActive ? 'bg-[#DFF5EC] text-[#1DB980]' : 'bg-[#FFE3E1] text-[#FF3B30]'}`}>
           {member.isActive ? 'Active' : 'Inactive'}
         </span>
         {isOwner && !isSelf && member.role !== 'OWNER' && (
           <button
             onClick={toggleActive}
-            className="p-1.5 rounded hover:bg-[#f3f4f6] text-[#9ca3af]"
+            className="p-1.5 rounded hover:bg-[#EDF0F6] text-[#9AA1B4]"
             title={member.isActive ? 'Deactivate' : 'Activate'}
           >
-            {member.isActive ? <UserX className="w-4 h-4 hover:text-[#ea4d4d]" /> : <UserCheck className="w-4 h-4 hover:text-[#17c666]" />}
+            {member.isActive ? <UserX className="w-4 h-4 hover:text-[#FF3B30]" /> : <UserCheck className="w-4 h-4 hover:text-[#1DB980]" />}
           </button>
         )}
       </div>
@@ -149,29 +149,29 @@ export default function BusinessTeamPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#283c50]">Team</h1>
-          <p className="text-sm text-[#6b7885] mt-0.5">Manage admins who have access to your business dashboard.</p>
+          <h1 className="text-xl font-bold text-[#0D1426]">Team</h1>
+          <p className="text-sm text-[#525A72] mt-0.5">Manage admins who have access to your business dashboard.</p>
         </div>
         {isOwner && (
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg"
-            style={{ backgroundColor: '#3454d1' }}
+            style={{ backgroundColor: '#1E5FFF' }}
           >
             <Plus className="w-4 h-4" /> Add Admin
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-5 h-5 animate-spin text-[#3454d1]" />
+            <Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" />
           </div>
         ) : !team || team.length === 0 ? (
-          <p className="text-center text-sm text-[#6b7885] py-12">No team members yet.</p>
+          <p className="text-center text-sm text-[#525A72] py-12">No team members yet.</p>
         ) : (
-          <div className="divide-y divide-[#f3f4f6]">
+          <div className="divide-y divide-[#EDF0F6]">
             {team.map((m) => <MemberRow key={m.id} member={m} />)}
           </div>
         )}

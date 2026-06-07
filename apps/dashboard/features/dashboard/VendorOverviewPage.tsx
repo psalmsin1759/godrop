@@ -8,15 +8,15 @@ import { formatNaira, formatNumber } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
 
 const STATUS_COLORS: Record<string, string> = {
-  DELIVERED: '#17c666',
-  IN_TRANSIT: '#3454d1',
-  PENDING: '#ffa21d',
-  CANCELLED: '#ea4d4d',
-  ACCEPTED: '#3dc7be',
-  PREPARING: '#8b5cf6',
+  DELIVERED: '#1DB980',
+  IN_TRANSIT: '#1E5FFF',
+  PENDING: '#E8930C',
+  CANCELLED: '#FF3B30',
+  ACCEPTED: '#FF6A2C',
+  PREPARING: '#7A5AE0',
   READY_FOR_PICKUP: '#06b6d4',
-  PICKED_UP: '#f59e0b',
-  FAILED: '#6b7280',
+  PICKED_UP: '#E8930C',
+  FAILED: '#9AA1B4',
 }
 
 interface TooltipProps {
@@ -28,13 +28,13 @@ interface TooltipProps {
 function ChartTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-[#e5e7eb] rounded-lg shadow-lg p-3 text-xs">
-      <p className="font-semibold text-[#283c50] mb-1.5">{label}</p>
+    <div className="bg-white border border-[#E7EAF1] rounded-lg shadow-lg p-3 text-xs">
+      <p className="font-semibold text-[#0D1426] mb-1.5">{label}</p>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-          <span className="text-[#6b7885]">{p.name}:</span>
-          <span className="font-semibold text-[#283c50]">
+          <span className="text-[#525A72]">{p.name}:</span>
+          <span className="font-semibold text-[#0D1426]">
             {p.name === 'Revenue' ? formatNaira(p.value) : formatNumber(p.value)}
           </span>
         </div>
@@ -60,9 +60,9 @@ function StatCard({
           <Icon style={{ color: iconColor, width: 18, height: 18 }} />
         </div>
       </div>
-      <p className="text-lg font-bold text-[#283c50] leading-none">{value}</p>
-      <p className="text-xs font-medium text-[#4b5563] mt-1">{label}</p>
-      <p className="text-[11px] text-[#9ca3af] mt-0.5">{sublabel}</p>
+      <p className="text-lg font-bold text-[#0D1426] leading-none">{value}</p>
+      <p className="text-xs font-medium text-[#525A72] mt-1">{label}</p>
+      <p className="text-[11px] text-[#9AA1B4] mt-0.5">{sublabel}</p>
     </div>
   )
 }
@@ -88,7 +88,7 @@ export default function VendorOverviewPage() {
   const statusData = analytics?.ordersByStatus?.map((s) => ({
     name: s.status,
     value: s.count,
-    color: STATUS_COLORS[s.status] ?? '#9ca3af',
+    color: STATUS_COLORS[s.status] ?? '#9AA1B4',
   })) ?? []
 
   const sum = analytics?.summary
@@ -96,7 +96,7 @@ export default function VendorOverviewPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#17c666]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#1DB980]" />
       </div>
     )
   }
@@ -105,8 +105,8 @@ export default function VendorOverviewPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-[#283c50] leading-tight">Vendor Dashboard</h1>
-          <p className="text-xs text-[#9ca3af] mt-0.5">
+          <h1 className="text-lg font-bold text-[#0D1426] leading-tight">Vendor Dashboard</h1>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">
             Welcome back, {session?.admin?.firstName} · {new Date().toLocaleDateString('en-NG', {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
             })}
@@ -119,17 +119,17 @@ export default function VendorOverviewPage() {
               disabled={togglingOpen}
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-60"
               style={settings.isOpen
-                ? { backgroundColor: '#e8faf2', color: '#17c666', borderColor: '#a7f3d0' }
-                : { backgroundColor: '#f3f4f6', color: '#6b7885', borderColor: '#e5e7eb' }}
+                ? { backgroundColor: '#DFF5EC', color: '#1DB980', borderColor: '#A8E6CC' }
+                : { backgroundColor: '#EDF0F6', color: '#525A72', borderColor: '#E7EAF1' }}
             >
               {togglingOpen
                 ? <Loader2 className="w-3 h-3 animate-spin" />
-                : <span className={`w-1.5 h-1.5 rounded-full ${settings.isOpen ? 'bg-[#17c666] animate-pulse' : 'bg-[#9ca3af]'}`} />}
+                : <span className={`w-1.5 h-1.5 rounded-full ${settings.isOpen ? 'bg-[#1DB980] animate-pulse' : 'bg-[#9AA1B4]'}`} />}
               {settings.isOpen ? 'Store Open' : 'Store Closed'}
             </button>
           )}
-          <span className="flex items-center gap-1.5 text-xs text-[#6b7885] bg-white border border-[#e5e7eb] rounded px-3 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#17c666] animate-pulse" />
+          <span className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#1DB980] animate-pulse" />
             Live data
           </span>
         </div>
@@ -142,32 +142,32 @@ export default function VendorOverviewPage() {
           sublabel="All time"
           value={sum ? formatNumber(sum.totalOrders) : '—'}
           icon={ShoppingBag}
-          iconColor="#3454d1"
-          iconBg="#eef1fb"
+          iconColor="#1E5FFF"
+          iconBg="#E7EEFF"
         />
         <StatCard
           label="Total Revenue"
           sublabel="Paid orders"
           value={sum ? formatNaira(sum.totalRevenueKobo) : '—'}
           icon={TrendingUp}
-          iconColor="#ffa21d"
-          iconBg="#fff6e8"
+          iconColor="#E8930C"
+          iconBg="#FBEDD7"
         />
         <StatCard
           label="Completed"
           sublabel="Delivered orders"
           value={sum ? formatNumber(sum.completedOrders) : '—'}
           icon={CheckCircle}
-          iconColor="#17c666"
-          iconBg="#e8faf2"
+          iconColor="#1DB980"
+          iconBg="#DFF5EC"
         />
         <StatCard
           label="Cancelled"
           sublabel="Cancelled orders"
           value={sum ? formatNumber(sum.cancelledOrders) : '—'}
           icon={XCircle}
-          iconColor="#ea4d4d"
-          iconBg="#fdf0f0"
+          iconColor="#FF3B30"
+          iconBg="#FFE3E1"
         />
       </div>
 
@@ -181,26 +181,26 @@ export default function VendorOverviewPage() {
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData} barGap={2} barSize={12}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} interval={1} />
-                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={32} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF0F6" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} interval={1} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(52,84,209,0.04)' }} />
-                  <Bar dataKey="Orders" fill="#17c666" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="Orders" fill="#1DB980" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[220px] flex items-center justify-center text-xs text-[#9ca3af]">
+              <div className="h-[220px] flex items-center justify-center text-xs text-[#9AA1B4]">
                 No chart data available
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-[#f3f4f6]">
+            <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-[#EDF0F6]">
               <div>
-                <p className="text-[11px] text-[#9ca3af]">Avg. Order Value</p>
-                <p className="text-sm font-bold text-[#283c50]">{sum ? formatNaira(sum.avgOrderValueKobo) : '—'}</p>
+                <p className="text-[11px] text-[#9AA1B4]">Avg. Order Value</p>
+                <p className="text-sm font-bold text-[#0D1426]">{sum ? formatNaira(sum.avgOrderValueKobo) : '—'}</p>
               </div>
               <div>
-                <p className="text-[11px] text-[#9ca3af]">Completion Rate</p>
-                <p className="text-sm font-bold text-[#17c666]">
+                <p className="text-[11px] text-[#9AA1B4]">Completion Rate</p>
+                <p className="text-sm font-bold text-[#1DB980]">
                   {sum && sum.totalOrders > 0
                     ? `${((sum.completedOrders / sum.totalOrders) * 100).toFixed(1)}%`
                     : '—'}
@@ -239,15 +239,15 @@ export default function VendorOverviewPage() {
                     <div key={s.name} className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                        <span className="text-[#4b5563] capitalize">{s.name.replace('_', ' ').toLowerCase()}</span>
+                        <span className="text-[#525A72] capitalize">{s.name.replace('_', ' ').toLowerCase()}</span>
                       </span>
-                      <span className="font-semibold text-[#283c50]">{formatNumber(s.value)}</span>
+                      <span className="font-semibold text-[#0D1426]">{formatNumber(s.value)}</span>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="h-[140px] flex items-center justify-center text-xs text-[#9ca3af]">
+              <div className="h-[140px] flex items-center justify-center text-xs text-[#9AA1B4]">
                 No data available
               </div>
             )}
@@ -260,30 +260,30 @@ export default function VendorOverviewPage() {
         <div className="card overflow-hidden">
           <div className="card-header">
             <h3 className="card-title">Top Products</h3>
-            <a href="/catalog" className="text-xs text-[#17c666] hover:underline">Manage catalog</a>
+            <a href="/catalog" className="text-xs text-[#1DB980] hover:underline">Manage catalog</a>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                   {['Product', 'Orders', 'Revenue'].map((h) => (
-                    <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3">
+                    <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f9fafb]">
+              <tbody className="divide-y divide-[#F7F9FC]">
                 {analytics.topProducts.map((p) => (
-                  <tr key={p.name} className="hover:bg-[#fafafa] transition-colors">
+                  <tr key={p.name} className="hover:bg-[#F7F9FC] transition-colors">
                     <td className="px-4 py-2.5">
-                      <span className="text-xs font-medium text-[#283c50]">{p.name}</span>
+                      <span className="text-xs font-medium text-[#0D1426]">{p.name}</span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="text-xs font-semibold text-[#3454d1]">{formatNumber(p.orders)}</span>
+                      <span className="text-xs font-semibold text-[#1E5FFF]">{formatNumber(p.orders)}</span>
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="text-xs font-semibold text-[#283c50]">{formatNaira(p.revenueKobo)}</span>
+                      <span className="text-xs font-semibold text-[#0D1426]">{formatNaira(p.revenueKobo)}</span>
                     </td>
                   </tr>
                 ))}

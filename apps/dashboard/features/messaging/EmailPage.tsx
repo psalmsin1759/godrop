@@ -21,7 +21,7 @@ interface Result {
 }
 
 function inputCls(extra = '') {
-  return `w-full px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] placeholder:text-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#3454d1] focus:border-[#3454d1] transition-colors ${extra}`
+  return `w-full px-3 py-2 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#0D1426] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] focus:border-[#1E5FFF] transition-colors ${extra}`
 }
 
 function SectionCard({ children }: { children: React.ReactNode }) {
@@ -33,13 +33,13 @@ function ResultCard({ result }: { result: Result }) {
     <div
       className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 text-xs ${
         result.success
-          ? 'bg-[#f0fdf4] border-[#86efac] text-[#166534]'
-          : 'bg-[#fef2f2] border-[#fca5a5] text-[#991b1b]'
+          ? 'bg-[#DFF5EC] border-[#A8E6CC] text-[#0E6B49]'
+          : 'bg-[#FFE3E1] border-[#FFB3AD] text-[#A13C36]'
       }`}
     >
       {result.success
-        ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#16a34a]" />
-        : <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#dc2626]" />}
+        ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0E8E60]" />
+        : <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#C42B22]" />}
       <div className="space-y-1">
         <p className="font-semibold">{result.message}</p>
         {result.sent !== undefined && (
@@ -76,7 +76,7 @@ export default function EmailPage() {
 
   const htmlBody = bodyText
     .split('\n')
-    .map((line) => `<p style="margin:0 0 10px;font-size:14px;color:#374151;line-height:1.6;">${line || '&nbsp;'}</p>`)
+    .map((line) => `<p style="margin:0 0 10px;font-size:14px;color:#525A72;line-height:1.6;">${line || '&nbsp;'}</p>`)
     .join('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,14 +101,14 @@ export default function EmailPage() {
   return (
     <div className="space-y-5 max-w-2xl">
       <div>
-        <h1 className="text-lg font-bold text-[#283c50]">Email</h1>
-        <p className="text-xs text-[#9ca3af] mt-0.5">Send emails to a single address, multiple recipients, or all customers</p>
+        <h1 className="text-lg font-bold text-[#0D1426]">Email</h1>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">Send emails to a single address, multiple recipients, or all customers</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Mode */}
         <SectionCard>
-          <p className="text-xs font-semibold text-[#283c50]">Recipient Mode</p>
+          <p className="text-xs font-semibold text-[#0D1426]">Recipient Mode</p>
           <div className="flex gap-3 flex-wrap">
             {([
               { id: 'single', label: 'Single', desc: 'One email address', icon: User },
@@ -121,25 +121,25 @@ export default function EmailPage() {
                 onClick={() => { setMode(m.id); reset() }}
                 className={`flex-1 min-w-[130px] flex flex-col items-start gap-0.5 px-3.5 py-3 rounded-lg border text-left transition-colors ${
                   mode === m.id
-                    ? 'border-[#3454d1] bg-[#eef1fb]'
-                    : 'border-[#e5e7eb] hover:border-[#3454d1]/40'
+                    ? 'border-[#1E5FFF] bg-[#E7EEFF]'
+                    : 'border-[#E7EAF1] hover:border-[#1E5FFF]/40'
                 }`}
               >
                 <div className="flex items-center gap-1.5">
-                  <Radio className={`w-3 h-3 ${mode === m.id ? 'text-[#3454d1]' : 'text-[#9ca3af]'}`} />
-                  <span className={`text-xs font-semibold ${mode === m.id ? 'text-[#3454d1]' : 'text-[#283c50]'}`}>
+                  <Radio className={`w-3 h-3 ${mode === m.id ? 'text-[#1E5FFF]' : 'text-[#9AA1B4]'}`} />
+                  <span className={`text-xs font-semibold ${mode === m.id ? 'text-[#1E5FFF]' : 'text-[#0D1426]'}`}>
                     {m.label}
                   </span>
                 </div>
-                <p className="text-[11px] text-[#9ca3af] ml-[18px]">{m.desc}</p>
+                <p className="text-[11px] text-[#9AA1B4] ml-[18px]">{m.desc}</p>
               </button>
             ))}
           </div>
 
           {mode === 'single' && (
             <div>
-              <label className="block text-xs font-medium text-[#4b5563] mb-1">
-                To <span className="text-[#ea4d4d]">*</span>
+              <label className="block text-xs font-medium text-[#525A72] mb-1">
+                To <span className="text-[#FF3B30]">*</span>
               </label>
               <input
                 type="email"
@@ -154,8 +154,8 @@ export default function EmailPage() {
 
           {mode === 'batch' && (
             <div>
-              <label className="block text-xs font-medium text-[#4b5563] mb-1">
-                Email Addresses <span className="text-[#ea4d4d]">*</span>
+              <label className="block text-xs font-medium text-[#525A72] mb-1">
+                Email Addresses <span className="text-[#FF3B30]">*</span>
               </label>
               <textarea
                 required
@@ -165,14 +165,14 @@ export default function EmailPage() {
                 placeholder="user1@example.com, user2@example.com, user3@example.com"
                 className={inputCls('resize-none')}
               />
-              <p className="text-[11px] text-[#9ca3af] mt-1">Separate multiple addresses with commas</p>
+              <p className="text-[11px] text-[#9AA1B4] mt-1">Separate multiple addresses with commas</p>
             </div>
           )}
 
           {mode === 'all-customers' && (
-            <div className="flex items-start gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-lg px-3 py-2.5">
-              <Users className="w-3.5 h-3.5 text-[#f97316] mt-0.5 shrink-0" />
-              <p className="text-[11px] text-[#92400e]">
+            <div className="flex items-start gap-2 bg-[#FBEDD7] border border-[#F6D9A8] rounded-lg px-3 py-2.5">
+              <Users className="w-3.5 h-3.5 text-[#FF6A2C] mt-0.5 shrink-0" />
+              <p className="text-[11px] text-[#8A5A0A]">
                 This will send an email to every active customer with an email address on Godrop.
               </p>
             </div>
@@ -181,10 +181,10 @@ export default function EmailPage() {
 
         {/* Compose */}
         <SectionCard>
-          <p className="text-xs font-semibold text-[#283c50]">Compose</p>
+          <p className="text-xs font-semibold text-[#0D1426]">Compose</p>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
-              Subject <span className="text-[#ea4d4d]">*</span>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
+              Subject <span className="text-[#FF3B30]">*</span>
             </label>
             <input
               type="text"
@@ -197,8 +197,8 @@ export default function EmailPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
-              Message <span className="text-[#ea4d4d]">*</span>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
+              Message <span className="text-[#FF3B30]">*</span>
             </label>
             <textarea
               required
@@ -208,7 +208,7 @@ export default function EmailPage() {
               placeholder="Write your message here. Each line becomes a paragraph."
               className={inputCls('resize-y')}
             />
-            <p className="text-[11px] text-[#9ca3af] mt-1">Each new line becomes a separate paragraph in the email</p>
+            <p className="text-[11px] text-[#9AA1B4] mt-1">Each new line becomes a separate paragraph in the email</p>
           </div>
         </SectionCard>
 
@@ -219,7 +219,7 @@ export default function EmailPage() {
             type="submit"
             disabled={sending}
             className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-60 transition-colors"
-            style={{ backgroundColor: '#3454d1' }}
+            style={{ backgroundColor: '#1E5FFF' }}
           >
             {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             {sending

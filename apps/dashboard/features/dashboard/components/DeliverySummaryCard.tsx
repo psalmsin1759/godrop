@@ -12,9 +12,9 @@ const recentItems = [
 ]
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
-  delivered: { bg: '#e8faf2', text: '#17c666', label: 'Delivered' },
-  in_transit: { bg: '#eef1fb', text: '#3454d1', label: 'In Transit' },
-  pending: { bg: '#fff6e8', text: '#ffa21d', label: 'Pending' },
+  delivered: { bg: '#DFF5EC', text: '#1DB980', label: 'Delivered' },
+  in_transit: { bg: '#E7EEFF', text: '#1E5FFF', label: 'In Transit' },
+  pending: { bg: '#FBEDD7', text: '#E8930C', label: 'Pending' },
 }
 
 export default function DeliverySummaryCard() {
@@ -23,7 +23,7 @@ export default function DeliverySummaryCard() {
       className="rounded-lg overflow-hidden animate-fade-in animate-delay-300 flex flex-col"
       style={{
         animationFillMode: 'both',
-        background: 'linear-gradient(135deg, #3454d1 0%, #1e3aa8 100%)',
+        background: 'linear-gradient(135deg, #1E5FFF 0%, #0A3FD1 100%)',
       }}
     >
       {/* Top section */}
@@ -70,20 +70,20 @@ export default function DeliverySummaryCard() {
 
       {/* Recent orders list */}
       <div className="bg-white flex-1">
-        <div className="px-4 py-2 border-b border-[#f3f4f6]">
-          <p className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">Recent Orders</p>
+        <div className="px-4 py-2 border-b border-[#EDF0F6]">
+          <p className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Recent Orders</p>
         </div>
-        <div className="divide-y divide-[#f3f4f6]">
+        <div className="divide-y divide-[#EDF0F6]">
           {recentItems.map((item) => {
             const s = statusStyles[item.status] ?? statusStyles.pending
             return (
               <div key={item.id} className="flex items-center justify-between px-4 py-2.5">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[#283c50] truncate">{item.label}</p>
-                  <p className="text-[11px] text-[#9ca3af]">{item.id}</p>
+                  <p className="text-xs font-medium text-[#0D1426] truncate">{item.label}</p>
+                  <p className="text-[11px] text-[#9AA1B4]">{item.id}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                  <p className="text-xs font-semibold text-[#283c50]">{formatNaira(item.amount)}</p>
+                  <p className="text-xs font-semibold text-[#0D1426]">{formatNaira(item.amount)}</p>
                   <span
                     className="text-[10px] font-medium rounded-full px-1.5 py-0.5"
                     style={{ backgroundColor: s.bg, color: s.text }}

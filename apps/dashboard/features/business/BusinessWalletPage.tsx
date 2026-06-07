@@ -11,8 +11,8 @@ const TX_LABEL: Record<BusinessWalletTxType, string> = {
 }
 
 const TX_COLOR: Record<BusinessWalletTxType, string> = {
-  RIDER_EARNING: '#17c666',
-  WITHDRAWAL: '#ea4d4d',
+  RIDER_EARNING: '#1DB980',
+  WITHDRAWAL: '#FF3B30',
 }
 
 export default function BusinessWalletPage() {
@@ -22,12 +22,12 @@ export default function BusinessWalletPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-[#283c50]">Wallet</h1>
+      <h1 className="text-xl font-bold text-[#0D1426]">Wallet</h1>
 
       {/* Balance Card */}
       <div
         className="rounded-2xl p-6 text-white"
-        style={{ background: 'linear-gradient(135deg, #283c50, #3454d1)' }}
+        style={{ background: 'linear-gradient(135deg, #0D1426, #1E5FFF)' }}
       >
         <div className="flex items-center gap-2 mb-3 opacity-70">
           <Wallet className="w-4 h-4" />
@@ -42,32 +42,32 @@ export default function BusinessWalletPage() {
       </div>
 
       {/* Transactions */}
-      <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#e5e7eb]">
-          <h2 className="text-sm font-semibold text-[#283c50]">Transaction History</h2>
+      <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">
+        <div className="px-5 py-4 border-b border-[#E7EAF1]">
+          <h2 className="text-sm font-semibold text-[#0D1426]">Transaction History</h2>
         </div>
         {txLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-5 h-5 animate-spin text-[#3454d1]" />
+            <Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" />
           </div>
         ) : transactions.length === 0 ? (
-          <p className="text-center text-sm text-[#6b7885] py-12">No transactions yet.</p>
+          <p className="text-center text-sm text-[#525A72] py-12">No transactions yet.</p>
         ) : (
-          <div className="divide-y divide-[#f3f4f6]">
+          <div className="divide-y divide-[#EDF0F6]">
             {transactions.map((tx) => (
               <div key={tx.id} className="px-5 py-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#283c50]">
+                  <p className="text-sm font-medium text-[#0D1426]">
                     {TX_LABEL[tx.type] ?? tx.type}
                   </p>
                   {tx.description && (
-                    <p className="text-xs text-[#6b7885] mt-0.5">{tx.description}</p>
+                    <p className="text-xs text-[#525A72] mt-0.5">{tx.description}</p>
                   )}
-                  <p className="text-[11px] text-[#9ca3af] mt-0.5">{formatDateTime(tx.createdAt)}</p>
+                  <p className="text-[11px] text-[#9AA1B4] mt-0.5">{formatDateTime(tx.createdAt)}</p>
                 </div>
                 <span
                   className="text-sm font-bold"
-                  style={{ color: TX_COLOR[tx.type] ?? '#283c50' }}
+                  style={{ color: TX_COLOR[tx.type] ?? '#0D1426' }}
                 >
                   {tx.type === 'WITHDRAWAL' ? '-' : '+'}{formatNaira(tx.amountKobo)}
                 </span>

@@ -4,11 +4,11 @@ import { upcomingDeliveries, type OrderCategory } from '@/lib/mock-data'
 import { Clock } from 'lucide-react'
 
 const categoryColors: Record<OrderCategory, string> = {
-  food: '#3454d1',
-  grocery: '#17c666',
-  parcel: '#3dc7be',
-  retail: '#ffa21d',
-  truck: '#ea4d4d',
+  food: '#1E5FFF',
+  grocery: '#1DB980',
+  parcel: '#FF6A2C',
+  retail: '#E8930C',
+  truck: '#FF3B30',
 }
 
 export default function UpcomingDeliveries() {
@@ -16,17 +16,17 @@ export default function UpcomingDeliveries() {
     <div className="card animate-fade-in animate-delay-500" style={{ animationFillMode: 'both' }}>
       <div className="card-header">
         <h3 className="card-title">Upcoming Deliveries</h3>
-        <span className="text-[11px] text-[#9ca3af] flex items-center gap-1">
+        <span className="text-[11px] text-[#9AA1B4] flex items-center gap-1">
           <Clock className="w-3 h-3" />
           Today
         </span>
       </div>
 
-      <div className="divide-y divide-[#f9fafb]">
+      <div className="divide-y divide-[#F7F9FC]">
         {upcomingDeliveries.map((item) => {
           const color = categoryColors[item.category]
           return (
-            <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#fafafa] transition-colors">
+            <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#F7F9FC] transition-colors">
               {/* Rider avatar */}
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
@@ -37,8 +37,8 @@ export default function UpcomingDeliveries() {
 
               {/* Details */}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[#283c50] truncate">{item.summary}</p>
-                <p className="text-[11px] text-[#9ca3af]">{item.riderName}</p>
+                <p className="text-xs font-medium text-[#0D1426] truncate">{item.summary}</p>
+                <p className="text-[11px] text-[#9AA1B4]">{item.riderName}</p>
               </div>
 
               {/* Time */}
@@ -58,7 +58,7 @@ export default function UpcomingDeliveries() {
       <div className="px-4 pb-3 pt-2">
         <a
           href="/orders"
-          className="block text-center text-xs font-medium text-[#3454d1] hover:underline"
+          className="block text-center text-xs font-medium text-[#1E5FFF] hover:underline"
         >
           View full schedule →
         </a>

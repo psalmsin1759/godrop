@@ -49,17 +49,17 @@ function exportVendorsCSV(vendors: Vendor[]) {
 }
 
 const statusConfig: Record<VendorStatus, { bg: string; text: string; label: string }> = {
-  APPROVED: { bg: '#e8faf2', text: '#17c666', label: 'Approved' },
-  PENDING: { bg: '#fff6e8', text: '#ffa21d', label: 'Pending' },
-  REJECTED: { bg: '#fdf0f0', text: '#ea4d4d', label: 'Rejected' },
-  SUSPENDED: { bg: '#f3f4f6', text: '#6b7885', label: 'Suspended' },
+  APPROVED: { bg: '#DFF5EC', text: '#1DB980', label: 'Approved' },
+  PENDING: { bg: '#FBEDD7', text: '#E8930C', label: 'Pending' },
+  REJECTED: { bg: '#FFE3E1', text: '#FF3B30', label: 'Rejected' },
+  SUSPENDED: { bg: '#EDF0F6', text: '#525A72', label: 'Suspended' },
 }
 
 const typeConfig: Record<VendorType, { label: string; color: string }> = {
-  RESTAURANT: { label: 'Restaurant', color: '#3454d1' },
-  GROCERY: { label: 'Grocery', color: '#17c666' },
-  RETAIL: { label: 'Retail', color: '#ffa21d' },
-  PHARMACY: { label: 'Pharmacy', color: '#3dc7be' },
+  RESTAURANT: { label: 'Restaurant', color: '#1E5FFF' },
+  GROCERY: { label: 'Grocery', color: '#1DB980' },
+  RETAIL: { label: 'Retail', color: '#E8930C' },
+  PHARMACY: { label: 'Pharmacy', color: '#FF6A2C' },
 }
 
 function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => void }) {
@@ -84,20 +84,20 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
   if (step === 'reject' || step === 'suspend') {
     const isReject = step === 'reject'
     return (
-      <div className="absolute right-0 top-8 z-50 w-64 bg-white rounded-lg border border-[#e5e7eb] shadow-card-md p-3 space-y-2">
-        <p className="text-xs font-semibold text-[#283c50]">
+      <div className="absolute right-0 top-8 z-50 w-64 bg-white rounded-lg border border-[#E7EAF1] shadow-card-md p-3 space-y-2">
+        <p className="text-xs font-semibold text-[#0D1426]">
           {isReject ? 'Reject vendor' : 'Suspend vendor'}
         </p>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder={isReject ? 'Reason (required)…' : 'Reason (optional)…'}
-          className="w-full text-xs border border-[#e5e7eb] rounded p-2 resize-none h-20 focus:outline-none focus:ring-1 focus:ring-[#3454d1]"
+          className="w-full text-xs border border-[#E7EAF1] rounded p-2 resize-none h-20 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]"
         />
         <div className="flex gap-2">
           <button
             onClick={() => setStep('menu')}
-            className="flex-1 text-xs py-1.5 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]"
+            className="flex-1 text-xs py-1.5 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]"
           >
             Cancel
           </button>
@@ -111,7 +111,7 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
               )
             }
             className="flex-1 text-xs py-1.5 rounded text-white font-medium disabled:opacity-50"
-            style={{ backgroundColor: isReject ? '#ea4d4d' : '#ffa21d' }}
+            style={{ backgroundColor: isReject ? '#FF3B30' : '#E8930C' }}
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Confirm'}
           </button>
@@ -121,19 +121,19 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
   }
 
   return (
-    <div className="absolute right-0 top-8 z-50 w-44 bg-white rounded-lg border border-[#e5e7eb] shadow-card-md py-1">
+    <div className="absolute right-0 top-8 z-50 w-44 bg-white rounded-lg border border-[#E7EAF1] shadow-card-md py-1">
       {vendor.status === 'PENDING' && (
         <>
           <button
             onClick={() => run(() => approve(vendor.id).unwrap())}
             disabled={loading}
-            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#17c666] hover:bg-[#f9fafb]"
+            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#1DB980] hover:bg-[#F7F9FC]"
           >
             <CheckCircle className="w-3.5 h-3.5" /> Approve
           </button>
           <button
             onClick={() => setStep('reject')}
-            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#ea4d4d] hover:bg-[#f9fafb]"
+            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#FF3B30] hover:bg-[#F7F9FC]"
           >
             <XCircle className="w-3.5 h-3.5" /> Reject
           </button>
@@ -142,7 +142,7 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
       {vendor.status === 'APPROVED' && (
         <button
           onClick={() => setStep('suspend')}
-          className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#ffa21d] hover:bg-[#f9fafb]"
+          className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#E8930C] hover:bg-[#F7F9FC]"
         >
           <PauseCircle className="w-3.5 h-3.5" /> Suspend
         </button>
@@ -151,14 +151,14 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
         <button
           onClick={() => run(() => reinstate(vendor.id).unwrap())}
           disabled={loading}
-          className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#3454d1] hover:bg-[#f9fafb]"
+          className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#1E5FFF] hover:bg-[#F7F9FC]"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Reinstate
         </button>
       )}
       <button
         onClick={onClose}
-        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#6b7885] hover:bg-[#f9fafb] border-t border-[#f3f4f6] mt-1"
+        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#525A72] hover:bg-[#F7F9FC] border-t border-[#EDF0F6] mt-1"
       >
         Close
       </button>
@@ -200,13 +200,13 @@ export default function VendorsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-[#283c50]">Vendors</h1>
-          <p className="text-xs text-[#9ca3af] mt-0.5">Manage vendor onboarding, approval and status</p>
+          <h1 className="text-lg font-bold text-[#0D1426]">Vendors</h1>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">Manage vendor onboarding, approval and status</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => exportVendorsCSV(filtered)}
-            className="flex items-center gap-1.5 text-xs text-[#6b7885] bg-white border border-[#e5e7eb] rounded px-3 py-1.5 hover:bg-[#f9fafb]"
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
           >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
@@ -219,18 +219,18 @@ export default function VendorsPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Total Vendors', value: counts.ALL, color: '#3454d1', bg: '#eef1fb' },
-          { label: 'Approved', value: counts.APPROVED, color: '#17c666', bg: '#e8faf2' },
-          { label: 'Pending Review', value: counts.PENDING, color: '#ffa21d', bg: '#fff6e8' },
-          { label: 'Suspended', value: counts.SUSPENDED, color: '#ea4d4d', bg: '#fdf0f0' },
+          { label: 'Total Vendors', value: counts.ALL, color: '#1E5FFF', bg: '#E7EEFF' },
+          { label: 'Approved', value: counts.APPROVED, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Pending Review', value: counts.PENDING, color: '#E8930C', bg: '#FBEDD7' },
+          { label: 'Suspended', value: counts.SUSPENDED, color: '#FF3B30', bg: '#FFE3E1' },
         ].map((s) => (
           <div key={s.label} className="card p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: s.bg }}>
               <Store style={{ color: s.color, width: 18, height: 18 }} />
             </div>
             <div>
-              <p className="text-lg font-bold text-[#283c50] leading-none">{s.value}</p>
-              <p className="text-[11px] text-[#6b7885] mt-0.5">{s.label}</p>
+              <p className="text-lg font-bold text-[#0D1426] leading-none">{s.value}</p>
+              <p className="text-[11px] text-[#525A72] mt-0.5">{s.label}</p>
             </div>
           </div>
         ))}
@@ -239,7 +239,7 @@ export default function VendorsPage() {
       {/* Filters */}
       <div className="card p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 p-1 bg-[#f3f4f6] rounded">
+          <div className="flex items-center gap-1 p-1 bg-[#EDF0F6] rounded">
             {(['ALL', 'PENDING', 'APPROVED', 'SUSPENDED', 'REJECTED'] as const).map((s) => (
               <button
                 key={s}
@@ -247,8 +247,8 @@ export default function VendorsPage() {
                 className="text-xs font-medium px-3 py-1.5 rounded transition-all"
                 style={
                   statusFilter === s
-                    ? { backgroundColor: '#fff', color: '#3454d1', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }
-                    : { color: '#6b7885' }
+                    ? { backgroundColor: '#fff', color: '#1E5FFF', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }
+                    : { color: '#525A72' }
                 }
               >
                 {s === 'ALL' ? 'All' : statusConfig[s].label}
@@ -262,7 +262,7 @@ export default function VendorsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as VendorType | 'ALL')}
-            className="text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#4b5563] px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#3454d1]"
+            className="text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]"
           >
             <option value="ALL">All types</option>
             {(Object.keys(typeConfig) as VendorType[]).map((t) => (
@@ -273,13 +273,13 @@ export default function VendorsPage() {
           <div className="flex-1" />
 
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9ca3af]" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9AA1B4]" />
             <input
               type="text"
               placeholder="Search vendors…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#4b5563] placeholder:text-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#3454d1] focus:border-[#3454d1] w-52"
+              className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] focus:border-[#1E5FFF] w-52"
             />
           </div>
         </div>
@@ -288,11 +288,11 @@ export default function VendorsPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9ca3af]">
+          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9AA1B4]">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading vendors…
           </div>
         ) : isError ? (
-          <div className="text-center py-16 text-xs text-[#ea4d4d]">
+          <div className="text-center py-16 text-xs text-[#FF3B30]">
             Failed to load vendors. Check your connection.
           </div>
         ) : (
@@ -300,18 +300,18 @@ export default function VendorsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                  <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                     {['Vendor', 'Type', 'Address', 'Phone', 'Status', 'Rating', 'Joined', ''].map((h) => (
-                      <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                      <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f9fafb]">
+                <tbody className="divide-y divide-[#F7F9FC]">
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-10 text-xs text-[#9ca3af]">
+                      <td colSpan={8} className="text-center py-10 text-xs text-[#9AA1B4]">
                         No vendors match your filters.
                       </td>
                     </tr>
@@ -322,20 +322,20 @@ export default function VendorsPage() {
                       return (
                         <tr
                           key={vendor.id}
-                          className="hover:bg-[#fafafa] transition-colors cursor-pointer"
+                          className="hover:bg-[#F7F9FC] transition-colors cursor-pointer"
                           onClick={() => router.push(`/vendors/${vendor.id}`)}
                         >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
                               <div
                                 className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                                style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}
+                                style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}
                               >
                                 {vendor.name[0]}
                               </div>
                               <div>
-                                <p className="text-xs font-semibold text-[#283c50]">{vendor.name}</p>
-                                <p className="text-[11px] text-[#9ca3af]">{vendor.email}</p>
+                                <p className="text-xs font-semibold text-[#0D1426]">{vendor.name}</p>
+                                <p className="text-[11px] text-[#9AA1B4]">{vendor.email}</p>
                               </div>
                             </div>
                           </td>
@@ -345,12 +345,12 @@ export default function VendorsPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3 max-w-[180px]">
-                            <span className="text-xs text-[#6b7885] truncate block" title={vendor.address}>
+                            <span className="text-xs text-[#525A72] truncate block" title={vendor.address}>
                               {vendor.address}
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-xs text-[#4b5563] font-mono">{vendor.phone}</span>
+                            <span className="text-xs text-[#525A72] font-mono">{vendor.phone}</span>
                           </td>
                           <td className="px-4 py-3">
                             <span
@@ -361,12 +361,12 @@ export default function VendorsPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-xs text-[#283c50] font-semibold">
+                            <span className="text-xs text-[#0D1426] font-semibold">
                               {vendor.rating != null ? vendor.rating.toFixed(1) : '—'}
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-[11px] text-[#9ca3af]">
+                            <span className="text-[11px] text-[#9AA1B4]">
                               {new Date(vendor.createdAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </span>
                           </td>
@@ -374,16 +374,16 @@ export default function VendorsPage() {
                             <div className="flex items-center gap-1 relative">
                               <button
                                 onClick={() => router.push(`/vendors/${vendor.id}`)}
-                                className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#eef1fb] transition-colors"
+                                className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#E7EEFF] transition-colors"
                               >
-                                <Eye className="w-3.5 h-3.5 text-[#3454d1]" />
+                                <Eye className="w-3.5 h-3.5 text-[#1E5FFF]" />
                               </button>
                               <div className="relative">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === vendor.id ? null : vendor.id) }}
-                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#EDF0F6] transition-colors"
                                 >
-                                  <MoreHorizontal className="w-3.5 h-3.5 text-[#9ca3af]" />
+                                  <MoreHorizontal className="w-3.5 h-3.5 text-[#9AA1B4]" />
                                 </button>
                                 {openMenu === vendor.id && (
                                   <VendorActionMenu vendor={vendor} onClose={() => setOpenMenu(null)} />
@@ -398,8 +398,8 @@ export default function VendorsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 py-3 border-t border-[#f3f4f6]">
-              <p className="text-xs text-[#9ca3af]">
+            <div className="px-4 py-3 border-t border-[#EDF0F6]">
+              <p className="text-xs text-[#9AA1B4]">
                 Showing {filtered.length} of {vendors.length} vendors
               </p>
             </div>

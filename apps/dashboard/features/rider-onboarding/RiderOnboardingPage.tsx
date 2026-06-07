@@ -90,17 +90,17 @@ function Field({ label, required, children, hint, error }: {
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#283c50] mb-1.5">
-        {label}{required && <span className="text-[#ea4d4d] ml-0.5">*</span>}
+      <label className="block text-xs font-semibold text-[#0D1426] mb-1.5">
+        {label}{required && <span className="text-[#FF3B30] ml-0.5">*</span>}
       </label>
       {children}
-      {hint && !error && <p className="text-[11px] text-[#9ca3af] mt-1">{hint}</p>}
-      {error && <p className="text-[11px] text-[#ea4d4d] mt-1">{error}</p>}
+      {hint && !error && <p className="text-[11px] text-[#9AA1B4] mt-1">{hint}</p>}
+      {error && <p className="text-[11px] text-[#FF3B30] mt-1">{error}</p>}
     </div>
   )
 }
 
-const inputCls = 'w-full px-3.5 py-2.5 text-sm rounded-lg border border-[#e5e7eb] bg-white text-[#283c50] placeholder:text-[#c4c9cf] focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1] transition-all'
+const inputCls = 'w-full px-3.5 py-2.5 text-sm rounded-lg border border-[#E7EAF1] bg-white text-[#0D1426] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF] transition-all'
 
 function fmt(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
@@ -127,18 +127,18 @@ function FileDropZone({ label, hint, value, onChange }: {
 
   return (
     <div>
-      <p className="text-xs font-semibold text-[#283c50] mb-1.5">{label}</p>
+      <p className="text-xs font-semibold text-[#0D1426] mb-1.5">{label}</p>
       {value ? (
-        <div className="flex items-center gap-3 p-3 rounded-lg border border-[#3454d1] bg-[#eef1fb]">
-          <div className="w-8 h-8 rounded-lg bg-[#3454d1] flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-3 p-3 rounded-lg border border-[#1E5FFF] bg-[#E7EEFF]">
+          <div className="w-8 h-8 rounded-lg bg-[#1E5FFF] flex items-center justify-center shrink-0">
             <FileText className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-[#283c50] truncate">{value.name}</p>
-            <p className="text-[11px] text-[#9ca3af]">{fmt(value.size)}</p>
+            <p className="text-xs font-semibold text-[#0D1426] truncate">{value.name}</p>
+            <p className="text-[11px] text-[#9AA1B4]">{fmt(value.size)}</p>
           </div>
           <button type="button" onClick={() => onChange(null)}
-            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#e5e7eb] text-[#9ca3af] hover:text-[#283c50] transition-colors shrink-0">
+            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#E7EAF1] text-[#9AA1B4] hover:text-[#0D1426] transition-colors shrink-0">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -149,11 +149,11 @@ function FileDropZone({ label, hint, value, onChange }: {
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
           className="cursor-pointer rounded-lg border-2 border-dashed transition-all p-5 text-center"
-          style={{ borderColor: dragging ? '#3454d1' : '#e5e7eb', backgroundColor: dragging ? '#eef1fb' : '#fafafa' }}
+          style={{ borderColor: dragging ? '#1E5FFF' : '#E7EAF1', backgroundColor: dragging ? '#E7EEFF' : '#F7F9FC' }}
         >
-          <Upload className="w-5 h-5 text-[#9ca3af] mx-auto mb-2" />
-          <p className="text-xs font-semibold text-[#283c50]">Drop file here or click to upload</p>
-          <p className="text-[11px] text-[#9ca3af] mt-1">{hint}</p>
+          <Upload className="w-5 h-5 text-[#9AA1B4] mx-auto mb-2" />
+          <p className="text-xs font-semibold text-[#0D1426]">Drop file here or click to upload</p>
+          <p className="text-[11px] text-[#9AA1B4] mt-1">{hint}</p>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*,application/pdf" className="hidden"
@@ -187,20 +187,20 @@ function MultiFileDropZone({ label, hint, files, onChange }: {
 
   return (
     <div>
-      <p className="text-xs font-semibold text-[#283c50] mb-1.5">{label}</p>
+      <p className="text-xs font-semibold text-[#0D1426] mb-1.5">{label}</p>
       {files.length > 0 && (
         <div className="space-y-2 mb-2">
           {files.map((f, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-[#3454d1] bg-[#eef1fb]">
-              <div className="w-8 h-8 rounded-lg bg-[#3454d1] flex items-center justify-center shrink-0">
+            <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-[#1E5FFF] bg-[#E7EEFF]">
+              <div className="w-8 h-8 rounded-lg bg-[#1E5FFF] flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#283c50] truncate">{f.name}</p>
-                <p className="text-[11px] text-[#9ca3af]">{fmt(f.size)}</p>
+                <p className="text-xs font-semibold text-[#0D1426] truncate">{f.name}</p>
+                <p className="text-[11px] text-[#9AA1B4]">{fmt(f.size)}</p>
               </div>
               <button type="button" onClick={() => remove(i)}
-                className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#e5e7eb] text-[#9ca3af] hover:text-[#283c50] transition-colors shrink-0">
+                className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#E7EAF1] text-[#9AA1B4] hover:text-[#0D1426] transition-colors shrink-0">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -214,13 +214,13 @@ function MultiFileDropZone({ label, hint, files, onChange }: {
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
           className="cursor-pointer rounded-lg border-2 border-dashed transition-all p-5 text-center"
-          style={{ borderColor: dragging ? '#3454d1' : '#e5e7eb', backgroundColor: dragging ? '#eef1fb' : '#fafafa' }}
+          style={{ borderColor: dragging ? '#1E5FFF' : '#E7EAF1', backgroundColor: dragging ? '#E7EEFF' : '#F7F9FC' }}
         >
-          <Upload className="w-5 h-5 text-[#9ca3af] mx-auto mb-2" />
-          <p className="text-xs font-semibold text-[#283c50]">
+          <Upload className="w-5 h-5 text-[#9AA1B4] mx-auto mb-2" />
+          <p className="text-xs font-semibold text-[#0D1426]">
             {files.length === 0 ? 'Drop files here or click to upload' : `Add more (${files.length}/5)`}
           </p>
-          <p className="text-[11px] text-[#9ca3af] mt-1">{hint}</p>
+          <p className="text-[11px] text-[#9AA1B4] mt-1">{hint}</p>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*,application/pdf" multiple className="hidden"
@@ -242,17 +242,17 @@ function StepBar({ current }: { current: number }) {
           <div key={s.id} className="flex items-center flex-1">
             <div className="flex flex-col items-center">
               <div className="w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0"
-                style={{ background: done ? '#17c666' : active ? '#3454d1' : '#f3f4f6', color: done || active ? '#fff' : '#9ca3af' }}>
+                style={{ background: done ? '#1DB980' : active ? '#1E5FFF' : '#EDF0F6', color: done || active ? '#fff' : '#9AA1B4' }}>
                 {done ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
               </div>
               <p className="text-[10px] font-semibold mt-1 whitespace-nowrap"
-                style={{ color: active ? '#3454d1' : done ? '#17c666' : '#9ca3af' }}>
+                style={{ color: active ? '#1E5FFF' : done ? '#1DB980' : '#9AA1B4' }}>
                 {s.label}
               </p>
             </div>
             {i < STEPS.length - 1 && (
               <div className="flex-1 h-0.5 mx-1 mb-4 rounded-full transition-all"
-                style={{ background: done ? '#17c666' : '#e5e7eb' }} />
+                style={{ background: done ? '#1DB980' : '#E7EAF1' }} />
             )}
           </div>
         )
@@ -267,30 +267,30 @@ function SuccessScreen({ name }: { name: string }) {
   return (
     <div className="text-center py-6">
       <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg,#17c666,#0fa356)' }}>
+        style={{ background: 'linear-gradient(135deg,#1DB980,#1DB980)' }}>
         <CheckCircle2 className="w-10 h-10 text-white" />
       </div>
-      <h2 className="text-2xl font-bold text-[#283c50] mb-3">Application Submitted!</h2>
-      <p className="text-sm text-[#6b7885] mb-2 max-w-sm mx-auto leading-relaxed">
-        Welcome, <strong className="text-[#283c50]">{name}</strong>! Your rider application has been received.
+      <h2 className="text-2xl font-bold text-[#0D1426] mb-3">Application Submitted!</h2>
+      <p className="text-sm text-[#525A72] mb-2 max-w-sm mx-auto leading-relaxed">
+        Welcome, <strong className="text-[#0D1426]">{name}</strong>! Your rider application has been received.
       </p>
-      <div className="inline-flex items-center gap-2 bg-[#fff7ed] border border-[#fed7aa] text-[#c2410c] text-xs font-semibold rounded-lg px-4 py-2.5 my-4">
+      <div className="inline-flex items-center gap-2 bg-[#FBEDD7] border border-[#F6D9A8] text-[#E0531A] text-xs font-semibold rounded-lg px-4 py-2.5 my-4">
         <AlertCircle className="w-4 h-4" />
         Our team will review your application within 1–2 business days
       </div>
-      <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-lg px-4 py-3 my-4 text-left max-w-sm mx-auto">
-        <p className="text-xs font-semibold text-[#1d4ed8] mb-1">What happens next?</p>
-        <p className="text-xs text-[#1d4ed8] leading-relaxed">
+      <div className="bg-[#E7EEFF] border border-[#C7D9FF] rounded-lg px-4 py-3 my-4 text-left max-w-sm mx-auto">
+        <p className="text-xs font-semibold text-[#0A3FD1] mb-1">What happens next?</p>
+        <p className="text-xs text-[#0A3FD1] leading-relaxed">
           Once your documents are verified, you'll receive a notification on your phone. Log in with your
           phone number via OTP to start accepting deliveries.
         </p>
       </div>
-      <p className="text-xs text-[#9ca3af] mb-8">
+      <p className="text-xs text-[#9AA1B4] mb-8">
         Keep your phone accessible — we'll send you an OTP when your account is approved.
       </p>
       <Link
         href="/"
-        className="inline-flex items-center gap-2 bg-[#3454d1] hover:bg-[#2a43a8] text-white text-sm font-bold px-6 py-3 rounded-lg transition-colors"
+        className="inline-flex items-center gap-2 bg-[#1E5FFF] hover:bg-[#0A3FD1] text-white text-sm font-bold px-6 py-3 rounded-lg transition-colors"
       >
         Back to Home <ArrowRight className="w-4 h-4" />
       </Link>
@@ -407,18 +407,18 @@ export default function RiderOnboardingPage() {
   // ── Render ─────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#f0f2f8' }}>
+    <div className="min-h-screen flex" style={{ background: '#EDF0F6' }}>
 
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-80 xl:w-96 flex-col justify-between p-10 shrink-0"
-        style={{ background: '#3454d1' }}>
+        style={{ background: '#1E5FFF' }}>
         <div>
           <div className="flex items-center gap-2 mb-10">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
               <span className="text-white text-base font-bold tracking-tight">G</span>
             </div>
             <span className="text-xl font-bold text-white">
-              Go<span style={{ color: '#fde68a' }}>drop</span>
+              Go<span style={{ color: '#F6D9A8' }}>drop</span>
             </span>
           </div>
 
@@ -454,11 +454,11 @@ export default function RiderOnboardingPage() {
 
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-[#3454d1] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#1E5FFF] flex items-center justify-center">
               <span className="text-white text-sm font-bold">G</span>
             </div>
-            <span className="text-xl font-bold text-[#283c50]">
-              Go<span className="text-[#3454d1]">drop</span>
+            <span className="text-xl font-bold text-[#0D1426]">
+              Go<span className="text-[#1E5FFF]">drop</span>
             </span>
           </div>
 
@@ -468,8 +468,8 @@ export default function RiderOnboardingPage() {
             ) : (
               <>
                 <div className="mb-6">
-                  <h1 className="text-xl font-bold text-[#283c50]">Rider Application</h1>
-                  <p className="text-xs text-[#9ca3af] mt-1">
+                  <h1 className="text-xl font-bold text-[#0D1426]">Rider Application</h1>
+                  <p className="text-xs text-[#9AA1B4] mt-1">
                     Step {step} of {STEPS.length} — {STEPS[step - 1].label}
                   </p>
                 </div>
@@ -492,7 +492,7 @@ export default function RiderOnboardingPage() {
 
                     <Field label="Phone Number" required hint="Nigerian number in format +234XXXXXXXXXX" error={err('phone')}>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B4]" />
                         <input type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)}
                           placeholder="+2348012345678" className={inputCls + ' pl-9'} />
                       </div>
@@ -500,7 +500,7 @@ export default function RiderOnboardingPage() {
 
                     <Field label="Email Address" hint="Optional — for account notifications" error={err('email')}>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B4]" />
                         <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)}
                           placeholder="emeka@example.com" className={inputCls + ' pl-9'} />
                       </div>
@@ -575,8 +575,8 @@ export default function RiderOnboardingPage() {
                       </Field>
                     </div>
 
-                    <div className="border-t border-[#f3f4f6] pt-4">
-                      <p className="text-xs font-bold text-[#283c50] mb-3">License & Compliance</p>
+                    <div className="border-t border-[#EDF0F6] pt-4">
+                      <p className="text-xs font-bold text-[#0D1426] mb-3">License & Compliance</p>
                       <div className="space-y-3">
                         <Field label="Driver's License Number">
                           <input type="text" value={form.driverLicenseNumber}
@@ -611,7 +611,7 @@ export default function RiderOnboardingPage() {
                 {/* ── Step 4: Guarantor ── */}
                 {step === 4 && (
                   <div className="space-y-4">
-                    <div className="bg-[#fffbeb] border border-[#fde68a] rounded-lg px-4 py-3 text-xs text-[#92400e] leading-relaxed">
+                    <div className="bg-[#FBEDD7] border border-[#F6D9A8] rounded-lg px-4 py-3 text-xs text-[#8A5A0A] leading-relaxed">
                       <strong>Guarantor:</strong> A person who vouches for your character and can be contacted in case of issues. Please provide accurate information.
                     </div>
 
@@ -623,7 +623,7 @@ export default function RiderOnboardingPage() {
 
                     <Field label="Phone Number" required error={err('guarantorPhone')}>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B4]" />
                         <input type="tel" value={form.guarantorPhone}
                           onChange={(e) => set('guarantorPhone', e.target.value)}
                           placeholder="+2348023456789" className={inputCls + ' pl-9'} />
@@ -649,7 +649,7 @@ export default function RiderOnboardingPage() {
                 {/* ── Step 5: Documents ── */}
                 {step === 5 && (
                   <div className="space-y-5">
-                    <div className="bg-[#fffbeb] border border-[#fde68a] rounded-lg px-4 py-3 text-xs text-[#92400e] leading-relaxed">
+                    <div className="bg-[#FBEDD7] border border-[#F6D9A8] rounded-lg px-4 py-3 text-xs text-[#8A5A0A] leading-relaxed">
                       <strong>Required documents:</strong> Upload clear images (JPG/PNG) or PDF files — max 10 MB each. Vehicle papers support up to 5 files.
                     </div>
 
@@ -661,7 +661,7 @@ export default function RiderOnboardingPage() {
                         onChange={(f) => setFiles((prev) => ({ ...prev, vehiclePapers: f }))}
                       />
                       {err('vehiclePapers') && (
-                        <p className="text-[11px] text-[#ea4d4d] mt-1">{err('vehiclePapers')}</p>
+                        <p className="text-[11px] text-[#FF3B30] mt-1">{err('vehiclePapers')}</p>
                       )}
                     </div>
 
@@ -673,12 +673,12 @@ export default function RiderOnboardingPage() {
                         onChange={(f) => setFiles((prev) => ({ ...prev, governmentId: f }))}
                       />
                       {err('governmentId') && (
-                        <p className="text-[11px] text-[#ea4d4d] mt-1">{err('governmentId')}</p>
+                        <p className="text-[11px] text-[#FF3B30] mt-1">{err('governmentId')}</p>
                       )}
                     </div>
 
                     {submitError && (
-                      <div className="flex items-start gap-2.5 text-xs text-[#ea4d4d] bg-[#fdf0f0] border border-[#fca5a5] rounded-lg px-4 py-3">
+                      <div className="flex items-start gap-2.5 text-xs text-[#FF3B30] bg-[#FFE3E1] border border-[#FFB3AD] rounded-lg px-4 py-3">
                         <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                         {submitError}
                       </div>
@@ -687,27 +687,27 @@ export default function RiderOnboardingPage() {
                 )}
 
                 {/* Navigation */}
-                <div className="flex items-center justify-between mt-8 pt-5 border-t border-[#f3f4f6]">
+                <div className="flex items-center justify-between mt-8 pt-5 border-t border-[#EDF0F6]">
                   {step > 1 ? (
                     <button type="button" onClick={back}
-                      className="flex items-center gap-1.5 text-sm font-semibold text-[#6b7885] hover:text-[#283c50] transition-colors">
+                      className="flex items-center gap-1.5 text-sm font-semibold text-[#525A72] hover:text-[#0D1426] transition-colors">
                       <ChevronLeft className="w-4 h-4" /> Back
                     </button>
                   ) : (
                     <Link href="/login"
-                      className="text-sm font-semibold text-[#6b7885] hover:text-[#283c50] transition-colors">
+                      className="text-sm font-semibold text-[#525A72] hover:text-[#0D1426] transition-colors">
                       ← Back to Login
                     </Link>
                   )}
 
                   {step < 5 ? (
                     <button type="button" onClick={next}
-                      className="flex items-center gap-2 bg-[#3454d1] hover:bg-[#2a43a8] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)]">
+                      className="flex items-center gap-2 bg-[#1E5FFF] hover:bg-[#0A3FD1] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)]">
                       Continue <ChevronRight className="w-4 h-4" />
                     </button>
                   ) : (
                     <button type="button" onClick={submit} disabled={loading}
-                      className="flex items-center gap-2 bg-[#3454d1] hover:bg-[#2a43a8] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)] disabled:opacity-60">
+                      className="flex items-center gap-2 bg-[#1E5FFF] hover:bg-[#0A3FD1] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)] disabled:opacity-60">
                       {loading
                         ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</>
                         : <><CheckCircle2 className="w-4 h-4" /> Submit Application</>}
@@ -719,9 +719,9 @@ export default function RiderOnboardingPage() {
           </div>
 
           {!done && (
-            <p className="text-center text-xs text-[#9ca3af] mt-5">
+            <p className="text-center text-xs text-[#9AA1B4] mt-5">
               Already a rider?{' '}
-              <Link href="/login" className="text-[#3454d1] font-semibold hover:underline">
+              <Link href="/login" className="text-[#1E5FFF] font-semibold hover:underline">
                 Log in
               </Link>
             </p>

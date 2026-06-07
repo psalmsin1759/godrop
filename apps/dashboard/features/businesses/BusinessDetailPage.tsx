@@ -22,9 +22,9 @@ import type { Business, BusinessStatus } from '@/types/api'
 // ─── Helpers ──────────────────────────────────────────────────
 
 const STATUS_CFG: Record<BusinessStatus, { bg: string; text: string; label: string }> = {
-  ACTIVE:      { bg: '#e8faf0', text: '#17c666', label: 'Active' },
-  SUSPENDED:   { bg: '#fef9ec', text: '#f59e0b', label: 'Suspended' },
-  DEACTIVATED: { bg: '#fef2f2', text: '#ea4d4d', label: 'Deactivated' },
+  ACTIVE:      { bg: '#DFF5EC', text: '#1DB980', label: 'Active' },
+  SUSPENDED:   { bg: '#FBEDD7', text: '#E8930C', label: 'Suspended' },
+  DEACTIVATED: { bg: '#FFE3E1', text: '#FF3B30', label: 'Deactivated' },
 }
 
 function StatusBadge({ status }: { status: BusinessStatus }) {
@@ -38,25 +38,25 @@ function StatusBadge({ status }: { status: BusinessStatus }) {
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
   return (
-    <div className="flex justify-between items-start py-2.5 border-b border-[#f3f4f6] last:border-0">
-      <span className="text-xs text-[#9ca3af] shrink-0 w-40">{label}</span>
-      <span className="text-xs text-[#283c50] font-medium text-right">{value || '—'}</span>
+    <div className="flex justify-between items-start py-2.5 border-b border-[#EDF0F6] last:border-0">
+      <span className="text-xs text-[#9AA1B4] shrink-0 w-40">{label}</span>
+      <span className="text-xs text-[#0D1426] font-medium text-right">{value || '—'}</span>
     </div>
   )
 }
 
 function DocLink({ label, url }: { label: string; url: string | null }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-[#f3f4f6] last:border-0">
+    <div className="flex items-center justify-between py-2.5 border-b border-[#EDF0F6] last:border-0">
       <div className="flex items-center gap-2">
         {url
-          ? <CheckCircle className="w-3.5 h-3.5 text-[#17c666]" />
-          : <div className="w-3.5 h-3.5 rounded-full border-2 border-[#d1d5db]" />}
-        <span className="text-xs text-[#283c50]">{label}</span>
+          ? <CheckCircle className="w-3.5 h-3.5 text-[#1DB980]" />
+          : <div className="w-3.5 h-3.5 rounded-full border-2 border-[#DDE2EC]" />}
+        <span className="text-xs text-[#0D1426]">{label}</span>
       </div>
       {url && (
         <a href={url} target="_blank" rel="noreferrer"
-          className="flex items-center gap-1 text-[11px] text-[#3454d1] hover:underline">
+          className="flex items-center gap-1 text-[11px] text-[#1E5FFF] hover:underline">
           View <ExternalLink className="w-3 h-3" />
         </a>
       )}
@@ -66,10 +66,10 @@ function DocLink({ label, url }: { label: string; url: string | null }) {
 
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-[#f3f4f6] flex items-center gap-2">
-        <span className="text-[#3454d1]">{icon}</span>
-        <h3 className="text-sm font-semibold text-[#283c50]">{title}</h3>
+    <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-[#EDF0F6] flex items-center gap-2">
+        <span className="text-[#1E5FFF]">{icon}</span>
+        <h3 className="text-sm font-semibold text-[#0D1426]">{title}</h3>
       </div>
       <div className="px-5 py-3">{children}</div>
     </div>
@@ -94,35 +94,35 @@ function AddOwnerModal({ businessId, onClose }: { businessId: string; onClose: (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-[#283c50]">Create Business Owner</h2>
-          <button onClick={onClose} className="text-[#9ca3af] hover:text-[#283c50] text-lg leading-none">×</button>
+          <h2 className="text-base font-bold text-[#0D1426]">Create Business Owner</h2>
+          <button onClick={onClose} className="text-[#9AA1B4] hover:text-[#0D1426] text-lg leading-none">×</button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             {(['firstName', 'lastName'] as const).map((f) => (
               <div key={f}>
-                <label className="block text-xs font-medium text-[#283c50] mb-1.5">{f === 'firstName' ? 'First Name' : 'Last Name'} *</label>
+                <label className="block text-xs font-medium text-[#0D1426] mb-1.5">{f === 'firstName' ? 'First Name' : 'Last Name'} *</label>
                 <input required value={form[f]} onChange={(e) => setForm((p) => ({ ...p, [f]: e.target.value }))}
-                  className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]" />
+                  className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]" />
               </div>
             ))}
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#283c50] mb-1.5">Email *</label>
+            <label className="block text-xs font-medium text-[#0D1426] mb-1.5">Email *</label>
             <input required type="email" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]" />
+              className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#283c50] mb-1.5">Password *</label>
+            <label className="block text-xs font-medium text-[#0D1426] mb-1.5">Password *</label>
             <input required type="password" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-              className="w-full border border-[#e5e7eb] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1]" />
+              className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]" />
           </div>
-          {error && <p className="text-xs text-[#ea4d4d]">{(error as any)?.data?.error ?? 'Failed to create owner'}</p>}
+          {error && <p className="text-xs text-[#FF3B30]">{(error as any)?.data?.error ?? 'Failed to create owner'}</p>}
           <div className="flex gap-2 justify-end pt-1">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-[#6b7885] hover:bg-[#f3f4f6] rounded-lg">Cancel</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-[#525A72] hover:bg-[#EDF0F6] rounded-lg">Cancel</button>
             <button type="submit" disabled={isLoading}
               className="px-4 py-2 text-sm text-white rounded-lg flex items-center gap-1.5 disabled:opacity-50"
-              style={{ backgroundColor: '#3454d1' }}>
+              style={{ backgroundColor: '#1E5FFF' }}>
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Create Owner
             </button>
@@ -160,20 +160,20 @@ function OverviewTab({ biz }: { biz: Business }) {
   return (
     <div className="space-y-4">
       {/* Status bar */}
-      <div className="bg-white rounded-xl border border-[#e5e7eb] px-5 py-4 flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-[#E7EAF1] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#eef1fb' }}>
-            <Building2 className="w-5 h-5 text-[#3454d1]" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#E7EEFF' }}>
+            <Building2 className="w-5 h-5 text-[#1E5FFF]" />
           </div>
           <div>
-            <p className="text-sm font-bold text-[#283c50]">{biz.name}</p>
-            <p className="text-xs text-[#9ca3af] mt-0.5">ID: {biz.id}</p>
+            <p className="text-sm font-bold text-[#0D1426]">{biz.name}</p>
+            <p className="text-xs text-[#9AA1B4] mt-0.5">ID: {biz.id}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge status={biz.status} />
           <button onClick={() => setShowStatus(true)}
-            className="text-xs border border-[#e5e7eb] px-3 py-1.5 rounded-lg text-[#6b7885] hover:bg-[#f9fafb]">
+            className="text-xs border border-[#E7EAF1] px-3 py-1.5 rounded-lg text-[#525A72] hover:bg-[#F7F9FC]">
             Change Status
           </button>
         </div>
@@ -182,12 +182,12 @@ function OverviewTab({ biz }: { biz: Business }) {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Wallet Balance', value: formatNaira(biz.wallet?.balanceKobo ?? 0), color: '#17c666' },
-          { label: 'Riders', value: String(biz._count?.riders ?? 0), color: '#3454d1' },
-          { label: 'Team Members', value: String(biz._count?.admins ?? 0), color: '#f59e0b' },
+          { label: 'Wallet Balance', value: formatNaira(biz.wallet?.balanceKobo ?? 0), color: '#1DB980' },
+          { label: 'Riders', value: String(biz._count?.riders ?? 0), color: '#1E5FFF' },
+          { label: 'Team Members', value: String(biz._count?.admins ?? 0), color: '#E8930C' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-[#e5e7eb] px-5 py-4">
-            <p className="text-xs text-[#9ca3af]">{label}</p>
+          <div key={label} className="bg-white rounded-xl border border-[#E7EAF1] px-5 py-4">
+            <p className="text-xs text-[#9AA1B4]">{label}</p>
             <p className="text-xl font-bold mt-1" style={{ color }}>{value}</p>
           </div>
         ))}
@@ -239,19 +239,19 @@ function OverviewTab({ biz }: { biz: Business }) {
       {showStatus && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-xl shadow-xl w-72 p-5 space-y-3">
-            <h3 className="text-sm font-bold text-[#283c50]">Change Status</h3>
+            <h3 className="text-sm font-bold text-[#0D1426]">Change Status</h3>
             {statuses.map((s) => {
               const cfg = STATUS_CFG[s]
               return (
                 <button key={s} onClick={() => changeStatus(s)} disabled={updating || s === biz.status}
                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-left disabled:opacity-50"
-                  style={s === biz.status ? { borderColor: '#3454d1', background: '#eef1fb' } : { borderColor: '#e5e7eb' }}>
+                  style={s === biz.status ? { borderColor: '#1E5FFF', background: '#E7EEFF' } : { borderColor: '#E7EAF1' }}>
                   <span className="text-xs font-semibold" style={{ color: cfg.text }}>{cfg.label}</span>
-                  {s === biz.status && <span className="text-[10px] text-[#9ca3af]">current</span>}
+                  {s === biz.status && <span className="text-[10px] text-[#9AA1B4]">current</span>}
                 </button>
               )
             })}
-            <button onClick={() => setShowStatus(false)} className="w-full text-xs text-[#6b7885] py-2 hover:bg-[#f3f4f6] rounded-lg">
+            <button onClick={() => setShowStatus(false)} className="w-full text-xs text-[#525A72] py-2 hover:bg-[#EDF0F6] rounded-lg">
               Cancel
             </button>
           </div>
@@ -269,40 +269,40 @@ function RidersTab({ businessId }: { businessId: string }) {
   const riders = data?.data ?? []
   const meta = data?.meta
 
-  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-[#3454d1]" /></div>
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" /></div>
 
   if (riders.length === 0) return (
     <div className="text-center py-12">
-      <Bike className="w-8 h-8 text-[#d1d5db] mx-auto mb-2" />
-      <p className="text-sm text-[#9ca3af]">No riders assigned to this business.</p>
+      <Bike className="w-8 h-8 text-[#DDE2EC] mx-auto mb-2" />
+      <p className="text-sm text-[#9AA1B4]">No riders assigned to this business.</p>
     </div>
   )
 
   return (
     <div className="space-y-3">
-      <table className="w-full text-sm bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
+      <table className="w-full text-sm bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">
         <thead>
-          <tr className="text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af] border-b border-[#f3f4f6]">
+          <tr className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] border-b border-[#EDF0F6]">
             <th className="px-5 py-3 text-left">Rider</th>
             <th className="px-5 py-3 text-left">Phone</th>
             <th className="px-5 py-3 text-left">Status</th>
             <th className="px-5 py-3 text-right">Joined</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#f3f4f6]">
+        <tbody className="divide-y divide-[#EDF0F6]">
           {riders.map((r) => (
-            <tr key={r.id} className="hover:bg-[#f9fafb]">
+            <tr key={r.id} className="hover:bg-[#F7F9FC]">
               <td className="px-5 py-3">
-                <p className="font-medium text-[#283c50]">{r.firstName} {r.lastName}</p>
-                <p className="text-xs text-[#9ca3af]">{r.email ?? '—'}</p>
+                <p className="font-medium text-[#0D1426]">{r.firstName} {r.lastName}</p>
+                <p className="text-xs text-[#9AA1B4]">{r.email ?? '—'}</p>
               </td>
-              <td className="px-5 py-3 text-[#6b7885] text-sm">{r.phone ?? '—'}</td>
+              <td className="px-5 py-3 text-[#525A72] text-sm">{r.phone ?? '—'}</td>
               <td className="px-5 py-3">
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${r.isActive ? 'bg-[#e8faf0] text-[#17c666]' : 'bg-[#f3f4f6] text-[#9ca3af]'}`}>
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${r.isActive ? 'bg-[#DFF5EC] text-[#1DB980]' : 'bg-[#EDF0F6] text-[#9AA1B4]'}`}>
                   {r.isActive ? 'Active' : 'Inactive'}
                 </span>
               </td>
-              <td className="px-5 py-3 text-right text-xs text-[#9ca3af]">{formatDate(r.createdAt)}</td>
+              <td className="px-5 py-3 text-right text-xs text-[#9AA1B4]">{formatDate(r.createdAt)}</td>
             </tr>
           ))}
         </tbody>
@@ -320,54 +320,54 @@ function TransactionsTab({ businessId, walletBalance }: { businessId: string; wa
   const txs = data?.data ?? []
   const meta = data?.meta
 
-  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-[#3454d1]" /></div>
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" /></div>
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border border-[#e5e7eb] px-5 py-4 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#e8faf0' }}>
-          <Wallet className="w-4.5 h-4.5 text-[#17c666]" />
+      <div className="bg-white rounded-xl border border-[#E7EAF1] px-5 py-4 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#DFF5EC' }}>
+          <Wallet className="w-4.5 h-4.5 text-[#1DB980]" />
         </div>
         <div>
-          <p className="text-xs text-[#9ca3af]">Wallet Balance</p>
-          <p className="text-lg font-bold text-[#283c50]">{formatNaira(walletBalance)}</p>
+          <p className="text-xs text-[#9AA1B4]">Wallet Balance</p>
+          <p className="text-lg font-bold text-[#0D1426]">{formatNaira(walletBalance)}</p>
         </div>
       </div>
 
       {txs.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-[#e5e7eb]">
-          <Wallet className="w-8 h-8 text-[#d1d5db] mx-auto mb-2" />
-          <p className="text-sm text-[#9ca3af]">No transactions yet.</p>
+        <div className="text-center py-12 bg-white rounded-xl border border-[#E7EAF1]">
+          <Wallet className="w-8 h-8 text-[#DDE2EC] mx-auto mb-2" />
+          <p className="text-sm text-[#9AA1B4]">No transactions yet.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af] border-b border-[#f3f4f6]">
+              <tr className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] border-b border-[#EDF0F6]">
                 <th className="px-5 py-3 text-left">Type</th>
                 <th className="px-5 py-3 text-left">Description</th>
                 <th className="px-5 py-3 text-right">Amount</th>
                 <th className="px-5 py-3 text-right">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#f3f4f6]">
+            <tbody className="divide-y divide-[#EDF0F6]">
               {txs.map((tx) => (
-                <tr key={tx.id} className="hover:bg-[#f9fafb]">
+                <tr key={tx.id} className="hover:bg-[#F7F9FC]">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       {tx.type === 'RIDER_EARNING'
-                        ? <ArrowDownCircle className="w-4 h-4 text-[#ea4d4d]" />
-                        : <ArrowUpCircle className="w-4 h-4 text-[#17c666]" />}
-                      <span className="text-xs font-medium text-[#283c50]">
+                        ? <ArrowDownCircle className="w-4 h-4 text-[#FF3B30]" />
+                        : <ArrowUpCircle className="w-4 h-4 text-[#1DB980]" />}
+                      <span className="text-xs font-medium text-[#0D1426]">
                         {tx.type === 'RIDER_EARNING' ? 'Rider Earning' : 'Withdrawal'}
                       </span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-xs text-[#6b7885]">{tx.description ?? tx.reference ?? '—'}</td>
-                  <td className={`px-5 py-3 text-right text-sm font-semibold ${tx.type === 'RIDER_EARNING' ? 'text-[#ea4d4d]' : 'text-[#17c666]'}`}>
+                  <td className="px-5 py-3 text-xs text-[#525A72]">{tx.description ?? tx.reference ?? '—'}</td>
+                  <td className={`px-5 py-3 text-right text-sm font-semibold ${tx.type === 'RIDER_EARNING' ? 'text-[#FF3B30]' : 'text-[#1DB980]'}`}>
                     {tx.type === 'RIDER_EARNING' ? '-' : '+'}{formatNaira(tx.amountKobo)}
                   </td>
-                  <td className="px-5 py-3 text-right text-xs text-[#9ca3af]">{formatDateTime(tx.createdAt)}</td>
+                  <td className="px-5 py-3 text-right text-xs text-[#9AA1B4]">{formatDateTime(tx.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -385,12 +385,12 @@ function TeamTab({ businessId }: { businessId: string }) {
   const [showAddOwner, setShowAddOwner] = useState(false)
   const { data: members = [], isLoading } = useGetBusinessTeamAsAdminQuery(businessId)
 
-  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-[#3454d1]" /></div>
+  if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" /></div>
 
   const ROLE_CFG: Record<string, { bg: string; text: string }> = {
-    OWNER:   { bg: '#eef1fb', text: '#3454d1' },
-    MANAGER: { bg: '#fef9ec', text: '#f59e0b' },
-    STAFF:   { bg: '#f3f4f6', text: '#6b7280' },
+    OWNER:   { bg: '#E7EEFF', text: '#1E5FFF' },
+    MANAGER: { bg: '#FBEDD7', text: '#E8930C' },
+    STAFF:   { bg: '#EDF0F6', text: '#9AA1B4' },
   }
 
   return (
@@ -398,35 +398,35 @@ function TeamTab({ businessId }: { businessId: string }) {
       <div className="flex justify-end">
         <button onClick={() => setShowAddOwner(true)}
           className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg"
-          style={{ backgroundColor: '#3454d1' }}>
+          style={{ backgroundColor: '#1E5FFF' }}>
           <Plus className="w-4 h-4" /> Add Owner
         </button>
       </div>
 
       {members.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-[#e5e7eb]">
-          <Users className="w-8 h-8 text-[#d1d5db] mx-auto mb-2" />
-          <p className="text-sm text-[#9ca3af]">No team members yet.</p>
+        <div className="text-center py-12 bg-white rounded-xl border border-[#E7EAF1]">
+          <Users className="w-8 h-8 text-[#DDE2EC] mx-auto mb-2" />
+          <p className="text-sm text-[#9AA1B4]">No team members yet.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[10px] font-semibold uppercase tracking-wider text-[#9ca3af] border-b border-[#f3f4f6]">
+              <tr className="text-[10px] font-semibold uppercase tracking-wider text-[#9AA1B4] border-b border-[#EDF0F6]">
                 <th className="px-5 py-3 text-left">Member</th>
                 <th className="px-5 py-3 text-left">Role</th>
                 <th className="px-5 py-3 text-left">Status</th>
                 <th className="px-5 py-3 text-right">Joined</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#f3f4f6]">
+            <tbody className="divide-y divide-[#EDF0F6]">
               {members.map((m) => {
                 const roleCfg = ROLE_CFG[m.role] ?? ROLE_CFG.STAFF
                 return (
-                  <tr key={m.id} className="hover:bg-[#f9fafb]">
+                  <tr key={m.id} className="hover:bg-[#F7F9FC]">
                     <td className="px-5 py-3">
-                      <p className="font-medium text-[#283c50]">{m.firstName} {m.lastName}</p>
-                      <p className="text-xs text-[#9ca3af]">{m.email}</p>
+                      <p className="font-medium text-[#0D1426]">{m.firstName} {m.lastName}</p>
+                      <p className="text-xs text-[#9AA1B4]">{m.email}</p>
                     </td>
                     <td className="px-5 py-3">
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: roleCfg.bg, color: roleCfg.text }}>
@@ -434,11 +434,11 @@ function TeamTab({ businessId }: { businessId: string }) {
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${m.isActive ? 'bg-[#e8faf0] text-[#17c666]' : 'bg-[#f3f4f6] text-[#9ca3af]'}`}>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${m.isActive ? 'bg-[#DFF5EC] text-[#1DB980]' : 'bg-[#EDF0F6] text-[#9AA1B4]'}`}>
                         {m.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right text-xs text-[#9ca3af]">{formatDate(m.createdAt)}</td>
+                    <td className="px-5 py-3 text-right text-xs text-[#9AA1B4]">{formatDate(m.createdAt)}</td>
                   </tr>
                 )
               })}
@@ -457,16 +457,16 @@ function TeamTab({ businessId }: { businessId: string }) {
 function Pagination({ page, meta, onPage }: { page: number; meta: { totalPages: number; total: number }; onPage: (p: number) => void }) {
   return (
     <div className="flex items-center justify-between px-1">
-      <p className="text-xs text-[#9ca3af]">{meta.total} total</p>
+      <p className="text-xs text-[#9AA1B4]">{meta.total} total</p>
       <div className="flex items-center gap-2">
         <button disabled={page <= 1} onClick={() => onPage(page - 1)}
-          className="p-1.5 rounded-lg border border-[#e5e7eb] disabled:opacity-40 hover:bg-[#f3f4f6]">
-          <ChevronLeft className="w-3.5 h-3.5 text-[#283c50]" />
+          className="p-1.5 rounded-lg border border-[#E7EAF1] disabled:opacity-40 hover:bg-[#EDF0F6]">
+          <ChevronLeft className="w-3.5 h-3.5 text-[#0D1426]" />
         </button>
-        <span className="text-xs text-[#6b7885]">{page} / {meta.totalPages}</span>
+        <span className="text-xs text-[#525A72]">{page} / {meta.totalPages}</span>
         <button disabled={page >= meta.totalPages} onClick={() => onPage(page + 1)}
-          className="p-1.5 rounded-lg border border-[#e5e7eb] disabled:opacity-40 hover:bg-[#f3f4f6]">
-          <ChevronRight className="w-3.5 h-3.5 text-[#283c50]" />
+          className="p-1.5 rounded-lg border border-[#E7EAF1] disabled:opacity-40 hover:bg-[#EDF0F6]">
+          <ChevronRight className="w-3.5 h-3.5 text-[#0D1426]" />
         </button>
       </div>
     </div>
@@ -481,15 +481,15 @@ export default function BusinessDetailPage({ businessId }: { businessId: string 
 
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <Loader2 className="w-6 h-6 animate-spin text-[#3454d1]" />
+      <Loader2 className="w-6 h-6 animate-spin text-[#1E5FFF]" />
     </div>
   )
 
   if (!biz) return (
     <div className="text-center py-16">
-      <Building2 className="w-10 h-10 text-[#d1d5db] mx-auto mb-3" />
-      <p className="text-sm text-[#6b7885]">Business not found.</p>
-      <Link href="/businesses" className="mt-2 text-sm text-[#3454d1] hover:underline inline-block">Back to businesses</Link>
+      <Building2 className="w-10 h-10 text-[#DDE2EC] mx-auto mb-3" />
+      <p className="text-sm text-[#525A72]">Business not found.</p>
+      <Link href="/businesses" className="mt-2 text-sm text-[#1E5FFF] hover:underline inline-block">Back to businesses</Link>
     </div>
   )
 
@@ -497,23 +497,23 @@ export default function BusinessDetailPage({ businessId }: { businessId: string 
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/businesses" className="p-2 rounded-lg border border-[#e5e7eb] hover:bg-[#f3f4f6] text-[#6b7885]">
+        <Link href="/businesses" className="p-2 rounded-lg border border-[#E7EAF1] hover:bg-[#EDF0F6] text-[#525A72]">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-[#283c50]">{biz.name}</h1>
-          <p className="text-xs text-[#9ca3af] mt-0.5">Business details</p>
+          <h1 className="text-xl font-bold text-[#0D1426]">{biz.name}</h1>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">Business details</p>
         </div>
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center gap-1 border-b border-[#e5e7eb]">
+      <div className="flex items-center gap-1 border-b border-[#E7EAF1]">
         {TABS.map(({ id, label, icon }) => (
           <button key={id} onClick={() => setTab(id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               tab === id
-                ? 'border-[#3454d1] text-[#3454d1]'
-                : 'border-transparent text-[#9ca3af] hover:text-[#283c50]'
+                ? 'border-[#1E5FFF] text-[#1E5FFF]'
+                : 'border-transparent text-[#9AA1B4] hover:text-[#0D1426]'
             }`}>
             {icon}{label}
           </button>

@@ -25,8 +25,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       <div className="min-h-screen flex flex-col lg:ml-[220px]">
         <Topbar onMenuToggle={() => setSidebarOpen((o) => !o)} />
         <main
-          className="flex-1 p-5 overflow-y-auto"
-          style={{ marginTop: 'var(--topbar-height)', backgroundColor: '#f0f2f8' }}
+          className="flex-1 p-[18px] overflow-y-auto"
+          style={{ marginTop: 'var(--topbar-height)', backgroundColor: '#EDF0F6' }}
         >
           {children}
         </main>

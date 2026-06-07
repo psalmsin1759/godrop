@@ -31,7 +31,7 @@ export default function MetricSparkCard({
       <div className="p-4 pb-2">
         <div className="flex items-start justify-between mb-2">
           <div>
-            <p className="text-xs text-[#6b7885] font-medium">{label}</p>
+            <p className="text-xs text-[#525A72] font-medium">{label}</p>
           </div>
           <span
             className="text-[11px] font-bold rounded-full px-2 py-0.5"
@@ -41,8 +41,8 @@ export default function MetricSparkCard({
           </span>
         </div>
         <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold text-[#283c50] leading-none">{current}</span>
-          <span className="text-sm text-[#9ca3af]">/ {total}</span>
+          <span className="text-2xl font-bold text-[#0D1426] leading-none">{current}</span>
+          <span className="text-sm text-[#9AA1B4]">/ {total}</span>
         </div>
       </div>
 

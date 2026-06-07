@@ -134,8 +134,8 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-[#283c50]">Products</h2>
-          <p className="text-xs text-[#9ca3af] mt-0.5">
+          <h2 className="text-base font-bold text-[#0D1426]">Products</h2>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">
             {total > 0 ? `${total} product${total !== 1 ? 's' : ''} total` : 'Manage your product catalogue'}
           </p>
         </div>
@@ -145,14 +145,14 @@ export default function ProductsPage() {
       </div>
 
       {error && (
-        <div className="text-xs text-[#ea4d4d] bg-[#fdf0f0] border border-[#f9c8c8] rounded-lg px-4 py-2.5">
+        <div className="text-xs text-[#FF3B30] bg-[#FFE3E1] border border-[#FFD4D1] rounded-lg px-4 py-2.5">
           {error}
           <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
         </div>
       )}
 
       {categories.length === 0 && !isLoading && (
-        <div className="text-xs text-[#ffa21d] bg-[#fff6e8] border border-[#ffe0a3] rounded-lg px-4 py-2.5">
+        <div className="text-xs text-[#E8930C] bg-[#FBEDD7] border border-[#F6D9A8] rounded-lg px-4 py-2.5">
           No categories exist yet. Create a category first before adding products.
         </div>
       )}
@@ -163,7 +163,7 @@ export default function ProductsPage() {
           <select
             value={categoryFilter}
             onChange={(e) => { setCategoryFilter(e.target.value); setPage(1) }}
-            className="text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#4b5563] px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#3454d1]"
+            className="text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]"
           >
             <option value="">All categories</option>
             {categories.map((c) => (
@@ -174,13 +174,13 @@ export default function ProductsPage() {
           <div className="flex-1" />
 
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9ca3af]" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9AA1B4]" />
             <input
               type="text"
               placeholder="Search products…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#4b5563] placeholder:text-[#9ca3af] focus:outline-none focus:ring-1 focus:ring-[#3454d1] focus:border-[#3454d1] w-52"
+              className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] focus:border-[#1E5FFF] w-52"
             />
           </div>
         </div>
@@ -189,19 +189,19 @@ export default function ProductsPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9ca3af]">
+          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9AA1B4]">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading products…
           </div>
         ) : isError ? (
-          <div className="text-center py-16 text-xs text-[#ea4d4d]">
+          <div className="text-center py-16 text-xs text-[#FF3B30]">
             Failed to load products.
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#eef1fb' }}>
-              <Package className="w-6 h-6" style={{ color: '#3454d1' }} />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E7EEFF' }}>
+              <Package className="w-6 h-6" style={{ color: '#1E5FFF' }} />
             </div>
-            <p className="text-xs text-[#9ca3af]">
+            <p className="text-xs text-[#9AA1B4]">
               {search ? 'No products match your search.' : 'No products yet.'}
             </p>
             {!search && categories.length > 0 && (
@@ -215,30 +215,30 @@ export default function ProductsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                  <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                     {['Product', 'Category', 'Price', 'Stock', 'Availability', ''].map((h) => (
-                      <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                      <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f9fafb]">
+                <tbody className="divide-y divide-[#F7F9FC]">
                   {filtered.map((product) => (
-                    <tr key={product.id} className="hover:bg-[#fafafa] transition-colors">
+                    <tr key={product.id} className="hover:bg-[#F7F9FC] transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
                           {product.imageUrl ? (
                             <img src={product.imageUrl} alt={product.name} className="w-9 h-9 rounded object-cover shrink-0" />
                           ) : (
-                            <div className="w-9 h-9 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: '#f3f4f6' }}>
-                              <Package className="w-4 h-4 text-[#9ca3af]" />
+                            <div className="w-9 h-9 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: '#EDF0F6' }}>
+                              <Package className="w-4 h-4 text-[#9AA1B4]" />
                             </div>
                           )}
                           <div>
-                            <p className="text-xs font-semibold text-[#283c50]">{product.name}</p>
+                            <p className="text-xs font-semibold text-[#0D1426]">{product.name}</p>
                             {product.description && (
-                              <p className="text-[11px] text-[#9ca3af] truncate max-w-[160px]" title={product.description}>
+                              <p className="text-[11px] text-[#9AA1B4] truncate max-w-[160px]" title={product.description}>
                                 {product.description}
                               </p>
                             )}
@@ -246,15 +246,15 @@ export default function ProductsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-[#6b7885]">{product.category.name}</span>
+                        <span className="text-xs text-[#525A72]">{product.category.name}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-semibold text-[#283c50]">
+                        <span className="text-xs font-semibold text-[#0D1426]">
                           {formatNaira(product.priceKobo)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-[#6b7885]">
+                        <span className="text-xs text-[#525A72]">
                           {product.stock != null ? product.stock : '∞'}
                         </span>
                       </td>
@@ -265,8 +265,8 @@ export default function ProductsPage() {
                           className="flex items-center gap-1.5 text-[11px] font-medium rounded-full px-2 py-0.5 transition-colors"
                           style={
                             product.isAvailable
-                              ? { backgroundColor: '#e8faf2', color: '#17c666' }
-                              : { backgroundColor: '#f3f4f6', color: '#6b7885' }
+                              ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
+                              : { backgroundColor: '#EDF0F6', color: '#525A72' }
                           }
                         >
                           {toggling === product.id ? (
@@ -283,17 +283,17 @@ export default function ProductsPage() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEdit(product)}
-                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#eef1fb] transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#E7EEFF] transition-colors"
                             title="Edit"
                           >
-                            <Pencil className="w-3.5 h-3.5" style={{ color: '#3454d1' }} />
+                            <Pencil className="w-3.5 h-3.5" style={{ color: '#1E5FFF' }} />
                           </button>
                           <button
                             onClick={() => setDeleteTarget(product)}
-                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#fdf0f0] transition-colors"
+                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#FFE3E1] transition-colors"
                             title="Delete"
                           >
-                            <Trash2 className="w-3.5 h-3.5" style={{ color: '#ea4d4d' }} />
+                            <Trash2 className="w-3.5 h-3.5" style={{ color: '#FF3B30' }} />
                           </button>
                         </div>
                       </td>
@@ -304,22 +304,22 @@ export default function ProductsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="px-4 py-3 border-t border-[#f3f4f6] flex items-center justify-between">
-              <p className="text-xs text-[#9ca3af]">
+            <div className="px-4 py-3 border-t border-[#EDF0F6] flex items-center justify-between">
+              <p className="text-xs text-[#9AA1B4]">
                 Page {page} of {totalPages} · {total} products
               </p>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="w-7 h-7 flex items-center justify-center rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb] disabled:opacity-40"
+                  className="w-7 h-7 flex items-center justify-center rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC] disabled:opacity-40"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="w-7 h-7 flex items-center justify-center rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb] disabled:opacity-40"
+                  className="w-7 h-7 flex items-center justify-center rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC] disabled:opacity-40"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>

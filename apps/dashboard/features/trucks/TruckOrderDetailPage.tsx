@@ -16,15 +16,15 @@ import {
 // ─── Status config ─────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<OrderStatus, { bg: string; text: string; label: string }> = {
-  PENDING:          { bg: '#fff6e8', text: '#ffa21d', label: 'Pending' },
-  ACCEPTED:         { bg: '#e0f9f7', text: '#3dc7be', label: 'Accepted' },
-  PREPARING:        { bg: '#f3eeff', text: '#8b5cf6', label: 'Preparing' },
+  PENDING:          { bg: '#FBEDD7', text: '#E8930C', label: 'Pending' },
+  ACCEPTED:         { bg: '#FFEAE1', text: '#FF6A2C', label: 'Accepted' },
+  PREPARING:        { bg: '#F0EAFA', text: '#7A5AE0', label: 'Preparing' },
   READY_FOR_PICKUP: { bg: '#e0f2fe', text: '#06b6d4', label: 'Ready' },
-  PICKED_UP:        { bg: '#fef3c7', text: '#f59e0b', label: 'Picked Up' },
-  IN_TRANSIT:       { bg: '#eef1fb', text: '#3454d1', label: 'In Transit' },
-  DELIVERED:        { bg: '#e8faf2', text: '#17c666', label: 'Delivered' },
-  CANCELLED:        { bg: '#fdf0f0', text: '#ea4d4d', label: 'Cancelled' },
-  FAILED:           { bg: '#f3f4f6', text: '#6b7280', label: 'Failed' },
+  PICKED_UP:        { bg: '#FBEDD7', text: '#E8930C', label: 'Picked Up' },
+  IN_TRANSIT:       { bg: '#E7EEFF', text: '#1E5FFF', label: 'In Transit' },
+  DELIVERED:        { bg: '#DFF5EC', text: '#1DB980', label: 'Delivered' },
+  CANCELLED:        { bg: '#FFE3E1', text: '#FF3B30', label: 'Cancelled' },
+  FAILED:           { bg: '#EDF0F6', text: '#9AA1B4', label: 'Failed' },
 }
 
 const TERMINAL_STATUSES: OrderStatus[] = ['DELIVERED', 'CANCELLED', 'FAILED']
@@ -70,19 +70,19 @@ function StatusUpdateModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f3f4f6]">
-          <h2 className="text-sm font-bold text-[#283c50]">Update Order Status</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDF0F6]">
+          <h2 className="text-sm font-bold text-[#0D1426]">Update Order Status</h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+            className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#EDF0F6] transition-colors"
           >
-            <X className="w-4 h-4 text-[#9ca3af]" />
+            <X className="w-4 h-4 text-[#9AA1B4]" />
           </button>
         </div>
 
         <form onSubmit={submit} className="p-5 space-y-4">
           <div>
-            <label className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">
+            <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">
               New Status
             </label>
             <div className="mt-2 grid grid-cols-2 gap-2">
@@ -98,12 +98,12 @@ function StatusUpdateModal({
                     style={
                       selected
                         ? { backgroundColor: cfg.bg, borderColor: cfg.text, color: cfg.text }
-                        : { borderColor: '#e5e7eb', color: '#6b7885' }
+                        : { borderColor: '#E7EAF1', color: '#525A72' }
                     }
                   >
                     <span
                       className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: selected ? cfg.text : '#d1d5db' }}
+                      style={{ backgroundColor: selected ? cfg.text : '#DDE2EC' }}
                     />
                     {s.label}
                   </button>
@@ -113,7 +113,7 @@ function StatusUpdateModal({
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-[#6b7885] uppercase tracking-wide">
+            <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">
               Note <span className="normal-case font-normal">(optional)</span>
             </label>
             <textarea
@@ -121,14 +121,14 @@ function StatusUpdateModal({
               onChange={(e) => setNote(e.target.value)}
               placeholder="e.g. Driver picked up furniture — en route to Lekki"
               rows={2}
-              className="mt-1 w-full text-xs border border-[#e5e7eb] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3454d1] bg-[#f9fafb] resize-none"
+              className="mt-1 w-full text-xs border border-[#E7EAF1] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-[#F7F9FC] resize-none"
             />
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#fdf0f0]">
-              <AlertCircle className="w-3.5 h-3.5 text-[#ea4d4d] shrink-0 mt-0.5" />
-              <p className="text-[11px] text-[#ea4d4d]">{error}</p>
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#FFE3E1]">
+              <AlertCircle className="w-3.5 h-3.5 text-[#FF3B30] shrink-0 mt-0.5" />
+              <p className="text-[11px] text-[#FF3B30]">{error}</p>
             </div>
           )}
 
@@ -136,7 +136,7 @@ function StatusUpdateModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb] transition-colors"
+              className="flex-1 text-xs py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC] transition-colors"
             >
               Cancel
             </button>
@@ -144,7 +144,7 @@ function StatusUpdateModal({
               type="submit"
               disabled={isLoading || status === currentStatus}
               className="flex-1 text-xs py-2 rounded text-white font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors"
-              style={{ backgroundColor: '#3454d1' }}
+              style={{ backgroundColor: '#1E5FFF' }}
             >
               {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
               Update Status
@@ -161,8 +161,8 @@ function StatusUpdateModal({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="card overflow-hidden">
-      <div className="px-4 py-3 border-b border-[#f3f4f6]">
-        <h3 className="text-xs font-semibold text-[#283c50]">{title}</h3>
+      <div className="px-4 py-3 border-b border-[#EDF0F6]">
+        <h3 className="text-xs font-semibold text-[#0D1426]">{title}</h3>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -172,8 +172,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-1.5">
-      <span className="text-[11px] font-medium text-[#9ca3af] shrink-0">{label}</span>
-      <span className="text-xs font-medium text-[#283c50] text-right">{value}</span>
+      <span className="text-[11px] font-medium text-[#9AA1B4] shrink-0">{label}</span>
+      <span className="text-xs font-medium text-[#0D1426] text-right">{value}</span>
     </div>
   )
 }
@@ -187,7 +187,7 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-24 gap-2 text-xs text-[#9ca3af]">
+      <div className="flex items-center justify-center py-24 gap-2 text-xs text-[#9AA1B4]">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading booking…
       </div>
     )
@@ -196,11 +196,11 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
   if (isError || !order) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <AlertCircle className="w-8 h-8 text-[#ea4d4d]" />
-        <p className="text-sm font-medium text-[#283c50]">Booking not found</p>
+        <AlertCircle className="w-8 h-8 text-[#FF3B30]" />
+        <p className="text-sm font-medium text-[#0D1426]">Booking not found</p>
         <button
           onClick={() => router.back()}
-          className="text-xs text-[#3454d1] hover:underline"
+          className="text-xs text-[#1E5FFF] hover:underline"
         >
           Go back
         </button>
@@ -217,13 +217,13 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.back()}
-          className="w-8 h-8 rounded flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+          className="w-8 h-8 rounded flex items-center justify-center hover:bg-[#EDF0F6] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 text-[#6b7885]" />
+          <ArrowLeft className="w-4 h-4 text-[#525A72]" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2.5">
-            <h1 className="text-lg font-bold text-[#283c50] font-mono">{order.trackingCode}</h1>
+            <h1 className="text-lg font-bold text-[#0D1426] font-mono">{order.trackingCode}</h1>
             <span
               className="text-[11px] font-semibold rounded-full px-2.5 py-0.5"
               style={{ backgroundColor: statusCfg.bg, color: statusCfg.text }}
@@ -231,7 +231,7 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
               {statusCfg.label}
             </span>
           </div>
-          <p className="text-xs text-[#9ca3af] mt-0.5">
+          <p className="text-xs text-[#9AA1B4] mt-0.5">
             Booked {formatDateTime(order.createdAt)}
             {order.scheduledAt && ` · Scheduled for ${formatDateTime(order.scheduledAt)}`}
           </p>
@@ -253,12 +253,12 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
           {/* Truck details */}
           {order.apartmentType && (
             <Section title="Move Details">
-              <div className="divide-y divide-[#f9fafb]">
+              <div className="divide-y divide-[#F7F9FC]">
                 <InfoRow
                   label="Apartment Type"
                   value={
                     <span className="flex items-center gap-1.5">
-                      <Home className="w-3.5 h-3.5 text-[#3454d1]" />
+                      <Home className="w-3.5 h-3.5 text-[#1E5FFF]" />
                       {order.apartmentType.name}
                     </span>
                   }
@@ -268,7 +268,7 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
                     label="Loaders"
                     value={
                       <span className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-[#6b7885]" />
+                        <Users className="w-3.5 h-3.5 text-[#525A72]" />
                         {order.numLoaders} loader{order.numLoaders !== 1 ? 's' : ''}
                       </span>
                     }
@@ -288,34 +288,34 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
           <Section title="Route">
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#e8faf2' }}>
-                  <MapPin className="w-3.5 h-3.5 text-[#17c666]" />
+                <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#DFF5EC' }}>
+                  <MapPin className="w-3.5 h-3.5 text-[#1DB980]" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Pickup</p>
-                  <p className="text-xs font-medium text-[#283c50] mt-0.5">{order.pickupAddress || '—'}</p>
+                  <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Pickup</p>
+                  <p className="text-xs font-medium text-[#0D1426] mt-0.5">{order.pickupAddress || '—'}</p>
                 </div>
               </div>
 
               {order.stops && order.stops.length > 0 && order.stops.map((stop, i) => (
                 <div key={i} className="flex items-start gap-3">
-                  <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#fef3c7' }}>
-                    <MapPin className="w-3.5 h-3.5 text-[#f59e0b]" />
+                  <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#FBEDD7' }}>
+                    <MapPin className="w-3.5 h-3.5 text-[#E8930C]" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Stop {i + 1}</p>
-                    <p className="text-xs font-medium text-[#283c50] mt-0.5">{stop.address || `${stop.lat}, ${stop.lng}`}</p>
+                    <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Stop {i + 1}</p>
+                    <p className="text-xs font-medium text-[#0D1426] mt-0.5">{stop.address || `${stop.lat}, ${stop.lng}`}</p>
                   </div>
                 </div>
               ))}
 
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#fdf0f0' }}>
-                  <MapPin className="w-3.5 h-3.5 text-[#ea4d4d]" />
+                <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: '#FFE3E1' }}>
+                  <MapPin className="w-3.5 h-3.5 text-[#FF3B30]" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Dropoff</p>
-                  <p className="text-xs font-medium text-[#283c50] mt-0.5">{order.dropoffAddress || '—'}</p>
+                  <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Dropoff</p>
+                  <p className="text-xs font-medium text-[#0D1426] mt-0.5">{order.dropoffAddress || '—'}</p>
                 </div>
               </div>
             </div>
@@ -334,20 +334,20 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
                           className="w-2.5 h-2.5 rounded-full border-2 mt-0.5 shrink-0"
                           style={
                             isLast
-                              ? { backgroundColor: '#3454d1', borderColor: '#3454d1' }
-                              : { backgroundColor: '#fff', borderColor: '#d1d5db' }
+                              ? { backgroundColor: '#1E5FFF', borderColor: '#1E5FFF' }
+                              : { backgroundColor: '#fff', borderColor: '#DDE2EC' }
                           }
                         />
-                        {!isLast && <div className="w-px flex-1 bg-[#e5e7eb] mt-1 mb-1" />}
+                        {!isLast && <div className="w-px flex-1 bg-[#E7EAF1] mt-1 mb-1" />}
                       </div>
                       <div className={`pb-4 ${isLast ? '' : ''}`}>
-                        <p className="text-xs font-semibold text-[#283c50]">
+                        <p className="text-xs font-semibold text-[#0D1426]">
                           {STATUS_CONFIG[event.status as OrderStatus]?.label ?? event.status}
                         </p>
                         {event.description && (
-                          <p className="text-[11px] text-[#6b7885] mt-0.5">{event.description}</p>
+                          <p className="text-[11px] text-[#525A72] mt-0.5">{event.description}</p>
                         )}
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5">{formatDateTime(event.createdAt)}</p>
+                        <p className="text-[11px] text-[#9AA1B4] mt-0.5">{formatDateTime(event.createdAt)}</p>
                       </div>
                     </div>
                   )
@@ -359,16 +359,16 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
           {/* Notes */}
           {order.notes && (
             <Section title="Notes">
-              <p className="text-xs text-[#6b7885]">{order.notes}</p>
+              <p className="text-xs text-[#525A72]">{order.notes}</p>
             </Section>
           )}
 
           {order.cancellationReason && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-[#fdf0f0]">
-              <AlertCircle className="w-4 h-4 text-[#ea4d4d] shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-[#FFE3E1]">
+              <AlertCircle className="w-4 h-4 text-[#FF3B30] shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold text-[#ea4d4d]">Cancellation Reason</p>
-                <p className="text-xs text-[#ea4d4d] mt-0.5">{order.cancellationReason}</p>
+                <p className="text-xs font-semibold text-[#FF3B30]">Cancellation Reason</p>
+                <p className="text-xs text-[#FF3B30] mt-0.5">{order.cancellationReason}</p>
               </div>
             </div>
           )}
@@ -379,16 +379,16 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
           {/* Customer */}
           <Section title="Customer">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-[#eef1fb] flex items-center justify-center shrink-0">
-                <User className="w-4 h-4 text-[#3454d1]" />
+              <div className="w-9 h-9 rounded-full bg-[#E7EEFF] flex items-center justify-center shrink-0">
+                <User className="w-4 h-4 text-[#1E5FFF]" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#283c50]">
+                <p className="text-xs font-semibold text-[#0D1426]">
                   {order.customer.firstName} {order.customer.lastName}
                 </p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <Phone className="w-3 h-3 text-[#9ca3af]" />
-                  <span className="text-[11px] text-[#9ca3af]">{order.customer.phone}</span>
+                  <Phone className="w-3 h-3 text-[#9AA1B4]" />
+                  <span className="text-[11px] text-[#9AA1B4]">{order.customer.phone}</span>
                 </div>
               </div>
             </div>
@@ -398,29 +398,29 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
           {order.rider ? (
             <Section title="Assigned Driver">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#e8faf2] flex items-center justify-center shrink-0">
-                  <Truck className="w-4 h-4 text-[#17c666]" />
+                <div className="w-9 h-9 rounded-full bg-[#DFF5EC] flex items-center justify-center shrink-0">
+                  <Truck className="w-4 h-4 text-[#1DB980]" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#283c50]">
+                  <p className="text-xs font-semibold text-[#0D1426]">
                     {order.rider.firstName} {order.rider.lastName}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Phone className="w-3 h-3 text-[#9ca3af]" />
-                    <span className="text-[11px] text-[#9ca3af]">{order.rider.phone}</span>
+                    <Phone className="w-3 h-3 text-[#9AA1B4]" />
+                    <span className="text-[11px] text-[#9AA1B4]">{order.rider.phone}</span>
                   </div>
                 </div>
               </div>
             </Section>
           ) : (
             <Section title="Assigned Driver">
-              <p className="text-xs text-[#9ca3af]">No driver assigned yet.</p>
+              <p className="text-xs text-[#9AA1B4]">No driver assigned yet.</p>
             </Section>
           )}
 
           {/* Payment */}
           <Section title="Payment">
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               <InfoRow label="Method" value={order.paymentMethod} />
               <InfoRow
                 label="Payment Status"
@@ -429,12 +429,12 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
                     className="text-[11px] font-medium rounded-full px-2 py-0.5"
                     style={
                       order.paymentStatus === 'PAID'
-                        ? { backgroundColor: '#e8faf2', color: '#17c666' }
+                        ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
                         : order.paymentStatus === 'REFUNDED'
-                        ? { backgroundColor: '#eef1fb', color: '#3454d1' }
+                        ? { backgroundColor: '#E7EEFF', color: '#1E5FFF' }
                         : order.paymentStatus === 'FAILED'
-                        ? { backgroundColor: '#fdf0f0', color: '#ea4d4d' }
-                        : { backgroundColor: '#fff6e8', color: '#ffa21d' }
+                        ? { backgroundColor: '#FFE3E1', color: '#FF3B30' }
+                        : { backgroundColor: '#FBEDD7', color: '#E8930C' }
                     }
                   >
                     {order.paymentStatus}
@@ -446,7 +446,7 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
 
           {/* Financials */}
           <Section title="Price Breakdown">
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               {order.subtotalKobo > 0 && (
                 <InfoRow label="Subtotal" value={formatNaira(order.subtotalKobo)} />
               )}
@@ -460,15 +460,15 @@ export default function TruckOrderDetailPage({ id }: { id: string }) {
                 <InfoRow label="Discount" value={`-${formatNaira(order.discountKobo)}`} />
               )}
               <div className="flex items-center justify-between pt-2 mt-1">
-                <span className="text-xs font-bold text-[#283c50]">Total</span>
-                <span className="text-sm font-bold text-[#3454d1]">{formatNaira(order.totalKobo)}</span>
+                <span className="text-xs font-bold text-[#0D1426]">Total</span>
+                <span className="text-sm font-bold text-[#1E5FFF]">{formatNaira(order.totalKobo)}</span>
               </div>
             </div>
           </Section>
 
           {/* Meta */}
           <Section title="Order Info">
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               <InfoRow label="Order ID" value={<span className="font-mono text-[11px]">{order.id.slice(0, 8)}…</span>} />
               <InfoRow label="Created" value={formatDateTime(order.createdAt)} />
               <InfoRow label="Updated" value={formatDateTime(order.updatedAt)} />

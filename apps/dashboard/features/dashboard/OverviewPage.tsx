@@ -17,8 +17,8 @@ export default function OverviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-[#283c50] leading-tight">Overview</h1>
-          <p className="text-xs text-[#9ca3af] mt-0.5">
+          <h1 className="text-lg font-bold text-[#0D1426] leading-tight">Overview</h1>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">
             {new Date().toLocaleDateString('en-NG', {
               weekday: 'long',
               day: 'numeric',
@@ -29,8 +29,8 @@ export default function OverviewPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 text-xs text-[#6b7885] bg-white border border-[#e5e7eb] rounded px-3 py-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#17c666] animate-pulse" />
+          <span className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#1DB980] animate-pulse" />
             Live data
           </span>
           <button className="btn-primary rounded flex items-center gap-1.5">
@@ -50,8 +50,8 @@ export default function OverviewPage() {
           trend={8}
           trendLabel="vs yesterday"
           icon={ShoppingBag}
-          iconColor="#3454d1"
-          iconBg="#eef1fb"
+          iconColor="#1E5FFF"
+          iconBg="#E7EEFF"
           delay={0}
         />
         <StatsCard
@@ -62,8 +62,8 @@ export default function OverviewPage() {
           trend={4}
           trendLabel="vs yesterday"
           icon={Bike}
-          iconColor="#17c666"
-          iconBg="#e8faf2"
+          iconColor="#1DB980"
+          iconBg="#DFF5EC"
           delay={100}
         />
         <StatsCard
@@ -73,8 +73,8 @@ export default function OverviewPage() {
           trend={12}
           trendLabel="vs yesterday"
           icon={TrendingUp}
-          iconColor="#ffa21d"
-          iconBg="#fff6e8"
+          iconColor="#E8930C"
+          iconBg="#FBEDD7"
           delay={200}
         />
         <StatsCard
@@ -85,8 +85,8 @@ export default function OverviewPage() {
           trend={-2}
           trendLabel="vs yesterday"
           icon={AlertTriangle}
-          iconColor="#ea4d4d"
-          iconBg="#fdf0f0"
+          iconColor="#FF3B30"
+          iconBg="#FFE3E1"
           delay={300}
         />
       </div>
@@ -106,7 +106,7 @@ export default function OverviewPage() {
           current={22}
           total={35}
           data={sparklineCompleted}
-          color="#3dc7be"
+          color="#FF6A2C"
           gradientId="grad-completed"
           delay={0}
         />
@@ -115,7 +115,7 @@ export default function OverviewPage() {
           current={5}
           total={20}
           data={sparklineNew}
-          color="#3454d1"
+          color="#1E5FFF"
           gradientId="grad-new"
           delay={100}
         />
@@ -124,7 +124,7 @@ export default function OverviewPage() {
           current={20}
           total={30}
           data={sparklineRider}
-          color="#ea4d4d"
+          color="#FF3B30"
           gradientId="grad-rider"
           delay={200}
         />

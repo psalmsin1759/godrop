@@ -85,16 +85,16 @@ function Field({ label, required, children, hint }: {
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#283c50] mb-1.5">
-        {label}{required && <span className="text-[#ea4d4d] ml-0.5">*</span>}
+      <label className="block text-xs font-semibold text-[#0D1426] mb-1.5">
+        {label}{required && <span className="text-[#FF3B30] ml-0.5">*</span>}
       </label>
       {children}
-      {hint && <p className="text-[11px] text-[#9ca3af] mt-1">{hint}</p>}
+      {hint && <p className="text-[11px] text-[#9AA1B4] mt-1">{hint}</p>}
     </div>
   )
 }
 
-const inputCls = 'w-full px-3.5 py-2.5 text-sm rounded-lg border border-[#e5e7eb] bg-white text-[#283c50] placeholder:text-[#c4c9cf] focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1] transition-all'
+const inputCls = 'w-full px-3.5 py-2.5 text-sm rounded-lg border border-[#E7EAF1] bg-white text-[#0D1426] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF] transition-all'
 
 // ─── File upload drop zone ────────────────────────────────────
 
@@ -132,20 +132,20 @@ function FileDropZone({
 
   return (
     <div>
-      <p className="text-xs font-semibold text-[#283c50] mb-1.5">{label} <span className="text-[#ea4d4d]">*</span></p>
+      <p className="text-xs font-semibold text-[#0D1426] mb-1.5">{label} <span className="text-[#FF3B30]">*</span></p>
       {value ? (
-        <div className="flex items-center gap-3 p-3 rounded-lg border border-[#3454d1] bg-[#eef1fb]">
-          <div className="w-8 h-8 rounded-lg bg-[#3454d1] flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-3 p-3 rounded-lg border border-[#1E5FFF] bg-[#E7EEFF]">
+          <div className="w-8 h-8 rounded-lg bg-[#1E5FFF] flex items-center justify-center shrink-0">
             <FileText className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-[#283c50] truncate">{value.name}</p>
-            <p className="text-[11px] text-[#9ca3af]">{fmt(value.size)}</p>
+            <p className="text-xs font-semibold text-[#0D1426] truncate">{value.name}</p>
+            <p className="text-[11px] text-[#9AA1B4]">{fmt(value.size)}</p>
           </div>
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#e5e7eb] text-[#9ca3af] hover:text-[#283c50] transition-colors shrink-0"
+            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#E7EAF1] text-[#9AA1B4] hover:text-[#0D1426] transition-colors shrink-0"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -158,13 +158,13 @@ function FileDropZone({
           onDrop={onDrop}
           className="cursor-pointer rounded-lg border-2 border-dashed transition-all p-5 text-center"
           style={{
-            borderColor: dragging ? '#3454d1' : '#e5e7eb',
-            backgroundColor: dragging ? '#eef1fb' : '#fafafa',
+            borderColor: dragging ? '#1E5FFF' : '#E7EAF1',
+            backgroundColor: dragging ? '#E7EEFF' : '#F7F9FC',
           }}
         >
-          <Upload className="w-5 h-5 text-[#9ca3af] mx-auto mb-2" />
-          <p className="text-xs font-semibold text-[#283c50]">Drop file here or click to upload</p>
-          <p className="text-[11px] text-[#9ca3af] mt-1">{hint}</p>
+          <Upload className="w-5 h-5 text-[#9AA1B4] mx-auto mb-2" />
+          <p className="text-xs font-semibold text-[#0D1426]">Drop file here or click to upload</p>
+          <p className="text-[11px] text-[#9AA1B4] mt-1">{hint}</p>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={onFile} />
@@ -187,8 +187,8 @@ function StepBar({ current }: { current: number }) {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0"
                 style={{
-                  background: done ? '#17c666' : active ? '#3454d1' : '#f3f4f6',
-                  color: done || active ? '#fff' : '#9ca3af',
+                  background: done ? '#1DB980' : active ? '#1E5FFF' : '#EDF0F6',
+                  color: done || active ? '#fff' : '#9AA1B4',
                 }}
               >
                 {done
@@ -197,7 +197,7 @@ function StepBar({ current }: { current: number }) {
               </div>
               <p
                 className="text-[10px] font-semibold mt-1 whitespace-nowrap"
-                style={{ color: active ? '#3454d1' : done ? '#17c666' : '#9ca3af' }}
+                style={{ color: active ? '#1E5FFF' : done ? '#1DB980' : '#9AA1B4' }}
               >
                 {s.label}
               </p>
@@ -205,7 +205,7 @@ function StepBar({ current }: { current: number }) {
             {i < STEPS.length - 1 && (
               <div
                 className="flex-1 h-0.5 mx-1 mb-4 rounded-full transition-all"
-                style={{ background: done ? '#17c666' : '#e5e7eb' }}
+                style={{ background: done ? '#1DB980' : '#E7EAF1' }}
               />
             )}
           </div>
@@ -221,31 +221,31 @@ function SuccessScreen({ vendorName }: { vendorName: string }) {
   return (
     <div className="text-center py-6">
       <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg,#17c666,#0fa356)' }}>
+        style={{ background: 'linear-gradient(135deg,#1DB980,#1DB980)' }}>
         <CheckCircle2 className="w-10 h-10 text-white" />
       </div>
-      <h2 className="text-2xl font-bold text-[#283c50] mb-3">Application Submitted!</h2>
-      <p className="text-sm text-[#6b7885] mb-2 max-w-sm mx-auto leading-relaxed">
+      <h2 className="text-2xl font-bold text-[#0D1426] mb-3">Application Submitted!</h2>
+      <p className="text-sm text-[#525A72] mb-2 max-w-sm mx-auto leading-relaxed">
         Thank you for applying to join Godrop as a vendor. Your application for{' '}
-        <strong className="text-[#283c50]">{vendorName}</strong> has been received.
+        <strong className="text-[#0D1426]">{vendorName}</strong> has been received.
       </p>
-      <div className="inline-flex items-center gap-2 bg-[#fff7ed] border border-[#fed7aa] text-[#c2410c] text-xs font-semibold rounded-lg px-4 py-2.5 my-4">
+      <div className="inline-flex items-center gap-2 bg-[#FBEDD7] border border-[#F6D9A8] text-[#E0531A] text-xs font-semibold rounded-lg px-4 py-2.5 my-4">
         <AlertCircle className="w-4 h-4" />
         Our team will review your application within 1–2 business days
       </div>
-      <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-lg px-4 py-3 my-4 text-left max-w-sm mx-auto">
-        <p className="text-xs font-semibold text-[#1d4ed8] mb-1">You can get started now</p>
-        <p className="text-xs text-[#1d4ed8] leading-relaxed">
+      <div className="bg-[#E7EEFF] border border-[#C7D9FF] rounded-lg px-4 py-3 my-4 text-left max-w-sm mx-auto">
+        <p className="text-xs font-semibold text-[#0A3FD1] mb-1">You can get started now</p>
+        <p className="text-xs text-[#0A3FD1] leading-relaxed">
           Log in to your dashboard and start uploading your products or menu. They will only become
           visible to customers once your application is approved.
         </p>
       </div>
-      <p className="text-xs text-[#9ca3af] mb-8">
+      <p className="text-xs text-[#9AA1B4] mb-8">
         Check your email for a confirmation with next steps.
       </p>
       <Link
         href="/login"
-        className="inline-flex items-center gap-2 bg-[#3454d1] hover:bg-[#2a43a8] text-white text-sm font-bold px-6 py-3 rounded-lg transition-colors"
+        className="inline-flex items-center gap-2 bg-[#1E5FFF] hover:bg-[#0A3FD1] text-white text-sm font-bold px-6 py-3 rounded-lg transition-colors"
       >
         Log In to Dashboard <ArrowRight className="w-4 h-4" />
       </Link>
@@ -383,12 +383,12 @@ export default function VendorOnboardingPage() {
   // ── Render ─────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#f0f2f8' }}>
+    <div className="min-h-screen flex" style={{ background: '#EDF0F6' }}>
 
       {/* Left decorative panel (desktop only) */}
       <div
         className="hidden lg:flex lg:w-80 xl:w-96 flex-col justify-between p-10 shrink-0"
-        style={{ background: '#3454d1' }}
+        style={{ background: '#1E5FFF' }}
       >
         {/* Logo */}
         <div>
@@ -397,7 +397,7 @@ export default function VendorOnboardingPage() {
               <span className="text-white text-base font-bold tracking-tight">G</span>
             </div>
             <span className="text-xl font-bold text-white">
-              Go<span style={{ color: '#fde68a' }}>drop</span>
+              Go<span style={{ color: '#F6D9A8' }}>drop</span>
             </span>
           </div>
 
@@ -434,11 +434,11 @@ export default function VendorOnboardingPage() {
 
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-[#3454d1] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-[#1E5FFF] flex items-center justify-center">
               <span className="text-white text-sm font-bold">G</span>
             </div>
-            <span className="text-xl font-bold text-[#283c50]">
-              Go<span className="text-[#3454d1]">drop</span>
+            <span className="text-xl font-bold text-[#0D1426]">
+              Go<span className="text-[#1E5FFF]">drop</span>
             </span>
           </div>
 
@@ -450,8 +450,8 @@ export default function VendorOnboardingPage() {
             ) : (
               <>
                 <div className="mb-6">
-                  <h1 className="text-xl font-bold text-[#283c50]">Vendor Registration</h1>
-                  <p className="text-xs text-[#9ca3af] mt-1">
+                  <h1 className="text-xl font-bold text-[#0D1426]">Vendor Registration</h1>
+                  <p className="text-xs text-[#9AA1B4] mt-1">
                     Step {step} of {STEPS.length} — {STEPS[step - 1].label}
                   </p>
                 </div>
@@ -469,7 +469,7 @@ export default function VendorOnboardingPage() {
                         placeholder="e.g. Mama's Kitchen"
                         className={inputCls}
                       />
-                      {errors.name && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.name}</p>}
+                      {errors.name && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.name}</p>}
                     </Field>
 
                     <Field label="Business Type" required>
@@ -479,7 +479,7 @@ export default function VendorOnboardingPage() {
                           <option key={t.value} value={t.value}>{t.label}</option>
                         ))}
                       </select>
-                      {errors.type && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.type}</p>}
+                      {errors.type && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.type}</p>}
                     </Field>
 
                     <Field label="Description" hint="A short description of what you sell (optional)">
@@ -517,7 +517,7 @@ export default function VendorOnboardingPage() {
                         placeholder="14 Admiralty Way, Lekki Phase 1, Lagos"
                         className={inputCls}
                       />
-                      {errors.address && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.address}</p>}
+                      {errors.address && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.address}</p>}
                     </Field>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -530,7 +530,7 @@ export default function VendorOnboardingPage() {
                           placeholder="6.4314"
                           className={inputCls}
                         />
-                        {errors.lat && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.lat}</p>}
+                        {errors.lat && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.lat}</p>}
                       </Field>
                       <Field label="Longitude" required hint="Lagos: ~3.3 – 3.6">
                         <input
@@ -541,7 +541,7 @@ export default function VendorOnboardingPage() {
                           placeholder="3.4703"
                           className={inputCls}
                         />
-                        {errors.lng && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.lng}</p>}
+                        {errors.lng && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.lng}</p>}
                       </Field>
                     </div>
 
@@ -549,7 +549,7 @@ export default function VendorOnboardingPage() {
                       type="button"
                       onClick={useCurrentLocation}
                       disabled={geoLoading}
-                      className="flex items-center gap-1.5 text-xs text-[#3454d1] hover:underline font-medium disabled:opacity-50"
+                      className="flex items-center gap-1.5 text-xs text-[#1E5FFF] hover:underline font-medium disabled:opacity-50"
                     >
                       {geoLoading
                         ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Detecting…</>
@@ -558,7 +558,7 @@ export default function VendorOnboardingPage() {
 
                     <Field label="Business Phone" required hint="Must be a Nigerian number: +234XXXXXXXXXX">
                       <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B4]" />
                         <input
                           type="tel"
                           value={form.phone}
@@ -567,12 +567,12 @@ export default function VendorOnboardingPage() {
                           className={inputCls + ' pl-9'}
                         />
                       </div>
-                      {errors.phone && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.phone}</p>}
+                      {errors.phone && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.phone}</p>}
                     </Field>
 
                     <Field label="Business Email" required hint="This will be your login email">
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B4]" />
                         <input
                           type="email"
                           value={form.email}
@@ -581,7 +581,7 @@ export default function VendorOnboardingPage() {
                           className={inputCls + ' pl-9'}
                         />
                       </div>
-                      {errors.email && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.email}</p>}
+                      {errors.email && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.email}</p>}
                     </Field>
                   </div>
                 )}
@@ -589,7 +589,7 @@ export default function VendorOnboardingPage() {
                 {/* ── Step 3: Owner Account ── */}
                 {step === 3 && (
                   <div className="space-y-4">
-                    <div className="bg-[#eef1fb] rounded-lg px-4 py-3 text-xs text-[#3454d1] leading-relaxed">
+                    <div className="bg-[#E7EEFF] rounded-lg px-4 py-3 text-xs text-[#1E5FFF] leading-relaxed">
                       <strong>Owner Account</strong> — These details are for the business owner who will manage the store.
                     </div>
 
@@ -602,7 +602,7 @@ export default function VendorOnboardingPage() {
                           placeholder="Ada"
                           className={inputCls}
                         />
-                        {errors.ownerFirstName && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.ownerFirstName}</p>}
+                        {errors.ownerFirstName && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.ownerFirstName}</p>}
                       </Field>
                       <Field label="Last Name" required>
                         <input
@@ -612,7 +612,7 @@ export default function VendorOnboardingPage() {
                           placeholder="Okafor"
                           className={inputCls}
                         />
-                        {errors.ownerLastName && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.ownerLastName}</p>}
+                        {errors.ownerLastName && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.ownerLastName}</p>}
                       </Field>
                     </div>
 
@@ -628,13 +628,13 @@ export default function VendorOnboardingPage() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#6b7885]"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AA1B4] hover:text-[#525A72]"
                           tabIndex={-1}
                         >
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
-                      {errors.ownerPassword && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.ownerPassword}</p>}
+                      {errors.ownerPassword && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.ownerPassword}</p>}
                     </Field>
 
                     <Field label="Confirm Password" required>
@@ -649,13 +649,13 @@ export default function VendorOnboardingPage() {
                         <button
                           type="button"
                           onClick={() => setShowConfirm(!showConfirm)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#6b7885]"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AA1B4] hover:text-[#525A72]"
                           tabIndex={-1}
                         >
                           {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
-                      {errors.ownerPasswordConfirm && <p className="text-[11px] text-[#ea4d4d] mt-1">{errors.ownerPasswordConfirm}</p>}
+                      {errors.ownerPasswordConfirm && <p className="text-[11px] text-[#FF3B30] mt-1">{errors.ownerPasswordConfirm}</p>}
                     </Field>
                   </div>
                 )}
@@ -663,7 +663,7 @@ export default function VendorOnboardingPage() {
                 {/* ── Step 4: Documents ── */}
                 {step === 4 && (
                   <div className="space-y-5">
-                    <div className="bg-[#fffbeb] border border-[#fde68a] rounded-lg px-4 py-3 text-xs text-[#92400e] leading-relaxed">
+                    <div className="bg-[#FBEDD7] border border-[#F6D9A8] rounded-lg px-4 py-3 text-xs text-[#8A5A0A] leading-relaxed">
                       <strong>Required documents:</strong> We need to verify your business before it goes live.
                       Upload clear images (JPG/PNG) or PDF files — max 10 MB each.
                     </div>
@@ -675,7 +675,7 @@ export default function VendorOnboardingPage() {
                       onChange={(f) => setFile('businessRegistration', f)}
                     />
                     {errors.businessRegistration && (
-                      <p className="text-[11px] text-[#ea4d4d] -mt-3">{errors.businessRegistration}</p>
+                      <p className="text-[11px] text-[#FF3B30] -mt-3">{errors.businessRegistration}</p>
                     )}
 
                     <FileDropZone
@@ -685,7 +685,7 @@ export default function VendorOnboardingPage() {
                       onChange={(f) => setFile('governmentId', f)}
                     />
                     {errors.governmentId && (
-                      <p className="text-[11px] text-[#ea4d4d] -mt-3">{errors.governmentId}</p>
+                      <p className="text-[11px] text-[#FF3B30] -mt-3">{errors.governmentId}</p>
                     )}
 
                     <FileDropZone
@@ -695,11 +695,11 @@ export default function VendorOnboardingPage() {
                       onChange={(f) => setFile('utilityBill', f)}
                     />
                     {errors.utilityBill && (
-                      <p className="text-[11px] text-[#ea4d4d] -mt-3">{errors.utilityBill}</p>
+                      <p className="text-[11px] text-[#FF3B30] -mt-3">{errors.utilityBill}</p>
                     )}
 
                     {submitError && (
-                      <div className="flex items-start gap-2.5 text-xs text-[#ea4d4d] bg-[#fdf0f0] border border-[#fca5a5] rounded-lg px-4 py-3">
+                      <div className="flex items-start gap-2.5 text-xs text-[#FF3B30] bg-[#FFE3E1] border border-[#FFB3AD] rounded-lg px-4 py-3">
                         <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                         {submitError}
                       </div>
@@ -708,19 +708,19 @@ export default function VendorOnboardingPage() {
                 )}
 
                 {/* Navigation */}
-                <div className="flex items-center justify-between mt-8 pt-5 border-t border-[#f3f4f6]">
+                <div className="flex items-center justify-between mt-8 pt-5 border-t border-[#EDF0F6]">
                   {step > 1 ? (
                     <button
                       type="button"
                       onClick={back}
-                      className="flex items-center gap-1.5 text-sm font-semibold text-[#6b7885] hover:text-[#283c50] transition-colors"
+                      className="flex items-center gap-1.5 text-sm font-semibold text-[#525A72] hover:text-[#0D1426] transition-colors"
                     >
                       <ChevronLeft className="w-4 h-4" /> Back
                     </button>
                   ) : (
                     <Link
                       href="/login"
-                      className="text-sm font-semibold text-[#6b7885] hover:text-[#283c50] transition-colors"
+                      className="text-sm font-semibold text-[#525A72] hover:text-[#0D1426] transition-colors"
                     >
                       ← Back to Login
                     </Link>
@@ -730,7 +730,7 @@ export default function VendorOnboardingPage() {
                     <button
                       type="button"
                       onClick={next}
-                      className="flex items-center gap-2 bg-[#3454d1] hover:bg-[#2a43a8] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)]"
+                      className="flex items-center gap-2 bg-[#1E5FFF] hover:bg-[#0A3FD1] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)]"
                     >
                       Continue <ChevronRight className="w-4 h-4" />
                     </button>
@@ -739,7 +739,7 @@ export default function VendorOnboardingPage() {
                       type="button"
                       onClick={submit}
                       disabled={loading}
-                      className="flex items-center gap-2 bg-[#3454d1] hover:bg-[#2a43a8] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)] disabled:opacity-60"
+                      className="flex items-center gap-2 bg-[#1E5FFF] hover:bg-[#0A3FD1] text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-colors shadow-[0_4px_14px_rgba(52,84,209,0.25)] disabled:opacity-60"
                     >
                       {loading ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</>
@@ -755,9 +755,9 @@ export default function VendorOnboardingPage() {
 
           {/* Footer note */}
           {!done && (
-            <p className="text-center text-xs text-[#9ca3af] mt-5">
+            <p className="text-center text-xs text-[#9AA1B4] mt-5">
               Already have an account?{' '}
-              <Link href="/login" className="text-[#3454d1] font-semibold hover:underline">
+              <Link href="/login" className="text-[#1E5FFF] font-semibold hover:underline">
                 Log in
               </Link>
             </p>

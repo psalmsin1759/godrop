@@ -27,12 +27,12 @@ import {
 } from 'lucide-react'
 
 const roleConfig: Record<SystemAdminRole, { label: string; bg: string; text: string }> = {
-  SUPER_ADMIN: { label: 'Super Admin', bg: '#fdf0f0', text: '#ea4d4d' },
-  ADMIN:       { label: 'Admin',       bg: '#eef1fb', text: '#3454d1' },
+  SUPER_ADMIN: { label: 'Super Admin', bg: '#FFE3E1', text: '#FF3B30' },
+  ADMIN:       { label: 'Admin',       bg: '#E7EEFF', text: '#1E5FFF' },
 }
 
 function inputCls() {
-  return 'w-full text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] px-3 py-1.5 text-[#283c50] focus:outline-none focus:ring-1 focus:ring-[#3454d1]'
+  return 'w-full text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] px-3 py-1.5 text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]'
 }
 
 // ─── Create dialog ────────────────────────────────────────────────────────────
@@ -60,35 +60,35 @@ function CreateAdminDialog({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f3f4f6]">
-          <h2 className="text-sm font-bold text-[#283c50]">Add System Admin</h2>
-          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#f3f4f6]">
-            <X className="w-4 h-4 text-[#6b7885]" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDF0F6]">
+          <h2 className="text-sm font-bold text-[#0D1426]">Add System Admin</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#EDF0F6]">
+            <X className="w-4 h-4 text-[#525A72]" />
           </button>
         </div>
         <form onSubmit={submit} className="p-5 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-[#6b7885] mb-1">First Name *</label>
+              <label className="block text-[11px] font-medium text-[#525A72] mb-1">First Name *</label>
               <input required type="text" value={form.firstName}
                 onChange={(e) => set('firstName', e.target.value)}
                 className={inputCls()} />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-[#6b7885] mb-1">Last Name *</label>
+              <label className="block text-[11px] font-medium text-[#525A72] mb-1">Last Name *</label>
               <input required type="text" value={form.lastName}
                 onChange={(e) => set('lastName', e.target.value)}
                 className={inputCls()} />
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-[#6b7885] mb-1">Email *</label>
+            <label className="block text-[11px] font-medium text-[#525A72] mb-1">Email *</label>
             <input required type="email" value={form.email}
               onChange={(e) => set('email', e.target.value)}
               className={inputCls()} />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-[#6b7885] mb-1">Role</label>
+            <label className="block text-[11px] font-medium text-[#525A72] mb-1">Role</label>
             <select value={form.role} onChange={(e) => set('role', e.target.value as SystemAdminRole)}
               className={inputCls()}>
               <option value="ADMIN">Admin</option>
@@ -96,11 +96,11 @@ function CreateAdminDialog({ onClose }: { onClose: () => void }) {
             </select>
           </div>
 
-          {error && <p className="text-[11px] text-[#ea4d4d]">{error}</p>}
+          {error && <p className="text-[11px] text-[#FF3B30]">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="text-xs px-4 py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+              className="text-xs px-4 py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]">
               Cancel
             </button>
             <button type="submit" disabled={isLoading}
@@ -141,29 +141,29 @@ function EditAdminDialog({ admin, onClose }: { admin: AdminUser; onClose: () => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f3f4f6]">
-          <h2 className="text-sm font-bold text-[#283c50]">Edit Admin</h2>
-          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#f3f4f6]">
-            <X className="w-4 h-4 text-[#6b7885]" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDF0F6]">
+          <h2 className="text-sm font-bold text-[#0D1426]">Edit Admin</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#EDF0F6]">
+            <X className="w-4 h-4 text-[#525A72]" />
           </button>
         </div>
         <form onSubmit={submit} className="p-5 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-[#6b7885] mb-1">First Name</label>
+              <label className="block text-[11px] font-medium text-[#525A72] mb-1">First Name</label>
               <input type="text" value={form.firstName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
                 className={inputCls()} />
             </div>
             <div>
-              <label className="block text-[11px] font-medium text-[#6b7885] mb-1">Last Name</label>
+              <label className="block text-[11px] font-medium text-[#525A72] mb-1">Last Name</label>
               <input type="text" value={form.lastName ?? ''}
                 onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
                 className={inputCls()} />
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-[#6b7885] mb-1">Role</label>
+            <label className="block text-[11px] font-medium text-[#525A72] mb-1">Role</label>
             <select value={form.role ?? 'ADMIN'}
               onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as SystemAdminRole }))}
               className={inputCls()}>
@@ -172,7 +172,7 @@ function EditAdminDialog({ admin, onClose }: { admin: AdminUser; onClose: () => 
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-[#6b7885] mb-2">Account Status</label>
+            <label className="block text-[11px] font-medium text-[#525A72] mb-2">Account Status</label>
             <div className="flex items-center gap-3">
               {(['active', 'inactive'] as const).map((opt) => (
                 <button
@@ -183,9 +183,9 @@ function EditAdminDialog({ admin, onClose }: { admin: AdminUser; onClose: () => 
                   style={
                     (opt === 'active') === form.isActive
                       ? opt === 'active'
-                        ? { backgroundColor: '#e8faf2', borderColor: '#17c666', color: '#17c666' }
-                        : { backgroundColor: '#fdf0f0', borderColor: '#ea4d4d', color: '#ea4d4d' }
-                      : { backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' }
+                        ? { backgroundColor: '#DFF5EC', borderColor: '#1DB980', color: '#1DB980' }
+                        : { backgroundColor: '#FFE3E1', borderColor: '#FF3B30', color: '#FF3B30' }
+                      : { backgroundColor: '#F7F9FC', borderColor: '#E7EAF1', color: '#9AA1B4' }
                   }
                 >
                   {opt === 'active' ? 'Active' : 'Inactive'}
@@ -194,11 +194,11 @@ function EditAdminDialog({ admin, onClose }: { admin: AdminUser; onClose: () => 
             </div>
           </div>
 
-          {error && <p className="text-[11px] text-[#ea4d4d]">{error}</p>}
+          {error && <p className="text-[11px] text-[#FF3B30]">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="text-xs px-4 py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+              className="text-xs px-4 py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]">
               Cancel
             </button>
             <button type="submit" disabled={isLoading}
@@ -248,22 +248,22 @@ function EmailPrefsDialog({ admin, onClose }: { admin: AdminUser; onClose: () =>
     onChange: (v: boolean) => void
   }) {
     return (
-      <div className="flex items-center justify-between py-3 border-b border-[#f3f4f6] last:border-0">
+      <div className="flex items-center justify-between py-3 border-b border-[#EDF0F6] last:border-0">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: value ? '#fff7ed' : '#f3f4f6', color: value ? '#f97316' : '#9ca3af' }}>
+            style={{ backgroundColor: value ? '#FBEDD7' : '#EDF0F6', color: value ? '#FF6A2C' : '#9AA1B4' }}>
             {icon}
           </div>
           <div>
-            <p className="text-xs font-semibold text-[#283c50]">{label}</p>
-            <p className="text-[11px] text-[#9ca3af] mt-0.5">{description}</p>
+            <p className="text-xs font-semibold text-[#0D1426]">{label}</p>
+            <p className="text-[11px] text-[#9AA1B4] mt-0.5">{description}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => onChange(!value)}
           className="relative w-10 h-5 rounded-full transition-colors shrink-0 ml-4"
-          style={{ backgroundColor: value ? '#f97316' : '#d1d5db' }}
+          style={{ backgroundColor: value ? '#FF6A2C' : '#DDE2EC' }}
         >
           <span
             className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
@@ -277,18 +277,18 @@ function EmailPrefsDialog({ admin, onClose }: { admin: AdminUser; onClose: () =>
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#f3f4f6]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#EDF0F6]">
           <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-[#f97316]" />
-            <h2 className="text-sm font-bold text-[#283c50]">Email Notifications</h2>
+            <Bell className="w-4 h-4 text-[#FF6A2C]" />
+            <h2 className="text-sm font-bold text-[#0D1426]">Email Notifications</h2>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#f3f4f6]">
-            <X className="w-4 h-4 text-[#6b7885]" />
+          <button onClick={onClose} className="w-7 h-7 rounded flex items-center justify-center hover:bg-[#EDF0F6]">
+            <X className="w-4 h-4 text-[#525A72]" />
           </button>
         </div>
         <form onSubmit={submit} className="p-5">
-          <p className="text-xs text-[#6b7885] mb-4">
-            Choose which email alerts <strong className="text-[#283c50]">{admin.firstName} {admin.lastName}</strong> receives.
+          <p className="text-xs text-[#525A72] mb-4">
+            Choose which email alerts <strong className="text-[#0D1426]">{admin.firstName} {admin.lastName}</strong> receives.
           </p>
           <div>
             <ToggleRow
@@ -307,11 +307,11 @@ function EmailPrefsDialog({ admin, onClose }: { admin: AdminUser; onClose: () =>
             />
           </div>
 
-          {error && <p className="text-[11px] text-[#ea4d4d] mt-3">{error}</p>}
+          {error && <p className="text-[11px] text-[#FF3B30] mt-3">{error}</p>}
 
           <div className="flex justify-end gap-2 mt-5">
             <button type="button" onClick={onClose}
-              className="text-xs px-4 py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+              className="text-xs px-4 py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]">
               Cancel
             </button>
             <button type="submit" disabled={isLoading}
@@ -349,26 +349,26 @@ function AdminActionMenu({
   }
 
   return (
-    <div className="absolute right-0 top-8 z-50 w-48 bg-white rounded-lg border border-[#e5e7eb] shadow-card-md py-1">
+    <div className="absolute right-0 top-8 z-50 w-48 bg-white rounded-lg border border-[#E7EAF1] shadow-card-md py-1">
       <button
         onClick={() => { onEdit(); onClose() }}
-        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#283c50] hover:bg-[#f9fafb]"
+        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#0D1426] hover:bg-[#F7F9FC]"
       >
-        <Edit3 className="w-3.5 h-3.5 text-[#3454d1]" /> Edit Admin
+        <Edit3 className="w-3.5 h-3.5 text-[#1E5FFF]" /> Edit Admin
       </button>
       <button
         onClick={() => { onEmailPrefs(); onClose() }}
-        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#283c50] hover:bg-[#f9fafb]"
+        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#0D1426] hover:bg-[#F7F9FC]"
       >
-        <Bell className="w-3.5 h-3.5 text-[#f97316]" /> Email Notifications
+        <Bell className="w-3.5 h-3.5 text-[#FF6A2C]" /> Email Notifications
       </button>
       {!isSelf && (
-        <div className="border-t border-[#f3f4f6] mt-1">
+        <div className="border-t border-[#EDF0F6] mt-1">
           <button
             onClick={toggleActive}
             disabled={isLoading}
-            className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-[#f9fafb] disabled:opacity-50"
-            style={{ color: admin.isActive ? '#ea4d4d' : '#17c666' }}
+            className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-[#F7F9FC] disabled:opacity-50"
+            style={{ color: admin.isActive ? '#FF3B30' : '#1DB980' }}
           >
             <Power className="w-3.5 h-3.5" />
             {admin.isActive ? 'Deactivate' : 'Activate'}
@@ -383,19 +383,19 @@ function AdminActionMenu({
 
 function NotifBadges({ admin }: { admin: AdminUser }) {
   if (!admin.receiveVendorEmails && !admin.receiveRiderEmails) {
-    return <span className="text-[10px] text-[#d1d5db]">—</span>
+    return <span className="text-[10px] text-[#DDE2EC]">—</span>
   }
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {admin.receiveVendorEmails && (
         <span className="inline-flex items-center gap-0.5 text-[10px] font-medium rounded-full px-1.5 py-0.5"
-          style={{ backgroundColor: '#fff7ed', color: '#ea580c' }}>
+          style={{ backgroundColor: '#FBEDD7', color: '#FF6A2C' }}>
           <Store className="w-2.5 h-2.5" /> Vendor
         </span>
       )}
       {admin.receiveRiderEmails && (
         <span className="inline-flex items-center gap-0.5 text-[10px] font-medium rounded-full px-1.5 py-0.5"
-          style={{ backgroundColor: '#f0fdf4', color: '#16a34a' }}>
+          style={{ backgroundColor: '#DFF5EC', color: '#0E8E60' }}>
           <Bike className="w-2.5 h-2.5" /> Rider
         </span>
       )}
@@ -429,8 +429,8 @@ export default function AdminsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-[#283c50]">System Admins</h1>
-          <p className="text-xs text-[#9ca3af] mt-0.5">Manage admin accounts, access levels, and email notifications</p>
+          <h1 className="text-lg font-bold text-[#0D1426]">System Admins</h1>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">Manage admin accounts, access levels, and email notifications</p>
         </div>
         {isSuperAdmin && (
           <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-1.5">
@@ -440,7 +440,7 @@ export default function AdminsPage() {
       </div>
 
       {!isSuperAdmin && (
-        <div className="text-xs text-[#f59e0b] bg-[#fffbeb] border border-[#fde68a] rounded px-4 py-2.5">
+        <div className="text-xs text-[#E8930C] bg-[#FBEDD7] border border-[#F6D9A8] rounded px-4 py-2.5">
           <strong>Super Admin</strong> role required to create or modify admin accounts.
         </div>
       )}
@@ -448,10 +448,10 @@ export default function AdminsPage() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: 'Total Admins', value: total, icon: <Users className="w-4 h-4" />, color: '#3454d1', bg: '#eef1fb' },
-          { label: 'Active', value: activeCount, icon: <UserCheck className="w-4 h-4" />, color: '#17c666', bg: '#e8faf2' },
-          { label: 'Super Admins', value: superAdminCount, icon: <Shield className="w-4 h-4" />, color: '#ea4d4d', bg: '#fdf0f0' },
-          { label: 'Get Notified', value: notifCount, icon: <Bell className="w-4 h-4" />, color: '#f97316', bg: '#fff7ed' },
+          { label: 'Total Admins', value: total, icon: <Users className="w-4 h-4" />, color: '#1E5FFF', bg: '#E7EEFF' },
+          { label: 'Active', value: activeCount, icon: <UserCheck className="w-4 h-4" />, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Super Admins', value: superAdminCount, icon: <Shield className="w-4 h-4" />, color: '#FF3B30', bg: '#FFE3E1' },
+          { label: 'Get Notified', value: notifCount, icon: <Bell className="w-4 h-4" />, color: '#FF6A2C', bg: '#FBEDD7' },
         ].map((s) => (
           <div key={s.label} className="card p-4 flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -459,8 +459,8 @@ export default function AdminsPage() {
               {s.icon}
             </div>
             <div>
-              <p className="text-[11px] text-[#9ca3af] font-medium">{s.label}</p>
-              <p className="text-lg font-bold text-[#283c50] leading-tight">{s.value}</p>
+              <p className="text-[11px] text-[#9AA1B4] font-medium">{s.label}</p>
+              <p className="text-lg font-bold text-[#0D1426] leading-tight">{s.value}</p>
             </div>
           </div>
         ))}
@@ -469,49 +469,49 @@ export default function AdminsPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9ca3af]">
+          <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9AA1B4]">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading admins…
           </div>
         ) : isError ? (
-          <div className="text-center py-16 text-xs text-[#ea4d4d]">Failed to load admins.</div>
+          <div className="text-center py-16 text-xs text-[#FF3B30]">Failed to load admins.</div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                  <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                     {['Admin', 'Email', 'Role', 'Status', 'Notifications', 'Joined', ''].map((h) => (
-                      <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
+                      <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f9fafb]">
+                <tbody className="divide-y divide-[#F7F9FC]">
                   {admins.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-10 text-xs text-[#9ca3af]">No admins found.</td>
+                      <td colSpan={7} className="text-center py-10 text-xs text-[#9AA1B4]">No admins found.</td>
                     </tr>
                   ) : (
                     admins.map((admin) => {
                       const rc = roleConfig[admin.role as SystemAdminRole] ?? roleConfig.ADMIN
                       const isSelf = session?.admin?.email === admin.email
                       return (
-                        <tr key={admin.id} className="hover:bg-[#fafafa] transition-colors" onClick={(e) => e.stopPropagation()}>
+                        <tr key={admin.id} className="hover:bg-[#F7F9FC] transition-colors" onClick={(e) => e.stopPropagation()}>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                                style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}>
+                                style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}>
                                 {admin.firstName[0]}{admin.lastName[0]}
                               </div>
                               <div>
-                                <p className="text-xs font-semibold text-[#283c50]">{admin.firstName} {admin.lastName}</p>
-                                {isSelf && <span className="text-[10px] font-medium text-[#3454d1]">You</span>}
+                                <p className="text-xs font-semibold text-[#0D1426]">{admin.firstName} {admin.lastName}</p>
+                                {isSelf && <span className="text-[10px] font-medium text-[#1E5FFF]">You</span>}
                               </div>
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-xs text-[#4b5563]">{admin.email}</span>
+                            <span className="text-xs text-[#525A72]">{admin.email}</span>
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-[11px] font-medium rounded-full px-2 py-0.5"
@@ -522,8 +522,8 @@ export default function AdminsPage() {
                           <td className="px-4 py-3">
                             <span className="text-[11px] font-medium rounded-full px-2 py-0.5"
                               style={admin.isActive
-                                ? { backgroundColor: '#e8faf2', color: '#17c666' }
-                                : { backgroundColor: '#f3f4f6', color: '#9ca3af' }}>
+                                ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
+                                : { backgroundColor: '#EDF0F6', color: '#9AA1B4' }}>
                               {admin.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </td>
@@ -531,7 +531,7 @@ export default function AdminsPage() {
                             <NotifBadges admin={admin} />
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-[11px] text-[#9ca3af]">
+                            <span className="text-[11px] text-[#9AA1B4]">
                               {new Date(admin.createdAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </span>
                           </td>
@@ -540,9 +540,9 @@ export default function AdminsPage() {
                               <div className="relative" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => setOpenMenu(openMenu === admin.id ? null : admin.id)}
-                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#EDF0F6] transition-colors"
                                 >
-                                  <MoreHorizontal className="w-3.5 h-3.5 text-[#9ca3af]" />
+                                  <MoreHorizontal className="w-3.5 h-3.5 text-[#9AA1B4]" />
                                 </button>
                                 {openMenu === admin.id && (
                                   <AdminActionMenu
@@ -565,18 +565,18 @@ export default function AdminsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="px-4 py-3 border-t border-[#f3f4f6] flex items-center justify-between">
-              <p className="text-xs text-[#9ca3af]">
+            <div className="px-4 py-3 border-t border-[#EDF0F6] flex items-center justify-between">
+              <p className="text-xs text-[#9AA1B4]">
                 {total === 0 ? 'No admins' : `Page ${page} of ${totalPages} · ${total} total`}
               </p>
               <div className="flex items-center gap-1">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
-                  className="w-7 h-7 rounded flex items-center justify-center border border-[#e5e7eb] disabled:opacity-40 hover:bg-[#f9fafb]">
-                  <ChevronLeft className="w-3.5 h-3.5 text-[#6b7885]" />
+                  className="w-7 h-7 rounded flex items-center justify-center border border-[#E7EAF1] disabled:opacity-40 hover:bg-[#F7F9FC]">
+                  <ChevronLeft className="w-3.5 h-3.5 text-[#525A72]" />
                 </button>
                 <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-                  className="w-7 h-7 rounded flex items-center justify-center border border-[#e5e7eb] disabled:opacity-40 hover:bg-[#f9fafb]">
-                  <ChevronRight className="w-3.5 h-3.5 text-[#6b7885]" />
+                  className="w-7 h-7 rounded flex items-center justify-center border border-[#E7EAF1] disabled:opacity-40 hover:bg-[#F7F9FC]">
+                  <ChevronRight className="w-3.5 h-3.5 text-[#525A72]" />
                 </button>
               </div>
             </div>

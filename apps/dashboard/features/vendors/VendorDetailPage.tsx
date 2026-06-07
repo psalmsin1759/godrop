@@ -12,10 +12,10 @@ import {
 import { useState } from 'react'
 
 const withdrawalStatusConfig: Record<VendorWithdrawal['status'], { bg: string; text: string; label: string }> = {
-  PENDING:    { bg: '#fff6e8', text: '#ffa21d', label: 'Pending' },
-  PROCESSING: { bg: '#eef1fb', text: '#3454d1', label: 'Processing' },
-  COMPLETED:  { bg: '#e8faf2', text: '#17c666', label: 'Completed' },
-  FAILED:     { bg: '#fdf0f0', text: '#ea4d4d', label: 'Failed' },
+  PENDING:    { bg: '#FBEDD7', text: '#E8930C', label: 'Pending' },
+  PROCESSING: { bg: '#E7EEFF', text: '#1E5FFF', label: 'Processing' },
+  COMPLETED:  { bg: '#DFF5EC', text: '#1DB980', label: 'Completed' },
+  FAILED:     { bg: '#FFE3E1', text: '#FF3B30', label: 'Failed' },
 }
 
 function WithdrawalsSection({ vendorId }: { vendorId: string }) {
@@ -27,33 +27,33 @@ function WithdrawalsSection({ vendorId }: { vendorId: string }) {
     <div className="card overflow-hidden">
       <div className="card-header flex items-center justify-between">
         <h3 className="card-title flex items-center gap-1.5">
-          <Wallet className="w-3.5 h-3.5 text-[#9ca3af]" /> Wallet &amp; Withdrawals
+          <Wallet className="w-3.5 h-3.5 text-[#9AA1B4]" /> Wallet &amp; Withdrawals
         </h3>
         {walletData && (
-          <span className="text-xs font-semibold text-[#17c666]">
+          <span className="text-xs font-semibold text-[#1DB980]">
             Balance: {formatNaira(walletData.balanceKobo)}
           </span>
         )}
       </div>
       {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-4 h-4 animate-spin text-[#9ca3af]" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="w-4 h-4 animate-spin text-[#9AA1B4]" /></div>
       ) : withdrawals.length === 0 ? (
-        <p className="text-xs text-[#9ca3af] px-4 py-6 text-center">No withdrawal requests yet</p>
+        <p className="text-xs text-[#9AA1B4] px-4 py-6 text-center">No withdrawal requests yet</p>
       ) : (
-        <div className="divide-y divide-[#f9fafb]">
+        <div className="divide-y divide-[#F7F9FC]">
           {withdrawals.map((w) => {
             const s = withdrawalStatusConfig[w.status]
             return (
               <div key={w.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#fdf0f0] shrink-0">
-                  <ArrowUpRight className="w-4 h-4 text-[#ea4d4d]" />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#FFE3E1] shrink-0">
+                  <ArrowUpRight className="w-4 h-4 text-[#FF3B30]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-[#283c50]">{formatNaira(w.amountKobo)}</p>
-                  <p className="text-[11px] text-[#9ca3af] truncate">
+                  <p className="text-xs font-semibold text-[#0D1426]">{formatNaira(w.amountKobo)}</p>
+                  <p className="text-[11px] text-[#9AA1B4] truncate">
                     {w.accountName} · {w.bankName} ···{w.accountNumber.slice(-4)}
                   </p>
-                  <p className="text-[11px] text-[#9ca3af]">{formatDateTime(w.createdAt)}</p>
+                  <p className="text-[11px] text-[#9AA1B4]">{formatDateTime(w.createdAt)}</p>
                 </div>
                 <span
                   className="text-[11px] font-semibold rounded-full px-2.5 py-0.5 shrink-0"
@@ -71,17 +71,17 @@ function WithdrawalsSection({ vendorId }: { vendorId: string }) {
 }
 
 const statusConfig: Record<VendorStatus, { bg: string; text: string; label: string }> = {
-  APPROVED:  { bg: '#e8faf2', text: '#17c666', label: 'Approved' },
-  PENDING:   { bg: '#fff6e8', text: '#ffa21d', label: 'Pending Review' },
-  REJECTED:  { bg: '#fdf0f0', text: '#ea4d4d', label: 'Rejected' },
-  SUSPENDED: { bg: '#f3f4f6', text: '#6b7885', label: 'Suspended' },
+  APPROVED:  { bg: '#DFF5EC', text: '#1DB980', label: 'Approved' },
+  PENDING:   { bg: '#FBEDD7', text: '#E8930C', label: 'Pending Review' },
+  REJECTED:  { bg: '#FFE3E1', text: '#FF3B30', label: 'Rejected' },
+  SUSPENDED: { bg: '#EDF0F6', text: '#525A72', label: 'Suspended' },
 }
 
 const typeColors: Record<string, string> = {
-  RESTAURANT: '#3454d1',
-  GROCERY:    '#17c666',
-  RETAIL:     '#ffa21d',
-  PHARMACY:   '#3dc7be',
+  RESTAURANT: '#1E5FFF',
+  GROCERY:    '#1DB980',
+  RETAIL:     '#E8930C',
+  PHARMACY:   '#FF6A2C',
 }
 
 const DAY_LABELS: Record<string, string> = {
@@ -105,17 +105,17 @@ function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="bg-white rounded-xl shadow-xl w-80 p-5 space-y-4">
-        <h3 className="text-sm font-bold text-[#283c50]">{title}</h3>
+        <h3 className="text-sm font-bold text-[#0D1426]">{title}</h3>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder={placeholder}
-          className="w-full text-xs border border-[#e5e7eb] rounded-lg p-3 resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#3454d1]"
+          className="w-full text-xs border border-[#E7EAF1] rounded-lg p-3 resize-none h-24 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]"
         />
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 text-xs py-2 rounded-lg border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]"
+            className="flex-1 text-xs py-2 rounded-lg border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]"
           >
             Cancel
           </button>
@@ -165,7 +165,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#3454d1]" />
+        <Loader2 className="w-6 h-6 animate-spin text-[#1E5FFF]" />
       </div>
     )
   }
@@ -173,8 +173,8 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
   if (isError || !vendor) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-sm text-[#ea4d4d]">Failed to load vendor.</p>
-        <button onClick={() => router.back()} className="text-xs text-[#3454d1] hover:underline">
+        <p className="text-sm text-[#FF3B30]">Failed to load vendor.</p>
+        <button onClick={() => router.back()} className="text-xs text-[#1E5FFF] hover:underline">
           Go back
         </button>
       </div>
@@ -182,7 +182,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
   }
 
   const status = statusConfig[vendor.status]
-  const typeColor = typeColors[vendor.type] ?? '#9ca3af'
+  const typeColor = typeColors[vendor.type] ?? '#9AA1B4'
   const typeLabel = vendor.type.charAt(0) + vendor.type.slice(1).toLowerCase()
 
   return (
@@ -193,7 +193,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
           placeholder="Reason for rejection (required)…"
           required
           confirmLabel="Reject"
-          confirmColor="#ea4d4d"
+          confirmColor="#FF3B30"
           onConfirm={handleReject}
           onCancel={() => setDialog(null)}
           loading={rejecting}
@@ -205,7 +205,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
           placeholder="Reason for suspension (optional)…"
           required={false}
           confirmLabel="Suspend"
-          confirmColor="#ffa21d"
+          confirmColor="#E8930C"
           onConfirm={handleSuspend}
           onCancel={() => setDialog(null)}
           loading={suspending}
@@ -217,13 +217,13 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
         <div className="flex items-start gap-4">
           <button
             onClick={() => router.back()}
-            className="mt-0.5 w-8 h-8 flex items-center justify-center rounded-lg border border-[#e5e7eb] hover:bg-[#f3f4f6] transition-colors shrink-0"
+            className="mt-0.5 w-8 h-8 flex items-center justify-center rounded-lg border border-[#E7EAF1] hover:bg-[#EDF0F6] transition-colors shrink-0"
           >
-            <ArrowLeft className="w-4 h-4 text-[#4b5563]" />
+            <ArrowLeft className="w-4 h-4 text-[#525A72]" />
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-lg font-bold text-[#283c50]">{vendor.name}</h1>
+              <h1 className="text-lg font-bold text-[#0D1426]">{vendor.name}</h1>
               <span className="text-[11px] font-semibold rounded-full px-2.5 py-0.5" style={{ backgroundColor: status.bg, color: status.text }}>
                 {status.label}
               </span>
@@ -231,14 +231,14 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                 <span
                   className="text-[11px] font-semibold rounded-full px-2.5 py-0.5"
                   style={vendor.isOpen
-                    ? { backgroundColor: '#e8faf2', color: '#17c666' }
-                    : { backgroundColor: '#f3f4f6', color: '#6b7885' }}
+                    ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
+                    : { backgroundColor: '#EDF0F6', color: '#525A72' }}
                 >
                   {vendor.isOpen ? 'Open' : 'Closed'}
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#9ca3af] mt-0.5">
+            <p className="text-xs text-[#9AA1B4] mt-0.5">
               <span className="font-medium" style={{ color: typeColor }}>{typeLabel}</span>
               {' · '}Joined {formatDate(vendor.createdAt)}
             </p>
@@ -252,7 +252,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                   onClick={handleApprove}
                   disabled={actionLoading}
                   className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-                  style={{ backgroundColor: '#17c666' }}
+                  style={{ backgroundColor: '#1DB980' }}
                 >
                   {approving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                   Approve
@@ -261,7 +261,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                   onClick={() => setDialog('reject')}
                   disabled={actionLoading}
                   className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-                  style={{ backgroundColor: '#ea4d4d' }}
+                  style={{ backgroundColor: '#FF3B30' }}
                 >
                   <XCircle className="w-3.5 h-3.5" /> Reject
                 </button>
@@ -272,7 +272,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                 onClick={() => setDialog('suspend')}
                 disabled={actionLoading}
                 className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-                style={{ backgroundColor: '#ffa21d' }}
+                style={{ backgroundColor: '#E8930C' }}
               >
                 <PauseCircle className="w-3.5 h-3.5" /> Suspend
               </button>
@@ -282,7 +282,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                 onClick={handleReinstate}
                 disabled={actionLoading}
                 className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-                style={{ backgroundColor: '#3454d1' }}
+                style={{ backgroundColor: '#1E5FFF' }}
               >
                 {reinstating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                 Reinstate
@@ -294,28 +294,28 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Contact info */}
           <div className="card p-4 space-y-3">
-            <h2 className="text-xs font-bold text-[#283c50] uppercase tracking-wide">Contact</h2>
+            <h2 className="text-xs font-bold text-[#0D1426] uppercase tracking-wide">Contact</h2>
             <div className="space-y-2.5">
               <div className="flex items-start gap-2.5">
-                <Mail className="w-4 h-4 text-[#9ca3af] mt-0.5 shrink-0" />
+                <Mail className="w-4 h-4 text-[#9AA1B4] mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-[11px] text-[#9ca3af]">Email</p>
-                  <p className="text-xs font-medium text-[#283c50]">{vendor.email}</p>
+                  <p className="text-[11px] text-[#9AA1B4]">Email</p>
+                  <p className="text-xs font-medium text-[#0D1426]">{vendor.email}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
-                <Phone className="w-4 h-4 text-[#9ca3af] mt-0.5 shrink-0" />
+                <Phone className="w-4 h-4 text-[#9AA1B4] mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-[11px] text-[#9ca3af]">Phone</p>
-                  <p className="text-xs font-medium text-[#283c50] font-mono">{vendor.phone}</p>
+                  <p className="text-[11px] text-[#9AA1B4]">Phone</p>
+                  <p className="text-xs font-medium text-[#0D1426] font-mono">{vendor.phone}</p>
                 </div>
               </div>
               {(vendor.ownerFirstName || vendor.ownerLastName) && (
                 <div className="flex items-start gap-2.5">
-                  <Store className="w-4 h-4 text-[#9ca3af] mt-0.5 shrink-0" />
+                  <Store className="w-4 h-4 text-[#9AA1B4] mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-[11px] text-[#9ca3af]">Owner</p>
-                    <p className="text-xs font-medium text-[#283c50]">
+                    <p className="text-[11px] text-[#9AA1B4]">Owner</p>
+                    <p className="text-xs font-medium text-[#0D1426]">
                       {[vendor.ownerFirstName, vendor.ownerLastName].filter(Boolean).join(' ')}
                     </p>
                   </div>
@@ -326,22 +326,22 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
 
           {/* Location */}
           <div className="card p-4 space-y-3">
-            <h2 className="text-xs font-bold text-[#283c50] uppercase tracking-wide">Location</h2>
+            <h2 className="text-xs font-bold text-[#0D1426] uppercase tracking-wide">Location</h2>
             <div className="space-y-2.5">
               <div className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-[#9ca3af] mt-0.5 shrink-0" />
+                <MapPin className="w-4 h-4 text-[#9AA1B4] mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-[11px] text-[#9ca3af]">Address</p>
-                  <p className="text-xs font-medium text-[#283c50]">{vendor.address}</p>
+                  <p className="text-[11px] text-[#9AA1B4]">Address</p>
+                  <p className="text-xs font-medium text-[#0D1426]">{vendor.address}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
                 <div className="w-4 h-4 shrink-0 flex items-center justify-center">
-                  <span className="text-[10px] text-[#9ca3af] font-mono">GPS</span>
+                  <span className="text-[10px] text-[#9AA1B4] font-mono">GPS</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-[#9ca3af]">Coordinates</p>
-                  <p className="text-xs text-[#4b5563] font-mono">{vendor.lat.toFixed(5)}, {vendor.lng.toFixed(5)}</p>
+                  <p className="text-[11px] text-[#9AA1B4]">Coordinates</p>
+                  <p className="text-xs text-[#525A72] font-mono">{vendor.lat.toFixed(5)}, {vendor.lng.toFixed(5)}</p>
                 </div>
               </div>
             </div>
@@ -349,39 +349,39 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
 
           {/* Business details */}
           <div className="card p-4 space-y-3">
-            <h2 className="text-xs font-bold text-[#283c50] uppercase tracking-wide">Business</h2>
+            <h2 className="text-xs font-bold text-[#0D1426] uppercase tracking-wide">Business</h2>
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[#9ca3af]">Type</span>
+                <span className="text-[11px] text-[#9AA1B4]">Type</span>
                 <span className="text-xs font-semibold" style={{ color: typeColor }}>{typeLabel}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[#9ca3af]">Rating</span>
-                <span className="flex items-center gap-1 text-xs font-semibold text-[#283c50]">
-                  <Star className="w-3 h-3 text-[#ffa21d] fill-[#ffa21d]" />
+                <span className="text-[11px] text-[#9AA1B4]">Rating</span>
+                <span className="flex items-center gap-1 text-xs font-semibold text-[#0D1426]">
+                  <Star className="w-3 h-3 text-[#E8930C] fill-[#E8930C]" />
                   {vendor.rating != null ? vendor.rating.toFixed(1) : '—'}
                 </span>
               </div>
               {vendor.deliveryFeeKobo != null && (
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-[#9ca3af]">Delivery fee</span>
-                  <span className="text-xs font-semibold text-[#283c50]">
+                  <span className="text-[11px] text-[#9AA1B4]">Delivery fee</span>
+                  <span className="text-xs font-semibold text-[#0D1426]">
                     ₦{(vendor.deliveryFeeKobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 0 })}
                   </span>
                 </div>
               )}
               {vendor.estimatedMinutes != null && (
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-[#9ca3af]">Est. time</span>
-                  <span className="text-xs font-semibold text-[#283c50]">{vendor.estimatedMinutes} min</span>
+                  <span className="text-[11px] text-[#9AA1B4]">Est. time</span>
+                  <span className="text-xs font-semibold text-[#0D1426]">{vendor.estimatedMinutes} min</span>
                 </div>
               )}
               {vendor.cuisines && vendor.cuisines.length > 0 && (
                 <div>
-                  <p className="text-[11px] text-[#9ca3af] mb-1">Cuisines</p>
+                  <p className="text-[11px] text-[#9AA1B4] mb-1">Cuisines</p>
                   <div className="flex flex-wrap gap-1">
                     {vendor.cuisines.map((c) => (
-                      <span key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-[#eef1fb] text-[#3454d1] font-medium">{c}</span>
+                      <span key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-[#E7EEFF] text-[#1E5FFF] font-medium">{c}</span>
                     ))}
                   </div>
                 </div>
@@ -393,8 +393,8 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
         {/* Description */}
         {vendor.description && (
           <div className="card p-4">
-            <h2 className="text-xs font-bold text-[#283c50] uppercase tracking-wide mb-2">Description</h2>
-            <p className="text-xs text-[#4b5563] leading-relaxed">{vendor.description}</p>
+            <h2 className="text-xs font-bold text-[#0D1426] uppercase tracking-wide mb-2">Description</h2>
+            <p className="text-xs text-[#525A72] leading-relaxed">{vendor.description}</p>
           </div>
         )}
 
@@ -403,14 +403,14 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
           <div className="card overflow-hidden">
             <div className="card-header">
               <h3 className="card-title flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#9ca3af]" /> Opening Hours
+                <Clock className="w-3.5 h-3.5 text-[#9AA1B4]" /> Opening Hours
               </h3>
             </div>
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               {Object.entries(vendor.openingHours).map(([day, hours]) => (
                 <div key={day} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-xs font-medium text-[#283c50]">{DAY_LABELS[day] ?? day}</span>
-                  <span className="text-xs text-[#4b5563] font-mono">
+                  <span className="text-xs font-medium text-[#0D1426]">{DAY_LABELS[day] ?? day}</span>
+                  <span className="text-xs text-[#525A72] font-mono">
                     {hours.open} – {hours.close}
                   </span>
                 </div>
@@ -423,7 +423,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
         <div className="card overflow-hidden">
           <div className="card-header">
             <h3 className="card-title flex items-center gap-1.5">
-              <FileCheck className="w-3.5 h-3.5 text-[#9ca3af]" /> Submitted Documents
+              <FileCheck className="w-3.5 h-3.5 text-[#9AA1B4]" /> Submitted Documents
             </h3>
           </div>
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -437,28 +437,28 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                 <div
                   key={key}
                   className="flex items-start gap-3 p-3 rounded-lg border"
-                  style={{ borderColor: url ? '#3454d1' : '#e5e7eb', backgroundColor: url ? '#eef1fb' : '#fafafa' }}
+                  style={{ borderColor: url ? '#1E5FFF' : '#E7EAF1', backgroundColor: url ? '#E7EEFF' : '#F7F9FC' }}
                 >
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: url ? '#3454d1' : '#e5e7eb' }}
+                    style={{ background: url ? '#1E5FFF' : '#E7EAF1' }}
                   >
-                    <FileText className="w-4 h-4" style={{ color: url ? '#fff' : '#9ca3af' }} />
+                    <FileText className="w-4 h-4" style={{ color: url ? '#fff' : '#9AA1B4' }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-[#283c50] leading-snug">{label}</p>
-                    <p className="text-[11px] text-[#9ca3af] mt-0.5">{hint}</p>
+                    <p className="text-xs font-semibold text-[#0D1426] leading-snug">{label}</p>
+                    <p className="text-[11px] text-[#9AA1B4] mt-0.5">{hint}</p>
                     {url ? (
                       <a
                         href={url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#3454d1] hover:underline mt-1.5"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1E5FFF] hover:underline mt-1.5"
                       >
                         View document <ExternalLink className="w-3 h-3" />
                       </a>
                     ) : (
-                      <p className="text-[11px] text-[#ea4d4d] font-medium mt-1.5">Not uploaded</p>
+                      <p className="text-[11px] text-[#FF3B30] font-medium mt-1.5">Not uploaded</p>
                     )}
                   </div>
                 </div>
@@ -469,13 +469,13 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
 
         {/* Rejection / suspension reason */}
         {vendor.rejectionReason && (
-          <div className="flex items-start gap-2.5 rounded-lg border border-[#fca5a5] bg-[#fdf0f0] px-4 py-3">
-            <XCircle className="w-4 h-4 text-[#ea4d4d] shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 rounded-lg border border-[#FFB3AD] bg-[#FFE3E1] px-4 py-3">
+            <XCircle className="w-4 h-4 text-[#FF3B30] shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-semibold text-[#ea4d4d]">
+              <p className="text-xs font-semibold text-[#FF3B30]">
                 {vendor.status === 'REJECTED' ? 'Rejection reason' : 'Suspension reason'}
               </p>
-              <p className="text-xs text-[#4b5563] mt-0.5">{vendor.rejectionReason}</p>
+              <p className="text-xs text-[#525A72] mt-0.5">{vendor.rejectionReason}</p>
             </div>
           </div>
         )}

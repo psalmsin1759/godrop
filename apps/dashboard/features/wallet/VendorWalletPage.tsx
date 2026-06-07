@@ -18,12 +18,12 @@ import { formatNaira, formatDateTime } from '@/lib/utils'
 function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div className="card p-4 flex items-center gap-4">
-      <div className="w-10 h-10 rounded-lg bg-[#e8faf2] flex items-center justify-center text-[#17c666]">
+      <div className="w-10 h-10 rounded-lg bg-[#DFF5EC] flex items-center justify-center text-[#1DB980]">
         {icon}
       </div>
       <div>
-        <p className="text-xs text-[#9ca3af]">{label}</p>
-        <p className="text-lg font-bold text-[#283c50]">{value}</p>
+        <p className="text-xs text-[#9AA1B4]">{label}</p>
+        <p className="text-lg font-bold text-[#0D1426]">{value}</p>
       </div>
     </div>
   )
@@ -32,17 +32,17 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 function TxRow({ tx }: { tx: VendorWalletTx }) {
   const isCredit = tx.type === 'CREDIT'
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-[#f9fafb] last:border-0">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCredit ? 'bg-[#e8faf2]' : 'bg-[#fdf0f0]'}`}>
+    <div className="flex items-center gap-3 py-3 border-b border-[#F7F9FC] last:border-0">
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCredit ? 'bg-[#DFF5EC]' : 'bg-[#FFE3E1]'}`}>
         {isCredit
-          ? <ArrowDownLeft className="w-4 h-4 text-[#17c666]" />
-          : <ArrowUpRight className="w-4 h-4 text-[#ea4d4d]" />}
+          ? <ArrowDownLeft className="w-4 h-4 text-[#1DB980]" />
+          : <ArrowUpRight className="w-4 h-4 text-[#FF3B30]" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-[#283c50] truncate">{tx.description ?? tx.type}</p>
-        <p className="text-[11px] text-[#9ca3af]">{formatDateTime(tx.createdAt)}</p>
+        <p className="text-xs font-medium text-[#0D1426] truncate">{tx.description ?? tx.type}</p>
+        <p className="text-[11px] text-[#9AA1B4]">{formatDateTime(tx.createdAt)}</p>
       </div>
-      <span className={`text-xs font-semibold ${isCredit ? 'text-[#17c666]' : 'text-[#ea4d4d]'}`}>
+      <span className={`text-xs font-semibold ${isCredit ? 'text-[#1DB980]' : 'text-[#FF3B30]'}`}>
         {isCredit ? '+' : '-'}{formatNaira(tx.amountKobo)}
       </span>
     </div>
@@ -108,7 +108,7 @@ function BankAccountSection() {
     }
   }
 
-  if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-[#9ca3af]" /></div>
+  if (isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-[#9AA1B4]" /></div>
 
   if (account && !editing) {
     return (
@@ -116,8 +116,8 @@ function BankAccountSection() {
         <div className="grid grid-cols-2 gap-3">
           {[['Bank', account.bankName], ['Account Number', account.accountNumber], ['Account Name', account.accountName]].map(([l, v]) => (
             <div key={l}>
-              <p className="text-[11px] text-[#9ca3af]">{l}</p>
-              <p className="text-xs font-semibold text-[#283c50] font-mono">{v}</p>
+              <p className="text-[11px] text-[#9AA1B4]">{l}</p>
+              <p className="text-xs font-semibold text-[#0D1426] font-mono">{v}</p>
             </div>
           ))}
         </div>
@@ -131,7 +131,7 @@ function BankAccountSection() {
             setSaveError('')
             setBankSearch('')
           }}
-          className="text-xs text-[#3454d1] hover:underline"
+          className="text-xs text-[#1E5FFF] hover:underline"
         >
           Edit bank account
         </button>
@@ -145,40 +145,40 @@ function BankAccountSection() {
 
       {/* Bank picker */}
       <div className="relative">
-        <label className="block text-xs font-medium text-[#4b5563] mb-1">Bank <span className="text-[#ea4d4d]">*</span></label>
+        <label className="block text-xs font-medium text-[#525A72] mb-1">Bank <span className="text-[#FF3B30]">*</span></label>
         <button
           type="button"
           onClick={() => setShowBankList((v) => !v)}
-          className="w-full px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-left flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+          className="w-full px-3 py-2 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-left flex items-center justify-between focus:outline-none focus:ring-1 focus:ring-[#1DB980]"
         >
-          <span className={selectedBank ? 'text-[#283c50]' : 'text-[#9ca3af]'}>
+          <span className={selectedBank ? 'text-[#0D1426]' : 'text-[#9AA1B4]'}>
             {selectedBank?.name ?? 'Select a bank…'}
           </span>
-          <Search className="w-3 h-3 text-[#9ca3af]" />
+          <Search className="w-3 h-3 text-[#9AA1B4]" />
         </button>
         {showBankList && (
-          <div className="absolute z-20 mt-1 w-full bg-white border border-[#e5e7eb] rounded-lg shadow-lg">
-            <div className="p-2 border-b border-[#f3f4f6]">
+          <div className="absolute z-20 mt-1 w-full bg-white border border-[#E7EAF1] rounded-lg shadow-lg">
+            <div className="p-2 border-b border-[#EDF0F6]">
               <input
                 autoFocus
                 type="text"
                 value={bankSearch}
                 onChange={(e) => setBankSearch(e.target.value)}
                 placeholder="Search banks…"
-                className="w-full px-2 py-1.5 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+                className="w-full px-2 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] focus:outline-none focus:ring-1 focus:ring-[#1DB980]"
               />
             </div>
             <ul className="max-h-44 overflow-y-auto py-1">
               {banksLoading ? (
-                <li className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-[#9ca3af]" /></li>
+                <li className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-[#9AA1B4]" /></li>
               ) : filteredBanks.length === 0 ? (
-                <li className="text-xs text-[#9ca3af] px-3 py-2">No banks found</li>
+                <li className="text-xs text-[#9AA1B4] px-3 py-2">No banks found</li>
               ) : filteredBanks.map((bank) => (
                 <li key={bank.code}>
                   <button
                     type="button"
                     onClick={() => { setSelectedBank(bank); setShowBankList(false); setBankSearch('') }}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-[#f9fafb] transition-colors ${selectedBank?.code === bank.code ? 'text-[#17c666] font-semibold' : 'text-[#283c50]'}`}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-[#F7F9FC] transition-colors ${selectedBank?.code === bank.code ? 'text-[#1DB980] font-semibold' : 'text-[#0D1426]'}`}
                   >
                     {bank.name}
                   </button>
@@ -191,7 +191,7 @@ function BankAccountSection() {
 
       {/* Account number + verify */}
       <div>
-        <label className="block text-xs font-medium text-[#4b5563] mb-1">Account Number <span className="text-[#ea4d4d]">*</span></label>
+        <label className="block text-xs font-medium text-[#525A72] mb-1">Account Number <span className="text-[#FF3B30]">*</span></label>
         <div className="flex gap-2">
           <input
             type="text"
@@ -200,13 +200,13 @@ function BankAccountSection() {
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
             placeholder="10-digit NUBAN"
-            className="flex-1 px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] font-mono focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+            className="flex-1 px-3 py-2 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#0D1426] font-mono focus:outline-none focus:ring-1 focus:ring-[#1DB980]"
           />
           <button
             type="button"
             onClick={handleResolve}
             disabled={!selectedBank || accountNumber.length !== 10 || resolving}
-            className="px-3 py-2 text-xs rounded border border-[#e5e7eb] text-[#283c50] font-medium disabled:opacity-40 hover:bg-[#f9fafb] transition-colors whitespace-nowrap flex items-center gap-1.5"
+            className="px-3 py-2 text-xs rounded border border-[#E7EAF1] text-[#0D1426] font-medium disabled:opacity-40 hover:bg-[#F7F9FC] transition-colors whitespace-nowrap flex items-center gap-1.5"
           >
             {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
             Verify
@@ -217,18 +217,18 @@ function BankAccountSection() {
 
       {/* Resolved account name */}
       {resolvedName && (
-        <div className="flex items-center gap-2 bg-[#f0fdf4] border border-[#86efac] rounded-lg px-3 py-2.5">
-          <CheckCircle2 className="w-3.5 h-3.5 text-[#16a34a] shrink-0" />
+        <div className="flex items-center gap-2 bg-[#DFF5EC] border border-[#A8E6CC] rounded-lg px-3 py-2.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-[#0E8E60] shrink-0" />
           <div>
-            <p className="text-[11px] text-[#166534]">Account verified</p>
-            <p className="text-xs font-semibold text-[#166534]">{resolvedName}</p>
+            <p className="text-[11px] text-[#0E6B49]">Account verified</p>
+            <p className="text-xs font-semibold text-[#0E6B49]">{resolvedName}</p>
           </div>
         </div>
       )}
 
       <div className="flex gap-2">
         {editing && (
-          <button type="button" onClick={() => setEditing(false)} className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885]">
+          <button type="button" onClick={() => setEditing(false)} className="flex-1 text-xs py-2 rounded border border-[#E7EAF1] text-[#525A72]">
             Cancel
           </button>
         )}
@@ -236,7 +236,7 @@ function BankAccountSection() {
           type="submit"
           disabled={saving || !resolvedName}
           className="flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded text-white font-medium disabled:opacity-60"
-          style={{ backgroundColor: saved ? '#17c666' : '#283c50' }}
+          style={{ backgroundColor: saved ? '#1DB980' : '#0D1426' }}
         >
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : saved ? <CheckCircle2 className="w-3 h-3" /> : null}
           {saved ? 'Saved!' : 'Save Bank Account'}
@@ -272,9 +272,9 @@ function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
   return (
     <form onSubmit={handleWithdraw} className="space-y-3">
       {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
-      {done && <p className="text-xs text-[#17c666] bg-[#e8faf2] border border-[#86efac] rounded px-3 py-2">Withdrawal request submitted successfully!</p>}
+      {done && <p className="text-xs text-[#1DB980] bg-[#DFF5EC] border border-[#A8E6CC] rounded px-3 py-2">Withdrawal request submitted successfully!</p>}
       <div>
-        <label className="block text-xs font-medium text-[#4b5563] mb-1">Amount (₦)</label>
+        <label className="block text-xs font-medium text-[#525A72] mb-1">Amount (₦)</label>
         <input
           type="number"
           min={100}
@@ -283,14 +283,14 @@ function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
           value={amountNaira}
           onChange={(e) => setAmountNaira(e.target.value)}
           placeholder="Enter amount in Naira"
-          className="w-full px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+          className="w-full px-3 py-2 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1DB980]"
         />
-        <p className="text-[11px] text-[#9ca3af] mt-1">Available: {formatNaira(balanceKobo)}</p>
+        <p className="text-[11px] text-[#9AA1B4] mt-1">Available: {formatNaira(balanceKobo)}</p>
       </div>
       <button
         type="submit"
         disabled={isLoading || !amountNaira || balanceKobo === 0}
-        className="w-full flex items-center justify-center gap-1.5 text-xs py-2.5 rounded text-white font-medium disabled:opacity-60 bg-[#283c50]"
+        className="w-full flex items-center justify-center gap-1.5 text-xs py-2.5 rounded text-white font-medium disabled:opacity-60 bg-[#0D1426]"
       >
         {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
         Request Withdrawal
@@ -309,13 +309,13 @@ export default function VendorWalletPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-[#283c50]">Wallet</h1>
-        <p className="text-xs text-[#9ca3af] mt-0.5">View your earnings, transactions, and withdraw funds.</p>
+        <h1 className="text-lg font-bold text-[#0D1426]">Wallet</h1>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">View your earnings, transactions, and withdraw funds.</p>
       </div>
 
       {walletLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-5 h-5 animate-spin text-[#9ca3af]" />
+          <Loader2 className="w-5 h-5 animate-spin text-[#9AA1B4]" />
         </div>
       ) : (
         <>
@@ -324,11 +324,11 @@ export default function VendorWalletPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Transactions */}
             <div className="card p-4 space-y-3">
-              <h2 className="text-sm font-semibold text-[#283c50]">Recent Transactions</h2>
+              <h2 className="text-sm font-semibold text-[#0D1426]">Recent Transactions</h2>
               {txLoading ? (
-                <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-[#9ca3af]" /></div>
+                <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-[#9AA1B4]" /></div>
               ) : transactions.length === 0 ? (
-                <p className="text-xs text-[#9ca3af] py-4 text-center">No transactions yet</p>
+                <p className="text-xs text-[#9AA1B4] py-4 text-center">No transactions yet</p>
               ) : (
                 <div>{transactions.map((tx) => <TxRow key={tx.id} tx={tx} />)}</div>
               )}
@@ -337,15 +337,15 @@ export default function VendorWalletPage() {
             {/* Bank account + Withdraw */}
             <div className="space-y-5">
               <div className="card p-4 space-y-3">
-                <h2 className="text-sm font-semibold text-[#283c50] flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#17c666]" /> Bank Account
+                <h2 className="text-sm font-semibold text-[#0D1426] flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#1DB980]" /> Bank Account
                 </h2>
                 <BankAccountSection />
               </div>
 
               <div className="card p-4 space-y-3">
-                <h2 className="text-sm font-semibold text-[#283c50] flex items-center gap-2">
-                  <ArrowUpRight className="w-4 h-4 text-[#3454d1]" /> Withdraw
+                <h2 className="text-sm font-semibold text-[#0D1426] flex items-center gap-2">
+                  <ArrowUpRight className="w-4 h-4 text-[#1E5FFF]" /> Withdraw
                 </h2>
                 <WithdrawSection balanceKobo={balanceKobo} />
               </div>

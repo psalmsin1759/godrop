@@ -24,15 +24,15 @@ import {
 } from 'lucide-react'
 
 const STATUS_CONFIG: Record<OrderStatus, { bg: string; text: string; label: string }> = {
-  PENDING:          { bg: '#fff6e8', text: '#ffa21d', label: 'Pending' },
-  ACCEPTED:         { bg: '#e0f9f7', text: '#3dc7be', label: 'Accepted' },
-  PREPARING:        { bg: '#f3eeff', text: '#8b5cf6', label: 'Preparing' },
+  PENDING:          { bg: '#FBEDD7', text: '#E8930C', label: 'Pending' },
+  ACCEPTED:         { bg: '#FFEAE1', text: '#FF6A2C', label: 'Accepted' },
+  PREPARING:        { bg: '#F0EAFA', text: '#7A5AE0', label: 'Preparing' },
   READY_FOR_PICKUP: { bg: '#e0f2fe', text: '#06b6d4', label: 'Ready for Pickup' },
-  PICKED_UP:        { bg: '#fef3c7', text: '#f59e0b', label: 'Picked Up' },
-  IN_TRANSIT:       { bg: '#eef1fb', text: '#3454d1', label: 'In Transit' },
-  DELIVERED:        { bg: '#e8faf2', text: '#17c666', label: 'Delivered' },
-  CANCELLED:        { bg: '#fdf0f0', text: '#ea4d4d', label: 'Cancelled' },
-  FAILED:           { bg: '#f3f4f6', text: '#6b7280', label: 'Failed' },
+  PICKED_UP:        { bg: '#FBEDD7', text: '#E8930C', label: 'Picked Up' },
+  IN_TRANSIT:       { bg: '#E7EEFF', text: '#1E5FFF', label: 'In Transit' },
+  DELIVERED:        { bg: '#DFF5EC', text: '#1DB980', label: 'Delivered' },
+  CANCELLED:        { bg: '#FFE3E1', text: '#FF3B30', label: 'Cancelled' },
+  FAILED:           { bg: '#EDF0F6', text: '#9AA1B4', label: 'Failed' },
 }
 
 const TERMINAL_STATUSES: OrderStatus[] = ['DELIVERED', 'CANCELLED', 'FAILED']
@@ -49,8 +49,8 @@ const ORDER_TYPE_LABELS: Record<string, string> = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="card overflow-hidden">
-      <div className="px-4 py-3 border-b border-[#f3f4f6]">
-        <h3 className="text-xs font-semibold text-[#283c50]">{title}</h3>
+      <div className="px-4 py-3 border-b border-[#EDF0F6]">
+        <h3 className="text-xs font-semibold text-[#0D1426]">{title}</h3>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -60,18 +60,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-1.5">
-      <span className="text-[11px] font-medium text-[#9ca3af] shrink-0">{label}</span>
-      <span className="text-xs font-medium text-[#283c50] text-right">{value}</span>
+      <span className="text-[11px] font-medium text-[#9AA1B4] shrink-0">{label}</span>
+      <span className="text-xs font-medium text-[#0D1426] text-right">{value}</span>
     </div>
   )
 }
 
 function PaymentStatusBadge({ status }: { status: string }) {
   const styles =
-    status === 'PAID'     ? { backgroundColor: '#e8faf2', color: '#17c666' } :
-    status === 'REFUNDED' ? { backgroundColor: '#eef1fb', color: '#3454d1' } :
-    status === 'FAILED'   ? { backgroundColor: '#fdf0f0', color: '#ea4d4d' } :
-                            { backgroundColor: '#fff6e8', color: '#ffa21d' }
+    status === 'PAID'     ? { backgroundColor: '#DFF5EC', color: '#1DB980' } :
+    status === 'REFUNDED' ? { backgroundColor: '#E7EEFF', color: '#1E5FFF' } :
+    status === 'FAILED'   ? { backgroundColor: '#FFE3E1', color: '#FF3B30' } :
+                            { backgroundColor: '#FBEDD7', color: '#E8930C' }
   return (
     <span className="text-[11px] font-medium rounded-full px-2 py-0.5" style={styles}>
       {status}
@@ -81,28 +81,28 @@ function PaymentStatusBadge({ status }: { status: string }) {
 
 function ItemsTable({ items }: { items: { name: string; quantity: number; unitPriceKobo: number; totalKobo: number; notes?: string }[] }) {
   if (items.length === 0) {
-    return <div className="p-4 text-xs text-[#9ca3af]">No items</div>
+    return <div className="p-4 text-xs text-[#9AA1B4]">No items</div>
   }
   return (
     <table className="w-full">
       <thead>
-        <tr className="bg-[#fafafa] border-b border-[#f3f4f6]">
-          <th className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-2.5">Item</th>
-          <th className="text-center text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-2.5">Qty</th>
-          <th className="text-right text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-2.5">Unit Price</th>
-          <th className="text-right text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-2.5">Total</th>
+        <tr className="bg-[#F7F9FC] border-b border-[#EDF0F6]">
+          <th className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-2.5">Item</th>
+          <th className="text-center text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-2.5">Qty</th>
+          <th className="text-right text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-2.5">Unit Price</th>
+          <th className="text-right text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-2.5">Total</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-[#f9fafb]">
+      <tbody className="divide-y divide-[#F7F9FC]">
         {items.map((item, i) => (
           <tr key={i}>
             <td className="px-4 py-2.5">
-              <p className="text-xs font-medium text-[#283c50]">{item.name}</p>
-              {item.notes && <p className="text-[11px] text-[#9ca3af]">{item.notes}</p>}
+              <p className="text-xs font-medium text-[#0D1426]">{item.name}</p>
+              {item.notes && <p className="text-[11px] text-[#9AA1B4]">{item.notes}</p>}
             </td>
-            <td className="px-4 py-2.5 text-center text-xs text-[#6b7885]">{item.quantity}</td>
-            <td className="px-4 py-2.5 text-right text-xs text-[#6b7885]">{formatNaira(item.unitPriceKobo)}</td>
-            <td className="px-4 py-2.5 text-right text-xs font-semibold text-[#283c50]">{formatNaira(item.totalKobo)}</td>
+            <td className="px-4 py-2.5 text-center text-xs text-[#525A72]">{item.quantity}</td>
+            <td className="px-4 py-2.5 text-right text-xs text-[#525A72]">{formatNaira(item.unitPriceKobo)}</td>
+            <td className="px-4 py-2.5 text-right text-xs font-semibold text-[#0D1426]">{formatNaira(item.totalKobo)}</td>
           </tr>
         ))}
       </tbody>
@@ -114,14 +114,14 @@ function PriceBreakdown({ subtotalKobo, deliveryFeeKobo, serviceFeeKobo, discoun
   subtotalKobo: number; deliveryFeeKobo: number; serviceFeeKobo: number; discountKobo: number; totalKobo: number; hideServiceFee?: boolean
 }) {
   return (
-    <div className="divide-y divide-[#f9fafb]">
+    <div className="divide-y divide-[#F7F9FC]">
       {subtotalKobo > 0 && <InfoRow label="Subtotal" value={formatNaira(subtotalKobo)} />}
       {deliveryFeeKobo > 0 && <InfoRow label="Delivery Fee" value={formatNaira(deliveryFeeKobo)} />}
       {!hideServiceFee && serviceFeeKobo > 0 && <InfoRow label="Service Fee" value={formatNaira(serviceFeeKobo)} />}
       {discountKobo > 0 && <InfoRow label="Discount" value={`-${formatNaira(discountKobo)}`} />}
       <div className="flex items-center justify-between pt-2 mt-1">
-        <span className="text-xs font-bold text-[#283c50]">Total</span>
-        <span className="text-sm font-bold text-[#3454d1]">{formatNaira(totalKobo)}</span>
+        <span className="text-xs font-bold text-[#0D1426]">Total</span>
+        <span className="text-sm font-bold text-[#1E5FFF]">{formatNaira(totalKobo)}</span>
       </div>
     </div>
   )
@@ -142,29 +142,29 @@ function CancelOrderDialog({ order, onClose }: { order: AdminOrder; onClose: () 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-xl p-5 w-80 space-y-3">
-        <p className="text-sm font-semibold text-[#283c50]">Cancel order</p>
-        <p className="text-xs text-[#6b7885]">
-          Cancel <span className="font-mono font-semibold text-[#3454d1]">{order.trackingCode}</span>?
+      <div className="bg-white rounded-xl border border-[#E7EAF1] shadow-xl p-5 w-80 space-y-3">
+        <p className="text-sm font-semibold text-[#0D1426]">Cancel order</p>
+        <p className="text-xs text-[#525A72]">
+          Cancel <span className="font-mono font-semibold text-[#1E5FFF]">{order.trackingCode}</span>?
           {(order.paymentMethod === 'CARD' || order.paymentMethod === 'WALLET') && (
-            <span className="block mt-1 text-[#ffa21d]">A refund will be triggered.</span>
+            <span className="block mt-1 text-[#E8930C]">A refund will be triggered.</span>
           )}
         </p>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Reason (optional)…"
-          className="w-full text-xs border border-[#e5e7eb] rounded p-2 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-[#3454d1]"
+          className="w-full text-xs border border-[#E7EAF1] rounded p-2 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]"
         />
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]">
             Keep order
           </button>
           <button
             disabled={loading}
             onClick={handleCancel}
             className="flex-1 text-xs py-2 rounded text-white font-medium disabled:opacity-50"
-            style={{ backgroundColor: '#ea4d4d' }}
+            style={{ backgroundColor: '#FF3B30' }}
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Cancel order'}
           </button>
@@ -189,23 +189,23 @@ function RejectOrderDialog({ orderId, onClose }: { orderId: string; onClose: () 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-xl p-5 w-80 space-y-3">
-        <p className="text-sm font-semibold text-[#283c50]">Reject order</p>
+      <div className="bg-white rounded-xl border border-[#E7EAF1] shadow-xl p-5 w-80 space-y-3">
+        <p className="text-sm font-semibold text-[#0D1426]">Reject order</p>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Reason (optional)…"
-          className="w-full text-xs border border-[#e5e7eb] rounded p-2 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-[#3454d1]"
+          className="w-full text-xs border border-[#E7EAF1] rounded p-2 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]"
         />
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]">
             Cancel
           </button>
           <button
             disabled={loading}
             onClick={handleReject}
             className="flex-1 text-xs py-2 rounded text-white font-medium disabled:opacity-50"
-            style={{ backgroundColor: '#ea4d4d' }}
+            style={{ backgroundColor: '#FF3B30' }}
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Reject'}
           </button>
@@ -228,10 +228,10 @@ function VendorCancelOrderDialog({ orderId, isPaid, onClose }: { orderId: string
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-xl p-5 w-80 space-y-3">
-        <p className="text-sm font-semibold text-[#283c50]">Cancel order</p>
+      <div className="bg-white rounded-xl border border-[#E7EAF1] shadow-xl p-5 w-80 space-y-3">
+        <p className="text-sm font-semibold text-[#0D1426]">Cancel order</p>
         {isPaid && (
-          <div className="text-xs bg-[#fffbeb] border border-[#fde68a] text-[#92400e] rounded px-3 py-2">
+          <div className="text-xs bg-[#FBEDD7] border border-[#F6D9A8] text-[#8A5A0A] rounded px-3 py-2">
             ⚠️ This order was paid. The full amount will be refunded to the customer&apos;s wallet automatically.
           </div>
         )}
@@ -239,17 +239,17 @@ function VendorCancelOrderDialog({ orderId, isPaid, onClose }: { orderId: string
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Reason for cancellation (optional)…"
-          className="w-full text-xs border border-[#e5e7eb] rounded p-2 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-[#ea4d4d]"
+          className="w-full text-xs border border-[#E7EAF1] rounded p-2 resize-none h-16 focus:outline-none focus:ring-1 focus:ring-[#FF3B30]"
         />
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#e5e7eb] text-[#6b7885] hover:bg-[#f9fafb]">
+          <button onClick={onClose} className="flex-1 text-xs py-2 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]">
             Go Back
           </button>
           <button
             disabled={loading}
             onClick={handleCancel}
             className="flex-1 text-xs py-2 rounded text-white font-medium disabled:opacity-50"
-            style={{ backgroundColor: '#ea4d4d' }}
+            style={{ backgroundColor: '#FF3B30' }}
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Cancel Order'}
           </button>
@@ -268,7 +268,7 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-24 gap-2 text-xs text-[#9ca3af]">
+      <div className="flex items-center justify-center py-24 gap-2 text-xs text-[#9AA1B4]">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading order…
       </div>
     )
@@ -277,9 +277,9 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
   if (isError || !order) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <AlertCircle className="w-8 h-8 text-[#ea4d4d]" />
-        <p className="text-sm font-medium text-[#283c50]">Order not found</p>
-        <button onClick={() => router.back()} className="text-xs text-[#3454d1] hover:underline">
+        <AlertCircle className="w-8 h-8 text-[#FF3B30]" />
+        <p className="text-sm font-medium text-[#0D1426]">Order not found</p>
+        <button onClick={() => router.back()} className="text-xs text-[#1E5FFF] hover:underline">
           Go back
         </button>
       </div>
@@ -297,24 +297,24 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.back()}
-          className="w-8 h-8 rounded flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+          className="w-8 h-8 rounded flex items-center justify-center hover:bg-[#EDF0F6] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 text-[#6b7885]" />
+          <ArrowLeft className="w-4 h-4 text-[#525A72]" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-lg font-bold text-[#283c50] font-mono">{order.trackingCode}</h1>
+            <h1 className="text-lg font-bold text-[#0D1426] font-mono">{order.trackingCode}</h1>
             <span
               className="text-[11px] font-semibold rounded-full px-2.5 py-0.5"
               style={{ backgroundColor: statusCfg.bg, color: statusCfg.text }}
             >
               {statusCfg.label}
             </span>
-            <span className="text-[11px] font-medium rounded-full px-2.5 py-0.5 bg-[#f3f4f6] text-[#6b7885]">
+            <span className="text-[11px] font-medium rounded-full px-2.5 py-0.5 bg-[#EDF0F6] text-[#525A72]">
               {ORDER_TYPE_LABELS[order.type] ?? order.type}
             </span>
           </div>
-          <p className="text-xs text-[#9ca3af] mt-0.5">
+          <p className="text-xs text-[#9AA1B4] mt-0.5">
             Placed {formatDateTime(order.createdAt)}
             {order.scheduledAt && ` · Scheduled for ${formatDateTime(order.scheduledAt)}`}
           </p>
@@ -322,7 +322,7 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
         {!isTerminal && (
           <button
             onClick={() => setShowCancel(true)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#ea4d4d] text-[#ea4d4d] hover:bg-[#fdf0f0] transition-colors font-medium"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#FF3B30] text-[#FF3B30] hover:bg-[#FFE3E1] transition-colors font-medium"
           >
             <Ban className="w-3.5 h-3.5" /> Force Cancel
           </button>
@@ -334,8 +334,8 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
         <div className="lg:col-span-2 space-y-5">
           {/* Items */}
           <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#f3f4f6]">
-              <h3 className="text-xs font-semibold text-[#283c50]">Order Items</h3>
+            <div className="px-4 py-3 border-b border-[#EDF0F6]">
+              <h3 className="text-xs font-semibold text-[#0D1426]">Order Items</h3>
             </div>
             <ItemsTable items={order.items} />
           </div>
@@ -347,13 +347,13 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
                 <div className="flex items-start gap-3">
                   <div
                     className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: '#e8faf2' }}
+                    style={{ backgroundColor: '#DFF5EC' }}
                   >
-                    <MapPin className="w-3.5 h-3.5 text-[#17c666]" />
+                    <MapPin className="w-3.5 h-3.5 text-[#1DB980]" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Pickup</p>
-                    <p className="text-xs font-medium text-[#283c50] mt-0.5">{order.pickupAddress || '—'}</p>
+                    <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Pickup</p>
+                    <p className="text-xs font-medium text-[#0D1426] mt-0.5">{order.pickupAddress || '—'}</p>
                   </div>
                 </div>
 
@@ -361,13 +361,13 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
                   <div key={i} className="flex items-start gap-3">
                     <div
                       className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: '#fef3c7' }}
+                      style={{ backgroundColor: '#FBEDD7' }}
                     >
-                      <MapPin className="w-3.5 h-3.5 text-[#f59e0b]" />
+                      <MapPin className="w-3.5 h-3.5 text-[#E8930C]" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Stop {i + 1}</p>
-                      <p className="text-xs font-medium text-[#283c50] mt-0.5">{stop.address || `${stop.lat}, ${stop.lng}`}</p>
+                      <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Stop {i + 1}</p>
+                      <p className="text-xs font-medium text-[#0D1426] mt-0.5">{stop.address || `${stop.lat}, ${stop.lng}`}</p>
                     </div>
                   </div>
                 ))}
@@ -375,13 +375,13 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
                 <div className="flex items-start gap-3">
                   <div
                     className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: '#fdf0f0' }}
+                    style={{ backgroundColor: '#FFE3E1' }}
                   >
-                    <MapPin className="w-3.5 h-3.5 text-[#ea4d4d]" />
+                    <MapPin className="w-3.5 h-3.5 text-[#FF3B30]" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide">Dropoff</p>
-                    <p className="text-xs font-medium text-[#283c50] mt-0.5">{order.dropoffAddress || '—'}</p>
+                    <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Dropoff</p>
+                    <p className="text-xs font-medium text-[#0D1426] mt-0.5">{order.dropoffAddress || '—'}</p>
                   </div>
                 </div>
               </div>
@@ -401,20 +401,20 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
                           className="w-2.5 h-2.5 rounded-full border-2 mt-0.5 shrink-0"
                           style={
                             isLast
-                              ? { backgroundColor: '#3454d1', borderColor: '#3454d1' }
-                              : { backgroundColor: '#fff', borderColor: '#d1d5db' }
+                              ? { backgroundColor: '#1E5FFF', borderColor: '#1E5FFF' }
+                              : { backgroundColor: '#fff', borderColor: '#DDE2EC' }
                           }
                         />
-                        {!isLast && <div className="w-px flex-1 bg-[#e5e7eb] mt-1 mb-1" />}
+                        {!isLast && <div className="w-px flex-1 bg-[#E7EAF1] mt-1 mb-1" />}
                       </div>
                       <div className="pb-4">
-                        <p className="text-xs font-semibold text-[#283c50]">
+                        <p className="text-xs font-semibold text-[#0D1426]">
                           {STATUS_CONFIG[event.status as OrderStatus]?.label ?? event.status}
                         </p>
                         {event.description && (
-                          <p className="text-[11px] text-[#6b7885] mt-0.5">{event.description}</p>
+                          <p className="text-[11px] text-[#525A72] mt-0.5">{event.description}</p>
                         )}
-                        <p className="text-[11px] text-[#9ca3af] mt-0.5">{formatDateTime(event.createdAt)}</p>
+                        <p className="text-[11px] text-[#9AA1B4] mt-0.5">{formatDateTime(event.createdAt)}</p>
                       </div>
                     </div>
                   )
@@ -426,12 +426,12 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
           {/* Truck-specific */}
           {order.type === 'TRUCK' && order.apartmentType && (
             <Section title="Move Details">
-              <div className="divide-y divide-[#f9fafb]">
+              <div className="divide-y divide-[#F7F9FC]">
                 <InfoRow
                   label="Apartment Type"
                   value={
                     <span className="flex items-center gap-1.5">
-                      <Home className="w-3.5 h-3.5 text-[#3454d1]" />
+                      <Home className="w-3.5 h-3.5 text-[#1E5FFF]" />
                       {order.apartmentType.name}
                     </span>
                   }
@@ -441,7 +441,7 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
                     label="Loaders"
                     value={
                       <span className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-[#6b7885]" />
+                        <Users className="w-3.5 h-3.5 text-[#525A72]" />
                         {order.numLoaders} loader{order.numLoaders !== 1 ? 's' : ''}
                       </span>
                     }
@@ -456,16 +456,16 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
 
           {order.notes && (
             <Section title="Notes">
-              <p className="text-xs text-[#6b7885]">{order.notes}</p>
+              <p className="text-xs text-[#525A72]">{order.notes}</p>
             </Section>
           )}
 
           {order.cancellationReason && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-[#fdf0f0]">
-              <AlertCircle className="w-4 h-4 text-[#ea4d4d] shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-[#FFE3E1]">
+              <AlertCircle className="w-4 h-4 text-[#FF3B30] shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold text-[#ea4d4d]">Cancellation Reason</p>
-                <p className="text-xs text-[#ea4d4d] mt-0.5">{order.cancellationReason}</p>
+                <p className="text-xs font-semibold text-[#FF3B30]">Cancellation Reason</p>
+                <p className="text-xs text-[#FF3B30] mt-0.5">{order.cancellationReason}</p>
               </div>
             </div>
           )}
@@ -477,21 +477,21 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
           <Section title="Customer">
             {order.customer ? (
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#eef1fb] flex items-center justify-center shrink-0">
-                  <User className="w-4 h-4 text-[#3454d1]" />
+                <div className="w-9 h-9 rounded-full bg-[#E7EEFF] flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-[#1E5FFF]" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#283c50]">
+                  <p className="text-xs font-semibold text-[#0D1426]">
                     {order.customer.firstName} {order.customer.lastName}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Phone className="w-3 h-3 text-[#9ca3af]" />
-                    <span className="text-[11px] text-[#9ca3af]">{order.customer.phone}</span>
+                    <Phone className="w-3 h-3 text-[#9AA1B4]" />
+                    <span className="text-[11px] text-[#9AA1B4]">{order.customer.phone}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-[#9ca3af]">No customer info</p>
+              <p className="text-xs text-[#9AA1B4]">No customer info</p>
             )}
           </Section>
 
@@ -499,12 +499,12 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
           {order.vendor && (
             <Section title="Vendor">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#f3eeff] flex items-center justify-center shrink-0">
-                  <Store className="w-4 h-4 text-[#8b5cf6]" />
+                <div className="w-9 h-9 rounded-full bg-[#F0EAFA] flex items-center justify-center shrink-0">
+                  <Store className="w-4 h-4 text-[#7A5AE0]" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#283c50]">{order.vendor.name}</p>
-                  <p className="text-[11px] text-[#9ca3af] capitalize">{order.vendor.type.toLowerCase()}</p>
+                  <p className="text-xs font-semibold text-[#0D1426]">{order.vendor.name}</p>
+                  <p className="text-[11px] text-[#9AA1B4] capitalize">{order.vendor.type.toLowerCase()}</p>
                 </div>
               </div>
             </Section>
@@ -514,27 +514,27 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
           <Section title={order.type === 'TRUCK' ? 'Assigned Driver' : 'Assigned Rider'}>
             {order.rider ? (
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#e8faf2] flex items-center justify-center shrink-0">
-                  <Truck className="w-4 h-4 text-[#17c666]" />
+                <div className="w-9 h-9 rounded-full bg-[#DFF5EC] flex items-center justify-center shrink-0">
+                  <Truck className="w-4 h-4 text-[#1DB980]" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#283c50]">
+                  <p className="text-xs font-semibold text-[#0D1426]">
                     {order.rider.firstName} {order.rider.lastName}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Phone className="w-3 h-3 text-[#9ca3af]" />
-                    <span className="text-[11px] text-[#9ca3af]">{order.rider.phone}</span>
+                    <Phone className="w-3 h-3 text-[#9AA1B4]" />
+                    <span className="text-[11px] text-[#9AA1B4]">{order.rider.phone}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-[#9ca3af]">No rider assigned yet.</p>
+              <p className="text-xs text-[#9AA1B4]">No rider assigned yet.</p>
             )}
           </Section>
 
           {/* Payment */}
           <Section title="Payment">
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               <InfoRow label="Method" value={order.paymentMethod} />
               <InfoRow label="Status" value={<PaymentStatusBadge status={order.paymentStatus} />} />
             </div>
@@ -553,7 +553,7 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
 
           {/* Meta */}
           <Section title="Order Info">
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               <InfoRow label="ID" value={<span className="font-mono text-[11px]">{order.id.slice(0, 8)}…</span>} />
               <InfoRow label="Type" value={ORDER_TYPE_LABELS[order.type] ?? order.type} />
               <InfoRow label="Created" value={formatDateTime(order.createdAt)} />
@@ -586,7 +586,7 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-24 gap-2 text-xs text-[#9ca3af]">
+      <div className="flex items-center justify-center py-24 gap-2 text-xs text-[#9AA1B4]">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading order…
       </div>
     )
@@ -595,9 +595,9 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
   if (isError || !order) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <AlertCircle className="w-8 h-8 text-[#ea4d4d]" />
-        <p className="text-sm font-medium text-[#283c50]">Order not found</p>
-        <button onClick={() => router.back()} className="text-xs text-[#3454d1] hover:underline">
+        <AlertCircle className="w-8 h-8 text-[#FF3B30]" />
+        <p className="text-sm font-medium text-[#0D1426]">Order not found</p>
+        <button onClick={() => router.back()} className="text-xs text-[#1E5FFF] hover:underline">
           Go back
         </button>
       </div>
@@ -621,24 +621,24 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
       <div className="flex items-center gap-3 flex-wrap">
         <button
           onClick={() => router.back()}
-          className="w-8 h-8 rounded flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+          className="w-8 h-8 rounded flex items-center justify-center hover:bg-[#EDF0F6] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4 text-[#6b7885]" />
+          <ArrowLeft className="w-4 h-4 text-[#525A72]" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-lg font-bold text-[#283c50] font-mono">{order.trackingCode}</h1>
+            <h1 className="text-lg font-bold text-[#0D1426] font-mono">{order.trackingCode}</h1>
             <span
               className="text-[11px] font-semibold rounded-full px-2.5 py-0.5"
               style={{ backgroundColor: statusCfg.bg, color: statusCfg.text }}
             >
               {statusCfg.label}
             </span>
-            <span className="text-[11px] font-medium rounded-full px-2.5 py-0.5 bg-[#f3f4f6] text-[#6b7885]">
+            <span className="text-[11px] font-medium rounded-full px-2.5 py-0.5 bg-[#EDF0F6] text-[#525A72]">
               {ORDER_TYPE_LABELS[order.type] ?? order.type}
             </span>
           </div>
-          <p className="text-xs text-[#9ca3af] mt-0.5">Placed {formatDateTime(order.createdAt)}</p>
+          <p className="text-xs text-[#9AA1B4] mt-0.5">Placed {formatDateTime(order.createdAt)}</p>
         </div>
 
         {/* Action buttons */}
@@ -649,14 +649,14 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
                 disabled={actionLoading}
                 onClick={() => runAction(() => accept(order.id).unwrap())}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded text-white font-medium disabled:opacity-50 transition-opacity"
-                style={{ backgroundColor: '#17c666' }}
+                style={{ backgroundColor: '#1DB980' }}
               >
                 {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                 Accept
               </button>
               <button
                 onClick={() => setShowReject(true)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#ea4d4d] text-[#ea4d4d] hover:bg-[#fdf0f0] font-medium"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#FF3B30] text-[#FF3B30] hover:bg-[#FFE3E1] font-medium"
               >
                 <XCircle className="w-3.5 h-3.5" /> Reject
               </button>
@@ -667,7 +667,7 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
               disabled={actionLoading}
               onClick={() => runAction(() => markPreparing(order.id).unwrap())}
               className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded text-white font-medium disabled:opacity-50"
-              style={{ backgroundColor: '#8b5cf6' }}
+              style={{ backgroundColor: '#7A5AE0' }}
             >
               {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
               Mark Preparing
@@ -687,7 +687,7 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
           {!['DELIVERED', 'CANCELLED', 'FAILED'].includes(order.status) && (
             <button
               onClick={() => setShowCancel(true)}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#ea4d4d] text-[#ea4d4d] hover:bg-[#fdf0f0] font-medium"
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-[#FF3B30] text-[#FF3B30] hover:bg-[#FFE3E1] font-medium"
             >
               <Ban className="w-3.5 h-3.5" /> Cancel Order
             </button>
@@ -699,15 +699,15 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
         {/* Left */}
         <div className="lg:col-span-2 space-y-5">
           <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#f3f4f6]">
-              <h3 className="text-xs font-semibold text-[#283c50]">Order Items</h3>
+            <div className="px-4 py-3 border-b border-[#EDF0F6]">
+              <h3 className="text-xs font-semibold text-[#0D1426]">Order Items</h3>
             </div>
             <ItemsTable items={order.items} />
           </div>
 
           {order.notes && (
             <Section title="Notes">
-              <p className="text-xs text-[#6b7885]">{order.notes}</p>
+              <p className="text-xs text-[#525A72]">{order.notes}</p>
             </Section>
           )}
         </div>
@@ -717,26 +717,26 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
           <Section title="Customer">
             {order.customer ? (
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#eef1fb] flex items-center justify-center shrink-0">
-                  <User className="w-4 h-4 text-[#3454d1]" />
+                <div className="w-9 h-9 rounded-full bg-[#E7EEFF] flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-[#1E5FFF]" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#283c50]">
+                  <p className="text-xs font-semibold text-[#0D1426]">
                     {order.customer.firstName} {order.customer.lastName}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Phone className="w-3 h-3 text-[#9ca3af]" />
-                    <span className="text-[11px] text-[#9ca3af]">{order.customer.phone}</span>
+                    <Phone className="w-3 h-3 text-[#9AA1B4]" />
+                    <span className="text-[11px] text-[#9AA1B4]">{order.customer.phone}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-[#9ca3af]">No customer info</p>
+              <p className="text-xs text-[#9AA1B4]">No customer info</p>
             )}
           </Section>
 
           <Section title="Payment">
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               <InfoRow label="Method" value={order.paymentMethod} />
               <InfoRow label="Status" value={<PaymentStatusBadge status={order.paymentStatus} />} />
             </div>
@@ -754,7 +754,7 @@ function VendorOrderDetail({ orderId }: { orderId: string }) {
           </Section>
 
           <Section title="Order Info">
-            <div className="divide-y divide-[#f9fafb]">
+            <div className="divide-y divide-[#F7F9FC]">
               <InfoRow label="ID" value={<span className="font-mono text-[11px]">{order.id.slice(0, 8)}…</span>} />
               <InfoRow label="Type" value={ORDER_TYPE_LABELS[order.type] ?? order.type} />
               <InfoRow label="Created" value={formatDateTime(order.createdAt)} />

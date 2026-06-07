@@ -38,7 +38,7 @@ export default function ImageUploader({ value, onChange, onClear }: Props) {
       <div
         className="relative flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors"
         style={{
-          borderColor: error ? '#ea4d4d' : '#e5e7eb',
+          borderColor: error ? '#FF3B30' : '#E7EAF1',
           minHeight: 110,
           cursor: isLoading ? 'default' : 'pointer',
         }}
@@ -49,13 +49,13 @@ export default function ImageUploader({ value, onChange, onClear }: Props) {
             <img
               src={value}
               alt="Preview"
-              className="w-20 h-20 object-cover rounded-lg border border-[#e5e7eb]"
+              className="w-20 h-20 object-cover rounded-lg border border-[#E7EAF1]"
             />
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onClear() }}
               className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
-              style={{ backgroundColor: '#ea4d4d' }}
+              style={{ backgroundColor: '#FF3B30' }}
             >
               <X className="w-2.5 h-2.5 text-white" />
             </button>
@@ -63,25 +63,25 @@ export default function ImageUploader({ value, onChange, onClear }: Props) {
               type="button"
               onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
               className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
-              style={{ backgroundColor: '#3454d1' }}
+              style={{ backgroundColor: '#1E5FFF' }}
             >
               <Upload className="w-2.5 h-2.5 text-white" />
             </button>
           </div>
         ) : isLoading ? (
           <div className="flex flex-col items-center gap-2 py-5">
-            <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#3454d1' }} />
-            <span className="text-[11px] text-[#9ca3af]">Uploading…</span>
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#1E5FFF' }} />
+            <span className="text-[11px] text-[#9AA1B4]">Uploading…</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 py-5">
             <div
               className="w-9 h-9 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: '#eef1fb' }}
+              style={{ backgroundColor: '#E7EEFF' }}
             >
-              <ImageIcon className="w-4.5 h-4.5" style={{ color: '#3454d1', width: 18, height: 18 }} />
+              <ImageIcon className="w-4.5 h-4.5" style={{ color: '#1E5FFF', width: 18, height: 18 }} />
             </div>
-            <span className="text-[11px] text-[#6b7885]">Click to upload</span>
+            <span className="text-[11px] text-[#525A72]">Click to upload</span>
           </div>
         )}
         <input
@@ -96,10 +96,10 @@ export default function ImageUploader({ value, onChange, onClear }: Props) {
           }}
         />
       </div>
-      <p className="text-[11px] text-[#9ca3af]">
+      <p className="text-[11px] text-[#9AA1B4]">
         Recommended 200×200 px · Max 2 MB · JPG, PNG, WebP
       </p>
-      {error && <p className="text-[11px]" style={{ color: '#ea4d4d' }}>{error}</p>}
+      {error && <p className="text-[11px]" style={{ color: '#FF3B30' }}>{error}</p>}
     </div>
   )
 }

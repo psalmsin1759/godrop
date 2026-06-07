@@ -44,9 +44,9 @@ function IconCheck() {
 function IconWarning() {
   return (
     <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
-      <path d="M12 9v4" stroke="#dc2626" strokeWidth="2.2" strokeLinecap="round" />
-      <circle cx="12" cy="16.5" r="1.2" fill="#dc2626" />
-      <path d="M10.3 4.2L2.5 18A2 2 0 0 0 4.2 21h15.6a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z" stroke="#dc2626" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M12 9v4" stroke="#C42B22" strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="12" cy="16.5" r="1.2" fill="#C42B22" />
+      <path d="M10.3 4.2L2.5 18A2 2 0 0 0 4.2 21h15.6a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z" stroke="#C42B22" strokeWidth="1.8" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -168,7 +168,7 @@ function ResetPasswordInner() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-[#f0f4f8] p-6"
+      className="min-h-screen flex items-center justify-center bg-[#F7F9FC] p-6"
       style={{ fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
     >
       <motion.div
@@ -318,7 +318,7 @@ function ResetPasswordInner() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 280, damping: 22 }}
                 className="w-[76px] h-[76px] rounded-[24px] mx-auto mb-[22px] flex items-center justify-center"
-                style={{ background: '#fef2f2' }}
+                style={{ background: '#FFE3E1' }}
               >
                 <IconWarning />
               </motion.div>
@@ -340,7 +340,7 @@ function ResetPasswordInner() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[12px] text-[#9ca3af] mt-[24px]">
+        <p className="text-center text-[12px] text-[#9AA1B4] mt-[24px]">
           © {new Date().getFullYear()} Godrop Technologies Ltd · Lagos, Nigeria
         </p>
       </motion.div>
@@ -357,7 +357,7 @@ function ResetPasswordInner() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#f0f4f8]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F9FC]">
         <div className="w-8 h-8 rounded-full border-[3px] border-[#1E5FFF]/30 border-t-[#1E5FFF] animate-spin" />
       </div>
     }>

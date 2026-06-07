@@ -20,19 +20,19 @@ import { Loader2, TrendingUp, ShoppingBag, Users, Store, Bike, Star, UserCheck, 
 import type { GraphGranularity } from '@/types/api'
 
 const TYPE_COLORS: Record<string, string> = {
-  FOOD: '#3454d1', GROCERY: '#17c666', RETAIL: '#ffa21d',
-  PHARMACY: '#3dc7be', PARCEL: '#8b5cf6', TRUCK: '#ea4d4d',
+  FOOD: '#1E5FFF', GROCERY: '#1DB980', RETAIL: '#E8930C',
+  PHARMACY: '#FF6A2C', PARCEL: '#7A5AE0', TRUCK: '#FF3B30',
 }
 const KYC_COLORS: Record<string, string> = {
-  PENDING: '#ffa21d', SUBMITTED: '#3454d1', VERIFIED: '#17c666', REJECTED: '#ea4d4d',
+  PENDING: '#E8930C', SUBMITTED: '#1E5FFF', VERIFIED: '#1DB980', REJECTED: '#FF3B30',
 }
 const VEHICLE_COLORS: Record<string, string> = {
-  MOTORCYCLE: '#3454d1', BICYCLE: '#17c666', CAR: '#ffa21d', VAN: '#ea4d4d',
+  MOTORCYCLE: '#1E5FFF', BICYCLE: '#1DB980', CAR: '#E8930C', VAN: '#FF3B30',
 }
 const STATUS_COLORS: Record<string, string> = {
-  DELIVERED: '#17c666', IN_TRANSIT: '#3454d1', PENDING: '#ffa21d',
-  CANCELLED: '#ea4d4d', ACCEPTED: '#3dc7be', PREPARING: '#8b5cf6',
-  READY_FOR_PICKUP: '#06b6d4', PICKED_UP: '#f59e0b', FAILED: '#6b7280',
+  DELIVERED: '#1DB980', IN_TRANSIT: '#1E5FFF', PENDING: '#E8930C',
+  CANCELLED: '#FF3B30', ACCEPTED: '#FF6A2C', PREPARING: '#7A5AE0',
+  READY_FOR_PICKUP: '#06b6d4', PICKED_UP: '#E8930C', FAILED: '#9AA1B4',
 }
 
 interface TooltipProps {
@@ -44,13 +44,13 @@ interface TooltipProps {
 function ChartTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-[#e5e7eb] rounded-lg shadow-lg p-3 text-xs">
-      <p className="font-semibold text-[#283c50] mb-1.5">{label}</p>
+    <div className="bg-white border border-[#E7EAF1] rounded-lg shadow-lg p-3 text-xs">
+      <p className="font-semibold text-[#0D1426] mb-1.5">{label}</p>
       {payload.map((p) => (
         <div key={p.name} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-          <span className="text-[#6b7885]">{p.name}:</span>
-          <span className="font-semibold text-[#283c50]">
+          <span className="text-[#525A72]">{p.name}:</span>
+          <span className="font-semibold text-[#0D1426]">
             {p.dataKey === 'revenueKobo' || p.dataKey === 'Revenue'
               ? formatNaira(p.value)
               : formatNumber(p.value)}
@@ -86,14 +86,14 @@ function SystemAnalyticsView() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-6 h-6 animate-spin text-[#3454d1]" />
+      <Loader2 className="w-6 h-6 animate-spin text-[#1E5FFF]" />
     </div>
   )
 
   return (
     <div className="space-y-5">
       {/* Tab switcher */}
-      <div className="flex gap-1 border-b border-[#e5e7eb]">
+      <div className="flex gap-1 border-b border-[#E7EAF1]">
         {([
           { id: 'platform', label: 'Platform', icon: <ShoppingBag className="w-3.5 h-3.5" /> },
           { id: 'riders',   label: 'Riders',   icon: <Bike className="w-3.5 h-3.5" /> },
@@ -101,8 +101,8 @@ function SystemAnalyticsView() {
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${
               tab === t.id
-                ? 'border-[#3454d1] text-[#3454d1]'
-                : 'border-transparent text-[#6b7885] hover:text-[#283c50]'
+                ? 'border-[#1E5FFF] text-[#1E5FFF]'
+                : 'border-transparent text-[#525A72] hover:text-[#0D1426]'
             }`}>
             {t.icon}{t.label}
           </button>
@@ -114,17 +114,17 @@ function SystemAnalyticsView() {
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: s ? formatNaira(s.totalRevenueKobo) : '—', icon: TrendingUp, color: '#ffa21d', bg: '#fff6e8' },
-          { label: 'Total Orders', value: s ? formatNumber(s.totalOrders) : '—', icon: ShoppingBag, color: '#3454d1', bg: '#eef1fb' },
-          { label: 'Total Users', value: s ? formatNumber(s.totalUsers) : '—', icon: Users, color: '#17c666', bg: '#e8faf2' },
-          { label: 'Active Vendors', value: s ? formatNumber(s.activeVendors) : '—', icon: Store, color: '#3dc7be', bg: '#e0f9f7' },
+          { label: 'Total Revenue', value: s ? formatNaira(s.totalRevenueKobo) : '—', icon: TrendingUp, color: '#E8930C', bg: '#FBEDD7' },
+          { label: 'Total Orders', value: s ? formatNumber(s.totalOrders) : '—', icon: ShoppingBag, color: '#1E5FFF', bg: '#E7EEFF' },
+          { label: 'Total Users', value: s ? formatNumber(s.totalUsers) : '—', icon: Users, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Active Vendors', value: s ? formatNumber(s.activeVendors) : '—', icon: Store, color: '#FF6A2C', bg: '#FFEAE1' },
         ].map((c) => (
           <div key={c.label} className="card p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ backgroundColor: c.bg }}>
               <c.icon style={{ color: c.color, width: 18, height: 18 }} />
             </div>
-            <p className="text-lg font-bold text-[#283c50]">{c.value}</p>
-            <p className="text-xs text-[#6b7885] mt-0.5">{c.label}</p>
+            <p className="text-lg font-bold text-[#0D1426]">{c.value}</p>
+            <p className="text-xs text-[#525A72] mt-0.5">{c.label}</p>
           </div>
         ))}
       </div>
@@ -133,15 +133,15 @@ function SystemAnalyticsView() {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Revenue & Orders Over Time</h3>
-          <div className="flex items-center gap-1 p-0.5 bg-[#f3f4f6] rounded">
+          <div className="flex items-center gap-1 p-0.5 bg-[#EDF0F6] rounded">
             {granularities.map((g) => (
               <button
                 key={g.value}
                 onClick={() => setGranularity(g.value)}
                 className="text-[11px] font-medium px-2.5 py-1 rounded transition-all"
                 style={granularity === g.value
-                  ? { backgroundColor: '#fff', color: '#3454d1', boxShadow: '0 1px 2px rgba(0,0,0,.08)' }
-                  : { color: '#6b7885' }}
+                  ? { backgroundColor: '#fff', color: '#1E5FFF', boxShadow: '0 1px 2px rgba(0,0,0,.08)' }
+                  : { color: '#525A72' }}
               >
                 {g.label}
               </button>
@@ -151,22 +151,22 @@ function SystemAnalyticsView() {
         <div className="p-4">
           {graphLoading ? (
             <div className="h-[260px] flex items-center justify-center">
-              <Loader2 className="w-5 h-5 animate-spin text-[#3454d1]" />
+              <Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" />
             </div>
           ) : chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={32} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF0F6" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} width={32} />
                 <Tooltip content={<ChartTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="Orders" stroke="#3454d1" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="New Users" stroke="#17c666" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="Orders" stroke="#1E5FFF" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="New Users" stroke="#1DB980" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[260px] flex items-center justify-center text-xs text-[#9ca3af]">No data available</div>
+            <div className="h-[260px] flex items-center justify-center text-xs text-[#9AA1B4]">No data available</div>
           )}
         </div>
       </div>
@@ -179,19 +179,19 @@ function SystemAnalyticsView() {
             {analytics?.ordersByType?.length ? (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={analytics.ordersByType} barSize={24}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <XAxis dataKey="type" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={32} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF0F6" />
+                  <XAxis dataKey="type" tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} width={32} />
                   <Tooltip content={<ChartTooltip />} />
                   <Bar dataKey="count" name="Orders" radius={[3, 3, 0, 0]}>
                     {analytics.ordersByType.map((entry, i) => (
-                      <Cell key={i} fill={TYPE_COLORS[entry.type] ?? '#9ca3af'} />
+                      <Cell key={i} fill={TYPE_COLORS[entry.type] ?? '#9AA1B4'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9AA1B4]">No data</div>
             )}
           </div>
         </div>
@@ -212,17 +212,17 @@ function SystemAnalyticsView() {
                     nameKey="status"
                   >
                     {analytics.ordersByStatus.map((entry, i) => (
-                      <Cell key={i} fill={STATUS_COLORS[entry.status] ?? '#9ca3af'} />
+                      <Cell key={i} fill={STATUS_COLORS[entry.status] ?? '#9AA1B4'} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(v: number) => formatNumber(v)} />
                   <Legend
-                    formatter={(value) => <span style={{ fontSize: 11, color: '#4b5563' }}>{value.replace('_', ' ')}</span>}
+                    formatter={(value) => <span style={{ fontSize: 11, color: '#525A72' }}>{value.replace('_', ' ')}</span>}
                   />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9AA1B4]">No data</div>
             )}
           </div>
         </div>
@@ -235,24 +235,24 @@ function SystemAnalyticsView() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                   {['Vendor', 'Type', 'Rating', 'Orders', 'Revenue'].map((h) => (
-                    <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f9fafb]">
+              <tbody className="divide-y divide-[#F7F9FC]">
                 {analytics.topVendors.map((v) => (
-                  <tr key={v.id} className="hover:bg-[#fafafa] transition-colors">
-                    <td className="px-4 py-2.5 text-xs font-medium text-[#283c50]">{v.name}</td>
+                  <tr key={v.id} className="hover:bg-[#F7F9FC] transition-colors">
+                    <td className="px-4 py-2.5 text-xs font-medium text-[#0D1426]">{v.name}</td>
                     <td className="px-4 py-2.5">
-                      <span className="text-[11px] font-medium capitalize" style={{ color: TYPE_COLORS[v.type] ?? '#9ca3af' }}>
+                      <span className="text-[11px] font-medium capitalize" style={{ color: TYPE_COLORS[v.type] ?? '#9AA1B4' }}>
                         {v.type.toLowerCase()}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs font-semibold text-[#283c50]">{v.rating?.toFixed(1) ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-xs font-semibold text-[#3454d1]">{formatNumber(v.orders)}</td>
-                    <td className="px-4 py-2.5 text-xs font-semibold text-[#283c50]">{formatNaira(v.revenueKobo)}</td>
+                    <td className="px-4 py-2.5 text-xs font-semibold text-[#0D1426]">{v.rating?.toFixed(1) ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs font-semibold text-[#1E5FFF]">{formatNumber(v.orders)}</td>
+                    <td className="px-4 py-2.5 text-xs font-semibold text-[#0D1426]">{formatNaira(v.revenueKobo)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -296,7 +296,7 @@ function RidersAnalyticsView() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-6 h-6 animate-spin text-[#3454d1]" />
+      <Loader2 className="w-6 h-6 animate-spin text-[#1E5FFF]" />
     </div>
   )
 
@@ -305,17 +305,17 @@ function RidersAnalyticsView() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Riders', value: stats ? formatNumber(stats.total) : '—', icon: Bike, color: '#3454d1', bg: '#eef1fb' },
-          { label: 'Active Riders', value: stats ? formatNumber(stats.active) : '—', icon: UserCheck, color: '#17c666', bg: '#e8faf2' },
-          { label: 'Online Now', value: stats ? formatNumber(stats.available) : '—', icon: Bike, color: '#ffa21d', bg: '#fff6e8' },
-          { label: 'KYC Verified', value: stats ? formatNumber(stats.byKycStatus.VERIFIED ?? 0) : '—', icon: Shield, color: '#3dc7be', bg: '#e0f9f7' },
+          { label: 'Total Riders', value: stats ? formatNumber(stats.total) : '—', icon: Bike, color: '#1E5FFF', bg: '#E7EEFF' },
+          { label: 'Active Riders', value: stats ? formatNumber(stats.active) : '—', icon: UserCheck, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Online Now', value: stats ? formatNumber(stats.available) : '—', icon: Bike, color: '#E8930C', bg: '#FBEDD7' },
+          { label: 'KYC Verified', value: stats ? formatNumber(stats.byKycStatus.VERIFIED ?? 0) : '—', icon: Shield, color: '#FF6A2C', bg: '#FFEAE1' },
         ].map((c) => (
           <div key={c.label} className="card p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ backgroundColor: c.bg }}>
               <c.icon style={{ color: c.color, width: 18, height: 18 }} />
             </div>
-            <p className="text-lg font-bold text-[#283c50]">{c.value}</p>
-            <p className="text-xs text-[#6b7885] mt-0.5">{c.label}</p>
+            <p className="text-lg font-bold text-[#0D1426]">{c.value}</p>
+            <p className="text-xs text-[#525A72] mt-0.5">{c.label}</p>
           </div>
         ))}
       </div>
@@ -331,19 +331,19 @@ function RidersAnalyticsView() {
                   <Pie data={kycData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
                     paddingAngle={2} dataKey="value" nameKey="name">
                     {kycData.map((entry, i) => (
-                      <Cell key={i} fill={KYC_COLORS[entry.name] ?? '#9ca3af'} />
+                      <Cell key={i} fill={KYC_COLORS[entry.name] ?? '#9AA1B4'} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(v: number) => formatNumber(v)} />
                   <Legend formatter={(value) => (
-                    <span style={{ fontSize: 11, color: '#4b5563', textTransform: 'capitalize' }}>
+                    <span style={{ fontSize: 11, color: '#525A72', textTransform: 'capitalize' }}>
                       {value.toLowerCase()}
                     </span>
                   )} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9AA1B4]">No data</div>
             )}
           </div>
         </div>
@@ -355,20 +355,20 @@ function RidersAnalyticsView() {
             {vehicleData.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={vehicleData} barSize={32}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false}
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF0F6" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false}
                     tickFormatter={(v) => v.charAt(0) + v.slice(1).toLowerCase()} />
-                  <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={28} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} width={28} />
                   <Tooltip formatter={(v: number) => [formatNumber(v), 'Riders']} />
                   <Bar dataKey="value" name="Riders" radius={[3, 3, 0, 0]}>
                     {vehicleData.map((entry, i) => (
-                      <Cell key={i} fill={VEHICLE_COLORS[entry.name] ?? '#9ca3af'} />
+                      <Cell key={i} fill={VEHICLE_COLORS[entry.name] ?? '#9AA1B4'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9AA1B4]">No data</div>
             )}
           </div>
         </div>
@@ -381,38 +381,38 @@ function RidersAnalyticsView() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
+                <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
                   {['#', 'Rider', 'Vehicle', 'KYC', 'Rating', 'Orders', 'Status'].map((h) => (
-                    <th key={h} className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3 whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f9fafb]">
+              <tbody className="divide-y divide-[#F7F9FC]">
                 {topRiders.map((rider, i) => {
-                  const kycColor = KYC_COLORS[rider.kycStatus] ?? '#9ca3af'
-                  const kycBg = rider.kycStatus === 'VERIFIED' ? '#e8faf2'
-                    : rider.kycStatus === 'SUBMITTED' ? '#eef1fb'
-                    : rider.kycStatus === 'REJECTED' ? '#fdf0f0' : '#fff6e8'
+                  const kycColor = KYC_COLORS[rider.kycStatus] ?? '#9AA1B4'
+                  const kycBg = rider.kycStatus === 'VERIFIED' ? '#DFF5EC'
+                    : rider.kycStatus === 'SUBMITTED' ? '#E7EEFF'
+                    : rider.kycStatus === 'REJECTED' ? '#FFE3E1' : '#FBEDD7'
                   return (
-                    <tr key={rider.id} className="hover:bg-[#fafafa] transition-colors">
+                    <tr key={rider.id} className="hover:bg-[#F7F9FC] transition-colors">
                       <td className="px-4 py-2.5">
                         <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-                          style={{ backgroundColor: '#eef1fb', color: '#3454d1' }}>{i + 1}</span>
+                          style={{ backgroundColor: '#E7EEFF', color: '#1E5FFF' }}>{i + 1}</span>
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                            style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}>
+                            style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}>
                             {rider.firstName[0]}{rider.lastName[0]}
                           </div>
                           <div>
-                            <p className="text-xs font-medium text-[#283c50]">{rider.firstName} {rider.lastName}</p>
-                            {rider.isAvailable && <span className="text-[10px] text-[#17c666]">● Online</span>}
+                            <p className="text-xs font-medium text-[#0D1426]">{rider.firstName} {rider.lastName}</p>
+                            {rider.isAvailable && <span className="text-[10px] text-[#1DB980]">● Online</span>}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="text-xs text-[#6b7885] capitalize">{rider.vehicleType?.toLowerCase() ?? '—'}</span>
+                        <span className="text-xs text-[#525A72] capitalize">{rider.vehicleType?.toLowerCase() ?? '—'}</span>
                       </td>
                       <td className="px-4 py-2.5">
                         <span className="text-[11px] font-medium rounded-full px-2 py-0.5 capitalize"
@@ -423,19 +423,19 @@ function RidersAnalyticsView() {
                       <td className="px-4 py-2.5">
                         {rider.rating != null ? (
                           <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-[#ffa21d]" fill="#ffa21d" />
-                            <span className="text-xs font-semibold text-[#283c50]">{rider.rating.toFixed(1)}</span>
+                            <Star className="w-3 h-3 text-[#E8930C]" fill="#E8930C" />
+                            <span className="text-xs font-semibold text-[#0D1426]">{rider.rating.toFixed(1)}</span>
                           </div>
-                        ) : <span className="text-xs text-[#9ca3af]">—</span>}
+                        ) : <span className="text-xs text-[#9AA1B4]">—</span>}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="text-xs font-bold text-[#3454d1]">{rider._count?.orders ?? 0}</span>
+                        <span className="text-xs font-bold text-[#1E5FFF]">{rider._count?.orders ?? 0}</span>
                       </td>
                       <td className="px-4 py-2.5">
                         <span className="text-[11px] font-medium rounded-full px-2 py-0.5"
                           style={rider.isActive
-                            ? { backgroundColor: '#e8faf2', color: '#17c666' }
-                            : { backgroundColor: '#f3f4f6', color: '#9ca3af' }}>
+                            ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
+                            : { backgroundColor: '#EDF0F6', color: '#9AA1B4' }}>
                           {rider.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
@@ -457,18 +457,18 @@ function RidersAnalyticsView() {
               {topEarningRiders.slice(0, 5).map((rider, i) => (
                 <div key={rider.id} className="flex items-center gap-3">
                   <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                    style={{ backgroundColor: '#eef1fb', color: '#3454d1' }}>{i + 1}</span>
+                    style={{ backgroundColor: '#E7EEFF', color: '#1E5FFF' }}>{i + 1}</span>
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #3454d1, #3dc7be)' }}>
+                    style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}>
                     {rider.firstName[0]}{rider.lastName[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-[#283c50] truncate">{rider.firstName} {rider.lastName}</p>
-                    <p className="text-[11px] text-[#9ca3af]">{rider._count?.orders ?? 0} orders · {rider.ratingCount} reviews</p>
+                    <p className="text-xs font-medium text-[#0D1426] truncate">{rider.firstName} {rider.lastName}</p>
+                    <p className="text-[11px] text-[#9AA1B4]">{rider._count?.orders ?? 0} orders · {rider.ratingCount} reviews</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Star className="w-3.5 h-3.5 text-[#ffa21d]" fill="#ffa21d" />
-                    <span className="text-sm font-bold text-[#283c50]">{rider.rating?.toFixed(1)}</span>
+                    <Star className="w-3.5 h-3.5 text-[#E8930C]" fill="#E8930C" />
+                    <span className="text-sm font-bold text-[#0D1426]">{rider.rating?.toFixed(1)}</span>
                   </div>
                 </div>
               ))}
@@ -497,7 +497,7 @@ function VendorAnalyticsView() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-6 h-6 animate-spin text-[#17c666]" />
+      <Loader2 className="w-6 h-6 animate-spin text-[#1DB980]" />
     </div>
   )
 
@@ -505,14 +505,14 @@ function VendorAnalyticsView() {
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: s ? formatNaira(s.totalRevenueKobo) : '—', color: '#ffa21d', bg: '#fff6e8' },
-          { label: 'Total Orders', value: s ? formatNumber(s.totalOrders) : '—', color: '#3454d1', bg: '#eef1fb' },
-          { label: 'Completed', value: s ? formatNumber(s.completedOrders) : '—', color: '#17c666', bg: '#e8faf2' },
-          { label: 'Avg. Order Value', value: s ? formatNaira(s.avgOrderValueKobo) : '—', color: '#3dc7be', bg: '#e0f9f7' },
+          { label: 'Total Revenue', value: s ? formatNaira(s.totalRevenueKobo) : '—', color: '#E8930C', bg: '#FBEDD7' },
+          { label: 'Total Orders', value: s ? formatNumber(s.totalOrders) : '—', color: '#1E5FFF', bg: '#E7EEFF' },
+          { label: 'Completed', value: s ? formatNumber(s.completedOrders) : '—', color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Avg. Order Value', value: s ? formatNaira(s.avgOrderValueKobo) : '—', color: '#FF6A2C', bg: '#FFEAE1' },
         ].map((c) => (
           <div key={c.label} className="card p-4">
-            <p className="text-lg font-bold text-[#283c50]" style={{ color: c.color }}>{c.value}</p>
-            <p className="text-xs text-[#6b7885] mt-1">{c.label}</p>
+            <p className="text-lg font-bold text-[#0D1426]" style={{ color: c.color }}>{c.value}</p>
+            <p className="text-xs text-[#525A72] mt-1">{c.label}</p>
           </div>
         ))}
       </div>
@@ -520,15 +520,15 @@ function VendorAnalyticsView() {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Orders Over Time</h3>
-          <div className="flex items-center gap-1 p-0.5 bg-[#f3f4f6] rounded">
+          <div className="flex items-center gap-1 p-0.5 bg-[#EDF0F6] rounded">
             {granularities.map((g) => (
               <button
                 key={g.value}
                 onClick={() => setGranularity(g.value)}
                 className="text-[11px] font-medium px-2.5 py-1 rounded transition-all"
                 style={granularity === g.value
-                  ? { backgroundColor: '#fff', color: '#17c666', boxShadow: '0 1px 2px rgba(0,0,0,.08)' }
-                  : { color: '#6b7885' }}
+                  ? { backgroundColor: '#fff', color: '#1DB980', boxShadow: '0 1px 2px rgba(0,0,0,.08)' }
+                  : { color: '#525A72' }}
               >
                 {g.label}
               </button>
@@ -538,20 +538,20 @@ function VendorAnalyticsView() {
         <div className="p-4">
           {graphLoading ? (
             <div className="h-[260px] flex items-center justify-center">
-              <Loader2 className="w-5 h-5 animate-spin text-[#17c666]" />
+              <Loader2 className="w-5 h-5 animate-spin text-[#1DB980]" />
             </div>
           ) : chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={chartData} barSize={16}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={32} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF0F6" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} width={32} />
                 <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="Orders" fill="#17c666" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Orders" fill="#1DB980" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[260px] flex items-center justify-center text-xs text-[#9ca3af]">No data available</div>
+            <div className="h-[260px] flex items-center justify-center text-xs text-[#9AA1B4]">No data available</div>
           )}
         </div>
       </div>
@@ -566,15 +566,15 @@ function VendorAnalyticsView() {
                 <PieChart>
                   <Pie data={analytics.ordersByStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="count" nameKey="status">
                     {analytics.ordersByStatus.map((entry, i) => (
-                      <Cell key={i} fill={STATUS_COLORS[entry.status] ?? '#9ca3af'} />
+                      <Cell key={i} fill={STATUS_COLORS[entry.status] ?? '#9AA1B4'} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(v: number) => formatNumber(v)} />
-                  <Legend formatter={(value) => <span style={{ fontSize: 11, color: '#4b5563' }}>{value.replace('_', ' ')}</span>} />
+                  <Legend formatter={(value) => <span style={{ fontSize: 11, color: '#525A72' }}>{value.replace('_', ' ')}</span>} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-xs text-[#9ca3af]">No data</div>
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9AA1B4]">No data</div>
             )}
           </div>
         </div>
@@ -587,19 +587,19 @@ function VendorAnalyticsView() {
               <div className="space-y-2.5">
                 {analytics.topProducts.map((p, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <span className="w-5 h-5 rounded-full bg-[#eef1fb] flex items-center justify-center text-[10px] font-bold text-[#3454d1] shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-[#E7EEFF] flex items-center justify-center text-[10px] font-bold text-[#1E5FFF] shrink-0">
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-[#283c50] truncate">{p.name}</p>
-                      <p className="text-[11px] text-[#9ca3af]">{formatNumber(p.orders)} orders</p>
+                      <p className="text-xs font-medium text-[#0D1426] truncate">{p.name}</p>
+                      <p className="text-[11px] text-[#9AA1B4]">{formatNumber(p.orders)} orders</p>
                     </div>
-                    <span className="text-xs font-semibold text-[#283c50] shrink-0">{formatNaira(p.revenueKobo)}</span>
+                    <span className="text-xs font-semibold text-[#0D1426] shrink-0">{formatNaira(p.revenueKobo)}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-[140px] text-xs text-[#9ca3af]">No data</div>
+              <div className="flex items-center justify-center h-[140px] text-xs text-[#9AA1B4]">No data</div>
             )}
           </div>
         </div>
@@ -624,8 +624,8 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-[#283c50]">Analytics</h1>
-        <p className="text-xs text-[#9ca3af] mt-0.5">
+        <h1 className="text-lg font-bold text-[#0D1426]">Analytics</h1>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">
           {isVendor ? 'Your vendor performance data' : 'Platform-wide analytics and insights'}
         </p>
       </div>

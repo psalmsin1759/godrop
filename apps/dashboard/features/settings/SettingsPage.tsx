@@ -26,13 +26,13 @@ import {
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
 function inputCls(extra = '') {
-  return `w-full px-3 py-2 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] focus:outline-none focus:ring-1 focus:ring-[#17c666] ${extra}`
+  return `w-full px-3 py-2 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1DB980] ${extra}`
 }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="card p-5 space-y-4">
-      <h2 className="text-sm font-semibold text-[#283c50]">{title}</h2>
+      <h2 className="text-sm font-semibold text-[#0D1426]">{title}</h2>
       {children}
     </div>
   )
@@ -46,9 +46,9 @@ function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: bool
       className="flex items-center gap-2.5 text-xs font-medium group"
     >
       {value
-        ? <ToggleRight className="w-7 h-7 text-[#17c666]" />
-        : <ToggleLeft className="w-7 h-7 text-[#d1d5db]" />}
-      <span className={value ? 'text-[#283c50]' : 'text-[#9ca3af]'}>{label}</span>
+        ? <ToggleRight className="w-7 h-7 text-[#1DB980]" />
+        : <ToggleLeft className="w-7 h-7 text-[#DDE2EC]" />}
+      <span className={value ? 'text-[#0D1426]' : 'text-[#9AA1B4]'}>{label}</span>
     </button>
   )
 }
@@ -59,7 +59,7 @@ function SaveButton({ saving, saved }: { saving: boolean; saved: boolean }) {
       type="submit"
       disabled={saving}
       className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded text-white disabled:opacity-60 transition-colors"
-      style={{ backgroundColor: saved ? '#17c666' : '#283c50' }}
+      style={{ backgroundColor: saved ? '#1DB980' : '#0D1426' }}
     >
       {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
       {saved ? 'Saved!' : 'Save Changes'}
@@ -116,9 +116,9 @@ function OpeningHoursEditor({
               className="flex items-center gap-1.5 w-20 shrink-0 text-xs font-medium"
             >
               {active
-                ? <ToggleRight className="w-5 h-5 text-[#17c666]" />
-                : <ToggleLeft className="w-5 h-5 text-[#d1d5db]" />}
-              <span className={active ? 'text-[#283c50]' : 'text-[#9ca3af]'}>{DAY_LABELS[day]}</span>
+                ? <ToggleRight className="w-5 h-5 text-[#1DB980]" />
+                : <ToggleLeft className="w-5 h-5 text-[#DDE2EC]" />}
+              <span className={active ? 'text-[#0D1426]' : 'text-[#9AA1B4]'}>{DAY_LABELS[day]}</span>
             </button>
             {active ? (
               <div className="flex items-center gap-2">
@@ -126,18 +126,18 @@ function OpeningHoursEditor({
                   type="time"
                   value={value[day]?.open ?? '09:00'}
                   onChange={(e) => setTime(day, 'open', e.target.value)}
-                  className="px-2 py-1 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+                  className="px-2 py-1 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1DB980]"
                 />
-                <span className="text-xs text-[#9ca3af]">to</span>
+                <span className="text-xs text-[#9AA1B4]">to</span>
                 <input
                   type="time"
                   value={value[day]?.close ?? '22:00'}
                   onChange={(e) => setTime(day, 'close', e.target.value)}
-                  className="px-2 py-1 text-xs rounded border border-[#e5e7eb] bg-[#f9fafb] text-[#283c50] focus:outline-none focus:ring-1 focus:ring-[#17c666]"
+                  className="px-2 py-1 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1DB980]"
                 />
               </div>
             ) : (
-              <span className="text-xs text-[#d1d5db]">Closed</span>
+              <span className="text-xs text-[#DDE2EC]">Closed</span>
             )}
           </div>
         )
@@ -152,15 +152,15 @@ type TabId = 'store' | 'notifications' | 'profile' | 'security'
 
 function Tabs({ tabs, active, onChange }: { tabs: { id: TabId; label: string; icon: React.ReactNode }[]; active: TabId; onChange: (id: TabId) => void }) {
   return (
-    <div className="flex gap-1 border-b border-[#e5e7eb] mb-5">
+    <div className="flex gap-1 border-b border-[#E7EAF1] mb-5">
       {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
           className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${
             active === t.id
-              ? 'border-[#17c666] text-[#17c666]'
-              : 'border-transparent text-[#6b7885] hover:text-[#283c50]'
+              ? 'border-[#1DB980] text-[#1DB980]'
+              : 'border-transparent text-[#525A72] hover:text-[#0D1426]'
           }`}
         >
           {t.icon}
@@ -214,7 +214,7 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-32">
-      <Loader2 className="w-5 h-5 animate-spin text-[#17c666]" />
+      <Loader2 className="w-5 h-5 animate-spin text-[#1DB980]" />
     </div>
   )
 
@@ -223,7 +223,7 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {disabled && (
-        <div className="text-xs text-[#f59e0b] bg-[#fffbeb] border border-[#fde68a] rounded px-4 py-2.5">
+        <div className="text-xs text-[#E8930C] bg-[#FBEDD7] border border-[#F6D9A8] rounded px-4 py-2.5">
           Only the store Owner can update these settings.
         </div>
       )}
@@ -231,25 +231,25 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
       <SectionCard title="Store Information">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Store Name</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Store Name</label>
             <input disabled={disabled} type="text" value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               className={inputCls('disabled:opacity-60')} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Phone</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Phone</label>
             <input disabled={disabled} type="text" value={form.phone}
               onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
               className={inputCls('font-mono disabled:opacity-60')} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Email</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Email</label>
             <input disabled={disabled} type="email" value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               className={inputCls('disabled:opacity-60')} />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Description</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Description</label>
             <textarea disabled={disabled} value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               rows={3}
@@ -261,10 +261,10 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
       <SectionCard title="Delivery Settings">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
               Delivery Fee (Kobo)
               {form.deliveryFeeKobo > 0 && (
-                <span className="ml-1 text-[#9ca3af] font-normal">= {formatNaira(form.deliveryFeeKobo)}</span>
+                <span className="ml-1 text-[#9AA1B4] font-normal">= {formatNaira(form.deliveryFeeKobo)}</span>
               )}
             </label>
             <input disabled={disabled} type="number" min={0} value={form.deliveryFeeKobo}
@@ -272,7 +272,7 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
               className={inputCls('disabled:opacity-60')} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Estimated Delivery (minutes)</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Estimated Delivery (minutes)</label>
             <input disabled={disabled} type="number" min={1} max={300} value={form.estimatedMinutes}
               onChange={(e) => setForm((f) => ({ ...f, estimatedMinutes: Number(e.target.value) }))}
               className={inputCls('disabled:opacity-60')} />
@@ -291,12 +291,12 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
             onChange={disabled ? () => {} : (v) => setForm((f) => ({ ...f, cashOnDeliveryEnabled: v }))}
             label="Accept cash on delivery"
           />
-          <p className="text-xs text-[#9ca3af] mt-1 ml-9">Customers can choose to pay in cash when their order arrives.</p>
+          <p className="text-xs text-[#9AA1B4] mt-1 ml-9">Customers can choose to pay in cash when their order arrives.</p>
         </div>
       </SectionCard>
 
       <SectionCard title="Opening Hours">
-        <p className="text-xs text-[#9ca3af]">Toggle each day and set your operating hours.</p>
+        <p className="text-xs text-[#9AA1B4]">Toggle each day and set your operating hours.</p>
         <OpeningHoursEditor
           value={form.openingHours}
           onChange={disabled ? () => {} : (v) => setForm((f) => ({ ...f, openingHours: v }))}
@@ -333,7 +333,7 @@ function VendorNotificationSettings() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-32">
-      <Loader2 className="w-5 h-5 animate-spin text-[#17c666]" />
+      <Loader2 className="w-5 h-5 animate-spin text-[#1DB980]" />
     </div>
   )
 
@@ -347,7 +347,7 @@ function VendorNotificationSettings() {
               onChange={(v) => setForm((f) => ({ ...f, emailNotifications: v }))}
               label="Email Notifications"
             />
-            <p className="text-xs text-[#9ca3af] mt-1 ml-9">Receive general platform emails and updates.</p>
+            <p className="text-xs text-[#9AA1B4] mt-1 ml-9">Receive general platform emails and updates.</p>
           </div>
           <div>
             <Toggle
@@ -355,7 +355,7 @@ function VendorNotificationSettings() {
               onChange={(v) => setForm((f) => ({ ...f, orderAlerts: v }))}
               label="New Order Alerts"
             />
-            <p className="text-xs text-[#9ca3af] mt-1 ml-9">Get an email whenever a new order comes in.</p>
+            <p className="text-xs text-[#9AA1B4] mt-1 ml-9">Get an email whenever a new order comes in.</p>
           </div>
         </div>
       </SectionCard>
@@ -405,19 +405,19 @@ function VendorProfileSettings() {
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">First Name</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">First Name</label>
             <input type="text" value={form.firstName}
               onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
               className={inputCls()} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Last Name</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Last Name</label>
             <input type="text" value={form.lastName}
               onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
               className={inputCls()} />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Email</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Email</label>
             <input type="email" value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               className={inputCls()} />
@@ -461,19 +461,19 @@ function VendorPasswordSettings() {
         )}
         <div className="space-y-3 max-w-sm">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Current Password</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Current Password</label>
             <input type="password" value={form.currentPassword}
               onChange={(e) => setForm((f) => ({ ...f, currentPassword: e.target.value }))}
               className={inputCls()} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">New Password</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">New Password</label>
             <input type="password" value={form.newPassword}
               onChange={(e) => setForm((f) => ({ ...f, newPassword: e.target.value }))}
               className={inputCls()} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Confirm New Password</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Confirm New Password</label>
             <input type="password" value={form.confirmPassword}
               onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
               className={inputCls()} />
@@ -525,27 +525,27 @@ function SystemProfileSettings() {
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">First Name</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">First Name</label>
             <input type="text" value={form.firstName}
               onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
               className={inputCls()} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Last Name</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Last Name</label>
             <input type="text" value={form.lastName}
               onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
               className={inputCls()} />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Email</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Email</label>
             <input type="email" value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               className={inputCls()} />
           </div>
         </div>
         <div className="pt-1">
-          <div className="text-xs text-[#9ca3af]">
-            Role: <span className="font-medium text-[#283c50]">{session?.admin?.role}</span>
+          <div className="text-xs text-[#9AA1B4]">
+            Role: <span className="font-medium text-[#0D1426]">{session?.admin?.role}</span>
           </div>
         </div>
       </SectionCard>
@@ -586,19 +586,19 @@ function SystemPasswordSettings() {
         )}
         <div className="space-y-3 max-w-sm">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Current Password</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Current Password</label>
             <input type="password" value={form.currentPassword}
               onChange={(e) => setForm((f) => ({ ...f, currentPassword: e.target.value }))}
               className={inputCls()} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">New Password</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">New Password</label>
             <input type="password" value={form.newPassword}
               onChange={(e) => setForm((f) => ({ ...f, newPassword: e.target.value }))}
               className={inputCls()} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Confirm New Password</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Confirm New Password</label>
             <input type="password" value={form.confirmPassword}
               onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
               className={inputCls()} />
@@ -632,7 +632,7 @@ function SystemNotificationSettings() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-32">
-      <Loader2 className="w-5 h-5 animate-spin text-[#17c666]" />
+      <Loader2 className="w-5 h-5 animate-spin text-[#1DB980]" />
     </div>
   )
 
@@ -646,7 +646,7 @@ function SystemNotificationSettings() {
               onChange={(v) => setForm((f) => ({ ...f, emailNotifications: v }))}
               label="Email Notifications"
             />
-            <p className="text-xs text-[#9ca3af] mt-1 ml-9">Receive platform alerts and operational emails.</p>
+            <p className="text-xs text-[#9AA1B4] mt-1 ml-9">Receive platform alerts and operational emails.</p>
           </div>
           <div>
             <Toggle
@@ -654,7 +654,7 @@ function SystemNotificationSettings() {
               onChange={(v) => setForm((f) => ({ ...f, weeklyReport: v }))}
               label="Weekly Platform Report"
             />
-            <p className="text-xs text-[#9ca3af] mt-1 ml-9">Get a weekly summary of orders, GMV, and key metrics.</p>
+            <p className="text-xs text-[#9AA1B4] mt-1 ml-9">Get a weekly summary of orders, GMV, and key metrics.</p>
           </div>
         </div>
       </SectionCard>
@@ -748,20 +748,20 @@ function SystemPlatformSettings() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-32">
-      <Loader2 className="w-5 h-5 animate-spin text-[#17c666]" />
+      <Loader2 className="w-5 h-5 animate-spin text-[#1DB980]" />
     </div>
   )
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <SectionCard title="Rider Earnings">
-        <p className="text-xs text-[#9ca3af]">
+        <p className="text-xs text-[#9AA1B4]">
           The percentage of each delivery fee credited to the rider&apos;s wallet after a successful delivery.
           Applies to all riders platform-wide.
         </p>
         <div className="flex items-end gap-3 max-w-xs">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
               Rider cut (% of delivery fee)
             </label>
             <div className="relative">
@@ -774,23 +774,23 @@ function SystemPlatformSettings() {
                 onChange={(e) => setRatePct(e.target.value)}
                 className={inputCls('pr-8')}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af] font-medium">%</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9AA1B4] font-medium">%</span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-[#9ca3af]">
-          Current: <span className="font-semibold text-[#283c50]">{settings ? `${Math.round(settings.riderEarningRate * 100)}%` : '—'}</span>
+        <p className="text-xs text-[#9AA1B4]">
+          Current: <span className="font-semibold text-[#0D1426]">{settings ? `${Math.round(settings.riderEarningRate * 100)}%` : '—'}</span>
           {settings && ` — rider earns ₦${Math.round(settings.riderEarningRate * 1000) / 10} per ₦100 delivery fee`}
         </p>
       </SectionCard>
 
       <SectionCard title="Vendor Platform Fee">
-        <p className="text-xs text-[#9ca3af]">
+        <p className="text-xs text-[#9AA1B4]">
           The percentage of each vendor order that the platform retains. The remainder is credited to the vendor&apos;s wallet.
         </p>
         <div className="flex items-end gap-3 max-w-xs">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
               Platform fee (% of order value)
             </label>
             <div className="relative">
@@ -803,23 +803,23 @@ function SystemPlatformSettings() {
                 onChange={(e) => setVendorFeePct(e.target.value)}
                 className={inputCls('pr-8')}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af] font-medium">%</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9AA1B4] font-medium">%</span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-[#9ca3af]">
-          Current: <span className="font-semibold text-[#283c50]">{settings ? `${Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)}%` : '—'}</span>
+        <p className="text-xs text-[#9AA1B4]">
+          Current: <span className="font-semibold text-[#0D1426]">{settings ? `${Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)}%` : '—'}</span>
           {settings && ` — vendor receives ${100 - Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)}% of order value`}
         </p>
       </SectionCard>
 
       <SectionCard title="Coverage Radius">
-        <p className="text-xs text-[#9ca3af]">
+        <p className="text-xs text-[#9AA1B4]">
           The maximum distance (in kilometres) within which customers can see restaurants, pharmacies, and grocery stores.
         </p>
         <div className="flex items-end gap-3 max-w-xs">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
               Coverage radius (km)
             </label>
             <div className="relative">
@@ -832,23 +832,23 @@ function SystemPlatformSettings() {
                 onChange={(e) => setCoverageKm(e.target.value)}
                 className={inputCls('pr-10')}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af] font-medium">km</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#9AA1B4] font-medium">km</span>
             </div>
           </div>
         </div>
-        <p className="text-xs text-[#9ca3af]">
-          Current: <span className="font-semibold text-[#283c50]">{settings ? `${settings.coverageRadiusKm} km` : '—'}</span>
+        <p className="text-xs text-[#9AA1B4]">
+          Current: <span className="font-semibold text-[#0D1426]">{settings ? `${settings.coverageRadiusKm} km` : '—'}</span>
           {settings && ` — vendors within ${settings.coverageRadiusKm} km of a customer are shown`}
         </p>
       </SectionCard>
 
       <SectionCard title="Delivery Fees">
-        <p className="text-xs text-[#9ca3af]">
+        <p className="text-xs text-[#9AA1B4]">
           Platform-wide fees charged to customers. These are fetched by the mobile app and shown on the cart checkout screen.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
               Standard Delivery Fee (₦)
             </label>
             <input
@@ -860,10 +860,10 @@ function SystemPlatformSettings() {
               className={inputCls()}
               placeholder="750"
             />
-            <p className="text-xs text-[#9ca3af] mt-1">Base delivery charge per order</p>
+            <p className="text-xs text-[#9AA1B4] mt-1">Base delivery charge per order</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
               Service Charge (₦)
             </label>
             <input
@@ -875,10 +875,10 @@ function SystemPlatformSettings() {
               className={inputCls()}
               placeholder="250"
             />
-            <p className="text-xs text-[#9ca3af] mt-1">Platform service fee per order</p>
+            <p className="text-xs text-[#9AA1B4] mt-1">Platform service fee per order</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">
+            <label className="block text-xs font-medium text-[#525A72] mb-1">
               Cost per km (₦)
             </label>
             <input
@@ -890,18 +890,18 @@ function SystemPlatformSettings() {
               className={inputCls()}
               placeholder="100"
             />
-            <p className="text-xs text-[#9ca3af] mt-1">Added on top of delivery fee</p>
+            <p className="text-xs text-[#9AA1B4] mt-1">Added on top of delivery fee</p>
           </div>
         </div>
       </SectionCard>
 
       <SectionCard title="Paystack Payment Keys">
-        <p className="text-xs text-[#9ca3af]">
+        <p className="text-xs text-[#9AA1B4]">
           Configure your Paystack API keys. The public key is shared with the mobile app; the secret key is kept server-side only.
         </p>
         <div className="space-y-3 max-w-md">
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Public Key</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Public Key</label>
             <input
               type="text"
               value={paystackPublicKey}
@@ -911,7 +911,7 @@ function SystemPlatformSettings() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4b5563] mb-1">Secret Key</label>
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Secret Key</label>
             <div className="relative">
               <input
                 type={showSecret ? 'text' : 'password'}
@@ -923,7 +923,7 @@ function SystemPlatformSettings() {
               <button
                 type="button"
                 onClick={() => setShowSecret(!showSecret)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#4b5563]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9AA1B4] hover:text-[#525A72]"
               >
                 {showSecret ? '🙈' : '👁'}
               </button>
@@ -956,15 +956,15 @@ function SystemSettingsPage() {
 
   return (
     <>
-      <div className="flex gap-1 border-b border-[#e5e7eb] mb-5">
+      <div className="flex gap-1 border-b border-[#E7EAF1] mb-5">
         {SYSTEM_TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${
               tab === t.id
-                ? 'border-[#17c666] text-[#17c666]'
-                : 'border-transparent text-[#6b7885] hover:text-[#283c50]'
+                ? 'border-[#1DB980] text-[#1DB980]'
+                : 'border-transparent text-[#525A72] hover:text-[#0D1426]'
             }`}
           >
             {t.icon}
@@ -990,8 +990,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-[#283c50]">Settings</h1>
-        <p className="text-xs text-[#9ca3af] mt-0.5">
+        <h1 className="text-lg font-bold text-[#0D1426]">Settings</h1>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">
           {isVendor ? 'Manage your store and account' : 'Platform and account configuration'}
         </p>
       </div>

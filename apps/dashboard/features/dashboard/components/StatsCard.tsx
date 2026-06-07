@@ -35,8 +35,8 @@ export default function StatsCard({
     >
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-xs text-[#6b7885] font-medium">{label}</p>
-          <p className="text-[11px] text-[#9ca3af] mt-0.5">{sublabel}</p>
+          <p className="text-xs text-[#525A72] font-medium">{label}</p>
+          <p className="text-[11px] text-[#9AA1B4] mt-0.5">{sublabel}</p>
         </div>
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -49,9 +49,9 @@ export default function StatsCard({
       <div className="flex items-end justify-between">
         <div>
           <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold text-[#283c50] leading-none">{current}</span>
+            <span className="text-xl font-bold text-[#0D1426] leading-none">{current}</span>
             {total !== undefined && (
-              <span className="text-sm text-[#9ca3af] leading-none">/ {total}</span>
+              <span className="text-sm text-[#9AA1B4] leading-none">/ {total}</span>
             )}
           </div>
         </div>
@@ -61,8 +61,8 @@ export default function StatsCard({
             className={cn(
               'flex items-center gap-1 text-[11px] font-semibold rounded-full px-2 py-0.5',
               isPositive
-                ? 'bg-[#e8faf2] text-[#17c666]'
-                : 'bg-[#fdf0f0] text-[#ea4d4d]'
+                ? 'bg-[#DFF5EC] text-[#1DB980]'
+                : 'bg-[#FFE3E1] text-[#FF3B30]'
             )}
           >
             {isPositive ? (
@@ -76,7 +76,7 @@ export default function StatsCard({
       </div>
 
       {trendLabel && (
-        <p className="text-[11px] text-[#9ca3af] mt-1.5">{trendLabel}</p>
+        <p className="text-[11px] text-[#9AA1B4] mt-1.5">{trendLabel}</p>
       )}
     </div>
   )

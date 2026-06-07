@@ -11,9 +11,9 @@ import {
 } from 'lucide-react'
 
 const STATUS_CONFIG: Record<CustomerStatus, { bg: string; text: string; label: string }> = {
-  ACTIVE:      { bg: '#e8faf2', text: '#17c666', label: 'Active' },
-  SUSPENDED:   { bg: '#fff6e8', text: '#ffa21d', label: 'Suspended' },
-  DEACTIVATED: { bg: '#fdf0f0', text: '#ea4d4d', label: 'Deactivated' },
+  ACTIVE:      { bg: '#DFF5EC', text: '#1DB980', label: 'Active' },
+  SUSPENDED:   { bg: '#FBEDD7', text: '#E8930C', label: 'Suspended' },
+  DEACTIVATED: { bg: '#FFE3E1', text: '#FF3B30', label: 'Deactivated' },
 }
 
 const STATUS_FILTERS: Array<{ value: CustomerStatus | ''; label: string }> = [
@@ -58,19 +58,19 @@ export default function CustomersPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-lg font-bold text-[#283c50]">Customers</h1>
-        <p className="text-xs text-[#9ca3af] mt-0.5">Search and manage customer accounts</p>
+        <h1 className="text-lg font-bold text-[#0D1426]">Customers</h1>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">Search and manage customer accounts</p>
       </div>
 
       {/* Filters */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9ca3af]" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9AA1B4]" />
           <input
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Search by name, phone, or email…"
-            className="w-full pl-8 pr-3 py-2 text-xs border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#3454d1] bg-white"
+            className="w-full pl-8 pr-3 py-2 text-xs border border-[#E7EAF1] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-white"
           />
         </div>
         <div className="flex gap-1">
@@ -80,8 +80,8 @@ export default function CustomersPage() {
               onClick={() => handleStatusChange(f.value)}
               className={`text-[11px] px-3 py-1.5 rounded-full font-medium transition-colors ${
                 statusFilter === f.value
-                  ? 'bg-[#3454d1] text-white'
-                  : 'bg-white border border-[#e5e7eb] text-[#6b7885] hover:border-[#3454d1] hover:text-[#3454d1]'
+                  ? 'bg-[#1E5FFF] text-white'
+                  : 'bg-white border border-[#E7EAF1] text-[#525A72] hover:border-[#1E5FFF] hover:text-[#1E5FFF]'
               }`}
             >
               {f.label}
@@ -89,7 +89,7 @@ export default function CustomersPage() {
           ))}
         </div>
         {isFetching && !isLoading && (
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#3454d1]" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E5FFF]" />
         )}
       </div>
 
@@ -97,43 +97,43 @@ export default function CustomersPage() {
       <div className="card overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
-            <Loader2 className="w-5 h-5 animate-spin text-[#3454d1]" />
+            <Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" />
           </div>
         ) : customers.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 gap-2">
-            <Users className="w-8 h-8 text-[#d1d5db]" />
-            <p className="text-sm text-[#9ca3af]">No customers found</p>
+            <Users className="w-8 h-8 text-[#DDE2EC]" />
+            <p className="text-sm text-[#9AA1B4]">No customers found</p>
           </div>
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#f3f4f6] bg-[#fafafa]">
-                <th className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3">Customer</th>
-                <th className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3">Phone</th>
-                <th className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3">Status</th>
-                <th className="text-right text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3">Wallet</th>
-                <th className="text-right text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3">Orders</th>
-                <th className="text-left text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wide px-4 py-3">Joined</th>
+              <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
+                <th className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3">Customer</th>
+                <th className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3">Phone</th>
+                <th className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3">Status</th>
+                <th className="text-right text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3">Wallet</th>
+                <th className="text-right text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3">Orders</th>
+                <th className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3">Joined</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#f3f4f6]">
+            <tbody className="divide-y divide-[#EDF0F6]">
               {customers.map((c) => {
                 const sc = STATUS_CONFIG[c.status]
                 return (
-                  <tr key={c.id} className="hover:bg-[#fafafa] transition-colors">
+                  <tr key={c.id} className="hover:bg-[#F7F9FC] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-[#eef1fb] flex items-center justify-center shrink-0 text-[11px] font-bold text-[#3454d1]">
+                        <div className="w-8 h-8 rounded-full bg-[#E7EEFF] flex items-center justify-center shrink-0 text-[11px] font-bold text-[#1E5FFF]">
                           {c.firstName[0]}{c.lastName[0]}
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-[#283c50]">{c.firstName} {c.lastName}</p>
-                          {c.email && <p className="text-[10px] text-[#9ca3af]">{c.email}</p>}
+                          <p className="text-xs font-semibold text-[#0D1426]">{c.firstName} {c.lastName}</p>
+                          {c.email && <p className="text-[10px] text-[#9AA1B4]">{c.email}</p>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-[#6b7885]">{c.phone}</td>
+                    <td className="px-4 py-3 text-xs text-[#525A72]">{c.phone}</td>
                     <td className="px-4 py-3">
                       <span
                         className="text-[11px] font-medium rounded-full px-2 py-0.5"
@@ -142,15 +142,15 @@ export default function CustomersPage() {
                         {sc.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-xs font-medium text-[#283c50]">
-                      {c.wallet ? formatNaira(c.wallet.balanceKobo) : <span className="text-[#d1d5db]">—</span>}
+                    <td className="px-4 py-3 text-right text-xs font-medium text-[#0D1426]">
+                      {c.wallet ? formatNaira(c.wallet.balanceKobo) : <span className="text-[#DDE2EC]">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-right text-xs text-[#6b7885]">{c._count.orders}</td>
-                    <td className="px-4 py-3 text-xs text-[#9ca3af]">{formatDate(c.createdAt)}</td>
+                    <td className="px-4 py-3 text-right text-xs text-[#525A72]">{c._count.orders}</td>
+                    <td className="px-4 py-3 text-xs text-[#9AA1B4]">{formatDate(c.createdAt)}</td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => router.push(`/customers/${c.id}`)}
-                        className="p-1.5 rounded hover:bg-[#eef1fb] text-[#9ca3af] hover:text-[#3454d1] transition-colors"
+                        className="p-1.5 rounded hover:bg-[#E7EEFF] text-[#9AA1B4] hover:text-[#1E5FFF] transition-colors"
                         title="View details"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -167,21 +167,21 @@ export default function CustomersPage() {
       {/* Pagination */}
       {meta && meta.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-[11px] text-[#9ca3af]">
+          <p className="text-[11px] text-[#9AA1B4]">
             {meta.total} customer{meta.total !== 1 ? 's' : ''} · page {meta.page} of {meta.totalPages}
           </p>
           <div className="flex gap-1">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="p-1.5 rounded border border-[#e5e7eb] disabled:opacity-40 hover:border-[#3454d1] transition-colors"
+              className="p-1.5 rounded border border-[#E7EAF1] disabled:opacity-40 hover:border-[#1E5FFF] transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
               disabled={page === meta.totalPages}
-              className="p-1.5 rounded border border-[#e5e7eb] disabled:opacity-40 hover:border-[#3454d1] transition-colors"
+              className="p-1.5 rounded border border-[#E7EAF1] disabled:opacity-40 hover:border-[#1E5FFF] transition-colors"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>

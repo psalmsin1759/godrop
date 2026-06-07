@@ -316,9 +316,8 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen grid"
+      className="min-h-screen grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]"
       style={{
-        gridTemplateColumns: 'minmax(0,1.05fr) minmax(0,1fr)',
         fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
@@ -396,7 +395,7 @@ export default function LoginPage() {
               className="text-[11px] font-semibold tracking-[2.4px] uppercase mt-[4px]"
               style={{ color: 'rgba(255,255,255,.62)', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}
             >
-              Admin Console
+              Admin Dashboard
             </div>
           </div>
         </div>
@@ -419,7 +418,7 @@ export default function LoginPage() {
             Run the network<br />that <span style={{ color: '#FFB38A' }}>moves Nigeria.</span>
           </h1>
           <p className="mt-[20px] text-[16px] leading-[1.6]" style={{ color: 'rgba(255,255,255,.74)' }}>
-            Dispatch, fleet, merchants and payouts — one console for every drop, across Lagos, Abuja, Port Harcourt and beyond.
+            Dispatch, fleet, merchants and payouts — one dashboard for every drop, across Lagos, Abuja, Port Harcourt and beyond.
           </p>
           <div ref={statsRef} className="flex gap-[30px] mt-[36px]">
             {[
@@ -445,15 +444,14 @@ export default function LoginPage() {
           <span>GoDrop Logistics</span>
           <span className="w-[4px] h-[4px] rounded-full bg-[rgba(255,255,255,0.35)]" />
           <span>Internal tooling</span>
-          <span className="w-[4px] h-[4px] rounded-full bg-[rgba(255,255,255,0.35)]" />
-          <span>v4.2.0</span>
+         
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
           RIGHT — FORM PANEL
       ══════════════════════════════════════════════════════ */}
-      <main className="bg-white flex items-center justify-center p-[40px] relative">
+      <main className="bg-white flex items-center justify-center p-6 sm:p-[40px] relative min-h-screen lg:min-h-0">
         <motion.div
           className={`w-full max-w-[392px] ${shake ? 'animate-shake' : ''}`}
           initial={{ opacity: 0, y: 14 }}
@@ -675,7 +673,7 @@ export default function LoginPage() {
                 </motion.div>
                 <h2 className="text-[26px] font-extrabold tracking-[-0.7px] text-[#0B1F4A]">Welcome back</h2>
                 <p className="text-[14.5px] text-[#4A5068] mt-[10px] leading-[1.55]">
-                  Signing you in to the <strong className="text-[#0B1F4A]">GoDrop Admin Console</strong>…
+                  Signing you in to the <strong className="text-[#0B1F4A]">GoDrop Admin Dashboard</strong>…
                 </p>
                 <div className="mt-[28px] flex justify-center">
                   <Spinner />

@@ -575,12 +575,7 @@ export default function LoginPage() {
                 <div className="flex items-center gap-[8px] text-[#8A90A3] text-[12px] font-medium mt-[34px] whitespace-nowrap">
                   <IconShield />
                   <span>Authorized personnel only</span>
-                  <span className="ml-auto text-[#4A5068] font-semibold">
-                    Need access?{' '}
-                    <a href="#" onClick={(e) => e.preventDefault()} className="text-[#4A5068] hover:text-[#1E5FFF] no-underline transition-colors">
-                      Contact ops
-                    </a>
-                  </span>
+                 
                 </div>
               </motion.div>
             )}

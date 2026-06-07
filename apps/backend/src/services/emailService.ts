@@ -19,6 +19,8 @@ async function getTransporter(): Promise<Transporter> {
         pass: process.env.MAILTRAP_PASS!,
       },
     });
+  } else if (provider === "json") {
+    transporter = nodemailer.createTransport({ jsonTransport: true });
   } else {
     const testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
@@ -49,7 +51,10 @@ export async function sendEmail(opts: EmailOptions): Promise<void> {
     text: opts.text,
   });
 
-  if (process.env.EMAIL_PROVIDER !== "mailtrap") {
+  if (process.env.EMAIL_PROVIDER === "json") {
+    const msg = JSON.parse((info as any).message);
+    console.log(`[email] TO: ${msg.to[0].address} | SUBJECT: ${msg.subject}`);
+  } else if (process.env.EMAIL_PROVIDER !== "mailtrap") {
     console.log(`[email] Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
   }
 }
@@ -539,5 +544,76 @@ export function vendorNewOrderEmail(opts: {
     subject: `New order #${opts.trackingCode} — ${opts.vendorName}`,
     html,
     text: `Hi ${opts.ownerFirstName}, a new ${opts.orderType} order #${opts.trackingCode} has been placed at ${opts.vendorName}.\n\nItems:\n${itemText}\n\nTotal: ${fmt(opts.totalKobo)}\nPayment: ${opts.paymentMethod}\nDeliver to: ${opts.deliveryAddress}\n\nView order: ${opts.dashboardOrderUrl}`,
+  };
+}
+
+export function contactAdminNotificationEmail(opts: {
+  name: string;
+  email: string;
+  phone?: string | null;
+  subject: string;
+  message: string;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader("New Contact Form Submission") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        A new message has been submitted via the Godrop contact form.
+      </p>
+      ${infoTable([
+        ["Name", opts.name],
+        ["Email", `<a href="mailto:${opts.email}" style="color:#f97316;text-decoration:none;">${opts.email}</a>`],
+        ...(opts.phone ? [["Phone", opts.phone] as [string, string]] : []),
+        ["Subject", opts.subject],
+      ])}
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-top:20px;">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Message</p>
+        <p style="margin:0;font-size:14px;color:#111827;line-height:1.7;white-space:pre-wrap;">${opts.message}</p>
+      </div>
+      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+        Reply directly to <a href="mailto:${opts.email}" style="color:#f97316;text-decoration:none;">${opts.email}</a> to respond to this enquiry.
+      </p>
+    `)
+  );
+
+  return {
+    to: "admin.naijagodrop@gmail.com",
+    subject: `Contact Form: ${opts.subject}`,
+    html,
+    text: `New contact form submission\n\nName: ${opts.name}\nEmail: ${opts.email}${opts.phone ? `\nPhone: ${opts.phone}` : ""}\nSubject: ${opts.subject}\n\nMessage:\n${opts.message}`,
+  };
+}
+
+export function contactConfirmationEmail(opts: {
+  name: string;
+  email: string;
+  subject: string;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader("We've received your message!", "#1e5fff") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.name}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        Thank you for reaching out to Godrop. We've received your message regarding
+        <strong>"${opts.subject}"</strong> and our team will get back to you within <strong>24 hours</strong>.
+      </p>
+      <div style="background:#eff6ff;border-left:4px solid #1e5fff;border-radius:4px;padding:14px 16px;margin:20px 0;">
+        <p style="margin:0;font-size:13px;color:#1e40af;line-height:1.5;">
+          In the meantime, if your request is urgent you can reach us directly at
+          <a href="mailto:admin.naijagodrop@gmail.com" style="color:#1e5fff;text-decoration:none;">admin.naijagodrop@gmail.com</a>
+          or call <strong>+234 703 452 9789</strong>.
+        </p>
+      </div>
+      <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Thanks for choosing Godrop — Nigeria's on-demand delivery platform.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: `We got your message — Godrop`,
+    html,
+    text: `Hi ${opts.name}, thank you for contacting Godrop. We've received your message about "${opts.subject}" and will respond within 24 hours.\n\nFor urgent matters: admin.naijagodrop@gmail.com or +234 703 452 9789.`,
   };
 }

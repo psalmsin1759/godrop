@@ -57,7 +57,7 @@ export default function PrivacyPolicyPage() {
           <Section title="5. Data Retention">
             We retain your personal data for as long as your account is active and for 5 years thereafter as required
             by Nigerian financial regulations. KYC documents are retained for 7 years per FCCPC guidelines.
-            You may request deletion of your account data by contacting hello@godrop.ng.
+            You may request deletion of your account data by contacting admin.naijagodrop@gmail.com.
           </Section>
 
           <Section title="6. Security">

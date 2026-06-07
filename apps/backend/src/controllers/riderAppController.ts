@@ -9,6 +9,7 @@ import * as riderEarningService from "../services/riderEarningService";
 import { uploadDocument } from "../services/cloudinaryService";
 import { submitKycBodySchema } from "../validators/riderAppValidators";
 import { onboardRiderSchema } from "../validators/riderOnboardingValidators";
+import { sendEmail, riderOnboardAdminEmail, riderOnboardConfirmationEmail } from "../services/emailService";
 import { prisma } from "../lib/prisma";
 import { OrderStatus } from "@prisma/client";
 
@@ -56,6 +57,29 @@ export async function onboardRider(req: Request, res: Response, next: NextFuncti
     if (vehiclePaperUrls.length > 0) documents.vehiclePaperUrls = vehiclePaperUrls;
 
     const rider = await riderAppService.onboardRider(parsed.data, guarantors, documents, avatarUrl);
+
+    // Fire emails in background — don't block the response on SMTP
+    const emailJobs = [
+      sendEmail(riderOnboardAdminEmail({
+        firstName: rider.firstName,
+        lastName: rider.lastName,
+        phone: rider.phone,
+        email: rider.email,
+        vehicleType: rider.vehicleType ?? parsed.data.vehicleType,
+        city: rider.city,
+        state: rider.state,
+      })),
+    ];
+    if (rider.email) {
+      emailJobs.push(sendEmail(riderOnboardConfirmationEmail({
+        firstName: rider.firstName,
+        email: rider.email,
+        phone: rider.phone,
+        vehicleType: rider.vehicleType ?? parsed.data.vehicleType,
+      })));
+    }
+    Promise.allSettled(emailJobs).catch(() => {/* best-effort */});
+
     return ok(res, { data: rider });
   } catch (err: any) {
     if (err.message?.includes("already exists")) return fail(res, err.message, 409);

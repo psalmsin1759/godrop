@@ -617,3 +617,83 @@ export function contactConfirmationEmail(opts: {
     text: `Hi ${opts.name}, thank you for contacting Godrop. We've received your message about "${opts.subject}" and will respond within 24 hours.\n\nFor urgent matters: admin.naijagodrop@gmail.com or +234 703 452 9789.`,
   };
 }
+
+export function riderOnboardAdminEmail(opts: {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string | null;
+  vehicleType: string;
+  city?: string | null;
+  state?: string | null;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader("New Rider Application Submitted") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        A new rider has submitted their onboarding application and is pending review.
+      </p>
+      ${infoTable([
+        ["Name", `${opts.firstName} ${opts.lastName}`],
+        ["Phone", opts.phone],
+        ...(opts.email ? [["Email", opts.email] as [string, string]] : []),
+        ["Vehicle Type", opts.vehicleType],
+        ...(opts.city || opts.state ? [["Location", [opts.city, opts.state].filter(Boolean).join(", ")] as [string, string]] : []),
+        ["Status", "Pending Review"],
+      ])}
+      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+        Log in to the admin dashboard to review and verify this rider application.
+      </p>
+    `)
+  );
+
+  return {
+    to: "admin.naijagodrop@gmail.com",
+    subject: `New Rider Application: ${opts.firstName} ${opts.lastName}`,
+    html,
+    text: `New rider application\n\nName: ${opts.firstName} ${opts.lastName}\nPhone: ${opts.phone}${opts.email ? `\nEmail: ${opts.email}` : ""}\nVehicle: ${opts.vehicleType}${opts.city ? `\nCity: ${opts.city}` : ""}${opts.state ? `\nState: ${opts.state}` : ""}\nStatus: Pending Review`,
+  };
+}
+
+export function riderOnboardConfirmationEmail(opts: {
+  firstName: string;
+  email: string;
+  phone: string;
+  vehicleType: string;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader("Application Received — We'll be in touch!", "#f97316") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        Thank you for applying to join the <strong>Godrop Rider Network</strong>. We've received your application
+        and our team will review your details shortly.
+      </p>
+      <div style="background:#fff7ed;border-left:4px solid #f97316;border-radius:4px;padding:14px 16px;margin:20px 0;">
+        <p style="margin:0;font-size:14px;color:#92400e;font-weight:600;">What happens next?</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#92400e;line-height:1.5;">
+          Our team will review your application and reach out to <strong>${opts.phone}</strong> within
+          <strong>24–48 hours</strong> to complete your onboarding.
+        </p>
+      </div>
+      ${infoTable([
+        ["Name", opts.firstName],
+        ["Phone", opts.phone],
+        ["Vehicle Type", opts.vehicleType],
+        ["Status", "Under Review"],
+      ])}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Questions? Reach us at
+        <a href="mailto:admin.naijagodrop@gmail.com" style="color:#f97316;text-decoration:none;">admin.naijagodrop@gmail.com</a>
+        or call <strong>+234 703 452 9789</strong>.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: `Application received — Welcome to the Godrop Rider Network!`,
+    html,
+    text: `Hi ${opts.firstName}, your Godrop rider application has been received. We'll contact you at ${opts.phone} within 24–48 hours.\n\nVehicle: ${opts.vehicleType}\nStatus: Under Review\n\nQuestions? admin.naijagodrop@gmail.com or +234 703 452 9789.`,
+  };
+}

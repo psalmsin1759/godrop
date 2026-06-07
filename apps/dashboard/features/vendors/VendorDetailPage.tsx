@@ -133,6 +133,44 @@ function ConfirmDialog({
   )
 }
 
+function ApproveConfirmDialog({
+  vendorName, onConfirm, onCancel, loading,
+}: {
+  vendorName: string
+  onConfirm: () => void
+  onCancel: () => void
+  loading: boolean
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="bg-white rounded-xl shadow-xl w-80 p-5 space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-[#0D1426]">Approve vendor</h3>
+          <p className="text-xs text-[#525A72] leading-snug">
+            Approve <span className="font-semibold text-[#0D1426]">{vendorName}</span>? Their store goes live immediately and the owner is notified by email.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 text-xs py-2 rounded-lg border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={loading}
+            onClick={onConfirm}
+            className="flex-1 text-xs py-2 rounded-lg text-white font-semibold disabled:opacity-50"
+            style={{ backgroundColor: '#1DB980' }}
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Approve'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
   const router = useRouter()
   const { data: vendor, isLoading, isError } = useGetVendorQuery(vendorId)
@@ -141,11 +179,12 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
   const [suspend, { isLoading: suspending }] = useSuspendVendorMutation()
   const [reinstate, { isLoading: reinstating }] = useReinstateVendorMutation()
 
-  const [dialog, setDialog] = useState<'reject' | 'suspend' | null>(null)
+  const [dialog, setDialog] = useState<'approve' | 'reject' | 'suspend' | null>(null)
   const actionLoading = approving || rejecting || suspending || reinstating
 
   async function handleApprove() {
     await approve(vendorId).unwrap()
+    setDialog(null)
   }
 
   async function handleReject(reason: string) {
@@ -187,6 +226,14 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
 
   return (
     <>
+      {dialog === 'approve' && (
+        <ApproveConfirmDialog
+          vendorName={vendor.name}
+          onConfirm={handleApprove}
+          onCancel={() => setDialog(null)}
+          loading={approving}
+        />
+      )}
       {dialog === 'reject' && (
         <ConfirmDialog
           title="Reject vendor"
@@ -249,7 +296,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
             {vendor.status === 'PENDING' && (
               <>
                 <button
-                  onClick={handleApprove}
+                  onClick={() => setDialog('approve')}
                   disabled={actionLoading}
                   className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
                   style={{ backgroundColor: '#1DB980' }}

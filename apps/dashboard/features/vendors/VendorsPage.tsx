@@ -68,7 +68,7 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
   const [suspend] = useSuspendVendorMutation()
   const [reinstate] = useReinstateVendorMutation()
   const [reason, setReason] = useState('')
-  const [step, setStep] = useState<'menu' | 'reject' | 'suspend'>('menu')
+  const [step, setStep] = useState<'menu' | 'approve' | 'reject' | 'suspend'>('menu')
   const [loading, setLoading] = useState(false)
 
   async function run(fn: () => Promise<unknown>) {
@@ -79,6 +79,33 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
     } finally {
       setLoading(false)
     }
+  }
+
+  if (step === 'approve') {
+    return (
+      <div className="absolute right-0 top-8 z-50 w-64 bg-white rounded-lg border border-[#E7EAF1] shadow-card-md p-3 space-y-2">
+        <p className="text-xs font-semibold text-[#0D1426]">Approve vendor</p>
+        <p className="text-[11px] text-[#525A72] leading-snug">
+          Approve <span className="font-semibold text-[#0D1426]">{vendor.name}</span>? Their store goes live immediately and the owner is notified by email.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setStep('menu')}
+            className="flex-1 text-xs py-1.5 rounded border border-[#E7EAF1] text-[#525A72] hover:bg-[#F7F9FC]"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={loading}
+            onClick={() => run(() => approve(vendor.id).unwrap())}
+            className="flex-1 text-xs py-1.5 rounded text-white font-medium disabled:opacity-50"
+            style={{ backgroundColor: '#1DB980' }}
+          >
+            {loading ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Confirm'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (step === 'reject' || step === 'suspend') {
@@ -125,7 +152,7 @@ function VendorActionMenu({ vendor, onClose }: { vendor: Vendor; onClose: () => 
       {vendor.status === 'PENDING' && (
         <>
           <button
-            onClick={() => run(() => approve(vendor.id).unwrap())}
+            onClick={() => setStep('approve')}
             disabled={loading}
             className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#1DB980] hover:bg-[#F7F9FC]"
           >

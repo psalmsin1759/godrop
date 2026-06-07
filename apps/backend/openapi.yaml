@@ -3046,6 +3046,40 @@ paths:
         "404":
           description: Apartment type not found
 
+  /truck/types/image:
+    post:
+      tags: [Truck]
+      summary: Upload a truck type image (admin)
+      description: Uploads an image to Cloudinary and returns its URL. Use the returned URL as `imageUrl` when creating or updating a truck type. Accepts images up to 2 MB.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Truck type image (JPG, PNG, WebP — max 2 MB)
+      responses:
+        "200":
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      url: { type: string, format: uri }
+        "400":
+          description: No file provided
+
   /truck/types:
     get:
       tags: [Truck]

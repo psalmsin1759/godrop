@@ -59,6 +59,11 @@ export const trucksApi = api.injectEndpoints({
       transformResponse: (res: TruckTypesResponse) => res.types,
     }),
 
+    uploadTruckTypeImage: build.mutation<{ url: string }, FormData>({
+      query: (body) => ({ url: '/truck/types/image', method: 'POST', body, formData: true }),
+      transformResponse: (res: { success: boolean; data: { url: string } }) => res.data,
+    }),
+
     createTruckType: build.mutation<TruckType, CreateTruckTypeRequest>({
       query: (body) => ({ url: '/truck/types', method: 'POST', body }),
       invalidatesTags: ['TruckType'],
@@ -150,6 +155,7 @@ export const trucksApi = api.injectEndpoints({
 
 export const {
   useGetTruckTypesQuery,
+  useUploadTruckTypeImageMutation,
   useCreateTruckTypeMutation,
   useUpdateTruckTypeMutation,
   useDeleteTruckTypeMutation,

@@ -3,6 +3,7 @@ import * as truckController from "../controllers/truckController";
 import { requireAuth } from "../middleware/auth";
 import { requireSystemAuth } from "../middleware/systemAuth";
 import { validate } from "../middleware/validate";
+import { catalogImageUpload } from "../middleware/upload";
 import {
   truckQuoteSchema,
   bookTruckSchema,
@@ -38,6 +39,7 @@ router.post("/orders", requireAuth, validate(bookTruckSchema), truckController.b
 
 // ─── Truck vehicle types — legacy CRUD ────────────────────────
 router.get("/types", truckController.listTruckTypes);
+router.post("/types/image", requireSystemAuth, catalogImageUpload.single("file"), truckController.uploadTruckTypeImage);
 router.post("/types", requireSystemAuth, validate(createTruckTypeSchema), truckController.createTruckType);
 router.patch("/types/:id", requireSystemAuth, validate(updateTruckTypeSchema), truckController.updateTruckType);
 router.delete("/types/:id", requireSystemAuth, truckController.deleteTruckType);

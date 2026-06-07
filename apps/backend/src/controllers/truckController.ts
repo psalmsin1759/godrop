@@ -4,6 +4,7 @@ import * as pricingService from "../services/pricingService";
 import * as orderService from "../services/orderService";
 import { ok, created, fail } from "../utils/response";
 import { Prisma } from "@prisma/client";
+import { uploadBuffer } from "../services/cloudinaryService";
 
 // ─── Apartment Types (public) ─────────────────────────────────
 
@@ -198,6 +199,16 @@ export async function listTruckTypes(_req: Request, res: Response, next: NextFun
   try {
     const types = await prisma.truckType.findMany({ where: { isActive: true } });
     ok(res, { types });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function uploadTruckTypeImage(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) return fail(res, "No file uploaded", 400);
+    const url = await uploadBuffer(req.file.buffer, "godrop/truck-types");
+    return ok(res, { url });
   } catch (err) {
     next(err);
   }

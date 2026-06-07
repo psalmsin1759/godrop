@@ -2,15 +2,17 @@
 
 import { useState } from 'react'
 import {
-  Send, Loader2, CheckCircle2, XCircle, Mail, Users, User, Radio,
+  Send, Loader2, CheckCircle2, XCircle, Mail, Users, User, Radio, Store, Bike,
 } from 'lucide-react'
 import {
   useSendEmailSingleMutation,
   useSendEmailBatchMutation,
   useSendEmailAllCustomersMutation,
+  useSendEmailAllVendorsMutation,
+  useSendEmailAllRidersMutation,
 } from '@/store/services/messagingApi'
 
-type Mode = 'single' | 'batch' | 'all-customers'
+type Mode = 'single' | 'batch' | 'all-customers' | 'all-vendors' | 'all-riders'
 
 interface Result {
   success: boolean
@@ -62,9 +64,11 @@ export default function EmailPage() {
 
   const [sendSingle, { isLoading: sendingSingle }] = useSendEmailSingleMutation()
   const [sendBatch, { isLoading: sendingBatch }] = useSendEmailBatchMutation()
-  const [sendAll, { isLoading: sendingAll }] = useSendEmailAllCustomersMutation()
+  const [sendAllCustomers, { isLoading: sendingAllCustomers }] = useSendEmailAllCustomersMutation()
+  const [sendAllVendors, { isLoading: sendingAllVendors }] = useSendEmailAllVendorsMutation()
+  const [sendAllRiders, { isLoading: sendingAllRiders }] = useSendEmailAllRidersMutation()
 
-  const sending = sendingSingle || sendingBatch || sendingAll
+  const sending = sendingSingle || sendingBatch || sendingAllCustomers || sendingAllVendors || sendingAllRiders
 
   function reset() {
     setTo('')
@@ -76,7 +80,7 @@ export default function EmailPage() {
 
   const htmlBody = bodyText
     .split('\n')
-    .map((line) => `<p style="margin:0 0 10px;font-size:14px;color:#525A72;line-height:1.6;">${line || '&nbsp;'}</p>`)
+    .map((line) => `<p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">${line || '&nbsp;'}</p>`)
     .join('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -89,8 +93,12 @@ export default function EmailPage() {
         res = await sendSingle({ ...base, to }).unwrap()
       } else if (mode === 'batch') {
         res = await sendBatch({ ...base, emails }).unwrap()
+      } else if (mode === 'all-customers') {
+        res = await sendAllCustomers(base).unwrap()
+      } else if (mode === 'all-vendors') {
+        res = await sendAllVendors(base).unwrap()
       } else {
-        res = await sendAll(base).unwrap()
+        res = await sendAllRiders(base).unwrap()
       }
       setResult({ success: true, message: res.message, sent: res.sent, failed: res.failed, total: res.total })
     } catch (err: any) {
@@ -102,7 +110,7 @@ export default function EmailPage() {
     <div className="space-y-5 max-w-2xl">
       <div>
         <h1 className="text-lg font-bold text-[#0D1426]">Email</h1>
-        <p className="text-xs text-[#9AA1B4] mt-0.5">Send emails to a single address, multiple recipients, or all customers</p>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">Send emails to a single address, multiple recipients, or broadcast to all customers, vendors, or riders</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,6 +122,8 @@ export default function EmailPage() {
               { id: 'single', label: 'Single', desc: 'One email address', icon: User },
               { id: 'batch', label: 'Multiple', desc: 'Comma-separated emails', icon: Mail },
               { id: 'all-customers', label: 'All Customers', desc: 'Every active customer', icon: Users },
+              { id: 'all-vendors', label: 'All Vendors', desc: 'Every active vendor owner', icon: Store },
+              { id: 'all-riders', label: 'All Riders', desc: 'Every active rider', icon: Bike },
             ] as { id: Mode; label: string; desc: string; icon: React.ElementType }[]).map((m) => (
               <button
                 key={m.id}
@@ -177,6 +187,24 @@ export default function EmailPage() {
               </p>
             </div>
           )}
+
+          {mode === 'all-vendors' && (
+            <div className="flex items-start gap-2 bg-[#FBEDD7] border border-[#F6D9A8] rounded-lg px-3 py-2.5">
+              <Store className="w-3.5 h-3.5 text-[#FF6A2C] mt-0.5 shrink-0" />
+              <p className="text-[11px] text-[#8A5A0A]">
+                This will send an email to the owner of every active vendor on Godrop.
+              </p>
+            </div>
+          )}
+
+          {mode === 'all-riders' && (
+            <div className="flex items-start gap-2 bg-[#FBEDD7] border border-[#F6D9A8] rounded-lg px-3 py-2.5">
+              <Bike className="w-3.5 h-3.5 text-[#FF6A2C] mt-0.5 shrink-0" />
+              <p className="text-[11px] text-[#8A5A0A]">
+                This will send an email to every active rider with an email address on Godrop.
+              </p>
+            </div>
+          )}
         </SectionCard>
 
         {/* Compose */}
@@ -228,7 +256,11 @@ export default function EmailPage() {
               ? 'Send Email'
               : mode === 'batch'
               ? 'Send to Recipients'
-              : 'Broadcast to All Customers'}
+              : mode === 'all-customers'
+              ? 'Broadcast to All Customers'
+              : mode === 'all-vendors'
+              ? 'Broadcast to All Vendors'
+              : 'Broadcast to All Riders'}
           </button>
         </div>
       </form>

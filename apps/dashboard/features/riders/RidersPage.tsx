@@ -734,12 +734,7 @@ export default function RidersPage() {
           <h1 className="text-lg font-bold text-[#0D1426]">Riders</h1>
           <p className="text-xs text-[#9AA1B4] mt-0.5">Delivery rider management and KYC</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="btn-primary flex items-center gap-1.5"
-        >
-          <Plus className="w-3.5 h-3.5" /> Add Rider
-        </button>
+       
       </div>
 
       <RiderStatsBar />

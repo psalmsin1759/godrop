@@ -23,3 +23,7 @@ export const sendEmailBatchSchema = emailBase.extend({
 });
 
 export const sendEmailAllCustomersSchema = emailBase;
+
+export const sendEmailAllVendorsSchema = emailBase;
+
+export const sendEmailAllRidersSchema = emailBase;

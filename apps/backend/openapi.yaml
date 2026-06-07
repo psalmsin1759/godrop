@@ -7225,6 +7225,66 @@ paths:
                   failed: { type: integer }
                   total: { type: integer }
 
+  /admin/messaging/email/all-vendors:
+    post:
+      summary: Broadcast email to all active vendor owners (ADMIN+)
+      tags: [System Admin — Messaging]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, html]
+              properties:
+                subject: { type: string, maxLength: 200 }
+                html: { type: string }
+                text: { type: string }
+      responses:
+        "200":
+          description: Broadcast complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  sent: { type: integer }
+                  failed: { type: integer }
+                  total: { type: integer }
+
+  /admin/messaging/email/all-riders:
+    post:
+      summary: Broadcast email to all active riders (ADMIN+)
+      tags: [System Admin — Messaging]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, html]
+              properties:
+                subject: { type: string, maxLength: 200 }
+                html: { type: string }
+                text: { type: string }
+      responses:
+        "200":
+          description: Broadcast complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  sent: { type: integer }
+                  failed: { type: integer }
+                  total: { type: integer }
+
   # ─── System Admin — Push Notifications ───────────────────────
 
   /admin/push/customers/broadcast:

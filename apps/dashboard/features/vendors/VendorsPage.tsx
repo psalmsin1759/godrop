@@ -237,9 +237,7 @@ export default function VendorsPage() {
           >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
-          <button className="btn-primary flex items-center gap-1.5">
-            <Plus className="w-3.5 h-3.5" /> Add Vendor
-          </button>
+         
         </div>
       </div>
 

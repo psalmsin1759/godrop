@@ -34,6 +34,8 @@ import {
   sendEmailSingleSchema,
   sendEmailBatchSchema,
   sendEmailAllCustomersSchema,
+  sendEmailAllVendorsSchema,
+  sendEmailAllRidersSchema,
 } from "../validators/messagingValidators";
 import {
   sendToSingleSchema,
@@ -244,6 +246,8 @@ router.patch(
 router.post("/messaging/email/single", requireSystemRole("ADMIN"), validate(sendEmailSingleSchema), messagingCtrl.sendEmailSingle);
 router.post("/messaging/email/batch", requireSystemRole("ADMIN"), validate(sendEmailBatchSchema), messagingCtrl.sendEmailBatch);
 router.post("/messaging/email/all-customers", requireSystemRole("ADMIN"), validate(sendEmailAllCustomersSchema), messagingCtrl.sendEmailAllCustomers);
+router.post("/messaging/email/all-vendors", requireSystemRole("ADMIN"), validate(sendEmailAllVendorsSchema), messagingCtrl.sendEmailAllVendors);
+router.post("/messaging/email/all-riders", requireSystemRole("ADMIN"), validate(sendEmailAllRidersSchema), messagingCtrl.sendEmailAllRiders);
 
 // ─── Push Notifications (ADMIN+) ─────────────────────────────
 router.post("/push/customers/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToCustomers);

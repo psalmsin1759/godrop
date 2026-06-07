@@ -34,6 +34,14 @@ export const messagingApi = api.injectEndpoints({
     sendEmailAllCustomers: build.mutation<EmailResult, EmailPayload>({
       query: (body) => ({ url: '/admin/messaging/email/all-customers', method: 'POST', body }),
     }),
+
+    sendEmailAllVendors: build.mutation<EmailResult, EmailPayload>({
+      query: (body) => ({ url: '/admin/messaging/email/all-vendors', method: 'POST', body }),
+    }),
+
+    sendEmailAllRiders: build.mutation<EmailResult, EmailPayload>({
+      query: (body) => ({ url: '/admin/messaging/email/all-riders', method: 'POST', body }),
+    }),
   }),
   overrideExisting: false,
 })
@@ -42,4 +50,6 @@ export const {
   useSendEmailSingleMutation,
   useSendEmailBatchMutation,
   useSendEmailAllCustomersMutation,
+  useSendEmailAllVendorsMutation,
+  useSendEmailAllRidersMutation,
 } = messagingApi

@@ -189,7 +189,7 @@ export function vendorWelcomeEmail(opts: {
   vendorName: string;
   email: string;
 }): EmailOptions {
-  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/vendor/login`;
+  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/login`;
   const html = emailLayout(
     cardHeader("Application Received — Under Review", "#f97316") +
     cardBody(`
@@ -301,7 +301,7 @@ export function vendorTeamInviteEmail(opts: {
   role: string;
   temporaryPassword: string;
 }): EmailOptions {
-  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/vendor/login`;
+  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/login`;
   const html = emailLayout(
     cardHeader(`You've been added to ${opts.vendorName}`) +
     cardBody(`
@@ -391,6 +391,25 @@ export function adminPasswordResetEmail(opts: {
     subject: "Reset your Godrop Admin password",
     html,
     text: `Hi ${opts.firstName},\n\nWe received a request to reset your Godrop Admin password.\n\nReset link (expires in 30 minutes):\n${opts.resetLink}\n\nIf you did not request this, ignore this email.\n\nGodrop Support: support@godrop.ng`,
+  };
+}
+
+export function adminBroadcastEmail(opts: {
+  to: string;
+  subject: string;
+  bodyHtml: string;
+  bodyText?: string;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader(opts.subject) +
+    cardBody(opts.bodyHtml)
+  );
+
+  return {
+    to: opts.to,
+    subject: opts.subject,
+    html,
+    text: opts.bodyText,
   };
 }
 

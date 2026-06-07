@@ -104,7 +104,7 @@ export default function AboutPage() {
           <p className="text-white/60 mb-8 max-w-md mx-auto">Whether you want to order, sell, or ride — there&apos;s a place for you on Godrop.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="https://godrop-dashboard.vercel.app/login"
+              href="https://dashboard.naijagodrop.com/login"
               target="_blank"
               rel="noopener noreferrer"
               className="px-8 py-3.5 rounded-full text-white text-sm font-semibold"

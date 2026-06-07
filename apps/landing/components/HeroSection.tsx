@@ -616,7 +616,7 @@ function Hero3() {
 
 // ─── Carousel ─────────────────────────────────────────────────
 
-const SLIDES = [Hero1, Hero2, Hero3] as const;
+const SLIDES = [Hero1, Hero3, Hero2] as const;
 
 export default function HeroSection() {
   const [current, setCurrent] = useState(0);

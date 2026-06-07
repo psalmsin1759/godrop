@@ -1,10 +1,12 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
 import { AdminRole, AdminType, UserStatus, VendorStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
-import { sendEmail, systemAdminInviteEmail, vendorApprovedEmail, vendorRejectedEmail } from "./emailService";
+import { sendEmail, systemAdminInviteEmail, vendorApprovedEmail, vendorRejectedEmail, adminPasswordResetEmail } from "./emailService";
+import { logAction } from "./auditLogService";
 
 const SALT_ROUNDS = 12;
 
@@ -39,6 +41,72 @@ export async function changeAdminPassword(adminId: string, currentPassword: stri
   if (!valid) throw new Error("Current password is incorrect");
   const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
   await prisma.admin.update({ where: { id: adminId }, data: { password: hashed } });
+}
+
+export async function requestAdminPasswordReset(
+  email: string,
+  meta?: { ipAddress?: string; userAgent?: string }
+): Promise<void> {
+  const admin = await prisma.admin.findUnique({ where: { email } });
+  // Always respond the same way — don't reveal whether the email exists
+  if (!admin || !admin.isActive) return;
+
+  const rawToken = nanoid(40);
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+  const expiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+
+  await prisma.admin.update({
+    where: { id: admin.id },
+    data: { passwordResetToken: hashedToken, passwordResetExpiry: expiry },
+  });
+
+  const dashboardUrl = process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng";
+  const resetLink = `${dashboardUrl}/reset-password?token=${rawToken}`;
+
+  await sendEmail(
+    adminPasswordResetEmail({ firstName: admin.firstName, email: admin.email, resetLink })
+  );
+
+  logAction({
+    adminId: admin.id,
+    action: "FORGOT_PASSWORD_REQUESTED",
+    entity: admin.type === AdminType.SYSTEM ? "SystemAdmin" : "VendorAdmin",
+    entityId: admin.id,
+    ipAddress: meta?.ipAddress,
+    userAgent: meta?.userAgent,
+  });
+}
+
+export async function resetAdminPassword(
+  rawToken: string,
+  newPassword: string,
+  meta?: { ipAddress?: string; userAgent?: string }
+): Promise<void> {
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  const admin = await prisma.admin.findFirst({
+    where: {
+      passwordResetToken: hashedToken,
+      passwordResetExpiry: { gt: new Date() },
+    },
+  });
+
+  if (!admin) throw new Error("Invalid or expired reset token");
+
+  const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await prisma.admin.update({
+    where: { id: admin.id },
+    data: { password: hashed, passwordResetToken: null, passwordResetExpiry: null },
+  });
+
+  logAction({
+    adminId: admin.id,
+    action: "PASSWORD_RESET",
+    entity: admin.type === AdminType.SYSTEM ? "SystemAdmin" : "VendorAdmin",
+    entityId: admin.id,
+    ipAddress: meta?.ipAddress,
+    userAgent: meta?.userAgent,
+  });
 }
 
 export async function updateAdminProfile(

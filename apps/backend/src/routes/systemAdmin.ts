@@ -19,6 +19,8 @@ import {
   changeAdminPasswordSchema,
   updateAdminProfileSchema,
   updateAdminSettingsSchema,
+  forgotAdminPasswordSchema,
+  resetAdminPasswordSchema,
 } from "../validators/systemAdminValidators";
 import * as ctrl from "../controllers/systemAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
@@ -53,6 +55,8 @@ const router = Router();
 
 // ─── Public ───────────────────────────────────────────────────
 router.post("/login", validate(adminLoginSchema), ctrl.login);
+router.post("/forgot-password", validate(forgotAdminPasswordSchema), ctrl.forgotPassword);
+router.post("/reset-password", validate(resetAdminPasswordSchema), ctrl.resetPassword);
 
 // ─── Authenticated ────────────────────────────────────────────
 router.use(requireSystemAuth);

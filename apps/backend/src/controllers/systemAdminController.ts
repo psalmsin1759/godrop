@@ -3,6 +3,7 @@ import { ok, fail } from "../utils/response";
 import * as svc from "../services/systemAdminService";
 import * as orderService from "../services/orderService";
 import * as notifSvc from "../services/notificationService";
+import { logAction } from "../services/auditLogService";
 import { paginate, buildMeta } from "../utils/pagination";
 import { prisma } from "../lib/prisma";
 
@@ -11,9 +12,45 @@ import { prisma } from "../lib/prisma";
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await svc.loginAdmin(req.body.email, req.body.password);
+    logAction({
+      adminId: result.admin.id,
+      vendorId: result.admin.vendorId ?? undefined,
+      action: "LOGIN",
+      entity: result.admin.type === "VENDOR" ? "VendorAdmin" : "SystemAdmin",
+      entityId: result.admin.id,
+      newValues: { email: result.admin.email, role: result.admin.role, type: result.admin.type },
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
     return ok(res, result);
   } catch (err: any) {
     if (err.message === "Invalid credentials") return fail(res, "Invalid email or password", 401);
+    next(err);
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    await svc.requestAdminPasswordReset(req.body.email, {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+    // Always return success to avoid email enumeration
+    return ok(res, { message: "If an account with that email exists, a reset link has been sent." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    await svc.resetAdminPassword(req.body.token, req.body.newPassword, {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+    return ok(res, { message: "Password reset successfully. Please log in with your new password." });
+  } catch (err: any) {
+    if (err.message === "Invalid or expired reset token") return fail(res, err.message, 400);
     next(err);
   }
 }

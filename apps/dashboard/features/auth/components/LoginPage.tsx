@@ -291,7 +291,16 @@ export default function LoginPage() {
     setResetEmailErr(false)
     if (!isValidEmail(resetEmail)) { setResetEmailErr(true); return }
     setResetLoading(true)
-    await new Promise((r) => setTimeout(r, 900))
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.naijagodrop.com/api/v1'
+      await fetch(`${apiUrl}/admin/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      })
+    } catch {
+      // Swallow errors — always show the sent confirmation to prevent email enumeration
+    }
     setResetLoading(false)
     setSentTo(resetEmail.trim())
     setView('sent')

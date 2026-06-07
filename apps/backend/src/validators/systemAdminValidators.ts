@@ -94,3 +94,12 @@ export const auditLogQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   limit: z.coerce.number().int().positive().max(100).optional().default(20),
 });
+
+export const forgotAdminPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetAdminPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});

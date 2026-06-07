@@ -289,6 +289,8 @@ model Admin {
   isActive            Boolean   @default(true)
   receiveVendorEmails Boolean   @default(false)
   receiveRiderEmails  Boolean   @default(false)
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 

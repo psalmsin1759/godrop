@@ -1,37 +1,15 @@
-import nodemailer, { Transporter } from "nodemailer";
+import axios from "axios";
 
-let transporter: Transporter | null = null;
+// ─── Mailtrap HTTP send ───────────────────────────────────────
 
-async function getTransporter(): Promise<Transporter> {
-  if (transporter) return transporter;
-
-  const provider = process.env.EMAIL_PROVIDER ?? "ethereal";
-
-  if (provider === "mailtrap") {
-    const port = Number(process.env.MAILTRAP_PORT ?? 587);
-    transporter = nodemailer.createTransport({
-      host: process.env.MAILTRAP_HOST ?? "sandbox.smtp.mailtrap.io",
-      port,
-      secure: port === 465,
-      requireTLS: port !== 465,
-      auth: {
-        user: process.env.MAILTRAP_USER!,
-        pass: process.env.MAILTRAP_PASS!,
-      },
-    });
-  } else if (provider === "json") {
-    transporter = nodemailer.createTransport({ jsonTransport: true });
-  } else {
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      auth: { user: testAccount.user, pass: testAccount.pass },
-    });
-    console.log(`[email] Ethereal test account: ${testAccount.user}`);
+function getMailtrapUrl(): string {
+  const isSandbox = (process.env.MAILTRAP_USE_SANDBOX ?? "false").trim().toLowerCase() === "true";
+  if (isSandbox) {
+    const inboxId = process.env.MAILTRAP_INBOX_ID;
+    if (!inboxId) throw new Error("MAILTRAP_INBOX_ID is required when MAILTRAP_USE_SANDBOX=true");
+    return `https://sandbox.api.mailtrap.io/api/send/${inboxId}`;
   }
-
-  return transporter;
+  return "https://send.api.mailtrap.io/api/send";
 }
 
 export interface EmailOptions {
@@ -42,20 +20,34 @@ export interface EmailOptions {
 }
 
 export async function sendEmail(opts: EmailOptions): Promise<void> {
-  const t = await getTransporter();
-  const info = await t.sendMail({
-    from: `"${process.env.EMAIL_FROM_NAME ?? "Godrop"}" <${process.env.EMAIL_FROM_ADDRESS ?? "noreply@godrop.ng"}>`,
-    to: opts.to,
-    subject: opts.subject,
-    html: opts.html,
-    text: opts.text,
-  });
+  const token = process.env.MAILTRAP_API_KEY;
+  if (!token) throw new Error("MAILTRAP_API_KEY is not set");
 
-  if (process.env.EMAIL_PROVIDER === "json") {
-    const msg = JSON.parse((info as any).message);
-    console.log(`[email] TO: ${msg.to[0].address} | SUBJECT: ${msg.subject}`);
-  } else if (process.env.EMAIL_PROVIDER !== "mailtrap") {
-    console.log(`[email] Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+  const fromName = process.env.EMAIL_FROM_NAME ?? "Godrop";
+  const fromEmail = process.env.EMAIL_FROM_ADDRESS ?? "noreply@godrop.ng";
+
+  try {
+    await axios.post(
+      getMailtrapUrl(),
+      {
+        from: { name: fromName, email: fromEmail },
+        to: [{ email: opts.to }],
+        subject: opts.subject,
+        html: opts.html,
+        ...(opts.text ? { text: opts.text } : {}),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(`[email] Sent → ${opts.to} | ${opts.subject}`);
+  } catch (err: any) {
+    const detail = err?.response?.data ?? err?.message;
+    console.error("[email] Send failed:", detail);
+    throw err;
   }
 }
 
@@ -69,18 +61,18 @@ function emailLayout(content: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Godrop</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:40px 16px;">
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
           <!-- Logo header -->
           <tr>
-            <td align="center" style="padding-bottom:24px;">
+            <td align="center" style="padding-bottom:28px;">
               <table cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background:linear-gradient(135deg,#f97316,#ea580c);border-radius:12px;padding:10px 22px;">
-                    <span style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">Go<span style="color:#fde68a;">drop</span></span>
+                  <td style="background:linear-gradient(135deg,#1E5FFF,#0A3FD1);border-radius:14px;padding:12px 28px;">
+                    <span style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">Go<span style="color:#93b4ff;">drop</span></span>
                   </td>
                 </tr>
               </table>
@@ -88,18 +80,18 @@ function emailLayout(content: string): string {
           </tr>
           <!-- Card -->
           <tr>
-            <td style="background:#ffffff;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);overflow:hidden;">
+            <td style="background:#ffffff;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.06);overflow:hidden;">
               ${content}
             </td>
           </tr>
           <!-- Footer -->
           <tr>
-            <td align="center" style="padding:24px 0 8px;">
+            <td align="center" style="padding:28px 0 8px;">
               <p style="margin:0;font-size:12px;color:#9ca3af;">
                 © ${new Date().getFullYear()} Godrop Technologies Ltd · Lagos, Nigeria
               </p>
-              <p style="margin:4px 0 0;font-size:12px;color:#9ca3af;">
-                Questions? <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>
+              <p style="margin:6px 0 0;font-size:12px;color:#9ca3af;">
+                Questions? <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>
               </p>
             </td>
           </tr>
@@ -111,19 +103,19 @@ function emailLayout(content: string): string {
 </html>`;
 }
 
-function cardHeader(title: string, accentColor = "#f97316"): string {
-  return `<div style="background:${accentColor};padding:28px 32px 24px;">
-    <h1 style="margin:0;font-size:20px;font-weight:700;color:#fff;line-height:1.3;">${title}</h1>
+function cardHeader(title: string, accentColor = "#1E5FFF"): string {
+  return `<div style="background:linear-gradient(135deg,${accentColor},${accentColor}cc);padding:32px 36px 28px;">
+    <h1 style="margin:0;font-size:21px;font-weight:700;color:#fff;line-height:1.3;">${title}</h1>
   </div>`;
 }
 
 function cardBody(html: string): string {
-  return `<div style="padding:28px 32px;">${html}</div>`;
+  return `<div style="padding:32px 36px;">${html}</div>`;
 }
 
-function ctaButton(label: string, url: string, color = "#f97316"): string {
-  return `<div style="margin-top:24px;">
-    <a href="${url}" style="display:inline-block;background:${color};color:#fff;padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">${label}</a>
+function ctaButton(label: string, url: string, color = "#1E5FFF"): string {
+  return `<div style="margin-top:28px;">
+    <a href="${url}" style="display:inline-block;background:${color};color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.2px;">${label}</a>
   </div>`;
 }
 
@@ -132,14 +124,20 @@ function infoTable(rows: Array<[string, string]>): string {
     .map(
       ([label, value]) => `
     <tr>
-      <td style="padding:9px 12px;font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;vertical-align:top;">${label}</td>
-      <td style="padding:9px 12px;font-size:13px;color:#111827;">${value}</td>
+      <td style="padding:10px 14px;font-size:13px;font-weight:600;color:#6b7280;white-space:nowrap;vertical-align:top;border-bottom:1px solid #f3f4f6;">${label}</td>
+      <td style="padding:10px 14px;font-size:13px;color:#111827;border-bottom:1px solid #f3f4f6;">${value}</td>
     </tr>`
     )
     .join("");
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;margin-top:20px;border-collapse:collapse;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:10px;margin-top:22px;border-collapse:collapse;overflow:hidden;">
     ${rowsHtml}
   </table>`;
+}
+
+function alertBox(message: string, color: string, bg: string): string {
+  return `<div style="background:${bg};border-left:4px solid ${color};border-radius:6px;padding:14px 18px;margin:22px 0;">
+    <p style="margin:0;font-size:13px;color:${color};line-height:1.55;">${message}</p>
+  </div>`;
 }
 
 // ─── Templates ────────────────────────────────────────────────
@@ -150,14 +148,14 @@ export function customerWelcomeEmail(opts: {
 }): EmailOptions {
   const appUrl = process.env.CUSTOMER_APP_URL ?? "https://godrop.ng";
   const html = emailLayout(
-    cardHeader("Welcome to Godrop! 🎉", "#f97316") +
+    cardHeader("Welcome to Godrop!", "#f97316") +
     cardBody(`
       <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
       <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
         Welcome to <strong>Godrop</strong> — your on-demand delivery platform for food, groceries, retail,
         and parcels in Lagos, Nigeria.
       </p>
-      <div style="background:#fff7ed;border-left:4px solid #f97316;border-radius:4px;padding:14px 16px;margin:20px 0;">
+      <div style="background:#fff7ed;border-left:4px solid #f97316;border-radius:6px;padding:14px 18px;margin:22px 0;">
         <p style="margin:0;font-size:14px;color:#92400e;font-weight:600;">What you can do with Godrop</p>
         <ul style="margin:8px 0 0;padding-left:18px;font-size:13px;color:#92400e;line-height:1.8;">
           <li>Order food from top restaurants nearby</li>
@@ -169,8 +167,8 @@ export function customerWelcomeEmail(opts: {
       <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
         Your account is ready. Download the Godrop app and start your first order today!
       </p>
-      ${ctaButton("Open Godrop App", appUrl)}
-      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+      ${ctaButton("Open Godrop App", appUrl, "#f97316")}
+      <p style="margin:28px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
         Need help? Reach us at
         <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>
         — we're always happy to assist.
@@ -193,21 +191,15 @@ export function vendorWelcomeEmail(opts: {
 }): EmailOptions {
   const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/vendor/login`;
   const html = emailLayout(
-    cardHeader("Application Received — Under Review") +
+    cardHeader("Application Received — Under Review", "#f97316") +
     cardBody(`
       <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
       <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
         Thank you for applying to join <strong>Godrop</strong> as a vendor. We've received your application for
         <strong>${opts.vendorName}</strong> and it's now under review.
       </p>
-      <div style="background:#fff7ed;border-left:4px solid #f97316;border-radius:4px;padding:14px 16px;margin:20px 0;">
-        <p style="margin:0;font-size:14px;color:#92400e;font-weight:600;">What happens next?</p>
-        <p style="margin:6px 0 0;font-size:13px;color:#92400e;line-height:1.5;">
-          Our team will review your documents and get back to you within <strong>1–2 business days</strong>.
-          You'll receive an email with the decision.
-        </p>
-      </div>
-      <div style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:4px;padding:14px 16px;margin:16px 0;">
+      ${alertBox(`Our team will review your documents and get back to you within <strong>1–2 business days</strong>. You'll receive an email with the decision.`, "#92400e", "#fff7ed")}
+      <div style="background:#eff6ff;border-left:4px solid #1E5FFF;border-radius:6px;padding:14px 18px;margin:16px 0;">
         <p style="margin:0;font-size:14px;color:#1e40af;font-weight:600;">You can get started now</p>
         <p style="margin:6px 0 0;font-size:13px;color:#1e40af;line-height:1.5;">
           While we review your application, you can already <strong>log in to your dashboard</strong> and
@@ -215,15 +207,15 @@ export function vendorWelcomeEmail(opts: {
           your application is approved.
         </p>
       </div>
-      ${ctaButton("Log In & Upload Products", loginUrl, "#3b82f6")}
+      ${ctaButton("Log In & Upload Products", loginUrl, "#1E5FFF")}
       ${infoTable([
         ["Business Name", opts.vendorName],
         ["Email", opts.email],
         ["Status", "Under Review"],
       ])}
-      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
-        If you have any questions in the meantime, please don't hesitate to reach out to us at
-        <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>.
+      <p style="margin:28px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        If you have any questions, please reach out at
+        <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
       </p>
     `)
   );
@@ -254,8 +246,8 @@ export function vendorApprovedEmail(opts: {
         Log in to your vendor dashboard to set up your menu, manage orders, and start earning.
       </p>
       ${ctaButton("Open Vendor Dashboard", loginUrl, "#16a34a")}
-      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">
-        Need help? Contact us at <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>.
+      <p style="margin:28px 0 0;font-size:13px;color:#6b7280;">
+        Need help? Contact us at <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
       </p>
     `)
   );
@@ -283,13 +275,13 @@ export function vendorRejectedEmail(opts: {
         could not be approved at this time.
       </p>
       ${opts.reason
-        ? `<div style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:4px;padding:14px 16px;margin:20px 0;">
+        ? `<div style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:6px;padding:14px 18px;margin:22px 0;">
             <p style="margin:0;font-size:13px;color:#991b1b;"><strong>Reason:</strong> ${opts.reason}</p>
           </div>`
         : ""}
       <p style="margin:16px 0;font-size:14px;color:#374151;line-height:1.6;">
         If you believe this was an error or would like to reapply, please reply to this email or contact us at
-        <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>.
+        <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
       </p>
     `)
   );
@@ -320,11 +312,9 @@ export function vendorTeamInviteEmail(opts: {
       ${infoTable([
         ["Email", opts.email],
         ["Role", opts.role],
-        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">${opts.temporaryPassword}</code>`],
+        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-family:monospace;">${opts.temporaryPassword}</code>`],
       ])}
-      <p style="margin:16px 0;font-size:13px;color:#6b7280;line-height:1.6;">
-        Please log in and change your password immediately.
-      </p>
+      ${alertBox("Please log in and <strong>change your password immediately</strong>.", "#92400e", "#fffbeb")}
       ${ctaButton("Log In to Dashboard", loginUrl)}
     `)
   );
@@ -349,18 +339,16 @@ export function systemAdminInviteEmail(opts: {
     cardBody(`
       <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
       <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
-        You have been added as a <strong>${opts.role.replace("_", " ")}</strong> on the Godrop Operations Dashboard.
+        You have been added as a <strong>${opts.role.replace(/_/g, " ")}</strong> on the Godrop Operations Dashboard.
         Use the credentials below to log in for the first time.
       </p>
       ${infoTable([
         ["Email", opts.email],
-        ["Role", opts.role.replace("_", " ")],
-        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">${opts.temporaryPassword}</code>`],
+        ["Role", opts.role.replace(/_/g, " ")],
+        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-family:monospace;">${opts.temporaryPassword}</code>`],
       ])}
-      <p style="margin:16px 0;font-size:13px;color:#6b7280;line-height:1.6;">
-        Please log in and change your password immediately.
-      </p>
-      ${ctaButton("Log In to Dashboard", loginUrl)}
+      ${alertBox("Please log in and <strong>change your password immediately</strong>. Do not share your credentials with anyone.", "#1e40af", "#eff6ff")}
+      ${ctaButton("Log In to Admin Dashboard", loginUrl)}
     `)
   );
 
@@ -369,6 +357,40 @@ export function systemAdminInviteEmail(opts: {
     subject: "You've been added to Godrop Admin Dashboard",
     html,
     text: `Hi ${opts.firstName}, you've been added as ${opts.role} on the Godrop Operations Dashboard. Login at ${loginUrl} with password: ${opts.temporaryPassword}. Please change your password after logging in.`,
+  };
+}
+
+export function adminPasswordResetEmail(opts: {
+  firstName: string;
+  email: string;
+  resetLink: string;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader("Reset Your Admin Password") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        We received a request to reset the password for your Godrop Admin account.
+        Click the button below to set a new password.
+      </p>
+      ${ctaButton("Reset My Password", opts.resetLink)}
+      <div style="margin-top:28px;padding:16px 20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Or copy this link</p>
+        <p style="margin:0;font-size:12px;color:#374151;word-break:break-all;font-family:monospace;">${opts.resetLink}</p>
+      </div>
+      ${alertBox("This link expires in <strong>30 minutes</strong>. If you did not request a password reset, you can safely ignore this email — your password will not change.", "#92400e", "#fffbeb")}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        For security, this link can only be used once. If you need help, contact
+        <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: "Reset your Godrop Admin password",
+    html,
+    text: `Hi ${opts.firstName},\n\nWe received a request to reset your Godrop Admin password.\n\nReset link (expires in 30 minutes):\n${opts.resetLink}\n\nIf you did not request this, ignore this email.\n\nGodrop Support: support@godrop.ng`,
   };
 }
 
@@ -386,9 +408,9 @@ export function adminNewVendorApplicationEmail(opts: {
 }): EmailOptions {
   const docRow = (label: string, uploaded: boolean) =>
     `<tr>
-      <td style="padding:8px 12px;font-size:13px;color:#374151;">${label}</td>
-      <td style="padding:8px 12px;font-size:13px;">
-        <span style="display:inline-flex;align-items:center;gap:4px;${uploaded ? "color:#16a34a;background:#e8faf2;" : "color:#dc2626;background:#fef2f2;"}padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">
+      <td style="padding:9px 14px;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6;">${label}</td>
+      <td style="padding:9px 14px;font-size:13px;border-bottom:1px solid #f3f4f6;">
+        <span style="display:inline-flex;align-items:center;gap:4px;${uploaded ? "color:#16a34a;background:#dcfce7;" : "color:#dc2626;background:#fef2f2;"}padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;">
           ${uploaded ? "✓ Uploaded" : "✗ Missing"}
         </span>
       </td>
@@ -409,16 +431,15 @@ export function adminNewVendorApplicationEmail(opts: {
         ["Address", opts.vendorAddress],
         ["Submitted", opts.submittedAt],
       ])}
-      <p style="margin:20px 0 8px;font-size:13px;font-weight:600;color:#374151;">Documents Submitted</p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;border-collapse:collapse;">
+      <p style="margin:22px 0 10px;font-size:13px;font-weight:600;color:#374151;">Documents Submitted</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:10px;border-collapse:collapse;overflow:hidden;">
         ${docRow("Business Registration Certificate", opts.documents.businessRegistration)}
         ${docRow("Government-Issued ID (Owner)", opts.documents.governmentId)}
         ${docRow("Utility Bill", opts.documents.utilityBill)}
       </table>
       ${ctaButton("Review Application", opts.reviewUrl)}
-      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+      <p style="margin:22px 0 0;font-size:12px;color:#9ca3af;">
         This notification was sent because you are listed as a vendor review recipient on Godrop.
-        You can manage your notification preferences in the admin dashboard.
       </p>
     `)
   );
@@ -450,18 +471,13 @@ export function businessOwnerWelcomeEmail(opts: {
         ["Business", opts.businessName],
         ["Email", opts.email],
         ["Role", "Business Owner"],
-        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">${opts.temporaryPassword}</code>`],
+        ["Temporary Password", `<code style="background:#f3f4f6;padding:2px 8px;border-radius:4px;font-family:monospace;">${opts.temporaryPassword}</code>`],
       ])}
-      <div style="background:#fffbeb;border-left:4px solid #f59e0b;border-radius:4px;padding:14px 16px;margin:20px 0;">
-        <p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">Action required</p>
-        <p style="margin:6px 0 0;font-size:13px;color:#92400e;line-height:1.5;">
-          Please log in and <strong>change your password immediately</strong>. Do not share your credentials with anyone.
-        </p>
-      </div>
+      ${alertBox("Please log in and <strong>change your password immediately</strong>. Do not share your credentials with anyone.", "#92400e", "#fffbeb")}
       ${ctaButton("Log In to Dashboard", loginUrl, "#f59e0b")}
-      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+      <p style="margin:28px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
         Need help getting started? Reach us at
-        <a href="mailto:support@godrop.ng" style="color:#f97316;text-decoration:none;">support@godrop.ng</a>.
+        <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
       </p>
     `)
   );
@@ -493,15 +509,15 @@ export function vendorNewOrderEmail(opts: {
     .map(
       (item) => `
     <tr>
-      <td style="padding:9px 12px;font-size:13px;color:#111827;">${item.name}</td>
-      <td style="padding:9px 12px;font-size:13px;color:#6b7280;text-align:center;">${item.quantity}</td>
-      <td style="padding:9px 12px;font-size:13px;color:#111827;text-align:right;white-space:nowrap;">${fmt(item.totalKobo)}</td>
+      <td style="padding:10px 14px;font-size:13px;color:#111827;border-bottom:1px solid #f3f4f6;">${item.name}</td>
+      <td style="padding:10px 14px;font-size:13px;color:#6b7280;text-align:center;border-bottom:1px solid #f3f4f6;">${item.quantity}</td>
+      <td style="padding:10px 14px;font-size:13px;color:#111827;text-align:right;white-space:nowrap;border-bottom:1px solid #f3f4f6;">${fmt(item.totalKobo)}</td>
     </tr>`
     )
     .join("");
 
   const html = emailLayout(
-    cardHeader("New Order Received", "#1e5fff") +
+    cardHeader("New Order Received", "#1E5FFF") +
     cardBody(`
       <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.ownerFirstName}</strong>,</p>
       <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
@@ -513,25 +529,25 @@ export function vendorNewOrderEmail(opts: {
         ["Payment", opts.paymentMethod === "cash" ? "Cash on delivery" : "Card / Online"],
         ["Delivery to", opts.deliveryAddress],
       ])}
-      <p style="margin:20px 0 8px;font-size:13px;font-weight:600;color:#374151;">Order Items</p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;border-collapse:collapse;">
+      <p style="margin:22px 0 10px;font-size:13px;font-weight:600;color:#374151;">Order Items</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:10px;border-collapse:collapse;overflow:hidden;">
         <thead>
           <tr style="background:#f9fafb;">
-            <th style="padding:9px 12px;font-size:12px;font-weight:600;color:#6b7280;text-align:left;">Item</th>
-            <th style="padding:9px 12px;font-size:12px;font-weight:600;color:#6b7280;text-align:center;">Qty</th>
-            <th style="padding:9px 12px;font-size:12px;font-weight:600;color:#6b7280;text-align:right;">Amount</th>
+            <th style="padding:10px 14px;font-size:12px;font-weight:600;color:#6b7280;text-align:left;">Item</th>
+            <th style="padding:10px 14px;font-size:12px;font-weight:600;color:#6b7280;text-align:center;">Qty</th>
+            <th style="padding:10px 14px;font-size:12px;font-weight:600;color:#6b7280;text-align:right;">Amount</th>
           </tr>
         </thead>
         <tbody>${itemRows}</tbody>
         <tfoot>
-          <tr style="border-top:2px solid #e5e7eb;">
-            <td colspan="2" style="padding:10px 12px;font-size:14px;font-weight:700;color:#111827;">Total</td>
-            <td style="padding:10px 12px;font-size:14px;font-weight:700;color:#1e5fff;text-align:right;white-space:nowrap;">${fmt(opts.totalKobo)}</td>
+          <tr style="background:#f9fafb;">
+            <td colspan="2" style="padding:12px 14px;font-size:14px;font-weight:700;color:#111827;">Total</td>
+            <td style="padding:12px 14px;font-size:14px;font-weight:700;color:#1E5FFF;text-align:right;white-space:nowrap;">${fmt(opts.totalKobo)}</td>
           </tr>
         </tfoot>
       </table>
-      ${ctaButton("View & Accept Order", opts.dashboardOrderUrl, "#1e5fff")}
-      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
+      ${ctaButton("View & Accept Order", opts.dashboardOrderUrl, "#1E5FFF")}
+      <p style="margin:22px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;">
         Accept or reject this order from your vendor dashboard. Orders left unattended for too long
         may be automatically cancelled.
       </p>
@@ -562,16 +578,16 @@ export function contactAdminNotificationEmail(opts: {
       </p>
       ${infoTable([
         ["Name", opts.name],
-        ["Email", `<a href="mailto:${opts.email}" style="color:#f97316;text-decoration:none;">${opts.email}</a>`],
+        ["Email", `<a href="mailto:${opts.email}" style="color:#1E5FFF;text-decoration:none;">${opts.email}</a>`],
         ...(opts.phone ? [["Phone", opts.phone] as [string, string]] : []),
         ["Subject", opts.subject],
       ])}
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-top:20px;">
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:18px;margin-top:22px;">
         <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Message</p>
         <p style="margin:0;font-size:14px;color:#111827;line-height:1.7;white-space:pre-wrap;">${opts.message}</p>
       </div>
-      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
-        Reply directly to <a href="mailto:${opts.email}" style="color:#f97316;text-decoration:none;">${opts.email}</a> to respond to this enquiry.
+      <p style="margin:22px 0 0;font-size:12px;color:#9ca3af;">
+        Reply directly to <a href="mailto:${opts.email}" style="color:#1E5FFF;text-decoration:none;">${opts.email}</a> to respond to this enquiry.
       </p>
     `)
   );
@@ -590,20 +606,14 @@ export function contactConfirmationEmail(opts: {
   subject: string;
 }): EmailOptions {
   const html = emailLayout(
-    cardHeader("We've received your message!", "#1e5fff") +
+    cardHeader("We've received your message!", "#1E5FFF") +
     cardBody(`
       <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.name}</strong>,</p>
       <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
         Thank you for reaching out to Godrop. We've received your message regarding
         <strong>"${opts.subject}"</strong> and our team will get back to you within <strong>24 hours</strong>.
       </p>
-      <div style="background:#eff6ff;border-left:4px solid #1e5fff;border-radius:4px;padding:14px 16px;margin:20px 0;">
-        <p style="margin:0;font-size:13px;color:#1e40af;line-height:1.5;">
-          In the meantime, if your request is urgent you can reach us directly at
-          <a href="mailto:admin.naijagodrop@gmail.com" style="color:#1e5fff;text-decoration:none;">admin.naijagodrop@gmail.com</a>
-          or call <strong>+234 703 452 9789</strong>.
-        </p>
-      </div>
+      ${alertBox(`In the meantime, if your request is urgent you can reach us directly at <a href="mailto:admin.naijagodrop@gmail.com" style="color:#1E5FFF;text-decoration:none;">admin.naijagodrop@gmail.com</a> or call <strong>+234 703 452 9789</strong>.`, "#1e40af", "#eff6ff")}
       <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
         Thanks for choosing Godrop — Nigeria's on-demand delivery platform.
       </p>
@@ -641,7 +651,7 @@ export function riderOnboardAdminEmail(opts: {
         ...(opts.city || opts.state ? [["Location", [opts.city, opts.state].filter(Boolean).join(", ")] as [string, string]] : []),
         ["Status", "Pending Review"],
       ])}
-      <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;">
+      <p style="margin:22px 0 0;font-size:12px;color:#9ca3af;">
         Log in to the admin dashboard to review and verify this rider application.
       </p>
     `)
@@ -669,22 +679,16 @@ export function riderOnboardConfirmationEmail(opts: {
         Thank you for applying to join the <strong>Godrop Rider Network</strong>. We've received your application
         and our team will review your details shortly.
       </p>
-      <div style="background:#fff7ed;border-left:4px solid #f97316;border-radius:4px;padding:14px 16px;margin:20px 0;">
-        <p style="margin:0;font-size:14px;color:#92400e;font-weight:600;">What happens next?</p>
-        <p style="margin:6px 0 0;font-size:13px;color:#92400e;line-height:1.5;">
-          Our team will review your application and reach out to <strong>${opts.phone}</strong> within
-          <strong>24–48 hours</strong> to complete your onboarding.
-        </p>
-      </div>
+      ${alertBox(`Our team will review your application and reach out to <strong>${opts.phone}</strong> within <strong>24–48 hours</strong> to complete your onboarding.`, "#92400e", "#fff7ed")}
       ${infoTable([
         ["Name", opts.firstName],
         ["Phone", opts.phone],
         ["Vehicle Type", opts.vehicleType],
         ["Status", "Under Review"],
       ])}
-      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+      <p style="margin:28px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
         Questions? Reach us at
-        <a href="mailto:admin.naijagodrop@gmail.com" style="color:#f97316;text-decoration:none;">admin.naijagodrop@gmail.com</a>
+        <a href="mailto:admin.naijagodrop@gmail.com" style="color:#1E5FFF;text-decoration:none;">admin.naijagodrop@gmail.com</a>
         or call <strong>+234 703 452 9789</strong>.
       </p>
     `)

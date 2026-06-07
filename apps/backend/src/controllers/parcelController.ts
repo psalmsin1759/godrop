@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma";
 import * as pricingService from "../services/pricingService";
 import * as orderService from "../services/orderService";
 import { ok, created, fail } from "../utils/response";
+import { uploadBuffer } from "../services/cloudinaryService";
 
 // ─── Vehicle Types (public) ───────────────────────────────────
 
@@ -35,6 +36,16 @@ export async function adminListVehicleTypes(_req: Request, res: Response, next: 
   try {
     const types = await prisma.parcelVehicleType.findMany({ orderBy: { baseFeeKobo: "asc" } });
     ok(res, { types });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function uploadVehicleTypeImage(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) return fail(res, "No file uploaded", 400);
+    const url = await uploadBuffer(req.file.buffer, "godrop/parcel-vehicle-types");
+    return ok(res, { url });
   } catch (err) {
     next(err);
   }

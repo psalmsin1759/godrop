@@ -33,6 +33,11 @@ export const parcelsApi = api.injectEndpoints({
       transformResponse: (res: ParcelVehicleTypesResponse) => res.types,
     }),
 
+    uploadParcelVehicleTypeImage: build.mutation<{ url: string }, FormData>({
+      query: (body) => ({ url: '/parcel/vehicle-types/image', method: 'POST', body, formData: true }),
+      transformResponse: (res: { success: boolean; data: { url: string } }) => res.data,
+    }),
+
     createParcelVehicleType: build.mutation<ParcelVehicleType, CreateParcelVehicleTypeRequest>({
       query: (body) => ({ url: '/parcel/vehicle-types', method: 'POST', body }),
       invalidatesTags: ['ParcelVehicleType'],
@@ -64,6 +69,7 @@ export const parcelsApi = api.injectEndpoints({
 
 export const {
   useGetAdminParcelVehicleTypesQuery,
+  useUploadParcelVehicleTypeImageMutation,
   useCreateParcelVehicleTypeMutation,
   useUpdateParcelVehicleTypeMutation,
   useDeleteParcelVehicleTypeMutation,

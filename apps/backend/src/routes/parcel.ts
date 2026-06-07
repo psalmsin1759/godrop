@@ -3,6 +3,7 @@ import * as parcelController from "../controllers/parcelController";
 import { requireAuth } from "../middleware/auth";
 import { requireSystemAuth } from "../middleware/systemAuth";
 import { validate } from "../middleware/validate";
+import { catalogImageUpload } from "../middleware/upload";
 import {
   parcelQuoteSchema,
   placeParcelOrderSchema,
@@ -18,6 +19,7 @@ router.get("/vehicle-types/:id", parcelController.getVehicleType);
 
 // ─── Vehicle types (admin) ────────────────────────────────────
 router.get("/admin/vehicle-types", requireSystemAuth, parcelController.adminListVehicleTypes);
+router.post("/vehicle-types/image", requireSystemAuth, catalogImageUpload.single("file"), parcelController.uploadVehicleTypeImage);
 router.post("/vehicle-types", requireSystemAuth, validate(createParcelVehicleTypeSchema), parcelController.createVehicleType);
 router.patch("/vehicle-types/:id", requireSystemAuth, validate(updateParcelVehicleTypeSchema), parcelController.updateVehicleType);
 router.delete("/vehicle-types/:id", requireSystemAuth, parcelController.deleteVehicleType);

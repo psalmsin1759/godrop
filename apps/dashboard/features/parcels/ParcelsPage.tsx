@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   useGetAdminParcelVehicleTypesQuery,
+  useUploadParcelVehicleTypeImageMutation,
   useCreateParcelVehicleTypeMutation,
   useUpdateParcelVehicleTypeMutation,
   useDeleteParcelVehicleTypeMutation,
@@ -14,8 +15,108 @@ import { formatNaira, formatDateTime } from '@/lib/utils'
 import {
   Plus, Pencil, Trash2, Loader2, Package, X, ChevronLeft,
   ChevronRight, Search, CheckCircle2, ToggleLeft, ToggleRight,
-  ExternalLink,
+  ExternalLink, ImageIcon, Upload,
 } from 'lucide-react'
+
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+
+function VehicleTypeImageField({
+  value,
+  onChange,
+  onClear,
+}: {
+  value: string
+  onChange: (url: string) => void
+  onClear: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploadImage, { isLoading }] = useUploadParcelVehicleTypeImageMutation()
+  const [error, setError] = useState('')
+
+  async function handleFile(file: File) {
+    setError('')
+    if (file.size > MAX_IMAGE_BYTES) {
+      setError('Image must be 2 MB or smaller.')
+      return
+    }
+    const fd = new FormData()
+    fd.append('file', file)
+    try {
+      const { url } = await uploadImage(fd).unwrap()
+      onChange(url)
+    } catch {
+      setError('Upload failed. Please try again.')
+    }
+  }
+
+  return (
+    <div>
+      <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Image</label>
+      <div
+        className="relative mt-1 flex flex-col items-center justify-center border-2 border-dashed rounded-lg transition-colors"
+        style={{
+          borderColor: error ? '#FF3B30' : '#E7EAF1',
+          minHeight: 100,
+          cursor: isLoading ? 'default' : 'pointer',
+        }}
+        onClick={() => !isLoading && inputRef.current?.click()}
+      >
+        {value ? (
+          <div className="relative py-3">
+            <img
+              src={value}
+              alt="Vehicle type preview"
+              className="w-20 h-20 object-cover rounded-lg border border-[#E7EAF1]"
+            />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onClear() }}
+              className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
+              style={{ backgroundColor: '#FF3B30' }}
+              title="Remove image"
+            >
+              <X className="w-2.5 h-2.5 text-white" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); inputRef.current?.click() }}
+              className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
+              style={{ backgroundColor: '#1E5FFF' }}
+              title="Replace image"
+            >
+              <Upload className="w-2.5 h-2.5 text-white" />
+            </button>
+          </div>
+        ) : isLoading ? (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#1E5FFF' }} />
+            <span className="text-[11px] text-[#9AA1B4]">Uploading…</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E7EEFF' }}>
+              <ImageIcon className="w-4.5 h-4.5" style={{ color: '#1E5FFF', width: 18, height: 18 }} />
+            </div>
+            <span className="text-[11px] text-[#525A72]">Click to upload (optional)</span>
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) handleFile(file)
+            e.target.value = ''
+          }}
+        />
+      </div>
+      <p className="text-[11px] text-[#9AA1B4] mt-1">Max 2 MB · JPG, PNG, WebP</p>
+      {error && <p className="text-[11px] mt-1" style={{ color: '#FF3B30' }}>{error}</p>}
+    </div>
+  )
+}
 
 // ─── Vehicle Type Form ─────────────────────────────────────────────────────
 
@@ -161,16 +262,11 @@ function VehicleTypeModal({
             </div>
           </div>
 
-          <div>
-            <label className="text-[11px] font-semibold text-[#525A72] uppercase tracking-wide">Image URL</label>
-            <input
-              type="url"
-              value={form.imageUrl}
-              onChange={field('imageUrl')}
-              placeholder="https://…"
-              className="mt-1 w-full text-xs border border-[#E7EAF1] rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] bg-[#F7F9FC]"
-            />
-          </div>
+          <VehicleTypeImageField
+            value={form.imageUrl}
+            onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
+            onClear={() => setForm((f) => ({ ...f, imageUrl: '' }))}
+          />
 
           <div className="flex items-center justify-between pt-1">
             <label className="text-xs font-medium text-[#0D1426]">Active</label>

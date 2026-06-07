@@ -11,7 +11,8 @@ export async function submitContact(req: Request, res: Response, next: NextFunct
 
     const message = await contactService.createContactMessage(parsed.data);
 
-    await Promise.allSettled([
+    // Fire emails in the background — don't block the response on SMTP
+    Promise.allSettled([
       sendEmail(contactAdminNotificationEmail({
         name: parsed.data.name,
         email: parsed.data.email,
@@ -24,7 +25,7 @@ export async function submitContact(req: Request, res: Response, next: NextFunct
         email: parsed.data.email,
         subject: parsed.data.subject,
       })),
-    ]);
+    ]).catch(() => {/* swallow — emails are best-effort */});
 
     return ok(res, { data: { id: message.id }, message: "Your message has been received. We'll get back to you within 24 hours." }, 201);
   } catch (err) {

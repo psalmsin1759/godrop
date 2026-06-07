@@ -333,7 +333,7 @@ export function systemAdminInviteEmail(opts: {
   role: string;
   temporaryPassword: string;
 }): EmailOptions {
-  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/admin/login`;
+  const loginUrl = `${process.env.DASHBOARD_URL ?? "https://dashboard.godrop.ng"}/login`;
   const html = emailLayout(
     cardHeader("You've been added as a Godrop Admin") +
     cardBody(`

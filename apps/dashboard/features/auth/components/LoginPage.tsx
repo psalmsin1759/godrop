@@ -1,346 +1,719 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Loader2, AlertCircle, Eye, EyeOff, Store } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { gsap } from 'gsap'
 
-function MiniBarChart({ color, bars }: { color: string; bars: number[] }) {
-  const maxH = 28
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type View = 'signin' | 'forgot' | 'sent' | 'welcome'
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+
+function IconMail({ className }: { className?: string }) {
   return (
-    <svg width={bars.length * 9} height={maxH} viewBox={`0 0 ${bars.length * 9} ${maxH}`} fill="none">
-      {bars.map((h, i) => (
-        <rect
-          key={i}
-          x={i * 9}
-          y={maxH - (h / 100) * maxH}
-          width="6"
-          height={(h / 100) * maxH}
-          rx="1.5"
-          fill={i === bars.length - 2 ? color : `${color}55`}
+    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconLock({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="10" width="16" height="10" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 10V8a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconEyeOpen({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
+    </svg>
+  )
+}
+
+function IconEyeOff({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M10.6 6.2A9.7 9.7 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3 3.5M6.5 7.6C3.8 9.3 2 12 2 12s3.5 6 10 6c1.4 0 2.7-.3 3.8-.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconShield({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6l8-3z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconArrow() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M5 12h14M13 6l6 6-6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconBack() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconCheck() {
+  return (
+    <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+      <path d="M4 12l5 5L20 6" stroke="#1DB980" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function Spinner() {
+  return (
+    <span
+      className="inline-block w-[18px] h-[18px] rounded-full border-[2.4px] border-white/40 border-t-white animate-spin"
+      style={{ animationDuration: '0.7s' }}
+    />
+  )
+}
+
+// ─── Logo mark SVG ───────────────────────────────────────────────────────────
+
+function GodropMark({ size = 26, color = '#fff' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 28 28" fill="none">
+      <path d="M14 3.5A10.5 10.5 0 1 0 24.5 14H14" stroke={color} strokeWidth="3.2" strokeLinecap="round" fill="none" />
+      <path d="M20.5 6.5c1.5 1.6 2.6 3.4 2.6 4.9a2.6 2.6 0 1 1-5.2 0c0-1.5 1.1-3.3 2.6-4.9z" fill="#FFB38A" />
+    </svg>
+  )
+}
+
+// ─── Drop shape SVG ──────────────────────────────────────────────────────────
+
+const Drop = React.forwardRef<SVGSVGElement, { fill: string; className?: string; style?: React.CSSProperties }>(
+  function Drop({ fill, className, style }, ref) {
+    return (
+      <svg ref={ref} className={className} style={style} viewBox="0 0 24 30" fill="none">
+        <path d="M12 1c4.5 4.6 8 9.5 8 14a8 8 0 1 1-16 0c0-4.5 3.5-9.4 8-14z" fill={fill} />
+      </svg>
+    )
+  }
+)
+
+// ─── Field component ─────────────────────────────────────────────────────────
+
+function Field({
+  id, label, icon, type = 'text', placeholder, value, onChange, error, hint,
+  right,
+}: {
+  id: string
+  label: string
+  icon: React.ReactNode
+  type?: string
+  placeholder: string
+  value: string
+  onChange: (v: string) => void
+  error?: boolean
+  hint?: string
+  right?: React.ReactNode
+}) {
+  return (
+    <div className="mb-[17px]">
+      <label htmlFor={id} className="block text-[12px] font-semibold tracking-[0.3px] text-[#4A5068] mb-[7px]">
+        {label}
+      </label>
+      <div
+        className={[
+          'relative flex items-center bg-white border-[1.5px] rounded-[13px] transition-all duration-150',
+          error
+            ? 'border-[#FF3B30] shadow-[0_0_0_4px_rgba(255,59,48,0.12)]'
+            : 'border-[#E6E8EF] focus-within:border-[#1E5FFF] focus-within:shadow-[0_0_0_4px_rgba(30,95,255,0.14)]',
+        ].join(' ')}
+      >
+        <span className="flex items-center pl-[14px] text-[#8A90A3]">{icon}</span>
+        <input
+          id={id}
+          type={type}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete={id === 'email' || id === 'remail' ? 'username' : 'current-password'}
+          spellCheck={false}
+          className="flex-1 border-0 outline-0 bg-transparent font-['Plus_Jakarta_Sans',sans-serif] text-[15px] font-medium text-[#0B1F4A] py-[15px] px-[14px] placeholder:text-[#B6BBCB] placeholder:font-medium"
         />
-      ))}
-    </svg>
+        {right}
+      </div>
+      {hint && error && (
+        <p className="text-[11.5px] text-[#FF3B30] mt-[6px] font-medium">{hint}</p>
+      )}
+    </div>
   )
 }
 
-function Character() {
+// ─── Toggle (remember me) ────────────────────────────────────────────────────
+
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <svg width="240" height="350" viewBox="0 0 240 350" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Shadow */}
-      <ellipse cx="120" cy="342" rx="52" ry="9" fill="rgba(0,0,0,0.16)" />
-
-      {/* Left shoe */}
-      <path d="M82 312 L76 323 Q68 330 66 335 Q64 341 71 343 Q80 345 97 343 Q107 341 108 335 L107 312Z" fill="#1a2336" />
-      <ellipse cx="87" cy="338" rx="9" ry="3" fill="#2a3348" opacity="0.6" />
-
-      {/* Right shoe */}
-      <path d="M133 312 L132 335 Q133 341 147 343 Q163 345 170 343 Q176 341 173 335 Q171 330 162 323 L154 312Z" fill="#1a2336" />
-      <ellipse cx="153" cy="338" rx="9" ry="3" fill="#2a3348" opacity="0.6" />
-
-      {/* Pants left leg */}
-      <path d="M84 208 L78 314 L108 314 L114 222Z" fill="#2540c8" />
-      {/* Pants right leg */}
-      <path d="M156 208 L126 222 L132 314 L162 314 L156 208Z" fill="#2540c8" />
-      {/* Pants waist */}
-      <rect x="84" y="196" width="72" height="16" rx="2" fill="#2540c8" />
-      <line x1="120" y1="198" x2="120" y2="240" stroke="#1c33b0" strokeWidth="1.5" />
-
-      {/* T-shirt */}
-      <path d="M84 144 L64 168 L76 175 L84 160 L84 197 L156 197 L156 160 L164 175 L176 168 L156 144 Q142 132 120 130 Q98 132 84 144Z" fill="#f2f2ed" />
-      <path d="M84 160 L84 197 L97 197 L97 150Q91 154 84 160Z" fill="#e5e5e0" />
-
-      {/* Left arm */}
-      <path d="M84 154 L65 220 L76 225 L93 166" fill="#f0c4a0" />
-      <ellipse cx="70" cy="222" rx="8" ry="6" fill="#f0c4a0" />
-      <path d="M62 219 Q67 229 76 227" stroke="#daa878" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-
-      {/* Right arm + phone */}
-      <rect x="154" y="148" width="15" height="58" rx="7" fill="#f0c4a0" />
-
-      {/* Phone body */}
-      <rect x="152" y="182" width="38" height="58" rx="6" fill="#1a2336" />
-      <rect x="155" y="187" width="32" height="46" rx="3" fill="#3dc7be" />
-      <rect x="163" y="185" width="14" height="3" rx="1.5" fill="#1a2336" />
-      {/* Screen content */}
-      <rect x="158" y="194" width="26" height="2.5" rx="1" fill="white" opacity="0.9" />
-      <rect x="158" y="200" width="18" height="2" rx="1" fill="white" opacity="0.55" />
-      <rect x="158" y="206" width="22" height="2" rx="1" fill="white" opacity="0.55" />
-      <rect x="158" y="212" width="14" height="2" rx="1" fill="white" opacity="0.55" />
-      {/* Mini bars on phone screen */}
-      <rect x="158" y="218" width="5" height="8" rx="1" fill="white" opacity="0.4" />
-      <rect x="165" y="214" width="5" height="12" rx="1" fill="white" opacity="0.75" />
-      <rect x="172" y="216" width="5" height="10" rx="1" fill="white" opacity="0.5" />
-      <rect x="179" y="212" width="5" height="14" rx="1" fill="white" opacity="0.85" />
-      {/* Phone grip */}
-      <rect x="150" y="218" width="8" height="28" rx="4" fill="#f0c4a0" />
-      <rect x="184" y="218" width="8" height="28" rx="4" fill="#f0c4a0" />
-
-      {/* Neck */}
-      <rect x="113" y="114" width="14" height="20" rx="4" fill="#f0c4a0" />
-
-      {/* Head */}
-      <ellipse cx="120" cy="84" rx="38" ry="40" fill="#f0c4a0" />
-
-      {/* Hair */}
-      <path d="M82 78 Q86 42 120 38 Q154 42 158 78 Q163 58 154 46 Q138 24 120 22 Q102 24 86 46 Q77 58 82 78Z" fill="#1a1a1a" />
-      <path d="M82 78 Q78 88 80 98" stroke="#1a1a1a" strokeWidth="6" strokeLinecap="round" />
-      <path d="M158 78 Q162 88 160 98" stroke="#1a1a1a" strokeWidth="6" strokeLinecap="round" />
-
-      {/* Ears */}
-      <ellipse cx="82" cy="88" rx="7" ry="10" fill="#e8b48e" />
-      <ellipse cx="158" cy="88" rx="7" ry="10" fill="#e8b48e" />
-
-      {/* Glasses */}
-      <circle cx="106" cy="84" r="15" fill="rgba(210,228,255,0.12)" stroke="#1a1a1a" strokeWidth="3" />
-      <circle cx="134" cy="84" r="15" fill="rgba(210,228,255,0.12)" stroke="#1a1a1a" strokeWidth="3" />
-      <path d="M121 84 L119 84" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M91 80 L83 76" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M149 80 L157 76" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" />
-
-      {/* Eyes */}
-      <circle cx="106" cy="85" r="6.5" fill="#281608" />
-      <circle cx="134" cy="85" r="6.5" fill="#281608" />
-      <circle cx="108" cy="82" r="2.5" fill="white" />
-      <circle cx="136" cy="82" r="2.5" fill="white" />
-
-      {/* Eyebrows */}
-      <path d="M93 71 Q106 66 118 69" stroke="#1a1a1a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      <path d="M122 69 Q134 66 147 71" stroke="#1a1a1a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-
-      {/* Nose */}
-      <path d="M116 100 Q120 106 124 100" stroke="#d4946a" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-
-      {/* Mouth */}
-      <path d="M111 112 Q120 120 129 112" stroke="#b46030" strokeWidth="2.2" fill="none" strokeLinecap="round" />
-    </svg>
+    <label className="inline-flex items-center gap-[10px] cursor-pointer select-none">
+      <input
+        type="checkbox"
+        className="sr-only"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span
+        className="relative w-[38px] h-[22px] rounded-full transition-colors duration-[180ms]"
+        style={{ background: checked ? '#1E5FFF' : '#E6E8EF' }}
+        onClick={() => onChange(!checked)}
+      >
+        <span
+          className="absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-[180ms]"
+          style={{ transform: checked ? 'translateX(18px)' : 'translateX(2px)' }}
+        />
+      </span>
+      <span className="text-[13.5px] font-semibold text-[#4A5068] whitespace-nowrap">{label}</span>
+    </label>
   )
 }
+
+// ─── Main component ──────────────────────────────────────────────────────────
 
 export default function LoginPage() {
   const router = useRouter()
+
+  // view state
+  const [view, setView] = useState<View>('signin')
+
+  // signin state
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [showPw, setShowPw] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
+  const [emailErr, setEmailErr] = useState(false)
+  const [passErr, setPassErr] = useState(false)
+  const [banner, setBanner] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [shake, setShake] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  // forgot state
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetEmailErr, setResetEmailErr] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [sentTo, setSentTo] = useState('')
+
+  // GSAP refs for left panel
+  const drop1 = useRef<SVGSVGElement>(null)
+  const drop2 = useRef<SVGSVGElement>(null)
+  const drop3 = useRef<SVGSVGElement>(null)
+  const drop4 = useRef<SVGSVGElement>(null)
+  const pingRef = useRef<HTMLSpanElement>(null)
+  const glowOrange = useRef<HTMLDivElement>(null)
+  const glowBlue = useRef<HTMLDivElement>(null)
+  const statsRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // floating drops — staggered bob
+      gsap.to(drop1.current, { y: -13, duration: 7, ease: 'sine.inOut', repeat: -1, yoyo: true })
+      gsap.to(drop2.current, { y: -13, duration: 5.5, ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 0.6 })
+      gsap.to(drop3.current, { y: -13, duration: 8, ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 1.1 })
+      gsap.to(drop4.current, { y: -13, duration: 6, ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 0.3 })
+
+      // subtle glow pulse
+      gsap.to(glowOrange.current, { opacity: 0.7, scale: 1.06, duration: 4, ease: 'sine.inOut', repeat: -1, yoyo: true })
+      gsap.to(glowBlue.current, { opacity: 0.85, scale: 1.04, duration: 5.5, ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 1 })
+
+      // entrance: stats counter fade-up
+      gsap.fromTo(
+        statsRef.current,
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', delay: 0.5 }
+      )
+    })
+    return () => ctx.revert()
+  }, [])
+
+  function isValidEmail(v: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+  }
+
+  function clearErrors() {
+    setBanner(false)
+    setEmailErr(false)
+    setPassErr(false)
+  }
+
+  function triggerShake() {
+    setShake(false)
+    requestAnimationFrame(() => setShake(true))
+    setTimeout(() => setShake(false), 500)
+  }
+
+  async function handleSignIn(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
+    clearErrors()
+
+    const okEmail = isValidEmail(email)
+    const okPass = password.length > 0
+    if (!okEmail) setEmailErr(true)
+    if (!okPass) setPassErr(true)
+    if (!okEmail || !okPass) return
+
     setLoading(true)
-   console.log('Attempting login with:', { email, password: '••••••••' })
     const result = await signIn('credentials', { email, password, redirect: false })
-    console.log('Login result:', result)
     setLoading(false)
+
     if (result?.error) {
-      setError('Invalid email or password. Please try again.')
+      setBanner(true)
+      setEmailErr(true)
+      setPassErr(true)
+      triggerShake()
     } else {
-      router.push('/')
-      router.refresh()
+      setView('welcome')
+      setTimeout(() => { router.push('/'); router.refresh() }, 1200)
     }
   }
 
+  async function handleReset(e: React.FormEvent) {
+    e.preventDefault()
+    setResetEmailErr(false)
+    if (!isValidEmail(resetEmail)) { setResetEmailErr(true); return }
+    setResetLoading(true)
+    await new Promise((r) => setTimeout(r, 900))
+    setResetLoading(false)
+    setSentTo(resetEmail.trim())
+    setView('sent')
+  }
+
+  function goToForgot() {
+    setResetEmail(email)
+    setResetEmailErr(false)
+    setView('forgot')
+  }
+
+  function goToSignIn() {
+    clearErrors()
+    setView('signin')
+  }
+
+  const panelVariants = {
+    enter: { opacity: 0, x: 24 },
+    center: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } },
+    exit: { opacity: 0, x: -20, transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } },
+  }
+
   return (
-    <div className="min-h-screen flex">
-
-      {/* ── Left panel: form ── */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-8 py-12">
-        <div className="w-full max-w-[380px]">
-
-          {/* Mobile-only logo */}
-          <div className="flex lg:hidden items-center gap-2 mb-10">
-            <div className="w-9 h-9 rounded-xl bg-[#3454d1] flex items-center justify-center">
-              <span className="text-white text-sm font-bold tracking-tight">G</span>
-            </div>
-            <span className="text-xl font-bold text-[#283c50]">
-              Go<span className="text-[#3454d1]">drop</span>
-            </span>
-          </div>
-
-          <h1 className="text-[1.9rem] font-bold text-[#283c50] leading-tight">Login</h1>
-
-          <p className="text-sm font-semibold text-[#283c50] mt-5 mb-1.5">
-            Login to your account
-          </p>
-          <p className="text-xs text-[#9ca3af] mb-7 leading-relaxed">
-            Welcome to Godrop Operations. Monitor deliveries, riders, and vendors across Lagos in real time.
-          </p>
-
-          {error && (
-            <div className="flex items-center gap-2.5 text-xs text-[#ea4d4d] bg-[#fdf0f0] border border-[#fca5a5] rounded-lg px-4 py-3 mb-5">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}  className="space-y-3.5">
-            <input
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@godrop.ng"
-              className="w-full px-4 py-3 text-sm rounded-lg border border-[#e5e7eb] bg-white text-[#283c50] placeholder:text-[#c4c9cf] focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1] transition-all"
-            />
-
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 pr-12 py-3 text-sm rounded-lg border border-[#e5e7eb] bg-white text-[#283c50] placeholder:text-[#c4c9cf] focus:outline-none focus:ring-2 focus:ring-[#3454d1]/20 focus:border-[#3454d1] transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#6b7885] transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between pt-0.5">
-              <label className="flex items-center gap-2 text-xs text-[#6b7885] cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-[#d1d5db] text-[#3454d1] focus:ring-[#3454d1]/20 cursor-pointer"
-                />
-                Remember Me
-              </label>
-              <button
-                type="button"
-                className="text-xs text-[#3454d1] hover:underline font-medium"
-              >
-                Forget password?
-              </button>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2.5 py-3.5 mt-1 rounded-lg text-sm font-bold uppercase tracking-widest text-white bg-[#3454d1] hover:bg-[#2a43a8] transition-colors disabled:opacity-60 shadow-[0_4px_14px_rgba(52,84,209,0.32)]"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing in
-                </>
-              ) : (
-                'Login'
-              )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-[#f3f4f6]" />
-            <span className="text-[11px] text-[#c4c9cf] font-medium uppercase tracking-wider">or</span>
-            <div className="flex-1 h-px bg-[#f3f4f6]" />
-          </div>
-
-          {/* Vendor onboarding CTA */}
-          <Link
-            href="/vendor-onboarding"
-            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-lg text-sm font-bold border-2 border-[#3454d1] text-[#3454d1] hover:bg-[#eef1fb] transition-colors"
-          >
-            <Store className="w-4 h-4" />
-            Register as a Vendor
-          </Link>
-
-          <p className="text-[11px] text-[#9ca3af] text-center mt-3 leading-relaxed">
-            Own a restaurant, grocery store, or retail shop?<br />
-            Apply to sell on Godrop in minutes.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Right panel: illustration ── */}
-      <div
-        className="hidden lg:flex lg:w-1/2 relative items-center justify-center overflow-hidden"
-        style={{ background: '#3454d1' }}
+    <div
+      className="min-h-screen grid"
+      style={{
+        gridTemplateColumns: 'minmax(0,1.05fr) minmax(0,1fr)',
+        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
+    >
+      {/* ══════════════════════════════════════════════════════
+          LEFT — BRAND MOTIF PANEL
+      ══════════════════════════════════════════════════════ */}
+      <section
+        className="relative overflow-hidden flex flex-col justify-between p-[48px_56px] text-white max-lg:hidden"
+        style={{ background: 'linear-gradient(155deg,#1E5FFF 0%,#0A3FD1 55%,#0B1F4A 100%)', isolation: 'isolate' }}
       >
-        {/* Subtle inner glow */}
+        {/* Glows */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          ref={glowOrange}
+          className="absolute rounded-full pointer-events-none z-0"
           style={{
-            background:
-              'radial-gradient(ellipse 75% 75% at 50% 50%, rgba(255,255,255,0.07) 0%, transparent 70%)',
+            top: -140, right: -120, width: 460, height: 460,
+            background: 'radial-gradient(circle, rgba(255,106,44,.55), rgba(255,106,44,0) 68%)',
+          }}
+        />
+        <div
+          ref={glowBlue}
+          className="absolute rounded-full pointer-events-none z-0"
+          style={{
+            bottom: -180, left: -140, width: 520, height: 520,
+            background: 'radial-gradient(circle, rgba(80,140,255,.7), rgba(80,140,255,0) 70%)',
           }}
         />
 
-        {/* Orb layers */}
-        <div
-          className="absolute rounded-full"
-          style={{ width: 400, height: 400, background: 'rgba(255,255,255,0.13)' }}
-        />
-        <div
-          className="absolute rounded-full"
-          style={{ width: 306, height: 306, background: 'rgba(255,255,255,0.10)' }}
-        />
+        {/* Grid lines */}
+        <svg className="absolute inset-0 z-0 opacity-50 w-full h-full" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <pattern id="g" width="48" height="48" patternUnits="userSpaceOnUse">
+              <path d="M48 0H0V48" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="600" height="800" fill="url(#g)" />
+          <path d="M-20 520 C 160 470, 240 600, 420 540 S 700 520, 720 470" fill="none" stroke="rgba(255,179,138,0.45)" strokeWidth="2" strokeDasharray="7 9" strokeLinecap="round" />
+          <path d="M40 200 C 180 250, 300 160, 460 230 S 640 300, 700 260" fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="1.5" strokeDasharray="5 8" />
+        </svg>
 
-        {/* Character */}
-        <div className="relative z-10 mt-8">
-          <Character />
+        {/* Floating drops */}
+        <Drop ref={drop1} fill="#FFB38A" className="absolute z-[2] w-[30px] opacity-90 drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]" style={{ top: '20%', right: '14%' }} />
+        <Drop ref={drop2} fill="#fff" className="absolute z-[2] w-[18px] opacity-60 drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]" style={{ top: '54%', right: '30%' }} />
+        <Drop ref={drop3} fill="#FF6A2C" className="absolute z-[2] w-[40px] opacity-85 drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]" style={{ top: '72%', right: '10%' }} />
+        <Drop ref={drop4} fill="#FFB38A" className="absolute z-[2] w-[14px] opacity-45 drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]" style={{ top: '33%', right: '44%' }} />
+
+        {/* Map pin */}
+        <div className="absolute z-[2]" style={{ top: '60%', right: '20%' }}>
+          <span
+            ref={pingRef}
+            className="absolute rounded-full border-[1.5px] border-[rgba(255,179,138,0.5)]"
+            style={{
+              left: '50%', top: '50%', width: 60, height: 60,
+              marginLeft: -30, marginTop: -30,
+              animation: 'ping 3s ease-out infinite',
+            }}
+          />
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+            <path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" fill="#FF6A2C" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
+            <circle cx="12" cy="10" r="2.6" fill="#fff" />
+          </svg>
         </div>
 
-        {/* Floating card: GMV */}
-        <div
-          className="absolute z-20 bg-white rounded-xl p-3.5 shadow-[0_10px_36px_rgba(0,0,0,0.20)]"
-          style={{ top: '20%', right: '9%', minWidth: 152 }}
-        >
-          <div className="flex items-start justify-between mb-2.5">
-            <div>
-              <p className="text-[10px] text-[#9ca3af] font-medium leading-none mb-1">
-                Today&apos;s GMV
-              </p>
-              <p className="text-[15px] font-bold text-[#283c50] leading-none">₦682,500</p>
-            </div>
-            <span className="text-[9px] text-[#17c666] bg-[#e8faf2] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
-              +12%
-            </span>
-          </div>
-          <MiniBarChart color="#3454d1" bars={[40, 65, 30, 80, 55, 90, 45]} />
-        </div>
-
-        {/* Floating card: Active Orders */}
-        <div
-          className="absolute z-20 bg-white rounded-xl p-3.5 shadow-[0_10px_36px_rgba(0,0,0,0.20)]"
-          style={{ bottom: '20%', left: '8%', minWidth: 152 }}
-        >
-          <div className="flex items-start justify-between mb-2.5">
-            <div>
-              <p className="text-[10px] text-[#9ca3af] font-medium leading-none mb-1">
-                Active Orders
-              </p>
-              <p className="text-[15px] font-bold text-[#283c50] leading-none">142 live</p>
-            </div>
-            <span className="text-[9px] text-[#ffa21d] bg-[#fff6e8] px-1.5 py-0.5 rounded-full font-semibold">
-              Live
-            </span>
-          </div>
-          <MiniBarChart color="#ffa21d" bars={[55, 40, 72, 45, 88, 62, 78]} />
-        </div>
-
-        {/* Brand footer */}
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-          <p
-            className="text-[10px] font-semibold tracking-[0.2em] uppercase"
-            style={{ color: 'rgba(255,255,255,0.28)' }}
+        {/* Logo */}
+        <div className="relative z-[3] flex items-center gap-[13px]">
+          <div
+            className="w-[46px] h-[46px] rounded-[14px] flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.22)', backdropFilter: 'blur(12px)' }}
           >
-            Godrop Operations
-          </p>
+            <GodropMark size={26} />
+          </div>
+          <div>
+            <div className="text-[23px] font-extrabold tracking-[-0.6px] leading-none">GoDrop</div>
+            <div
+              className="text-[11px] font-semibold tracking-[2.4px] uppercase mt-[4px]"
+              style={{ color: 'rgba(255,255,255,.62)', fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}
+            >
+              Admin Console
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Mid content */}
+        <div className="relative z-[3] max-w-[440px]">
+          <span
+            className="inline-flex items-center gap-[8px] text-[11.5px] font-semibold tracking-[1.4px] uppercase rounded-full px-[13px] py-[7px] mb-[26px]"
+            style={{
+              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+              color: 'rgba(255,255,255,.78)',
+              background: 'rgba(255,255,255,.08)',
+              border: '1px solid rgba(255,255,255,.16)',
+            }}
+          >
+            <span className="w-[7px] h-[7px] rounded-full bg-[#1DB980] shadow-[0_0_0_4px_rgba(29,185,128,0.25)]" />
+            Network operational
+          </span>
+          <h1 className="text-[42px] font-extrabold leading-[1.08] tracking-[-1.4px]">
+            Run the network<br />that <span style={{ color: '#FFB38A' }}>moves Nigeria.</span>
+          </h1>
+          <p className="mt-[20px] text-[16px] leading-[1.6]" style={{ color: 'rgba(255,255,255,.74)' }}>
+            Dispatch, fleet, merchants and payouts — one console for every drop, across Lagos, Abuja, Port Harcourt and beyond.
+          </p>
+          <div ref={statsRef} className="flex gap-[30px] mt-[36px]">
+            {[
+              { n: '18.4', u: 'k', label: 'Drops today' },
+              { n: '2,310', u: '', label: 'Riders online' },
+              { n: '99.2', u: '%', label: 'On-time rate' },
+            ].map(({ n, u, label }) => (
+              <div key={label}>
+                <div className="flex items-baseline gap-[3px] text-[26px] font-extrabold tracking-[-0.6px]">
+                  {n}<span className="text-[14px] font-bold" style={{ color: '#FFB38A' }}>{u}</span>
+                </div>
+                <div className="text-[12px] font-medium mt-[4px]" style={{ color: 'rgba(255,255,255,.6)' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          className="relative z-[3] flex items-center gap-[10px] text-[11.5px] tracking-[0.4px]"
+          style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: 'rgba(255,255,255,.55)' }}
+        >
+          <span>GoDrop Logistics</span>
+          <span className="w-[4px] h-[4px] rounded-full bg-[rgba(255,255,255,0.35)]" />
+          <span>Internal tooling</span>
+          <span className="w-[4px] h-[4px] rounded-full bg-[rgba(255,255,255,0.35)]" />
+          <span>v4.2.0</span>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          RIGHT — FORM PANEL
+      ══════════════════════════════════════════════════════ */}
+      <main className="bg-white flex items-center justify-center p-[40px] relative">
+        <motion.div
+          className={`w-full max-w-[392px] ${shake ? 'animate-shake' : ''}`}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-[11px] mb-[34px]">
+            <div
+              className="w-[40px] h-[40px] rounded-[12px] flex items-center justify-center shadow-[0_6px_16px_rgba(30,95,255,0.3)]"
+              style={{ background: 'linear-gradient(135deg,#1E5FFF 0%,#0A3FD1 100%)' }}
+            >
+              <GodropMark size={22} />
+            </div>
+            <div className="text-[19px] font-extrabold tracking-[-0.5px] text-[#0B1F4A]">
+              GoDrop <span className="font-bold text-[#8A90A3]">Admin</span>
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {/* ── SIGN IN ── */}
+            {view === 'signin' && (
+              <motion.div key="signin" variants={panelVariants} initial="enter" animate="center" exit="exit">
+                <div className="mb-[30px]">
+                  <h2 className="text-[30px] font-extrabold tracking-[-1px] text-[#0B1F4A]">Sign in</h2>
+                  <p className="text-[14.5px] text-[#4A5068] mt-[9px] leading-[1.5]">
+                    Welcome back. Use your GoDrop admin credentials to continue.
+                  </p>
+                </div>
+
+                {/* Error banner */}
+                <AnimatePresence>
+                  {banner && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex items-start gap-[11px] p-[13px_15px] rounded-[13px] mb-[20px]"
+                      style={{ background: '#FFF1F0', border: '1px solid #FFD4D1' }}
+                    >
+                      <svg className="flex-shrink-0 mt-[1px]" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="#C42B22" strokeWidth="1.8" />
+                        <path d="M12 7.5v5" stroke="#C42B22" strokeWidth="1.8" strokeLinecap="round" />
+                        <circle cx="12" cy="16" r="1.1" fill="#C42B22" />
+                      </svg>
+                      <div>
+                        <div className="text-[13.5px] font-bold text-[#C42B22]">Incorrect email or password</div>
+                        <div className="text-[12.5px] text-[#A13C36] mt-[2px] leading-[1.45]">
+                          Double-check your details and try again. Locked out after 5 attempts.
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <form onSubmit={handleSignIn} noValidate>
+                  <Field
+                    id="email"
+                    label="Work email"
+                    icon={<IconMail />}
+                    type="email"
+                    placeholder="you@godrop.ng"
+                    value={email}
+                    onChange={(v) => { setEmail(v); clearErrors() }}
+                    error={emailErr}
+                    hint="Enter a valid email address."
+                  />
+                  <Field
+                    id="password"
+                    label="Password"
+                    icon={<IconLock />}
+                    type={showPw ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(v) => { setPassword(v); clearErrors() }}
+                    error={passErr}
+                    hint="Password is required."
+                    right={
+                      <button
+                        type="button"
+                        aria-label={showPw ? 'Hide password' : 'Show password'}
+                        onClick={() => setShowPw(!showPw)}
+                        className="flex items-center justify-center w-[46px] h-[46px] text-[#8A90A3] hover:text-[#4A5068] transition-colors flex-shrink-0 border-0 bg-transparent cursor-pointer"
+                        tabIndex={-1}
+                      >
+                        {showPw ? <IconEyeOff /> : <IconEyeOpen />}
+                      </button>
+                    }
+                  />
+
+                  <div className="flex items-center justify-between mt-[6px] mb-[24px]">
+                    <Toggle checked={rememberMe} onChange={setRememberMe} label="Remember me" />
+                    <button
+                      type="button"
+                      onClick={goToForgot}
+                      className="text-[13.5px] font-bold text-[#1E5FFF] hover:text-[#0A3FD1] transition-colors bg-transparent border-0 cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-[9px] h-[54px] rounded-[14px] text-white text-[15.5px] font-bold tracking-[-0.2px] disabled:opacity-85 disabled:cursor-default border-0 cursor-pointer"
+                    style={{
+                      background: 'linear-gradient(135deg,#1E5FFF 0%,#0A3FD1 100%)',
+                      boxShadow: '0 10px 26px rgba(30,95,255,.32)',
+                    }}
+                    whileHover={!loading ? { filter: 'brightness(1.05)', boxShadow: '0 14px 32px rgba(30,95,255,.4)' } : {}}
+                    whileTap={!loading ? { scale: 0.98 } : {}}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {loading ? <Spinner /> : <><span>Sign in</span><IconArrow /></>}
+                  </motion.button>
+                </form>
+
+                <div className="flex items-center gap-[8px] text-[#8A90A3] text-[12px] font-medium mt-[34px] whitespace-nowrap">
+                  <IconShield />
+                  <span>Authorized personnel only</span>
+                  <span className="ml-auto text-[#4A5068] font-semibold">
+                    Need access?{' '}
+                    <a href="#" onClick={(e) => e.preventDefault()} className="text-[#4A5068] hover:text-[#1E5FFF] no-underline transition-colors">
+                      Contact ops
+                    </a>
+                  </span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── FORGOT PASSWORD ── */}
+            {view === 'forgot' && (
+              <motion.div key="forgot" variants={panelVariants} initial="enter" animate="center" exit="exit">
+                <button
+                  onClick={goToSignIn}
+                  className="inline-flex items-center gap-[7px] text-[13.5px] font-bold text-[#4A5068] hover:text-[#0B1F4A] transition-colors bg-transparent border-0 cursor-pointer mb-[22px]"
+                >
+                  <IconBack /> Back to sign in
+                </button>
+                <div className="mb-[28px]">
+                  <h2 className="text-[30px] font-extrabold tracking-[-1px] text-[#0B1F4A]">Reset password</h2>
+                  <p className="text-[14.5px] text-[#4A5068] mt-[9px] leading-[1.5]">
+                    Enter your work email and we&apos;ll send a secure link to reset your password.
+                  </p>
+                </div>
+                <form onSubmit={handleReset} noValidate>
+                  <Field
+                    id="remail"
+                    label="Work email"
+                    icon={<IconMail />}
+                    type="email"
+                    placeholder="you@godrop.ng"
+                    value={resetEmail}
+                    onChange={(v) => { setResetEmail(v); setResetEmailErr(false) }}
+                    error={resetEmailErr}
+                    hint="Enter a valid email address."
+                  />
+                  <motion.button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="w-full flex items-center justify-center gap-[9px] h-[54px] rounded-[14px] text-white text-[15.5px] font-bold mt-[6px] disabled:opacity-85 border-0 cursor-pointer"
+                    style={{
+                      background: 'linear-gradient(135deg,#1E5FFF 0%,#0A3FD1 100%)',
+                      boxShadow: '0 10px 26px rgba(30,95,255,.32)',
+                    }}
+                    whileHover={!resetLoading ? { filter: 'brightness(1.05)' } : {}}
+                    whileTap={!resetLoading ? { scale: 0.98 } : {}}
+                  >
+                    {resetLoading ? <Spinner /> : 'Send reset link'}
+                  </motion.button>
+                </form>
+                <div className="flex items-center gap-[8px] text-[#8A90A3] text-[12px] font-medium mt-[34px]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7" />
+                    <path d="M12 8v4l2.5 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                  </svg>
+                  <span>Reset links expire after 30 minutes</span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── RESET SENT ── */}
+            {view === 'sent' && (
+              <motion.div key="sent" variants={panelVariants} initial="enter" animate="center" exit="exit" className="text-center pt-[6px]">
+                <motion.div
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                  className="w-[76px] h-[76px] rounded-[24px] mx-auto mb-[22px] flex items-center justify-center"
+                  style={{ background: '#EAF1FF' }}
+                >
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="#1E5FFF" strokeWidth="1.7" />
+                    <path d="M4 7l8 6 8-6" stroke="#1E5FFF" strokeWidth="1.7" strokeLinejoin="round" />
+                  </svg>
+                </motion.div>
+                <h2 className="text-[26px] font-extrabold tracking-[-0.7px] text-[#0B1F4A]">Check your inbox</h2>
+                <p className="text-[14.5px] text-[#4A5068] mt-[10px] leading-[1.55]">
+                  We&apos;ve sent a reset link to <strong className="text-[#0B1F4A]">{sentTo}</strong>. Follow it to set a new password.
+                </p>
+                <div className="mt-[26px]">
+                  <button
+                    onClick={goToSignIn}
+                    className="text-[13.5px] font-bold text-[#1E5FFF] hover:text-[#0A3FD1] transition-colors bg-transparent border-0 cursor-pointer"
+                  >
+                    Back to sign in
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── WELCOME ── */}
+            {view === 'welcome' && (
+              <motion.div key="welcome" variants={panelVariants} initial="enter" animate="center" exit="exit" className="text-center pt-[6px]">
+                <motion.div
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 20 }}
+                  className="w-[76px] h-[76px] rounded-[24px] mx-auto mb-[22px] flex items-center justify-center"
+                  style={{ background: '#E2F7EE' }}
+                >
+                  <IconCheck />
+                </motion.div>
+                <h2 className="text-[26px] font-extrabold tracking-[-0.7px] text-[#0B1F4A]">Welcome back</h2>
+                <p className="text-[14.5px] text-[#4A5068] mt-[10px] leading-[1.55]">
+                  Signing you in to the <strong className="text-[#0B1F4A]">GoDrop Admin Console</strong>…
+                </p>
+                <div className="mt-[28px] flex justify-center">
+                  <Spinner />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </main>
+
+      {/* ── Global styles ── */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        @keyframes ping {
+          0%  { transform: scale(.4); opacity: .9; }
+          100%{ transform: scale(1.6); opacity: 0; }
+        }
+        @keyframes shake {
+          10%, 90% { transform: translateX(-1px); }
+          20%, 80% { transform: translateX(2px); }
+          30%, 50%, 70% { transform: translateX(-5px); }
+          40%, 60% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.45s cubic-bezier(.36,.07,.19,.97); }
+
+        @media (max-width: 1024px) {
+          .max-lg\\:hidden { display: none !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          * { animation: none !important; transition: none !important; }
+        }
+      `}</style>
     </div>
   )
 }

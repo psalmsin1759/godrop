@@ -10,10 +10,10 @@ export async function onboard(req: Request, res: Response, next: NextFunction) {
     const govId = files?.governmentId?.[0];
     const utilityBill = files?.utilityBill?.[0];
 
-    if (!businessReg || !govId || !utilityBill) {
+    if (!businessReg || !govId) {
       return fail(
         res,
-        "All three documents are required: businessRegistration, governmentId, utilityBill",
+        "These documents are required: businessRegistration, governmentId",
         400
       );
     }
@@ -23,7 +23,7 @@ export async function onboard(req: Request, res: Response, next: NextFunction) {
       documentBuffers: {
         businessRegistration: businessReg.buffer,
         governmentId: govId.buffer,
-        utilityBill: utilityBill.buffer,
+        utilityBill: utilityBill?.buffer,
       },
     });
 

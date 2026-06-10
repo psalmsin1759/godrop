@@ -523,6 +523,7 @@ interface DocField {
   label: string;
   description: string;
   examples: string;
+  optional?: boolean;
 }
 
 const DOC_FIELDS: DocField[] = [
@@ -543,6 +544,7 @@ const DOC_FIELDS: DocField[] = [
     label: "Utility Bill",
     description: "Recent utility bill for the business address (within 3 months)",
     examples: "NEPA/EKEDC bill, Water bill, Tenancy agreement",
+    optional: true,
   },
 ];
 
@@ -577,8 +579,8 @@ function Step5Form({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-    DOC_FIELDS.forEach(({ key }) => {
-      if (!files[key]) newErrors[key] = "This document is required";
+    DOC_FIELDS.forEach(({ key, optional }) => {
+      if (!optional && !files[key]) newErrors[key] = "This document is required";
     });
     if (Object.keys(newErrors).length > 0) {
       setFileErrors(newErrors);
@@ -591,14 +593,19 @@ function Step5Form({
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
         <p className="text-amber-300 text-sm leading-relaxed">
-          <strong>All 3 documents are required.</strong> Your application will be reviewed within 48 hours of submission.
+          <strong>Business Registration and Government ID are required.</strong> Your application will be reviewed within 48 hours of submission.
           Documents are encrypted and stored securely.
         </p>
       </div>
-      {DOC_FIELDS.map(({ key, label, description, examples }) => (
+      {DOC_FIELDS.map(({ key, label, description, examples, optional }) => (
         <div key={key} className="space-y-1.5">
           <label className="text-white/70 text-sm font-medium block">
-            {label} <span className="text-[#FF6A2C]">*</span>
+            {label}{" "}
+            {optional ? (
+              <span className="text-white/30 text-xs font-normal">(Optional)</span>
+            ) : (
+              <span className="text-[#FF6A2C]">*</span>
+            )}
           </label>
           <div
             onClick={() => inputRefs[key].current?.click()}
@@ -729,7 +736,7 @@ export default function VendorOnboardPage() {
       // Documents
       fd.append("businessRegistration", docs.businessRegistration);
       fd.append("governmentId", docs.governmentId);
-      fd.append("utilityBill", docs.utilityBill);
+      if (docs.utilityBill) fd.append("utilityBill", docs.utilityBill);
 
       const res = await fetch(`${BACKEND_URL}/api/v1/vendor`, {
         method: "POST",

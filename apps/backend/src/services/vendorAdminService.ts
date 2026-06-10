@@ -38,17 +38,19 @@ export async function onboardVendor(data: {
   documentBuffers: {
     businessRegistration: Buffer;
     governmentId: Buffer;
-    utilityBill: Buffer;
+    utilityBill?: Buffer;
   };
 }) {
   const existingAdmin = await prisma.admin.findUnique({ where: { email: data.email } });
   if (existingAdmin) throw new Error("An account with this email already exists");
 
-  // Upload all three documents to Cloudinary in parallel
+  // Upload required documents (and the utility bill, if provided) to Cloudinary in parallel
   const [businessRegistrationUrl, governmentIdUrl, utilityBillUrl] = await Promise.all([
     uploadDocument(data.documentBuffers.businessRegistration, VENDOR_DOC_FOLDERS.businessRegistration),
     uploadDocument(data.documentBuffers.governmentId, VENDOR_DOC_FOLDERS.governmentId),
-    uploadDocument(data.documentBuffers.utilityBill, VENDOR_DOC_FOLDERS.utilityBill),
+    data.documentBuffers.utilityBill
+      ? uploadDocument(data.documentBuffers.utilityBill, VENDOR_DOC_FOLDERS.utilityBill)
+      : Promise.resolve(null),
   ]);
 
   const hashedPassword = await bcrypt.hash(data.ownerPassword, SALT_ROUNDS);

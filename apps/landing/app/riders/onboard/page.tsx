@@ -6,6 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://godrop-backend-production.up.railway.app";
@@ -64,12 +65,12 @@ const STEPS = [
 function Input({ label, error, required, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; required?: boolean }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-white/70 text-sm font-medium block">
-        {label} {required && <span className="text-[#FF6A2C]">*</span>}
+      <label className="mono-label block text-white/60">
+        {label} {required && <span className="text-accent">*</span>}
       </label>
       <input
         {...props}
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#1E5FFF] transition-colors"
+        className="w-full rounded-2xl border border-white/10 bg-ink-soft px-5 py-3.5 text-[15px] text-white placeholder-white/30 transition-colors duration-200 focus:border-accent focus:outline-none"
       />
       {error && <p className="text-red-400 text-xs">{error}</p>}
     </div>
@@ -79,12 +80,12 @@ function Input({ label, error, required, ...props }: React.InputHTMLAttributes<H
 function Select({ label, error, required, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; error?: string; required?: boolean }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-white/70 text-sm font-medium block">
-        {label} {required && <span className="text-[#FF6A2C]">*</span>}
+      <label className="mono-label block text-white/60">
+        {label} {required && <span className="text-accent">*</span>}
       </label>
       <select
         {...props}
-        className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#1E5FFF] transition-colors"
+        className="w-full rounded-2xl border border-white/10 bg-ink-soft px-5 py-3.5 text-[15px] text-white transition-colors duration-200 focus:border-accent focus:outline-none"
       >
         {children}
       </select>
@@ -145,11 +146,58 @@ function Step2Form({ onNext, onBack, saved }: { onNext: (d: Step2) => void; onBa
 }
 
 const VEHICLE_TYPES = [
-  { value: "BICYCLE", label: "Bicycle", icon: "🚲" },
-  { value: "MOTORCYCLE", label: "Motorcycle", icon: "🏍️" },
-  { value: "CAR", label: "Car", icon: "🚗" },
-  { value: "VAN", label: "Van", icon: "🚐" },
+  { value: "BICYCLE", label: "Bicycle" },
+  { value: "MOTORCYCLE", label: "Motorcycle" },
+  { value: "CAR", label: "Car" },
+  { value: "VAN", label: "Van" },
 ] as const;
+
+function VehicleIcon({ type }: { type: (typeof VEHICLE_TYPES)[number]["value"] }) {
+  const common = {
+    width: 28,
+    height: 28,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": true,
+  } as const;
+  if (type === "BICYCLE")
+    return (
+      <svg {...common}>
+        <circle cx="5.5" cy="16.5" r="3.5" />
+        <circle cx="18.5" cy="16.5" r="3.5" />
+        <path d="M5.5 16.5L9 9h6.5M12 16.5L9 9M15.5 9l3 7.5M14 6h2.5" />
+      </svg>
+    );
+  if (type === "MOTORCYCLE")
+    return (
+      <svg {...common}>
+        <circle cx="5" cy="17" r="3" />
+        <circle cx="19" cy="17" r="3" />
+        <path d="M5 17h5l3-6h3.5M13 8h2.5l1.5 3M9 11h4" />
+      </svg>
+    );
+  if (type === "CAR")
+    return (
+      <svg {...common}>
+        <path d="M4 16v-3l1.5-4.5A1.5 1.5 0 017 7.5h10a1.5 1.5 0 011.5 1L20 13v3" />
+        <path d="M4 13h16M4 16h16" />
+        <circle cx="7.5" cy="17.5" r="1.8" />
+        <circle cx="16.5" cy="17.5" r="1.8" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <rect x="2" y="7" width="15" height="9" rx="1.2" />
+      <path d="M17 10h2.8L22 12.5V16h-5v-6z" />
+      <circle cx="6.5" cy="17.5" r="1.8" />
+      <circle cx="17.5" cy="17.5" r="1.8" />
+    </svg>
+  );
+}
 
 function Step3Form({ onNext, onBack, saved }: { onNext: (d: Step3) => void; onBack: () => void; saved: Partial<Step3> }) {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<Step3>({
@@ -163,14 +211,16 @@ function Step3Form({ onNext, onBack, saved }: { onNext: (d: Step3) => void; onBa
   return (
     <form onSubmit={handleSubmit(onNext)} className="space-y-5">
       <div className="space-y-1.5">
-        <label className="text-white/70 text-sm font-medium block">Vehicle Type <span className="text-[#FF6A2C]">*</span></label>
+        <label className="mono-label block text-white/60">Vehicle Type <span className="text-accent">*</span></label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {VEHICLE_TYPES.map(({ value, label, icon }) => (
+          {VEHICLE_TYPES.map(({ value, label }) => (
             <label key={value} className="cursor-pointer">
               <input type="radio" value={value} {...register("vehicleType")} className="sr-only peer" />
-              <div className="border border-white/10 rounded-xl p-4 text-center transition-all peer-checked:border-[#1E5FFF] peer-checked:bg-[#1E5FFF]/10 hover:border-white/30">
-                <span className="text-2xl block mb-1">{icon}</span>
-                <span className="text-white/80 text-sm font-medium">{label}</span>
+              <div className="rounded-2xl border border-white/10 bg-ink-soft p-4 text-center transition-colors duration-200 hover:border-white/30 peer-checked:border-accent peer-checked:bg-accent/10">
+                <span className="mb-2 flex justify-center text-white/80">
+                  <VehicleIcon type={value} />
+                </span>
+                <span className="text-sm font-medium text-white/80">{label}</span>
               </div>
             </label>
           ))}
@@ -179,7 +229,7 @@ function Step3Form({ onNext, onBack, saved }: { onNext: (d: Step3) => void; onBa
       </div>
 
       {isBicycle ? (
-        <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/50 text-sm">
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white/50">
           No registration details required for bicycles.
         </div>
       ) : (
@@ -245,13 +295,13 @@ function Step4Form({
     <form onSubmit={handleSubmit(onValid)} className="space-y-6">
       {/* Avatar upload */}
       <div className="space-y-2">
-        <label className="text-white/70 text-sm font-medium block">
-          Profile Photo <span className="text-[#FF6A2C]">*</span>
+        <label className="mono-label block text-white/60">
+          Profile Photo <span className="text-accent">*</span>
         </label>
         <div className="flex items-center gap-5">
           <div
             onClick={() => avatarInputRef.current?.click()}
-            className="w-24 h-24 rounded-2xl border-2 border-dashed border-white/20 hover:border-[#1E5FFF] flex items-center justify-center cursor-pointer overflow-hidden transition-colors relative"
+            className="w-24 h-24 rounded-2xl border-2 border-dashed border-white/20 hover:border-accent flex items-center justify-center cursor-pointer overflow-hidden transition-colors relative"
           >
             {avatarPreview ? (
               <Image src={avatarPreview} alt="Avatar preview" fill className="object-cover" />
@@ -281,10 +331,10 @@ function Step4Form({
 
       {/* Government ID */}
       <div className="space-y-1.5">
-        <label className="text-white/70 text-sm font-medium block">Government ID <span className="text-white/30 text-xs">(NIN slip, Driver&apos;s License, Voter&apos;s Card)</span></label>
+        <label className="mono-label block text-white/60">Government ID <span className="text-white/30 text-xs">(NIN slip, Driver&apos;s License, Voter&apos;s Card)</span></label>
         <div
           onClick={() => govIdInputRef.current?.click()}
-          className="border border-dashed border-white/20 hover:border-[#1E5FFF] rounded-xl p-5 flex items-center gap-4 cursor-pointer transition-colors"
+          className="flex cursor-pointer items-center gap-4 rounded-2xl border border-dashed border-white/20 p-5 transition-colors hover:border-accent"
         >
           <svg className="w-8 h-8 text-white/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -321,7 +371,7 @@ function Step5Form({
   const { register, handleSubmit } = useForm<Step5>({ defaultValues: saved });
   return (
     <form onSubmit={handleSubmit(onNext)} className="space-y-5">
-      <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-2">
+      <div className="mb-2 rounded-2xl border border-white/10 bg-white/5 p-5">
         <p className="text-white/60 text-sm leading-relaxed">
           A guarantor is someone who vouches for your identity and good character. This is optional but speeds up your verification.
         </p>
@@ -341,15 +391,14 @@ function StepFooter({ onBack, nextLabel = "Continue" }: { onBack?: () => void; n
         <button
           type="button"
           onClick={onBack}
-          className="px-6 py-3 rounded-full border border-white/20 text-white/70 text-sm font-medium hover:border-white/40 hover:text-white transition-colors"
+          className="inline-flex h-12 cursor-pointer items-center rounded-full border border-white/25 px-7 text-sm font-bold text-white/70 transition-colors duration-200 hover:border-white/60 hover:text-white"
         >
           Back
         </button>
       )}
       <button
         type="submit"
-        className="px-8 py-3 rounded-full text-white text-sm font-semibold transition-all hover:scale-105 active:scale-95"
-        style={{ backgroundColor: "#1E5FFF" }}
+        className="inline-flex h-12 cursor-pointer items-center rounded-full bg-accent px-8 text-sm font-bold text-white transition-colors duration-200 hover:bg-accent-light"
       >
         {nextLabel}
       </button>
@@ -453,27 +502,28 @@ export default function RiderOnboardPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/5 border border-white/10 rounded-3xl p-12"
+            className="rounded-3xl border border-white/10 bg-ink-soft p-12"
           >
-            <div className="w-20 h-20 rounded-full bg-[#1E5FFF]/20 flex items-center justify-center mx-auto mb-8">
-              <svg className="w-10 h-10 text-[#1E5FFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-accent/25 bg-accent/10">
+              <svg className="h-10 w-10 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-white text-3xl font-black mb-4">Application Submitted!</h1>
+            <h1 className="display mb-4 text-3xl text-white sm:text-4xl">
+              Application <span className="serif-accent text-accent">submitted!</span>
+            </h1>
             <p className="text-white/60 leading-relaxed mb-2">
               Welcome aboard, <strong className="text-white">{s1.firstName}</strong>! Your rider application has been received.
             </p>
             <p className="text-white/60 leading-relaxed mb-8">
               Our team will review your details and reach out to <strong className="text-white">{s1.phone}</strong> within 24–48 hours to complete your onboarding.
             </p>
-            <a
+            <Link
               href="/"
-              className="inline-block px-8 py-3 rounded-full text-white text-sm font-semibold"
-              style={{ backgroundColor: "#1E5FFF" }}
+              className="inline-flex h-12 items-center rounded-full bg-accent px-8 text-sm font-bold text-white transition-colors duration-200 hover:bg-accent-light"
             >
               Back to Home
-            </a>
+            </Link>
           </motion.div>
         </section>
       </PageShell>
@@ -485,11 +535,11 @@ export default function RiderOnboardPage() {
       <section className="max-w-2xl mx-auto px-6 py-16">
         {/* Header */}
         <div className="mb-10">
-          <p className="text-[#FF6A2C] text-sm font-semibold tracking-widest uppercase mb-3">Rider Application</p>
-          <h1 className="text-white text-3xl md:text-4xl font-black leading-tight mb-2">
-            Join the Godrop rider network
+          <p className="mono-label mb-6 text-accent">Rider Application</p>
+          <h1 className="display mb-4 text-[clamp(2.2rem,4.5vw,3.5rem)] text-white">
+            Join the Godrop <span className="serif-accent text-accent">rider network.</span>
           </h1>
-          <p className="text-white/50 text-base">Step {step + 1} of {STEPS.length} — {STEPS[step].description}</p>
+          <p className="mono-label text-white/50">Step {step + 1} of {STEPS.length} — {STEPS[step].description}</p>
         </div>
 
         {/* Progress bar */}
@@ -498,7 +548,7 @@ export default function RiderOnboardPage() {
             <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-white/10">
               <motion.div
                 className="h-full rounded-full"
-                style={{ backgroundColor: i <= step ? "#1E5FFF" : "transparent" }}
+                style={{ backgroundColor: i <= step ? "#FF6A2C" : "transparent" }}
                 animate={{ width: i <= step ? "100%" : "0%" }}
                 transition={{ duration: 0.4 }}
               />
@@ -509,14 +559,14 @@ export default function RiderOnboardPage() {
         {/* Step labels */}
         <div className="hidden md:flex justify-between mb-8">
           {STEPS.map((s, i) => (
-            <div key={i} className={`text-xs font-medium ${i <= step ? "text-[#1E5FFF]" : "text-white/30"}`}>
+            <div key={i} className={`mono-label !text-[10px] ${i <= step ? "text-accent" : "text-white/30"}`}>
               {s.label}
             </div>
           ))}
         </div>
 
         {/* Form card */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 min-h-[400px]">
+        <div className="min-h-[400px] rounded-3xl border border-white/10 bg-ink-soft p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -526,7 +576,7 @@ export default function RiderOnboardPage() {
               exit="exit"
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h2 className="text-white text-xl font-bold mb-6">{STEPS[step].label}</h2>
+              <h2 className="display mb-6 text-2xl !tracking-[-0.02em] text-white">{STEPS[step].label}</h2>
 
               {step === 0 && (
                 <Step1Form saved={s1} onNext={(d) => { setS1(d); setStep(1); }} />
@@ -559,7 +609,7 @@ export default function RiderOnboardPage() {
                   />
                   {submitting && (
                     <div className="mt-4 flex items-center gap-3 text-white/60 text-sm">
-                      <div className="w-4 h-4 border-2 border-[#1E5FFF] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                       Submitting your application…
                     </div>
                   )}

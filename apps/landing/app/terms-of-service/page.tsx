@@ -10,13 +10,15 @@ export default function TermsOfServicePage() {
   return (
     <PageShell>
       <article className="max-w-3xl mx-auto px-6 py-24">
-        <header className="mb-12">
-          <p className="text-[#FF6A2C] text-sm font-semibold tracking-widest uppercase mb-4">Legal</p>
-          <h1 className="text-white text-4xl md:text-5xl font-black leading-tight mb-4">Terms of Service</h1>
-          <p className="text-white/40 text-sm">Last updated: May 14, 2026</p>
+        <header className="mb-16">
+          <p className="mono-label mb-6 text-accent">Legal</p>
+          <h1 className="display mb-5 text-[clamp(2.6rem,5vw,4.5rem)] text-white">
+            Terms of <span className="serif-accent text-accent">Service.</span>
+          </h1>
+          <p className="mono-label text-white/40">Last updated: May 14, 2026</p>
         </header>
 
-        <div className="space-y-8 text-white/70 leading-relaxed">
+        <div className="space-y-10 leading-relaxed text-white/65">
           <Section title="1. Acceptance of Terms">
             By downloading, installing, or using the Godrop application or website, you agree to be bound by these
             Terms of Service (&quot;Terms&quot;). If you do not agree, do not use our Services. These Terms govern the
@@ -121,9 +123,9 @@ export default function TermsOfServicePage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section>
-      <h2 className="text-white text-xl font-bold mb-4">{title}</h2>
-      <div className="text-white/70">{children}</div>
+    <section className="border-t border-white/10 pt-8">
+      <h2 className="display mb-4 text-xl !tracking-[-0.02em] text-white sm:text-2xl">{title}</h2>
+      <div className="text-[15px] text-white/65">{children}</div>
     </section>
   );
 }

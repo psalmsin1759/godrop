@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
+import ChapterLabel from "@/components/ui/ChapterLabel";
 
 export const metadata: Metadata = {
   title: "For Riders — Godrop",
@@ -41,96 +42,129 @@ const benefits = [
 ];
 
 const requirements = [
-  { icon: "✓", text: "18 years or older" },
-  { icon: "✓", text: "Valid government-issued ID (NIN, Driver's License, or Voter's Card)" },
-  { icon: "✓", text: "A bicycle, motorcycle, or car" },
-  { icon: "✓", text: "Android or iOS smartphone" },
-  { icon: "✓", text: "Nigerian bank account for payouts" },
-  { icon: "✓", text: "Guarantor information (for your protection and ours)" },
+  "18 years or older",
+  "Valid government-issued ID (NIN, Driver's License, or Voter's Card)",
+  "A bicycle, motorcycle, or car",
+  "Android or iOS smartphone",
+  "Nigerian bank account for payouts",
+  "Guarantor information (for your protection and ours)",
+];
+
+const earnings = [
+  { value: "₦200k+", label: "Top rider monthly earnings" },
+  { value: "500+", label: "Active riders on platform" },
+  { value: "24hrs", label: "Withdrawal to bank" },
+  { value: "4.7★", label: "Average rider satisfaction" },
 ];
 
 export default function RidersPage() {
   return (
     <PageShell>
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-20 pb-24 text-center">
-        <p className="text-[#FF6A2C] text-sm font-semibold tracking-widest uppercase mb-4">For Riders</p>
-        <h1 className="text-white text-5xl md:text-6xl font-black leading-tight mb-6">
-          Your hustle.<br />
-          <span className="text-[#1E5FFF]">Your earnings.</span>
-        </h1>
-        <p className="text-white/60 text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-          Join thousands of riders already earning on Godrop. Work on your schedule, earn great income,
-          and be part of Nigeria&apos;s fastest-growing delivery network.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/riders/onboard"
-            className="px-8 py-4 rounded-full text-white font-bold text-base transition-all hover:scale-105 active:scale-95"
-            style={{ backgroundColor: "#1E5FFF" }}
-          >
-            Apply to Become a Rider
-          </Link>
-          <Link
-            href="/contact"
-            className="px-8 py-4 rounded-full text-white font-bold text-base border border-white/20 hover:border-white/40 transition-colors"
-          >
-            Have Questions?
-          </Link>
+      <section className="grain relative overflow-hidden bg-ink">
+        <div
+          className="pointer-events-none absolute -top-40 right-[-10%] h-[600px] w-[600px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(255,106,44,0.16) 0%, transparent 65%)" }}
+        />
+        <div className="relative mx-auto w-full max-w-[1500px] px-6 pb-20 pt-24 sm:px-10 lg:px-16">
+          <p className="mono-label mb-8 text-accent">For riders</p>
+          <h1 className="display max-w-5xl text-[clamp(2.8rem,7vw,6.5rem)] text-white">
+            Your hustle.
+            <br />
+            <span className="serif-accent text-accent">Your earnings.</span>
+          </h1>
+          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60">
+            Join thousands of riders already earning on Godrop. Work on your
+            schedule, earn great income, and be part of Nigeria&apos;s
+            fastest-growing delivery network.
+          </p>
+          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+            <Link
+              href="/riders/onboard"
+              className="inline-flex h-[56px] items-center justify-center rounded-full bg-accent px-8 text-[15px] font-bold text-white transition-colors duration-200 hover:bg-accent-light"
+            >
+              Apply to Become a Rider
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex h-[56px] items-center justify-center rounded-full border border-white/25 px-8 text-[15px] font-bold text-white transition-colors duration-200 hover:border-white/60"
+            >
+              Have Questions?
+            </Link>
+          </div>
+          <p className="mono-label mt-6 text-white/40">Free to join · Earnings start from day one</p>
         </div>
-        <p className="text-white/30 text-sm mt-4">Free to join. Earnings start from day one.</p>
       </section>
 
-      {/* Earnings banner */}
-      <section className="bg-gradient-to-r from-[#1E5FFF]/10 to-[#FF6A2C]/10 border-y border-white/10">
-        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {[
-            { value: "₦200k+", label: "Top rider monthly earnings" },
-            { value: "500+", label: "Active riders on platform" },
-            { value: "24hrs", label: "Withdrawal to bank" },
-            { value: "4.7★", label: "Average rider satisfaction" },
-          ].map(({ value, label }) => (
-            <div key={label}>
-              <p className="text-white text-3xl font-black mb-1">{value}</p>
-              <p className="text-white/50 text-sm">{label}</p>
+      {/* Earnings banner — orange chapter */}
+      <section className="grain relative overflow-hidden bg-accent py-20 text-white sm:py-24">
+        <div
+          className="pointer-events-none absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 65%)" }}
+        />
+        <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-2 gap-x-8 gap-y-12 px-6 sm:px-10 lg:grid-cols-4 lg:px-16">
+          {earnings.map(({ value, label }) => (
+            <div key={label} className="border-t border-white/30 pt-5">
+              <p className="display text-4xl sm:text-5xl">{value}</p>
+              <p className="mono-label mt-2 text-white/75">{label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Benefits */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-white text-3xl font-black mb-4">Why ride with Godrop?</h2>
-          <p className="text-white/50 max-w-lg mx-auto">The perks that make Godrop the best platform for riders in Nigeria.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {benefits.map(({ icon, title, body }) => (
-            <div key={title} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
-              <div className="w-11 h-11 rounded-xl bg-[#1E5FFF]/15 flex items-center justify-center mb-4">
-                <svg className="w-5 h-5 text-[#1E5FFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
-                </svg>
+      <section className="bg-ink py-24 sm:py-32">
+        <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 lg:px-16">
+          <ChapterLabel index="01" title="The perks" className="mb-8" />
+          <div className="mb-16 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="display text-[clamp(2.2rem,4.5vw,4rem)] text-white">
+              Why ride <span className="serif-accent text-accent">with Godrop?</span>
+            </h2>
+            <p className="max-w-sm text-[15px] leading-relaxed text-white/55">
+              The perks that make Godrop the best platform for riders in Nigeria.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {benefits.map(({ icon, title, body }) => (
+              <div
+                key={title}
+                className="rounded-3xl border border-white/10 bg-ink-soft p-7 transition-colors duration-200 hover:border-white/25"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/25 bg-accent/10">
+                  <svg className="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                  </svg>
+                </div>
+                <h3 className="display mb-2.5 text-xl !tracking-[-0.02em] text-white">{title}</h3>
+                <p className="text-sm leading-relaxed text-white/60">{body}</p>
               </div>
-              <h3 className="text-white font-bold text-base mb-2">{title}</h3>
-              <p className="text-white/60 text-sm leading-relaxed">{body}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Requirements */}
-      <section className="bg-white/[0.03] border-y border-white/10">
-        <div className="max-w-3xl mx-auto px-6 py-24">
-          <div className="text-center mb-12">
-            <h2 className="text-white text-3xl font-black mb-4">What you need to apply</h2>
-            <p className="text-white/50">Simple requirements — most riders are approved within 48 hours.</p>
+      {/* Requirements — bone chapter */}
+      <section className="bg-bone py-24 text-ink sm:py-32">
+        <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 lg:px-16">
+          <ChapterLabel index="02" title="Requirements" tone="dark" className="mb-8" />
+          <div className="mb-14 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="display text-[clamp(2.2rem,4.5vw,4rem)]">
+              What you need <span className="serif-accent text-accent">to apply.</span>
+            </h2>
+            <p className="max-w-sm text-[15px] leading-relaxed text-ink/60">
+              Simple requirements — most riders are approved within 48 hours.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {requirements.map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-                <span className="text-[#1E5FFF] font-black">{icon}</span>
-                <span className="text-white/80 text-sm">{text}</span>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {requirements.map((text) => (
+              <div
+                key={text}
+                className="flex items-center gap-4 rounded-2xl border border-ink/15 bg-white/60 px-6 py-5"
+              >
+                <svg className="h-4 w-4 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-medium text-ink/80">{text}</span>
               </div>
             ))}
           </div>
@@ -138,18 +172,36 @@ export default function RidersPage() {
       </section>
 
       {/* CTA */}
-      <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-        <h2 className="text-white text-4xl font-black mb-4">Ready to start earning?</h2>
-        <p className="text-white/60 mb-8 max-w-md mx-auto">
-          The application takes about 10 minutes. Our team reviews it within 48 hours and onboards you to the rider app.
-        </p>
-        <Link
-          href="/riders/onboard"
-          className="inline-block px-10 py-4 rounded-full text-white font-bold text-base transition-all hover:scale-105 active:scale-95"
-          style={{ backgroundColor: "#FF6A2C" }}
-        >
-          Start Your Application →
-        </Link>
+      <section className="grain relative overflow-hidden bg-ink py-28 sm:py-36">
+        <div
+          className="pointer-events-none absolute bottom-[-50%] left-1/2 h-[600px] w-[1000px] -translate-x-1/2 rounded-[50%]"
+          style={{ background: "radial-gradient(ellipse, rgba(255,106,44,0.3) 0%, transparent 70%)" }}
+        />
+        <div className="relative mx-auto flex w-full max-w-[1500px] flex-col items-center px-6 text-center sm:px-10">
+          <h2 className="display text-[clamp(2.6rem,6vw,5.5rem)] text-white">
+            Ready to start <span className="serif-accent text-accent">earning?</span>
+          </h2>
+          <p className="mt-6 max-w-md text-base leading-relaxed text-white/60 sm:text-lg">
+            The application takes about 10 minutes. Our team reviews it within 48
+            hours and onboards you to the rider app.
+          </p>
+          <Link
+            href="/riders/onboard"
+            className="group mt-10 inline-flex h-[56px] items-center justify-center gap-2.5 rounded-full bg-accent px-10 text-[15px] font-bold text-white transition-colors duration-200 hover:bg-accent-light"
+          >
+            Start Your Application
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="transition-transform duration-200 group-hover:translate-x-1"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        </div>
       </section>
     </PageShell>
   );

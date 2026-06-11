@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import PageShell from "@/components/PageShell";
+import ChapterLabel from "@/components/ui/ChapterLabel";
 
 export const metadata: Metadata = {
   title: "About — Godrop",
@@ -29,47 +30,59 @@ const values = [
   },
 ];
 
+const stats = [
+  { value: "10,000+", label: "Orders delivered" },
+  { value: "500+", label: "Active riders" },
+  { value: "200+", label: "Vendor partners" },
+  { value: "4.8★", label: "Average rating" },
+];
 
 export default function AboutPage() {
   return (
     <PageShell>
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 py-24 text-center">
-        <p className="text-[#FF6A2C] text-sm font-semibold tracking-widest uppercase mb-4">About Us</p>
-        <h1 className="text-white text-5xl md:text-6xl font-black leading-tight mb-6">
-          Delivering Nigeria&apos;s<br />
-          <span className="text-[#1E5FFF]">tomorrow</span>, today.
-        </h1>
-        <p className="text-white/60 text-xl max-w-2xl mx-auto leading-relaxed">
-          Godrop is an on-demand logistics platform built for Nigerian cities — starting with Lagos.
-          We connect customers to vendors and riders to earn meaningful income, all through one seamless app.
-        </p>
+      <section className="grain relative overflow-hidden bg-ink">
+        <div
+          className="pointer-events-none absolute -top-40 right-[-10%] h-[600px] w-[600px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(255,106,44,0.16) 0%, transparent 65%)" }}
+        />
+        <div className="relative mx-auto w-full max-w-[1500px] px-6 pb-24 pt-24 sm:px-10 lg:px-16">
+          <p className="mono-label mb-8 text-accent">About us</p>
+          <h1 className="display max-w-5xl text-[clamp(2.8rem,7vw,6.5rem)] text-white">
+            Delivering Nigeria&apos;s{" "}
+            <span className="serif-accent text-accent">tomorrow,</span> today.
+          </h1>
+          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/60">
+            Godrop is an on-demand logistics platform built for Nigerian cities —
+            starting with Lagos. We connect customers to vendors and riders to
+            earn meaningful income, all through one seamless app.
+          </p>
+        </div>
       </section>
 
-      {/* Mission */}
-      <section className="bg-white/[0.03] border-y border-white/10">
-        <div className="max-w-5xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      {/* Mission — bone chapter */}
+      <section className="bg-bone py-24 text-ink sm:py-32">
+        <div className="mx-auto grid w-full max-w-[1500px] grid-cols-1 items-center gap-14 px-6 sm:px-10 md:grid-cols-2 lg:px-16">
           <div>
-            <h2 className="text-white text-3xl font-black mb-6">Our Mission</h2>
-            <p className="text-white/60 text-lg leading-relaxed mb-6">
-              To make reliable, affordable delivery accessible to every Nigerian — whether you&apos;re ordering jollof rice
-              from your favourite spot, sending a birthday gift across town, or moving your entire apartment.
+            <ChapterLabel index="01" title="Our mission" tone="dark" className="mb-8" />
+            <h2 className="display mb-8 text-[clamp(2.2rem,4vw,3.5rem)]">
+              Logistics that <span className="serif-accent text-accent">actually works.</span>
+            </h2>
+            <p className="mb-6 text-lg leading-relaxed text-ink/65">
+              To make reliable, affordable delivery accessible to every Nigerian —
+              whether you&apos;re ordering jollof rice from your favourite spot,
+              sending a birthday gift across town, or moving your entire apartment.
             </p>
-            <p className="text-white/60 text-lg leading-relaxed">
-              We believe logistics infrastructure is the backbone of commerce, and Nigeria deserves infrastructure
-              that actually works.
+            <p className="text-lg leading-relaxed text-ink/65">
+              We believe logistics infrastructure is the backbone of commerce, and
+              Nigeria deserves infrastructure that actually works.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { value: "10,000+", label: "Orders Delivered" },
-              { value: "500+", label: "Active Riders" },
-              { value: "200+", label: "Vendor Partners" },
-              { value: "4.8★", label: "Average Rating" },
-            ].map(({ value, label }) => (
-              <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                <p className="text-white text-3xl font-black mb-1">{value}</p>
-                <p className="text-white/50 text-sm">{label}</p>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10">
+            {stats.map(({ value, label }) => (
+              <div key={label} className="border-t border-ink/20 pt-5">
+                <p className="display text-4xl sm:text-5xl">{value}</p>
+                <p className="mono-label mt-2 text-ink/55">{label}</p>
               </div>
             ))}
           </div>
@@ -77,44 +90,63 @@ export default function AboutPage() {
       </section>
 
       {/* Values */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-white text-3xl font-black mb-4">What We Stand For</h2>
-          <p className="text-white/50 max-w-lg mx-auto">The principles that drive every product decision, every partnership, every hire.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {values.map(({ icon, title, body }) => (
-            <div key={title} className="bg-white/5 border border-white/10 rounded-2xl p-7 hover:border-white/20 transition-colors">
-              <div className="w-11 h-11 rounded-xl bg-[#1E5FFF]/15 flex items-center justify-center mb-5">
-                <svg className="w-5 h-5 text-[#1E5FFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
-                </svg>
+      <section className="bg-ink py-24 sm:py-32">
+        <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 lg:px-16">
+          <ChapterLabel index="02" title="Our values" className="mb-8" />
+          <div className="mb-16 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="display text-[clamp(2.2rem,4.5vw,4rem)] text-white">
+              What we <span className="serif-accent text-accent">stand for.</span>
+            </h2>
+            <p className="max-w-sm text-[15px] leading-relaxed text-white/55">
+              The principles that drive every product decision, every partnership,
+              every hire.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {values.map(({ icon, title, body }) => (
+              <div
+                key={title}
+                className="rounded-3xl border border-white/10 bg-ink-soft p-8 transition-colors duration-200 hover:border-white/25"
+              >
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/25 bg-accent/10">
+                  <svg className="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                  </svg>
+                </div>
+                <h3 className="display mb-3 text-2xl !tracking-[-0.02em] text-white">{title}</h3>
+                <p className="text-[15px] leading-relaxed text-white/60">{body}</p>
               </div>
-              <h3 className="text-white font-bold text-lg mb-2">{title}</h3>
-              <p className="text-white/60 text-sm leading-relaxed">{body}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="max-w-3xl mx-auto px-6 py-16 text-center">
-        <div className="bg-gradient-to-r from-[#1E5FFF]/10 to-[#FF6A2C]/10 border border-white/10 rounded-3xl p-12">
-          <h2 className="text-white text-3xl font-black mb-4">Join the movement</h2>
-          <p className="text-white/60 mb-8 max-w-md mx-auto">Whether you want to order, sell, or ride — there&apos;s a place for you on Godrop.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <section className="grain relative overflow-hidden border-t border-white/10 bg-ink py-28 sm:py-36">
+        <div
+          className="pointer-events-none absolute bottom-[-50%] left-1/2 h-[600px] w-[1000px] -translate-x-1/2 rounded-[50%]"
+          style={{ background: "radial-gradient(ellipse, rgba(255,106,44,0.3) 0%, transparent 70%)" }}
+        />
+        <div className="relative mx-auto flex w-full max-w-[1500px] flex-col items-center px-6 text-center sm:px-10">
+          <h2 className="display text-[clamp(2.6rem,6vw,5.5rem)] text-white">
+            Join the <span className="serif-accent text-accent">movement.</span>
+          </h2>
+          <p className="mt-6 max-w-md text-base leading-relaxed text-white/60 sm:text-lg">
+            Whether you want to order, sell, or ride — there&apos;s a place for you
+            on Godrop.
+          </p>
+          <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
             <a
               href="https://dashboard.naijagodrop.com/login"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-8 py-3.5 rounded-full text-white text-sm font-semibold"
-              style={{ backgroundColor: "#1E5FFF" }}
+              className="inline-flex h-[56px] items-center justify-center rounded-full bg-accent px-8 text-[15px] font-bold text-white transition-colors duration-200 hover:bg-accent-light"
             >
               Login to Dashboard
             </a>
             <a
               href="/contact"
-              className="px-8 py-3.5 rounded-full text-white text-sm font-semibold border border-white/20 hover:border-white/40 transition-colors"
+              className="inline-flex h-[56px] items-center justify-center rounded-full border border-white/25 px-8 text-[15px] font-bold text-white transition-colors duration-200 hover:border-white/60"
             >
               Get in Touch
             </a>

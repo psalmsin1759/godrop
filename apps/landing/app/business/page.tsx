@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
+import ChapterLabel from "@/components/ui/ChapterLabel";
 import BusinessHero from "./BusinessHero";
 
 export const metadata: Metadata = {
@@ -65,12 +66,19 @@ const steps = [
 ];
 
 const requirements = [
-  { text: "Registered Nigerian business (CAC Certificate)" },
-  { text: "Valid Tax Identification Number (TIN)" },
-  { text: "Owner KYC — NIN or BVN + government-issued ID" },
-  { text: "Nigerian corporate or personal bank account" },
-  { text: "Minimum of 2 riders ready to be onboarded" },
-  { text: "Defined service areas within our coverage zones" },
+  "Registered Nigerian business (CAC Certificate)",
+  "Valid Tax Identification Number (TIN)",
+  "Owner KYC — NIN or BVN + government-issued ID",
+  "Nigerian corporate or personal bank account",
+  "Minimum of 2 riders ready to be onboarded",
+  "Defined service areas within our coverage zones",
+];
+
+const stats = [
+  { value: "500+", label: "Riders on the platform" },
+  { value: "₦0", label: "Setup or subscription fee" },
+  { value: "24hrs", label: "Wallet withdrawal to bank" },
+  { value: "PH", label: "Operational coverage (expanding)" },
 ];
 
 export default function BusinessPage() {
@@ -78,94 +86,142 @@ export default function BusinessPage() {
     <PageShell>
       <BusinessHero />
 
-      {/* Stats banner */}
-      <section className="bg-gradient-to-r from-[#1E5FFF]/10 to-[#FF6A2C]/10 border-y border-white/10">
-        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {[
-            { value: "500+", label: "Riders on the platform" },
-            { value: "₦0", label: "Setup or subscription fee" },
-            { value: "24hrs", label: "Wallet withdrawal to bank" },
-            { value: "PH", label: "Operational coverage (expanding)" },
-          ].map(({ value, label }) => (
-            <div key={label}>
-              <p className="text-white text-3xl font-black mb-1">{value}</p>
-              <p className="text-white/50 text-sm">{label}</p>
+      {/* Stats banner — orange chapter */}
+      <section className="grain relative overflow-hidden bg-accent py-20 text-white sm:py-24">
+        <div
+          className="pointer-events-none absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 65%)" }}
+        />
+        <div className="relative mx-auto grid w-full max-w-[1500px] grid-cols-2 gap-x-8 gap-y-12 px-6 sm:px-10 lg:grid-cols-4 lg:px-16">
+          {stats.map(({ value, label }) => (
+            <div key={label} className="border-t border-white/30 pt-5">
+              <p className="display text-4xl sm:text-5xl">{value}</p>
+              <p className="mono-label mt-2 text-white/75">{label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Benefits */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-white text-3xl font-black mb-4">Built for serious logistics operators</h2>
-          <p className="text-white/50 max-w-lg mx-auto">Everything your business needs to run a professional delivery operation.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {benefits.map(({ icon, title, body }) => (
-            <div key={title} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors">
-              <div className="w-11 h-11 rounded-xl bg-[#1E5FFF]/15 flex items-center justify-center mb-4">
-                <svg className="w-5 h-5 text-[#1E5FFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
-                </svg>
-              </div>
-              <h3 className="text-white font-bold text-base mb-2">{title}</h3>
-              <p className="text-white/60 text-sm leading-relaxed">{body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="bg-white/[0.03] border-y border-white/10">
-        <div className="max-w-5xl mx-auto px-6 py-24">
-          <div className="text-center mb-16">
-            <h2 className="text-white text-3xl font-black mb-4">How to get started</h2>
-            <p className="text-white/50 max-w-lg mx-auto">The onboarding process is straightforward. Most businesses are live within a week.</p>
+      <section className="bg-ink py-24 sm:py-32">
+        <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 lg:px-16">
+          <ChapterLabel index="01" title="The platform" className="mb-8" />
+          <div className="mb-16 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="display text-[clamp(2.2rem,4.5vw,4rem)] text-white">
+              Built for serious <span className="serif-accent text-accent">logistics operators.</span>
+            </h2>
+            <p className="max-w-sm text-[15px] leading-relaxed text-white/55">
+              Everything your business needs to run a professional delivery
+              operation.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {steps.map(({ step, title, body }) => (
-              <div key={step} className="flex gap-5 bg-white/5 border border-white/10 rounded-2xl p-6">
-                <span className="text-[#1E5FFF] font-black text-3xl leading-none shrink-0">{step}</span>
-                <div>
-                  <h3 className="text-white font-bold text-base mb-2">{title}</h3>
-                  <p className="text-white/60 text-sm leading-relaxed">{body}</p>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {benefits.map(({ icon, title, body }) => (
+              <div
+                key={title}
+                className="rounded-3xl border border-white/10 bg-ink-soft p-7 transition-colors duration-200 hover:border-white/25"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/25 bg-accent/10">
+                  <svg className="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                  </svg>
                 </div>
+                <h3 className="display mb-2.5 text-xl !tracking-[-0.02em] text-white">{title}</h3>
+                <p className="text-sm leading-relaxed text-white/60">{body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Requirements */}
-      <section className="max-w-3xl mx-auto px-6 py-24">
-        <div className="text-center mb-12">
-          <h2 className="text-white text-3xl font-black mb-4">Requirements</h2>
-          <p className="text-white/50">We verify every business to maintain platform integrity and protect our riders.</p>
+      {/* How it works — bone chapter */}
+      <section className="bg-bone py-24 text-ink sm:py-32">
+        <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 lg:px-16">
+          <ChapterLabel index="02" title="Getting started" tone="dark" className="mb-8" />
+          <div className="mb-16 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="display text-[clamp(2.2rem,4.5vw,4rem)]">
+              How to <span className="serif-accent text-accent">get started.</span>
+            </h2>
+            <p className="max-w-sm text-[15px] leading-relaxed text-ink/60">
+              The onboarding process is straightforward. Most businesses are live
+              within a week.
+            </p>
+          </div>
+          <ol className="grid grid-cols-1 border-t border-ink/15 md:grid-cols-2 lg:grid-cols-4">
+            {steps.map(({ step, title, body }) => (
+              <li
+                key={step}
+                className="flex flex-col gap-12 border-b border-ink/15 px-1 py-10 lg:border-b-0 lg:border-r lg:px-7 lg:py-12 lg:first:pl-1 lg:last:border-r-0"
+              >
+                <span className="font-mono text-sm font-bold text-accent">({step})</span>
+                <div>
+                  <h3 className="display mb-3 text-2xl !tracking-[-0.02em]">{title}</h3>
+                  <p className="text-sm leading-relaxed text-ink/60">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {requirements.map(({ text }) => (
-            <div key={text} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-5 py-4">
-              <span className="text-[#1E5FFF] font-black shrink-0">✓</span>
-              <span className="text-white/80 text-sm">{text}</span>
-            </div>
-          ))}
+      </section>
+
+      {/* Requirements */}
+      <section className="bg-ink py-24 sm:py-32">
+        <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 lg:px-16">
+          <ChapterLabel index="03" title="Requirements" className="mb-8" />
+          <div className="mb-14 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="display text-[clamp(2.2rem,4.5vw,4rem)] text-white">
+              What we <span className="serif-accent text-accent">verify.</span>
+            </h2>
+            <p className="max-w-sm text-[15px] leading-relaxed text-white/55">
+              We verify every business to maintain platform integrity and protect
+              our riders.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {requirements.map((text) => (
+              <div
+                key={text}
+                className="flex items-center gap-4 rounded-2xl border border-white/10 bg-ink-soft px-6 py-5"
+              >
+                <svg className="h-4 w-4 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-medium text-white/80">{text}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="bg-white/[0.03] border-t border-white/10">
-        <div className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <h2 className="text-white text-4xl font-black mb-4">Ready to partner with Godrop?</h2>
-          <p className="text-white/60 mb-8 max-w-md mx-auto">
-            Reach out to our partnerships team. We&apos;ll walk you through the process and get your business account set up.
+      <section className="grain relative overflow-hidden border-t border-white/10 bg-ink py-28 sm:py-36">
+        <div
+          className="pointer-events-none absolute bottom-[-50%] left-1/2 h-[600px] w-[1000px] -translate-x-1/2 rounded-[50%]"
+          style={{ background: "radial-gradient(ellipse, rgba(255,106,44,0.3) 0%, transparent 70%)" }}
+        />
+        <div className="relative mx-auto flex w-full max-w-[1500px] flex-col items-center px-6 text-center sm:px-10">
+          <h2 className="display text-[clamp(2.6rem,6vw,5.5rem)] text-white">
+            Ready to partner <span className="serif-accent text-accent">with Godrop?</span>
+          </h2>
+          <p className="mt-6 max-w-md text-base leading-relaxed text-white/60 sm:text-lg">
+            Reach out to our partnerships team. We&apos;ll walk you through the
+            process and get your business account set up.
           </p>
           <Link
             href="/contact"
-            className="inline-block px-10 py-4 rounded-full text-white font-bold text-base transition-all hover:scale-105 active:scale-95"
-            style={{ backgroundColor: "#FF6A2C" }}
+            className="group mt-10 inline-flex h-[56px] items-center justify-center gap-2.5 rounded-full bg-accent px-10 text-[15px] font-bold text-white transition-colors duration-200 hover:bg-accent-light"
           >
-            Contact Our Team →
+            Contact Our Team
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="transition-transform duration-200 group-hover:translate-x-1"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </Link>
         </div>
       </section>

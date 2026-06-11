@@ -1,44 +1,34 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import DescriptionSection from "@/components/DescriptionSection";
-import ServicesSection from "@/components/ServicesSection";
-import HowItWorksSection from "@/components/HowItWorksSection";
-import StatsSection from "@/components/StatsSection";
-import PressSection from "@/components/PressSection";
-import ReviewsSection from "@/components/ReviewsSection";
-import ImpactSection from "@/components/ImpactSection";
-import PhoneMockupSection from "@/components/PhoneMockupSection";
-import AppFeaturesSection from "@/components/AppFeaturesSection";
-import BuiltForSection from "@/components/BuiltForSection";
-import CoverageMapSection from "@/components/CoverageMapSection";
-import WhySection from "@/components/WhySection";
-import BlogTeaserSection from "@/components/BlogTeaserSection";
-import FAQSection from "@/components/FAQSection";
-import MissionSection from "@/components/MissionSection";
-import CTASection from "@/components/CTASection";
+import ServiceTicker from "@/components/home/ServiceTicker";
+import Manifesto from "@/components/home/Manifesto";
+import Services from "@/components/home/Services";
+import HowItWorks from "@/components/home/HowItWorks";
+import Stats from "@/components/home/Stats";
+import AppShowcase from "@/components/home/AppShowcase";
+import Cities from "@/components/home/Cities";
+import Reviews from "@/components/home/Reviews";
+import FAQ from "@/components/home/FAQ";
+import FinalCTA from "@/components/home/FinalCTA";
 import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <div className="bg-[#060606] min-h-screen">
+    <div className="min-h-screen bg-ink">
       <Navbar />
-      <HeroSection />
-      <DescriptionSection />
-      <ServicesSection />
-      <HowItWorksSection />
-      <StatsSection />
-      <PressSection />
-      <ReviewsSection />
-      {/* <ImpactSection /> */}
-      <PhoneMockupSection />
-      <AppFeaturesSection />
-      <BuiltForSection />
-      <CoverageMapSection />
-      <WhySection />
-      <BlogTeaserSection />
-      <FAQSection />
-      <MissionSection />
-      <CTASection />
+      <main>
+        <HeroSection />
+        <ServiceTicker />
+        <Manifesto />
+        <Services />
+        <HowItWorks />
+        <Stats />
+        <AppShowcase />
+        <Cities />
+        <Reviews />
+        <FAQ />
+        <FinalCTA />
+      </main>
       <Footer />
     </div>
   );

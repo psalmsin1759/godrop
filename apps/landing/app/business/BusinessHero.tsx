@@ -51,90 +51,96 @@ export default function BusinessHero() {
   const slide = slides[current];
 
   return (
-    <section className="max-w-5xl mx-auto px-6 pt-20 pb-24 text-center">
-      {/* Carousel content */}
-      <div className="relative overflow-hidden min-h-[260px] flex flex-col items-center justify-center">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={current}
-            custom={direction}
-            initial={{ opacity: 0, x: direction * 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -60 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full"
-          >
-            <p className="text-[#FF6A2C] text-sm font-semibold tracking-widest uppercase mb-4">
-              {slide.eyebrow}
-            </p>
-            <h1 className="text-white text-5xl md:text-6xl font-black leading-tight mb-6">
-              {slide.heading}<br />
-              <span className="text-[#1E5FFF]">{slide.accent}</span>
-            </h1>
-            <p className="text-white/60 text-xl max-w-2xl mx-auto leading-relaxed">
-              {slide.sub}
-            </p>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Prev / Next controls */}
-      <div className="flex items-center justify-center gap-4 mt-8 mb-10">
-        <button
-          onClick={prev}
-          aria-label="Previous"
-          className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-
-        {/* Dot indicators */}
-        <div className="flex items-center gap-2">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => go(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className="transition-all duration-300 rounded-full"
-              style={{
-                width: i === current ? 24 : 8,
-                height: 8,
-                backgroundColor: i === current ? "#1E5FFF" : "rgba(255,255,255,0.2)",
-              }}
-            />
-          ))}
+    <section className="grain relative overflow-hidden bg-ink">
+      <div
+        className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full"
+        style={{ background: "radial-gradient(ellipse, rgba(30,95,255,0.16) 0%, transparent 65%)" }}
+      />
+      <div className="relative mx-auto w-full max-w-[1500px] px-6 pb-20 pt-24 text-center sm:px-10">
+        {/* Carousel content */}
+        <div className="relative flex min-h-[300px] flex-col items-center justify-center overflow-hidden">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={current}
+              custom={direction}
+              initial={{ opacity: 0, x: direction * 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: direction * -60 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full"
+            >
+              <p className="mono-label mb-7 text-accent">{slide.eyebrow}</p>
+              <h1 className="display mx-auto max-w-4xl text-[clamp(2.8rem,6.5vw,6rem)] text-white">
+                {slide.heading}
+                <br />
+                <span className="serif-accent text-accent">{slide.accent}</span>
+              </h1>
+              <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-white/60">
+                {slide.sub}
+              </p>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        <button
-          onClick={next}
-          aria-label="Next"
-          className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-      </div>
+        {/* Prev / Next controls */}
+        <div className="mb-10 mt-8 flex items-center justify-center gap-4">
+          <button
+            onClick={prev}
+            aria-label="Previous"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
 
-      {/* CTAs */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link
-          href="/contact"
-          className="px-8 py-4 rounded-full text-white font-bold text-base transition-all hover:scale-105 active:scale-95"
-          style={{ backgroundColor: "#1E5FFF" }}
-        >
-          Partner With Us
-        </Link>
-        <Link
-          href="/about"
-          className="px-8 py-4 rounded-full text-white font-bold text-base border border-white/20 hover:border-white/40 transition-colors"
-        >
-          Learn About Godrop
-        </Link>
+          {/* Dot indicators */}
+          <div className="flex items-center gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => go(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className="h-1 cursor-pointer rounded-full border-none p-0"
+                style={{
+                  width: i === current ? 28 : 8,
+                  background: i === current ? "#fff" : "rgba(255,255,255,0.3)",
+                  transition: "width 0.3s ease, background 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={next}
+            aria-label="Next"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors duration-200 hover:bg-white/20"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
+
+        {/* CTAs */}
+        <div className="flex flex-col justify-center gap-4 sm:flex-row">
+          <Link
+            href="/contact"
+            className="inline-flex h-[56px] items-center justify-center rounded-full bg-accent px-8 text-[15px] font-bold text-white transition-colors duration-200 hover:bg-accent-light"
+          >
+            Partner With Us
+          </Link>
+          <Link
+            href="/about"
+            className="inline-flex h-[56px] items-center justify-center rounded-full border border-white/25 px-8 text-[15px] font-bold text-white transition-colors duration-200 hover:border-white/60"
+          >
+            Learn About Godrop
+          </Link>
+        </div>
+        <p className="mono-label mt-6 text-white/40">
+          Business accounts are created by invitation — contact us to get started
+        </p>
       </div>
-      <p className="text-white/30 text-sm mt-4">Business accounts are created by invitation — contact us to get started.</p>
     </section>
   );
 }

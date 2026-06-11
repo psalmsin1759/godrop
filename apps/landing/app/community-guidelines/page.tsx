@@ -54,35 +54,39 @@ export default function CommunityGuidelinesPage() {
     <PageShell>
       <article className="max-w-4xl mx-auto px-6 py-24">
         <header className="mb-16 text-center">
-          <p className="text-[#FF6A2C] text-sm font-semibold tracking-widest uppercase mb-4">Community</p>
-          <h1 className="text-white text-4xl md:text-5xl font-black leading-tight mb-6">Community Guidelines</h1>
-          <p className="text-white/60 text-lg max-w-2xl mx-auto">
+          <p className="mono-label mb-6 text-accent">Community</p>
+          <h1 className="display mb-6 text-[clamp(2.6rem,5vw,4.5rem)] text-white">
+            Community <span className="serif-accent text-accent">Guidelines.</span>
+          </h1>
+          <p className="mx-auto max-w-2xl text-lg leading-relaxed text-white/60">
             Godrop works because people trust each other. These guidelines keep that trust intact — for customers,
             vendors, and riders across Nigeria.
           </p>
-          <p className="text-white/40 text-sm mt-4">Last updated: May 14, 2026</p>
+          <p className="mono-label mt-5 text-white/40">Last updated: May 14, 2026</p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {guidelines.map(({ icon, title, body }) => (
             <div
               key={title}
-              className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors"
+              className="rounded-3xl border border-white/10 bg-ink-soft p-7 transition-colors duration-200 hover:border-white/25"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#1E5FFF]/15 flex items-center justify-center mb-4">
-                <svg className="w-5 h-5 text-[#1E5FFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/25 bg-accent/10">
+                <svg className="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
                 </svg>
               </div>
-              <h2 className="text-white font-bold text-lg mb-3">{title}</h2>
-              <p className="text-white/60 text-sm leading-relaxed">{body}</p>
+              <h2 className="display mb-3 text-xl !tracking-[-0.02em] text-white">{title}</h2>
+              <p className="text-sm leading-relaxed text-white/60">{body}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-16 bg-gradient-to-r from-[#1E5FFF]/10 to-[#FF6A2C]/10 border border-white/10 rounded-2xl p-8 text-center">
-          <h2 className="text-white text-2xl font-bold mb-3">Violations &amp; Enforcement</h2>
-          <p className="text-white/60 max-w-xl mx-auto text-sm leading-relaxed">
+        <div className="mt-16 rounded-3xl bg-accent p-10 text-center text-white">
+          <h2 className="display mb-3 text-3xl">
+            Violations &amp; <span className="serif-accent">Enforcement.</span>
+          </h2>
+          <p className="mx-auto max-w-xl text-sm leading-relaxed text-white/85">
             Violations of these guidelines may result in warnings, temporary suspension, or permanent deactivation
             depending on severity. We aim to be fair — if you believe an action was taken in error, appeal via
             appeals@godrop.ng within 14 days.

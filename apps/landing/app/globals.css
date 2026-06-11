@@ -1,68 +1,143 @@
 @import "tailwindcss";
 
 :root {
-  --background: #060606;
-  --foreground: #ffffff;
+  --background: #0a0a0b;
+  --foreground: #f5f3ee;
 
-  /* Primary brand colors */
-  --color-primary: #1E5FFF;
-  --color-primary-dark: #0A3FD1;
-  --color-primary-deeper: #0B1F4A;
-  --color-accent: #FF6A2C;
-  --color-accent-light: #FF8B57;
+  /* Brand */
+  --color-primary: #1e5fff;
+  --color-primary-dark: #0a3fd1;
+  --color-accent: #ff6a2c;
+  --color-accent-light: #ff8b57;
+  --color-amber: #ffb020;
 
-  /* Brand colors */
-  --color-lt-blue: #99cbf3;
-  --color-white: #ffffff;
-  --color-blue: #193853;
-  --color-green: #3a7363;
-  --color-coral: #d35a5a;
-  --color-lt-purple: #c8a5eb;
-  --color-beige: #bf9a60;
-  --color-lt-green: #c9efe4;
-  --color-lt-coral: #fa8888;
-  --color-purple: #4f2e6f;
-  --color-lt-beige: #ffdca3;
-
-  /* Blacks */
-  --black-100: #060606;
-  --black-90: #1a1a1a;
-  --black-80: #333333;
-  --black-70: #4d4d4d;
-  --black-60: #666666;
-
-  /* Spacing */
-  --spacing-xxs: 0.3rem;
-  --spacing-xs: 0.5rem;
-  --spacing-base: 1rem;
-  --spacing-md: 1.25rem;
-  --spacing-lrg: 2.5rem;
-  --spacing-xl: 4rem;
-
-  /* Border radius */
-  --rounded-sm: 0.625rem;
-  --rounded-base: 1.24rem;
-  --rounded-md: 1.875rem;
-  --rounded-lrg: 2.3rem;
-  --rounded-full: 9999px;
+  /* Chapters */
+  --ink: #0a0a0b;
+  --ink-soft: #121214;
+  --bone: #f2efe9;
+  --bone-soft: #e9e4da;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-bone: var(--bone);
+  --color-bone-soft: var(--bone-soft);
+  --color-primary: var(--color-primary);
+  --color-accent: var(--color-accent);
+  --color-accent-light: var(--color-accent-light);
+  --color-amber: var(--color-amber);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-serif: var(--font-instrument-serif);
+}
+
+html {
+  scroll-behavior: auto; /* lenis drives scrolling */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica Neue, Helvetica, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* ── Display type helpers ─────────────────────────────── */
+
+.display {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+}
+
+.serif-accent {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.mono-label {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Outlined headline text */
+.text-stroke {
+  -webkit-text-stroke: 1.5px currentColor;
+  -webkit-text-fill-color: transparent;
+  color: inherit;
+}
+
+/* ── Marquee ──────────────────────────────────────────── */
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee var(--marquee-duration, 30s) linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee.reverse {
+  animation-direction: reverse;
+}
+
+/* ── Film grain overlay ───────────────────────────────── */
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Focus visibility ─────────────────────────────────── */
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ── Reduced motion ───────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

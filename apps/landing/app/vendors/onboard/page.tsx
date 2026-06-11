@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "https://godrop-backend-production.up.railway.app";
@@ -15,28 +16,66 @@ const VENDOR_TYPES = [
   {
     value: "RESTAURANT",
     label: "Restaurant",
-    emoji: "🍽️",
     description: "Cooked meals, fast food, cafes, bakeries",
   },
   {
     value: "GROCERY",
     label: "Grocery",
-    emoji: "🛒",
     description: "Supermarkets, food stores, fresh produce",
   },
   {
     value: "RETAIL",
     label: "Retail",
-    emoji: "🛍️",
     description: "Fashion, electronics, home goods, general retail",
   },
   {
     value: "PHARMACY",
     label: "Pharmacy",
-    emoji: "💊",
     description: "Medications, health & beauty products",
   },
 ];
+
+function VendorTypeIcon({ type }: { type: string }) {
+  const common = {
+    width: 28,
+    height: 28,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": true,
+  } as const;
+  if (type === "RESTAURANT")
+    return (
+      <svg {...common}>
+        <path d="M3 11c0-4.5 4-7.5 9-7.5s9 3 9 7.5H3z" />
+        <path d="M2 13h20M5 16.5h14l-1 3.5H6l-1-3.5z" />
+      </svg>
+    );
+  if (type === "GROCERY")
+    return (
+      <svg {...common}>
+        <path d="M3 5h3l2.5 11h10l2-8H7" />
+        <circle cx="10" cy="20" r="1.6" />
+        <circle cx="17" cy="20" r="1.6" />
+      </svg>
+    );
+  if (type === "RETAIL")
+    return (
+      <svg {...common}>
+        <path d="M3.5 8h17l-1 12H4.5l-1-12z" />
+        <path d="M8 10V7a4 4 0 018 0v3" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
+  );
+}
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -102,12 +141,12 @@ function Input({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-white/70 text-sm font-medium block">
-        {label} {required && <span className="text-[#FF6A2C]">*</span>}
+      <label className="mono-label block text-white/60">
+        {label} {required && <span className="text-accent">*</span>}
       </label>
       <input
         {...props}
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#1E5FFF] transition-colors"
+        className="w-full rounded-2xl border border-white/10 bg-ink-soft px-5 py-3.5 text-[15px] text-white placeholder-white/30 transition-colors duration-200 focus:border-accent focus:outline-none"
       />
       {hint && !error && <p className="text-white/30 text-xs">{hint}</p>}
       {error && <p className="text-red-400 text-xs">{error}</p>}
@@ -127,12 +166,12 @@ function Textarea({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-white/70 text-sm font-medium block">
-        {label} {required && <span className="text-[#FF6A2C]">*</span>}
+      <label className="mono-label block text-white/60">
+        {label} {required && <span className="text-accent">*</span>}
       </label>
       <textarea
         {...props}
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#1E5FFF] transition-colors resize-none"
+        className="w-full resize-none rounded-2xl border border-white/10 bg-ink-soft px-5 py-3.5 text-[15px] text-white placeholder-white/30 transition-colors duration-200 focus:border-accent focus:outline-none"
       />
       {error && <p className="text-red-400 text-xs">{error}</p>}
     </div>
@@ -154,7 +193,7 @@ function StepFooter({
         <button
           type="button"
           onClick={onBack}
-          className="px-6 py-3 rounded-full border border-white/20 text-white/70 text-sm font-medium hover:border-white/40 hover:text-white transition-colors"
+          className="inline-flex h-12 cursor-pointer items-center rounded-full border border-white/25 px-7 text-sm font-bold text-white/70 transition-colors duration-200 hover:border-white/60 hover:text-white"
         >
           Back
         </button>
@@ -162,8 +201,7 @@ function StepFooter({
       <button
         type="submit"
         disabled={loading}
-        className="px-8 py-3 rounded-full text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
-        style={{ backgroundColor: "#1E5FFF" }}
+        className="inline-flex h-12 cursor-pointer items-center rounded-full bg-accent px-8 text-sm font-bold text-white transition-colors duration-200 hover:bg-accent-light disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? (
           <span className="flex items-center gap-2">
@@ -193,20 +231,22 @@ function Step1Form({ onNext, saved }: { onNext: (d: Step1) => void; saved: Parti
   return (
     <form onSubmit={handleSubmit(onNext)}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-        {VENDOR_TYPES.map(({ value, label, emoji, description }) => (
+        {VENDOR_TYPES.map(({ value, label, description }) => (
           <button
             key={value}
             type="button"
             onClick={() => setValue("type", value as Step1["type"], { shouldValidate: true })}
-            className={`text-left border rounded-2xl p-5 transition-all ${
+            className={`cursor-pointer rounded-2xl border p-5 text-left transition-colors duration-200 ${
               selected === value
-                ? "border-[#1E5FFF] bg-[#1E5FFF]/10"
-                : "border-white/10 hover:border-white/30 bg-white/5"
+                ? "border-accent bg-accent/10"
+                : "border-white/10 bg-ink-soft hover:border-white/30"
             }`}
           >
-            <span className="text-3xl block mb-3">{emoji}</span>
-            <p className="text-white font-bold text-base mb-1">{label}</p>
-            <p className="text-white/50 text-sm leading-snug">{description}</p>
+            <span className={`mb-3 block ${selected === value ? "text-accent" : "text-white/70"}`}>
+              <VendorTypeIcon type={value} />
+            </span>
+            <p className="display mb-1 text-lg !tracking-[-0.02em] text-white">{label}</p>
+            <p className="text-sm leading-snug text-white/50">{description}</p>
           </button>
         ))}
       </div>
@@ -317,7 +357,7 @@ function Step2Form({
             type="button"
             onClick={detectLocation}
             disabled={locating}
-            className="flex items-center gap-2 text-xs text-[#1E5FFF] hover:text-blue-400 transition-colors disabled:opacity-50"
+            className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-accent transition-colors duration-200 hover:text-accent-light disabled:opacity-50"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -391,7 +431,7 @@ function Step3Form({
               <button
                 type="button"
                 onClick={() => toggle(day)}
-                className={`w-9 h-5 rounded-full transition-colors relative ${h.closed ? "bg-white/10" : "bg-[#1E5FFF]"}`}
+                className={`relative h-5 w-9 cursor-pointer rounded-full transition-colors ${h.closed ? "bg-white/10" : "bg-accent"}`}
               >
                 <span
                   className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
@@ -409,14 +449,14 @@ function Step3Form({
                   type="time"
                   value={h.open}
                   onChange={(e) => updateTime(day, "open", e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#1E5FFF]"
+                  className="rounded-lg border border-white/10 bg-ink-soft px-3 py-1.5 text-sm text-white focus:border-accent focus:outline-none"
                 />
                 <span className="text-white/30 text-sm">to</span>
                 <input
                   type="time"
                   value={h.close}
                   onChange={(e) => updateTime(day, "close", e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#1E5FFF]"
+                  className="rounded-lg border border-white/10 bg-ink-soft px-3 py-1.5 text-sm text-white focus:border-accent focus:outline-none"
                 />
               </div>
             )}
@@ -448,7 +488,7 @@ function Step4Form({
 
   return (
     <form onSubmit={handleSubmit(onNext)} className="space-y-5">
-      <div className="bg-[#1E5FFF]/10 border border-[#1E5FFF]/20 rounded-xl p-4">
+      <div className="rounded-2xl border border-accent/20 bg-accent/10 p-5">
         <p className="text-white/70 text-sm leading-relaxed">
           This creates your vendor dashboard account. Use it to manage orders, update your menu, and track earnings.
         </p>
@@ -470,14 +510,14 @@ function Step4Form({
         />
       </div>
       <div className="space-y-1.5">
-        <label className="text-white/70 text-sm font-medium block">
-          Password <span className="text-[#FF6A2C]">*</span>
+        <label className="mono-label block text-white/60">
+          Password <span className="text-accent">*</span>
         </label>
         <div className="relative">
           <input
             type={showPw ? "text" : "password"}
             placeholder="Minimum 8 characters"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-12 text-white placeholder-white/30 focus:outline-none focus:border-[#1E5FFF] transition-colors"
+            className="w-full rounded-2xl border border-white/10 bg-ink-soft px-5 py-3.5 pr-12 text-[15px] text-white placeholder-white/30 transition-colors duration-200 focus:border-accent focus:outline-none"
             {...register("ownerPassword")}
           />
           <button
@@ -500,13 +540,13 @@ function Step4Form({
         {errors.ownerPassword && <p className="text-red-400 text-xs">{errors.ownerPassword.message}</p>}
       </div>
       <div className="space-y-1.5">
-        <label className="text-white/70 text-sm font-medium block">
-          Confirm Password <span className="text-[#FF6A2C]">*</span>
+        <label className="mono-label block text-white/60">
+          Confirm Password <span className="text-accent">*</span>
         </label>
         <input
           type={showPw ? "text" : "password"}
           placeholder="Re-enter your password"
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#1E5FFF] transition-colors"
+          className="w-full rounded-2xl border border-white/10 bg-ink-soft px-5 py-3.5 text-[15px] text-white placeholder-white/30 transition-colors duration-200 focus:border-accent focus:outline-none"
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && <p className="text-red-400 text-xs">{errors.confirmPassword.message}</p>}
@@ -599,25 +639,25 @@ function Step5Form({
       </div>
       {DOC_FIELDS.map(({ key, label, description, examples, optional }) => (
         <div key={key} className="space-y-1.5">
-          <label className="text-white/70 text-sm font-medium block">
+          <label className="mono-label block text-white/60">
             {label}{" "}
             {optional ? (
               <span className="text-white/30 text-xs font-normal">(Optional)</span>
             ) : (
-              <span className="text-[#FF6A2C]">*</span>
+              <span className="text-accent">*</span>
             )}
           </label>
           <div
             onClick={() => inputRefs[key].current?.click()}
-            className={`border border-dashed rounded-xl p-5 flex items-center gap-4 cursor-pointer transition-colors ${
+            className={`flex cursor-pointer items-center gap-4 rounded-2xl border border-dashed p-5 transition-colors ${
               files[key]
-                ? "border-[#1E5FFF]/60 bg-[#1E5FFF]/5"
-                : "border-white/20 hover:border-white/40 bg-white/[0.03]"
+                ? "border-accent/60 bg-accent/5"
+                : "border-white/20 bg-white/[0.03] hover:border-white/40"
             }`}
           >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${files[key] ? "bg-[#1E5FFF]/20" : "bg-white/5"}`}>
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${files[key] ? "bg-accent/20" : "bg-white/5"}`}>
               {files[key] ? (
-                <svg className="w-5 h-5 text-[#1E5FFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
@@ -767,14 +807,16 @@ export default function VendorOnboardPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white/5 border border-white/10 rounded-3xl p-12"
+            className="rounded-3xl border border-white/10 bg-ink-soft p-12"
           >
-            <div className="w-20 h-20 rounded-full bg-[#1E5FFF]/20 flex items-center justify-center mx-auto mb-8">
-              <svg className="w-10 h-10 text-[#1E5FFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full border border-accent/25 bg-accent/10">
+              <svg className="h-10 w-10 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-white text-3xl font-black mb-4">Application Submitted!</h1>
+            <h1 className="display mb-4 text-3xl text-white sm:text-4xl">
+              Application <span className="serif-accent text-accent">submitted!</span>
+            </h1>
             <p className="text-white/60 leading-relaxed mb-2">
               Thank you, <strong className="text-white">{s4.ownerFirstName}</strong>! Your vendor application for{" "}
               <strong className="text-white">{s2.name}</strong> has been received.
@@ -784,13 +826,12 @@ export default function VendorOnboardPage() {
               <strong className="text-white">{s2.email}</strong> within 24–48 hours.
               Once approved, you can log in to your vendor dashboard to start accepting orders.
             </p>
-            <a
+            <Link
               href="/"
-              className="inline-block px-8 py-3 rounded-full text-white text-sm font-semibold"
-              style={{ backgroundColor: "#1E5FFF" }}
+              className="inline-flex h-12 items-center rounded-full bg-accent px-8 text-sm font-bold text-white transition-colors duration-200 hover:bg-accent-light"
             >
               Back to Home
-            </a>
+            </Link>
           </motion.div>
         </section>
       </PageShell>
@@ -802,11 +843,11 @@ export default function VendorOnboardPage() {
       <section className="max-w-2xl mx-auto px-6 py-16">
         {/* Header */}
         <div className="mb-10">
-          <p className="text-[#FF6A2C] text-sm font-semibold tracking-widest uppercase mb-3">Vendor Application</p>
-          <h1 className="text-white text-3xl md:text-4xl font-black leading-tight mb-2">
-            Partner with Godrop
+          <p className="mono-label mb-6 text-accent">Vendor Application</p>
+          <h1 className="display mb-4 text-[clamp(2.2rem,4.5vw,3.5rem)] text-white">
+            Partner <span className="serif-accent text-accent">with Godrop.</span>
           </h1>
-          <p className="text-white/50 text-base">
+          <p className="mono-label text-white/50">
             Step {step + 1} of {STEPS.length} — {STEPS[step].description}
           </p>
         </div>
@@ -817,7 +858,7 @@ export default function VendorOnboardPage() {
             <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-white/10">
               <motion.div
                 className="h-full rounded-full"
-                style={{ backgroundColor: "#1E5FFF" }}
+                style={{ backgroundColor: "#FF6A2C" }}
                 animate={{ width: i <= step ? "100%" : "0%" }}
                 transition={{ duration: 0.4 }}
               />
@@ -828,14 +869,14 @@ export default function VendorOnboardPage() {
         {/* Step labels */}
         <div className="hidden md:flex justify-between mb-8">
           {STEPS.map((s, i) => (
-            <div key={i} className={`text-xs font-medium truncate ${i <= step ? "text-[#1E5FFF]" : "text-white/30"}`}>
+            <div key={i} className={`mono-label truncate !text-[10px] ${i <= step ? "text-accent" : "text-white/30"}`}>
               {s.label}
             </div>
           ))}
         </div>
 
         {/* Form card */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
+        <div className="rounded-3xl border border-white/10 bg-ink-soft p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -845,7 +886,7 @@ export default function VendorOnboardPage() {
               exit="exit"
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h2 className="text-white text-xl font-bold mb-6">{STEPS[step].label}</h2>
+              <h2 className="display mb-6 text-2xl !tracking-[-0.02em] text-white">{STEPS[step].label}</h2>
 
               {step === 0 && (
                 <Step1Form

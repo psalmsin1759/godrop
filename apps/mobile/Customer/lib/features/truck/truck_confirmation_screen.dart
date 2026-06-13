@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../app/theme.dart';
 import '../../shared/api/api.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
+import '../../shared/models/order_models.dart';
+import '../../shared/models/wallet_models.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../orders/bloc/order_cubit.dart';
@@ -23,7 +26,6 @@ class TruckConfirmationScreen extends StatefulWidget {
 }
 
 class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
-  int _paymentMethod = 0; // 0=card, 1=cash
   bool _placing = false;
 
   TruckBookingData get b => widget.booking;
@@ -56,7 +58,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
         b.scheduledTime.minute,
       ).toUtc().toIso8601String();
 
-      await service.bookTruck(TruckOrderBody(
+      final response = await service.bookTruck(TruckOrderBody(
         apartmentTypeId: b.apartmentTypeId ?? '',
         truckTypeId: b.truckTypeId,
         numLoaders: b.loaderCount > 0 ? b.loaderCount : null,
@@ -65,22 +67,119 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
         dropoff: LocationPoint(
             lat: b.dropoff.lat, lng: b.dropoff.lng, address: b.dropoff.name),
         scheduledAt: scheduledAt,
-        paymentMethod: _paymentMethod == 0 ? 'card' : 'cash',
+        paymentMethod: 'card',
       ));
+
+      if (!mounted) return;
+
+      final orderId = response.order['id'] as String?;
+      if (orderId == null) {
+        setState(() => _placing = false);
+        _showError('Failed to book truck. Please try again.');
+        return;
+      }
+
+      await _startCardPayment(orderId);
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() => _placing = false);
       _showError(_parseDioError(e));
-      return;
     } catch (_) {
       if (!mounted) return;
       setState(() => _placing = false);
       _showError('Failed to book truck. Please try again.');
-      return;
     }
+  }
 
-    if (!mounted) return;
+  /// Initializes a Paystack payment for the truck order just created. If a
+  /// hosted checkout URL comes back, shows it in a WebView and only
+  /// completes the booking once the payment is verified as successful.
+  Future<void> _startCardPayment(String orderId) async {
+    try {
+      final payRes = await PaymentService(DioClient.instance).initPayment(
+        PaymentInitBody(orderId: orderId, method: 'card'),
+      );
 
+      if (!mounted) return;
+
+      if (payRes.paystackAuthUrl != null &&
+          payRes.paystackAuthUrl!.isNotEmpty) {
+        _showPaystackWebView(
+          orderId: orderId,
+          url: payRes.paystackAuthUrl!,
+          reference: payRes.reference,
+        );
+        return;
+      }
+
+      _onPaymentSuccess();
+    } on DioException catch (e) {
+      await _cancelUnpaidOrder(orderId);
+      if (!mounted) return;
+      setState(() => _placing = false);
+      _showError(_parseDioError(e));
+    } catch (_) {
+      await _cancelUnpaidOrder(orderId);
+      if (!mounted) return;
+      setState(() => _placing = false);
+      _showError('Failed to start payment. Please try again.');
+    }
+  }
+
+  void _showPaystackWebView({
+    required String orderId,
+    required String url,
+    required String reference,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (sheetCtx) => _PaystackWebViewSheet(
+        url: url,
+        onPaymentDone: () async {
+          Navigator.pop(sheetCtx);
+          await _verifyCardPayment(orderId, reference);
+        },
+        onCancel: () async {
+          Navigator.pop(sheetCtx);
+          await _cancelUnpaidOrder(orderId);
+          if (!mounted) return;
+          setState(() => _placing = false);
+          _showError('Payment was cancelled.');
+        },
+      ),
+    );
+  }
+
+  Future<void> _verifyCardPayment(String orderId, String reference) async {
+    try {
+      await PaymentService(DioClient.instance)
+          .verifyPayment(PaymentVerifyBody(reference: reference));
+      if (!mounted) return;
+      _onPaymentSuccess();
+    } catch (_) {
+      await _cancelUnpaidOrder(orderId);
+      if (!mounted) return;
+      setState(() => _placing = false);
+      _showError('Payment verification failed. Please try again.');
+    }
+  }
+
+  Future<void> _cancelUnpaidOrder(String orderId) async {
+    try {
+      await OrdersService(DioClient.instance).cancelOrder(
+        orderId,
+        const CancelOrderBody(reason: 'Payment not completed'),
+      );
+    } catch (_) {
+      // Best-effort cleanup — ignore failures here.
+    }
+  }
+
+  void _onPaymentSuccess() {
     final order = ActiveOrderData(
       riderName: 'Pending Assignment',
       riderRating: 0.0,
@@ -431,16 +530,8 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                           icon: Icons.credit_card_rounded,
                           label: 'Pay with Card',
                           sublabel: 'Paystack · Debit / Credit card',
-                          selected: _paymentMethod == 0,
-                          onTap: () => setState(() => _paymentMethod = 0),
-                        ),
-                        const SizedBox(height: 10),
-                        _PaymentOption(
-                          icon: Icons.money_rounded,
-                          label: 'Cash on Delivery',
-                          sublabel: 'Pay the driver in cash',
-                          selected: _paymentMethod == 1,
-                          onTap: () => setState(() => _paymentMethod = 1),
+                          selected: true,
+                          onTap: () {},
                         ),
                       ],
                     ),
@@ -777,6 +868,160 @@ class _PaymentOption extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Paystack WebView sheet ────────────────────────────────────────────────────
+
+class _PaystackWebViewSheet extends StatefulWidget {
+  final String url;
+  final VoidCallback onPaymentDone;
+  final VoidCallback onCancel;
+  const _PaystackWebViewSheet({
+    required this.url,
+    required this.onPaymentDone,
+    required this.onCancel,
+  });
+
+  @override
+  State<_PaystackWebViewSheet> createState() => _PaystackWebViewSheetState();
+}
+
+class _PaystackWebViewSheetState extends State<_PaystackWebViewSheet> {
+  late final WebViewController _ctrl;
+  bool _loading = true;
+  bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (_) {
+          if (mounted) setState(() => _loading = false);
+        },
+        onNavigationRequest: (req) {
+          final isPaystack = req.url.contains('paystack.co') ||
+              req.url.contains('paystack.com') ||
+              req.url.contains('checkout.paystack');
+          final uri = Uri.tryParse(req.url);
+          if (!isPaystack &&
+              uri != null &&
+              (uri.queryParameters.containsKey('trxref') ||
+                  uri.queryParameters.containsKey('reference'))) {
+            if (!_done) {
+              _done = true;
+              widget.onPaymentDone();
+            }
+            return NavigationDecision.prevent;
+          }
+          return NavigationDecision.navigate;
+        },
+      ))
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: widget.onCancel,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: GodropColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                        size: 18, color: GodropColors.slate),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Complete Payment',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.ink),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5EE),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Secured by Paystack',
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: GodropColors.success,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: Stack(
+              children: [
+                WebViewWidget(controller: _ctrl),
+                if (_loading)
+                  const Center(
+                    child: CircularProgressIndicator(
+                        color: GodropColors.blue, strokeWidth: 2.5),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPad + 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _done
+                    ? null
+                    : () {
+                        if (!_done) {
+                          _done = true;
+                          widget.onPaymentDone();
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GodropColors.blue,
+                  disabledBackgroundColor: GodropColors.border,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("I've paid — verify now",
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

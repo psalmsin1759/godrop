@@ -506,8 +506,11 @@ class _TruckBookingBodyState extends State<_TruckBookingBody> {
                                                   truckType: e.value,
                                                   selected:
                                                       _selectedTruckIndex == e.key,
-                                                  onTap: () => setState(() =>
-                                                      _selectedTruckIndex = e.key),
+                                                  onTap: () {
+                                                    setState(() =>
+                                                        _selectedTruckIndex = e.key);
+                                                    _tryFetchQuote();
+                                                  },
                                                 ),
                                               ),
                                             )

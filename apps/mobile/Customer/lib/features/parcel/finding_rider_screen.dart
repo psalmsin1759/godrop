@@ -9,11 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../app/theme.dart';
 import '../../shared/api/api.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
 import '../../shared/models/order_models.dart';
+import '../../shared/models/wallet_models.dart';
 import '../../shared/widgets/godrop_button.dart';
 import 'models/parcel_location.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -168,7 +170,7 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
         packageDescription: routeData?.packageDescription.isNotEmpty == true
             ? routeData!.packageDescription
             : 'Parcel delivery',
-        paymentMethod: routeData?.paymentMethod ?? 'cash',
+        paymentMethod: 'card',
         recipientName: routeData?.recipientName.isNotEmpty == true
             ? routeData!.recipientName
             : 'Recipient',
@@ -188,11 +190,9 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
         return;
       }
 
-      setState(() {
-        _orderId = orderId;
-        _phase = _Phase.searching;
-      });
-      _connectWebSocket();
+      _orderId = orderId;
+
+      await _handleCardPayment(orderId);
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -205,6 +205,106 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
         _phase = _Phase.error;
         _errorMessage = 'Failed to place order. Please try again.';
       });
+    }
+  }
+
+  /// Initializes a Paystack payment for the just-created order. If a hosted
+  /// checkout URL comes back, shows it in a WebView and only proceeds to
+  /// rider search once the payment is verified as successful. If no URL is
+  /// returned, the order was already paid (e.g. a saved card was charged
+  /// automatically) and we can proceed straight away.
+  Future<void> _handleCardPayment(String orderId) async {
+    try {
+      final payRes = await PaymentService(DioClient.instance).initPayment(
+        PaymentInitBody(orderId: orderId, method: 'card'),
+      );
+
+      if (!mounted) return;
+
+      if (payRes.paystackAuthUrl != null &&
+          payRes.paystackAuthUrl!.isNotEmpty) {
+        _showPaystackWebView(
+          orderId: orderId,
+          url: payRes.paystackAuthUrl!,
+          reference: payRes.reference,
+        );
+        return;
+      }
+
+      setState(() => _phase = _Phase.searching);
+      _connectWebSocket();
+    } on DioException catch (e) {
+      await _cancelUnpaidOrder(orderId);
+      if (!mounted) return;
+      setState(() {
+        _phase = _Phase.error;
+        _errorMessage = _parseDioError(e);
+      });
+    } catch (_) {
+      await _cancelUnpaidOrder(orderId);
+      if (!mounted) return;
+      setState(() {
+        _phase = _Phase.error;
+        _errorMessage = 'Failed to start payment. Please try again.';
+      });
+    }
+  }
+
+  void _showPaystackWebView({
+    required String orderId,
+    required String url,
+    required String reference,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (sheetCtx) => _PaystackWebViewSheet(
+        url: url,
+        onPaymentDone: () async {
+          Navigator.pop(sheetCtx);
+          await _verifyCardPayment(orderId, reference);
+        },
+        onCancel: () async {
+          Navigator.pop(sheetCtx);
+          await _cancelUnpaidOrder(orderId);
+          if (!mounted) return;
+          setState(() {
+            _phase = _Phase.error;
+            _errorMessage = 'Payment was cancelled.';
+          });
+        },
+      ),
+    );
+  }
+
+  Future<void> _verifyCardPayment(String orderId, String reference) async {
+    try {
+      await PaymentService(DioClient.instance)
+          .verifyPayment(PaymentVerifyBody(reference: reference));
+      if (!mounted) return;
+      setState(() => _phase = _Phase.searching);
+      _connectWebSocket();
+    } catch (_) {
+      await _cancelUnpaidOrder(orderId);
+      if (!mounted) return;
+      setState(() {
+        _phase = _Phase.error;
+        _errorMessage = 'Payment verification failed. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _cancelUnpaidOrder(String orderId) async {
+    try {
+      await OrdersService(DioClient.instance).cancelOrder(
+        orderId,
+        const CancelOrderBody(reason: 'Payment not completed'),
+      );
+    } catch (_) {
+      // Best-effort cleanup — ignore failures here.
     }
   }
 
@@ -919,5 +1019,159 @@ class _RiderFoundCard extends StatelessWidget {
     if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}';
     if (parts[0].isNotEmpty) return parts[0][0];
     return '?';
+  }
+}
+
+// ── Paystack WebView sheet ────────────────────────────────────────────────────
+
+class _PaystackWebViewSheet extends StatefulWidget {
+  final String url;
+  final VoidCallback onPaymentDone;
+  final VoidCallback onCancel;
+  const _PaystackWebViewSheet({
+    required this.url,
+    required this.onPaymentDone,
+    required this.onCancel,
+  });
+
+  @override
+  State<_PaystackWebViewSheet> createState() => _PaystackWebViewSheetState();
+}
+
+class _PaystackWebViewSheetState extends State<_PaystackWebViewSheet> {
+  late final WebViewController _ctrl;
+  bool _loading = true;
+  bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (_) {
+          if (mounted) setState(() => _loading = false);
+        },
+        onNavigationRequest: (req) {
+          final isPaystack = req.url.contains('paystack.co') ||
+              req.url.contains('paystack.com') ||
+              req.url.contains('checkout.paystack');
+          final uri = Uri.tryParse(req.url);
+          if (!isPaystack &&
+              uri != null &&
+              (uri.queryParameters.containsKey('trxref') ||
+                  uri.queryParameters.containsKey('reference'))) {
+            if (!_done) {
+              _done = true;
+              widget.onPaymentDone();
+            }
+            return NavigationDecision.prevent;
+          }
+          return NavigationDecision.navigate;
+        },
+      ))
+      ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: widget.onCancel,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: GodropColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.close_rounded,
+                        size: 18, color: GodropColors.slate),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Complete Payment',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.ink),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5EE),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Secured by Paystack',
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: GodropColors.success,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: Stack(
+              children: [
+                WebViewWidget(controller: _ctrl),
+                if (_loading)
+                  const Center(
+                    child: CircularProgressIndicator(
+                        color: GodropColors.blue, strokeWidth: 2.5),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 10, 16, bottomPad + 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _done
+                    ? null
+                    : () {
+                        if (!_done) {
+                          _done = true;
+                          widget.onPaymentDone();
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: GodropColors.blue,
+                  disabledBackgroundColor: GodropColors.border,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("I've paid — verify now",
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

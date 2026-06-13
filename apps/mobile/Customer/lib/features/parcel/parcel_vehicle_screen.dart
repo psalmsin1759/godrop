@@ -45,7 +45,6 @@ class ParcelVehicleScreen extends StatefulWidget {
 }
 
 class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
-  int? _selectedPayment;
   final _recipientNameCtrl = TextEditingController();
   final _recipientPhoneCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
@@ -130,7 +129,7 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
         vehicleLabel: selected?.name ?? '',
         quotedTotalKobo: parcelState.quote?.totalKobo,
         estimatedMinutes: parcelState.estimatedMinutes,
-        paymentMethod: _selectedPayment == 0 ? 'cash' : 'card',
+        paymentMethod: 'card',
         recipientName: _recipientNameCtrl.text.trim(),
         recipientPhone: fullPhone?.trim() ?? '',
         packageDescription: _descriptionCtrl.text.trim().isEmpty
@@ -349,7 +348,6 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                       state: state,
                       pickup: _pickup,
                       dropoff: _dropoff,
-                      selectedPayment: _selectedPayment,
                       recipientNameCtrl: _recipientNameCtrl,
                       recipientPhoneCtrl: _recipientPhoneCtrl,
                       descriptionCtrl: _descriptionCtrl,
@@ -357,8 +355,6 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                       onPhoneChanged: (n) => _phoneNumber = n,
                       onPhoneValidated: (v) => _phoneValid = v,
                       bottomPad: bottomPad,
-                      onPaymentChanged: (v) =>
-                          setState(() => _selectedPayment = v),
                       onProceed: _proceed,
                     );
                   }
@@ -379,7 +375,6 @@ class _VehicleContent extends StatelessWidget {
   final ParcelLoaded state;
   final ParcelLocation pickup;
   final ParcelLocation dropoff;
-  final int? selectedPayment;
   final TextEditingController recipientNameCtrl;
   final TextEditingController recipientPhoneCtrl;
   final TextEditingController descriptionCtrl;
@@ -387,14 +382,12 @@ class _VehicleContent extends StatelessWidget {
   final ValueChanged<PhoneNumber> onPhoneChanged;
   final ValueChanged<bool> onPhoneValidated;
   final double bottomPad;
-  final ValueChanged<int> onPaymentChanged;
   final void Function(ParcelLoaded) onProceed;
 
   const _VehicleContent({
     required this.state,
     required this.pickup,
     required this.dropoff,
-    required this.selectedPayment,
     required this.recipientNameCtrl,
     required this.recipientPhoneCtrl,
     required this.descriptionCtrl,
@@ -402,7 +395,6 @@ class _VehicleContent extends StatelessWidget {
     required this.onPhoneChanged,
     required this.onPhoneValidated,
     required this.bottomPad,
-    required this.onPaymentChanged,
     required this.onProceed,
   });
 
@@ -464,30 +456,6 @@ class _VehicleContent extends StatelessWidget {
                     const SizedBox(height: 4),
                     _QuoteError(message: state.quoteError!),
                   ],
-                  const SizedBox(height: 16),
-                  const GodropSectionHeader(title: 'Payment method'),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _PaymentOption(
-                          icon: Icons.payments_outlined,
-                          label: 'Cash',
-                          selected: selectedPayment == 0,
-                          onTap: () => onPaymentChanged(0),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _PaymentOption(
-                          icon: Icons.credit_card_rounded,
-                          label: 'Card',
-                          selected: selectedPayment == 1,
-                          onTap: () => onPaymentChanged(1),
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 16),
                   const GodropSectionHeader(title: 'Recipient details'),
                   const SizedBox(height: 12),
@@ -747,66 +715,6 @@ class _QuoteError extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PaymentOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _PaymentOption({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: GodropColors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? GodropColors.blue : GodropColors.border,
-            width: selected ? 2 : 1,
-          ),
-          boxShadow: GodropColors.softShadow,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                gradient: selected ? GodropColors.blueGradient : null,
-                color: selected ? null : GodropColors.background,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon,
-                  size: 15,
-                  color: selected ? Colors.white : GodropColors.slate),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: selected ? GodropColors.blue : GodropColors.slate,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

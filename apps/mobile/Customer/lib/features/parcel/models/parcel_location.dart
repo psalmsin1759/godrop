@@ -31,7 +31,7 @@ class ParcelRouteData {
     this.vehicleLabel = '',
     this.quotedTotalKobo,
     this.estimatedMinutes,
-    this.paymentMethod = 'cash',
+    this.paymentMethod = 'card',
     this.recipientName = '',
     this.recipientPhone = '',
     this.packageDescription = 'Parcel delivery',

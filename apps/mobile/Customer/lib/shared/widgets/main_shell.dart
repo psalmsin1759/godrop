@@ -9,14 +9,32 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: GodropColors.background,
       body: shell,
       bottomNavigationBar: _GodropBottomNav(
         currentIndex: shell.currentIndex,
-        onTap: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
+        onTap: (i) =>
+            shell.goBranch(i, initialLocation: i == shell.currentIndex),
       ),
     );
   }
 }
+
+class _NavItemData {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  const _NavItemData(this.icon, this.activeIcon, this.label);
+}
+
+const _kNavItems = [
+  _NavItemData(Icons.home_outlined, Icons.home_rounded, 'Home'),
+  _NavItemData(
+      Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders'),
+  _NavItemData(Icons.account_balance_wallet_outlined,
+      Icons.account_balance_wallet_rounded, 'Wallet'),
+  _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+];
 
 class _GodropBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -25,48 +43,31 @@ class _GodropBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: GodropColors.white,
-        border: Border(top: BorderSide(color: GodropColors.border, width: 1)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: [
-              _NavItem(
-                icon: Icons.home_outlined,
-                activeIcon: Icons.home_rounded,
-                label: 'Home',
-                selected: currentIndex == 0,
-                onTap: () => onTap(0),
-              ),
-              _NavItem(
-                icon: Icons.receipt_long_outlined,
-                activeIcon: Icons.receipt_long_rounded,
-                label: 'Orders',
-                selected: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _CenterNavButton(onTap: () {}),
-              _NavItem(
-                icon: Icons.account_balance_wallet_outlined,
-                activeIcon: Icons.account_balance_wallet_rounded,
-                label: 'Wallet',
-                selected: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
-              _NavItem(
-                icon: Icons.person_outline_rounded,
-                activeIcon: Icons.person_rounded,
-                label: 'Profile',
-                selected: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-            ],
-          ),
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPad > 0 ? bottomPad : 12),
+      child: Container(
+        height: 66,
+        decoration: BoxDecoration(
+          color: GodropColors.white,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: GodropColors.ink.withValues(alpha: 0.10),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: List.generate(_kNavItems.length, (i) {
+            return _NavItem(
+              data: _kNavItems[i],
+              selected: currentIndex == i,
+              onTap: () => onTap(i),
+            );
+          }),
         ),
       ),
     );
@@ -74,16 +75,12 @@ class _GodropBottomNav extends StatelessWidget {
 }
 
 class _NavItem extends StatefulWidget {
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
+  final _NavItemData data;
   final bool selected;
   final VoidCallback onTap;
 
   const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
+    required this.data,
     required this.selected,
     required this.onTap,
   });
@@ -92,7 +89,8 @@ class _NavItem extends StatefulWidget {
   State<_NavItem> createState() => _NavItemState();
 }
 
-class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin {
+class _NavItemState extends State<_NavItem>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 380),
@@ -121,102 +119,55 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.selected ? GodropColors.blue : GodropColors.mute;
+    final selected = widget.selected;
+    final color = selected ? GodropColors.blue : GodropColors.mute;
 
     return Expanded(
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ScaleTransition(
-              scale: _bounce,
-              child: Icon(
-                widget.selected ? widget.activeIcon : widget.icon,
-                color: color,
-                size: 22,
-              ),
-            ),
-            const SizedBox(height: 2),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w400,
-                color: color,
-              ),
-              child: Text(widget.label),
-            ),
-            const SizedBox(height: 2),
-            // Animated selection dot
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 280),
               curve: Curves.easeOutCubic,
-              width: widget.selected ? 16 : 0,
-              height: 3,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: GodropColors.blue,
-                borderRadius: BorderRadius.circular(2),
+                color: selected
+                    ? GodropColors.blue.withValues(alpha: 0.10)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CenterNavButton extends StatefulWidget {
-  final VoidCallback onTap;
-  const _CenterNavButton({required this.onTap});
-
-  @override
-  State<_CenterNavButton> createState() => _CenterNavButtonState();
-}
-
-class _CenterNavButtonState extends State<_CenterNavButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 110),
-    reverseDuration: const Duration(milliseconds: 200),
-  );
-  late final Animation<double> _scale = Tween(begin: 1.0, end: 0.90).animate(
-    CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-  );
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Center(
-        child: GestureDetector(
-          onTapDown: (_) => _ctrl.forward(),
-          onTapUp: (_) => _ctrl.reverse(),
-          onTapCancel: _ctrl.reverse,
-          onTap: widget.onTap,
-          child: ScaleTransition(
-            scale: _scale,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: GodropColors.blueGradient,
-              ),
-              child: Center(
-                child: Image.asset(
-                  'screenshots/logo/godrop-mark-512.png',
-                  width: 26,
-                  height: 26,
-                  color: GodropColors.white,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScaleTransition(
+                    scale: _bounce,
+                    child: Icon(
+                      selected ? widget.data.activeIcon : widget.data.icon,
+                      color: color,
+                      size: 22,
+                    ),
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    child: selected
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Text(
+                              widget.data.label,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: GodropColors.blue,
+                              ),
+                            ),
+                          )
+                        : const SizedBox(width: 0, height: 0),
+                  ),
+                ],
               ),
             ),
           ),

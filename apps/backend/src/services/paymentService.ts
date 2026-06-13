@@ -4,6 +4,11 @@ import * as paystackService from "./paystackService";
 import * as walletService from "./walletService";
 import { nanoid } from "nanoid";
 
+function paymentCallbackUrl(): string {
+  const appUrl = process.env.CUSTOMER_APP_URL ?? "https://godrop.ng";
+  return `${appUrl}/payment/callback`;
+}
+
 async function fundVendorWallet(orderId: string, amountKobo: number) {
   const order = await prisma.order.findUnique({ where: { id: orderId }, select: { vendorId: true } });
   if (!order?.vendorId) return;
@@ -68,6 +73,7 @@ export async function initializePayment(userId: string, orderId: string, method:
       email: email2,
       amountKobo: cardAmountKobo,
       reference: reference2,
+      callbackUrl: paymentCallbackUrl(),
       metadata: { orderId, userId, type: "order_payment_partial", walletDeductedKobo: walletDeduction },
     });
 
@@ -108,6 +114,7 @@ export async function initializePayment(userId: string, orderId: string, method:
     email,
     amountKobo: order.totalKobo,
     reference,
+    callbackUrl: paymentCallbackUrl(),
     metadata: { orderId, userId, type: "order_payment" },
   });
 

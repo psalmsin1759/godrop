@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   useGetProductsQuery,
   useGetCategoriesQuery,
@@ -28,9 +29,10 @@ import {
 
 const PAGE_SIZE = 20
 
-export default function ProductsPage() {
+function ProductsPageInner() {
+  const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
-  const [categoryFilter, setCategoryFilter] = useState<string>('')
+  const [categoryFilter, setCategoryFilter] = useState<string>(searchParams.get('categoryId') ?? '')
   const [search, setSearch] = useState('')
 
   const { data: categories = [] } = useGetCategoriesQuery()
@@ -347,5 +349,17 @@ export default function ProductsPage() {
         loading={deleteLoading}
       />
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-16 gap-2 text-xs text-[#9AA1B4]">
+        <Loader2 className="w-4 h-4 animate-spin" /> Loading products…
+      </div>
+    }>
+      <ProductsPageInner />
+    </Suspense>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   useGetCategoriesQuery,
   useCreateCategoryMutation,
@@ -14,6 +15,7 @@ import ConfirmDeleteDialog from '@/components/catalog/ConfirmDeleteDialog'
 import { Plus, Pencil, Trash2, Loader2, ToggleLeft, ToggleRight, Tag } from 'lucide-react'
 
 export default function CategoriesPage() {
+  const router = useRouter()
   const { data: categories = [], isLoading, isError } = useGetCategoriesQuery()
   const [createCategory, { isLoading: creating }] = useCreateCategoryMutation()
   const [updateCategory, { isLoading: updating }] = useUpdateCategoryMutation()
@@ -142,7 +144,11 @@ export default function CategoriesPage() {
               </thead>
               <tbody className="divide-y divide-[#F7F9FC]">
                 {categories.map((cat) => (
-                  <tr key={cat.id} className="hover:bg-[#F7F9FC] transition-colors">
+                  <tr
+                    key={cat.id}
+                    onClick={() => router.push(`/catalog/products?categoryId=${cat.id}`)}
+                    className="hover:bg-[#F7F9FC] transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         {cat.imageUrl ? (
@@ -170,7 +176,7 @@ export default function CategoriesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => handleToggle(cat)}
+                        onClick={(e) => { e.stopPropagation(); handleToggle(cat) }}
                         disabled={toggling === cat.id}
                         className="flex items-center gap-1.5 text-[11px] font-medium rounded-full px-2 py-0.5 transition-colors"
                         style={
@@ -192,14 +198,14 @@ export default function CategoriesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => openEdit(cat)}
+                          onClick={(e) => { e.stopPropagation(); openEdit(cat) }}
                           className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#E7EEFF] transition-colors"
                           title="Edit"
                         >
                           <Pencil className="w-3.5 h-3.5" style={{ color: '#1E5FFF' }} />
                         </button>
                         <button
-                          onClick={() => setDeleteTarget(cat)}
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(cat) }}
                           className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#FFE3E1] transition-colors"
                           title="Delete"
                         >

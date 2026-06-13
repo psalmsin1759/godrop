@@ -127,7 +127,8 @@ class _OrdersScreenState extends State<OrdersScreen>
                     ),
                     _RemoteOrdersList(
                       orders: remoteState is RemoteOrdersLoaded
-                          ? remoteState.completed
+                          ? ([...remoteState.completed, ...remoteState.cancelled]
+                            ..sort((a, b) => b.createdAt.compareTo(a.createdAt)))
                           : [],
                       loading: remoteState is RemoteOrdersLoading,
                       error: remoteState is RemoteOrdersError

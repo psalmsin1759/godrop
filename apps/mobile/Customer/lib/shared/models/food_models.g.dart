@@ -16,6 +16,7 @@ Restaurant _$RestaurantFromJson(Map<String, dynamic> json) => Restaurant(
       deliveryFeeKobo: (json['deliveryFeeKobo'] as num).toInt(),
       estimatedMinutes: (json['estimatedMinutes'] as num).toInt(),
       isOpen: json['isOpen'] as bool,
+      isOpenNow: json['isOpenNow'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$RestaurantToJson(Restaurant instance) =>
@@ -28,6 +29,7 @@ Map<String, dynamic> _$RestaurantToJson(Restaurant instance) =>
       'deliveryFeeKobo': instance.deliveryFeeKobo,
       'estimatedMinutes': instance.estimatedMinutes,
       'isOpen': instance.isOpen,
+      'isOpenNow': instance.isOpenNow,
     };
 
 RestaurantListResponse _$RestaurantListResponseFromJson(

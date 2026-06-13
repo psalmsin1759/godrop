@@ -13,6 +13,7 @@ import 'features/orders/bloc/order_cubit.dart';
 import 'features/orders/bloc/remote_orders_cubit.dart';
 import 'features/food/bloc/cart_cubit.dart';
 import 'shared/bloc/delivery_address_cubit.dart';
+import 'shared/bloc/favorites_cubit.dart';
 import 'features/profile/bloc/profile_cubit.dart';
 import 'features/profile/bloc/wallet_cubit.dart';
 import 'features/profile/bloc/notifications_cubit.dart';
@@ -56,6 +57,7 @@ void main() async {
         BlocProvider(create: (_) => WalletCubit()),
         BlocProvider(create: (_) => NotificationsCubit()),
         BlocProvider(create: (_) => RemoteOrdersCubit()),
+        BlocProvider(create: (_) => FavoritesCubit()),
       ],
       child: const GodropCustomerApp(),
     ),

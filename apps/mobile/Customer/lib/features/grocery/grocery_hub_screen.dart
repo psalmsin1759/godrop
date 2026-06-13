@@ -269,49 +269,82 @@ class _StoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isClosed = !store.isOpenNow;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
+      child: Opacity(
+        opacity: isClosed ? 0.6 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
             color: GodropColors.white,
-            borderRadius: BorderRadius.circular(14)),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                  color: GodropColors.blue.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.store_rounded,
-                  color: GodropColors.blue, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(store.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: GodropColors.ink,
-                          fontSize: 14)),
-                  Text(
-                    store.deliveryTimeLabel,
-                    style: const TextStyle(
-                        fontSize: 12, color: GodropColors.slate),
-                  ),
-                ],
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: GodropColors.softShadow,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                    color: GodropColors.blue.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.store_rounded,
+                    color: GodropColors.blue, size: 26),
               ),
-            ),
-            Text(
-              store.deliveryFeeKobo != null
-                  ? _fmtFee(store.deliveryFeeKobo!)
-                  : '',
-              style: const TextStyle(fontSize: 12, color: GodropColors.mute),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(store.name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: GodropColors.ink,
+                            fontSize: 15)),
+                    const SizedBox(height: 2),
+                    Text(
+                      store.deliveryTimeLabel,
+                      style: const TextStyle(
+                          fontSize: 12, color: GodropColors.slate),
+                    ),
+                  ],
+                ),
+              ),
+              if (isClosed)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: GodropColors.ink.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time_filled_rounded,
+                          size: 11, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text('Closed',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                )
+              else
+                Text(
+                  store.deliveryFeeKobo != null
+                      ? _fmtFee(store.deliveryFeeKobo!)
+                      : '',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: GodropColors.mute),
+                ),
+            ],
+          ),
         ),
       ),
     );

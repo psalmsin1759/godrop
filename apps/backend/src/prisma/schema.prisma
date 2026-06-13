@@ -34,6 +34,7 @@ model User {
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
   savedCards    SavedCard[]
+  favorites     Favorite[]
 }
 
 enum UserStatus {
@@ -79,6 +80,21 @@ model SavedAddress {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+// ─── Favorites ────────────────────────────────────────────────
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, vendorId])
+  @@index([userId])
+  @@index([vendorId])
 }
 
 // ─── Wallet ───────────────────────────────────────────────────
@@ -167,6 +183,7 @@ model Vendor {
   auditLogs    AuditLog[]
   wallet       VendorWallet?
   bankAccount  VendorBankAccount?
+  favorites    Favorite[]
 }
 
 enum VendorType {

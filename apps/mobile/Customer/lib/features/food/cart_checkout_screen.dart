@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../app/theme.dart';
 import '../../shared/api/api.dart';
-import '../../shared/api/places_service.dart';
 import '../../shared/bloc/delivery_address_cubit.dart';
+import '../../shared/bloc/saved_addresses_cubit.dart';
 import '../../shared/models/food_models.dart';
 import '../../shared/models/store_models.dart';
 import '../../shared/models/wallet_models.dart';
@@ -14,6 +14,7 @@ import '../../shared/widgets/godrop_button.dart';
 import '../orders/bloc/order_cubit.dart';
 import '../orders/models/active_order.dart';
 import '../../features/parcel/models/parcel_location.dart';
+import '../parcel/widgets/location_picker_sheet.dart';
 import 'bloc/cart_cubit.dart';
 import 'bloc/cart_state.dart';
 import 'models/restaurant_data.dart';
@@ -65,12 +66,21 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     return (100000 + rng.nextInt(900000)).toString();
   }
 
+  late final SavedAddressesCubit _savedAddressesCubit;
+
   @override
   void initState() {
     super.initState();
+    _savedAddressesCubit = SavedAddressesCubit();
     _loadConfig();
     _loadVendorCod();
     _loadWalletBalance();
+  }
+
+  @override
+  void dispose() {
+    _savedAddressesCubit.close();
+    super.dispose();
   }
 
   Future<void> _loadConfig() async {
@@ -100,33 +110,21 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     } catch (_) {}
   }
 
-  void _showDeliverySheet() {
-    final current = context.read<DeliveryAddressCubit>().state;
-    showModalBottomSheet(
+  void _showDeliverySheet() async {
+    final saved = _savedAddressesCubit.state.addresses;
+    final result = await showModalBottomSheet<ParcelLocation>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _DeliverySheet(
-        currentAddress: current,
-        onAddressSelected: (addr) =>
-            context.read<DeliveryAddressCubit>().setAddress(addr),
+      builder: (_) => LocationPickerSheet(
+        title: 'Set delivery address',
+        showCurrentLocation: true,
+        savedAddresses: saved,
       ),
     );
-  }
-
-  void _showPaymentSheet(int totalKobo) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetCtx) => _PaymentMethodSheet(
-        current: _paymentMethod,
-        walletBalanceKobo: _walletBalanceKobo,
-        totalKobo: totalKobo,
-        codEnabled: _codEnabled,
-        onSelected: (method) => setState(() => _paymentMethod = method),
-      ),
-    );
+    if (result != null && mounted) {
+      context.read<DeliveryAddressCubit>().setAddress(result.name);
+    }
   }
 
   Future<void> _placeOrder(VendorCart cart, String deliveryAddress) async {
@@ -327,7 +325,9 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CartCubit, CartState>(
+    return BlocProvider.value(
+      value: _savedAddressesCubit,
+      child: BlocBuilder<CartCubit, CartState>(
       builder: (context, cartState) {
         final cart = cartState.cartFor(widget.partnerId);
 
@@ -405,7 +405,8 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                           Container(
                             decoration: BoxDecoration(
                                 color: GodropColors.white,
-                                borderRadius: BorderRadius.circular(14)),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: GodropColors.softShadow),
                             child: Column(
                               children: [
                                 ...cart.items.asMap().entries.map((e) {
@@ -554,33 +555,16 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                           ),
                           const SizedBox(height: 12),
 
-                          // Payment method
-                          _SectionCard(
-                            title: 'Payment',
-                            onTap: () => _showPaymentSheet(total),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _pmIcon(_paymentMethod),
-                                  size: 16,
-                                  color: GodropColors.blue,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _pmLabel(_paymentMethod, _walletBalanceKobo),
-                                    style: const TextStyle(
-                                        fontSize: 14, color: GodropColors.ink),
-                                  ),
-                                ),
-                                const Text('Change',
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        color: GodropColors.blue,
-                                        fontWeight: FontWeight.w500)),
-                              ],
-                            ),
+                          // Payment method — inline selectable cards
+                          const Padding(
+                            padding: EdgeInsets.only(left: 2, bottom: 8),
+                            child: Text('Payment method',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: GodropColors.slate,
+                                    fontWeight: FontWeight.w500)),
                           ),
+                          _buildPaymentOptions(total),
                           const SizedBox(height: 16),
 
                           // Price summary
@@ -588,7 +572,8 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                                 color: GodropColors.white,
-                                borderRadius: BorderRadius.circular(14)),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: GodropColors.softShadow),
                             child: Column(
                               children: [
                                 _SummaryRow('Subtotal', _fmt(subtotal)),
@@ -693,25 +678,65 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
           },
         );
       },
+      ),
     );
   }
 
-  IconData _pmIcon(String pm) {
-    switch (pm) {
-      case 'wallet': return Icons.account_balance_wallet_rounded;
-      case 'wallet_card': return Icons.credit_card_rounded;
-      case 'cash': return Icons.money_rounded;
-      default: return Icons.credit_card_rounded;
-    }
-  }
+  Widget _buildPaymentOptions(int totalKobo) {
+    final walletSuffix =
+        _walletBalanceKobo > 0 ? ' (${_fmt(_walletBalanceKobo)})' : ' (empty)';
+    final walletCoversAll = _walletBalanceKobo >= totalKobo;
+    final cardRemainder = max(0, totalKobo - _walletBalanceKobo);
 
-  String _pmLabel(String pm, int balance) {
-    switch (pm) {
-      case 'wallet': return 'Pay from wallet (${_fmt(balance)})';
-      case 'wallet_card': return 'Wallet + Card';
-      case 'cash': return 'Cash on delivery';
-      default: return 'Pay online (card / transfer)';
-    }
+    return Column(
+      children: [
+        _PaymentOption(
+          icon: Icons.credit_card_rounded,
+          label: 'Pay online',
+          subtitle: 'Card, bank transfer via Paystack',
+          value: 'card',
+          current: _paymentMethod,
+          onTap: () => setState(() => _paymentMethod = 'card'),
+        ),
+        const SizedBox(height: 10),
+        _PaymentOption(
+          icon: Icons.account_balance_wallet_rounded,
+          label: 'Pay from wallet$walletSuffix',
+          subtitle: walletCoversAll
+              ? 'Instantly deducted, no Paystack needed'
+              : 'Insufficient balance (need ${_fmt(totalKobo)})',
+          value: 'wallet',
+          current: _paymentMethod,
+          disabled: _walletBalanceKobo <= 0,
+          onTap: _walletBalanceKobo > 0
+              ? () => setState(() => _paymentMethod = 'wallet')
+              : null,
+        ),
+        if (_walletBalanceKobo > 0 && !walletCoversAll) ...[
+          const SizedBox(height: 10),
+          _PaymentOption(
+            icon: Icons.credit_card_rounded,
+            label: 'Wallet + Card',
+            subtitle:
+                'Use ${_fmt(_walletBalanceKobo)} from wallet, pay ${_fmt(cardRemainder)} via card',
+            value: 'wallet_card',
+            current: _paymentMethod,
+            onTap: () => setState(() => _paymentMethod = 'wallet_card'),
+          ),
+        ],
+        if (_codEnabled) ...[
+          const SizedBox(height: 10),
+          _PaymentOption(
+            icon: Icons.money_rounded,
+            label: 'Cash on delivery',
+            subtitle: 'Pay the rider when your order arrives',
+            value: 'cash',
+            current: _paymentMethod,
+            onTap: () => setState(() => _paymentMethod = 'cash'),
+          ),
+        ],
+      ],
+    );
   }
 }
 
@@ -826,269 +851,6 @@ class _PaystackWebViewSheetState extends State<_PaystackWebViewSheet> {
   }
 }
 
-// ── Delivery address bottom sheet ─────────────────────────────────────────────
-
-class _DeliverySheet extends StatefulWidget {
-  final String currentAddress;
-  final ValueChanged<String> onAddressSelected;
-  const _DeliverySheet(
-      {required this.currentAddress, required this.onAddressSelected});
-
-  @override
-  State<_DeliverySheet> createState() => _DeliverySheetState();
-}
-
-class _DeliverySheetState extends State<_DeliverySheet> {
-  late final TextEditingController _ctrl;
-  final FocusNode _focus = FocusNode();
-  List<PlacesPrediction> _suggestions = [];
-  bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.currentAddress);
-    _ctrl.addListener(_onChanged);
-    Future.delayed(const Duration(milliseconds: 300),
-        () { if (mounted) _focus.requestFocus(); });
-  }
-
-  void _onChanged() async {
-    final q = _ctrl.text.trim();
-    if (q.length < 2) {
-      setState(() { _suggestions = []; _loading = false; });
-      return;
-    }
-    setState(() => _loading = true);
-    final results = await PlacesService.autocomplete(q);
-    if (mounted) setState(() { _suggestions = results; _loading = false; });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    _focus.dispose();
-    super.dispose();
-  }
-
-  void _select(String address) {
-    widget.onAddressSelected(address);
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final showPopular = _ctrl.text.trim().length < 2;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.78 + bottomInset,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 12),
-          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: GodropColors.border, borderRadius: BorderRadius.circular(2)))),
-          const SizedBox(height: 20),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Delivery address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: GodropColors.ink)),
-          ),
-          const SizedBox(height: 4),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Where should we deliver your order?', style: TextStyle(fontSize: 13, color: GodropColors.slate)),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _ctrl,
-              focusNode: _focus,
-              style: const TextStyle(fontSize: 15, color: GodropColors.ink),
-              decoration: InputDecoration(
-                hintText: 'e.g. 14 Admiralty Way, Lekki',
-                hintStyle: const TextStyle(color: GodropColors.mute, fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, color: GodropColors.blue, size: 20),
-                suffixIcon: _loading
-                    ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: GodropColors.blue)))
-                    : (_ctrl.text.isNotEmpty
-                        ? IconButton(icon: const Icon(Icons.close_rounded, size: 18, color: GodropColors.mute), onPressed: _ctrl.clear)
-                        : null),
-                filled: true,
-                fillColor: GodropColors.background,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: GodropColors.blue, width: 1.5)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: showPopular
-                ? _buildPopularList()
-                : (_suggestions.isEmpty && !_loading
-                    ? const Center(child: Text('No results found', style: TextStyle(fontSize: 14, color: GodropColors.mute)))
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        itemCount: _suggestions.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1, indent: 44),
-                        itemBuilder: (_, i) {
-                          final p = _suggestions[i];
-                          final label = p.secondaryText.isNotEmpty ? '${p.mainText}, ${p.secondaryText}' : p.mainText;
-                          return ListTile(
-                            leading: Container(
-                              width: 32, height: 32,
-                              decoration: BoxDecoration(color: GodropColors.blue.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-                              child: const Icon(Icons.place_rounded, color: GodropColors.blue, size: 16),
-                            ),
-                            title: Text(p.mainText, style: const TextStyle(fontSize: 14, color: GodropColors.ink, fontWeight: FontWeight.w500)),
-                            subtitle: p.secondaryText.isNotEmpty ? Text(p.secondaryText, style: const TextStyle(fontSize: 12, color: GodropColors.mute)) : null,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                            dense: true,
-                            onTap: () => _select(label),
-                          );
-                        },
-                      )),
-          ),
-          SizedBox(height: bottomInset + 16),
-        ],
-      ),
-    );
-  }
-
-  static const _popular = [
-    'Lekki Phase 1, Lagos',
-    'Victoria Island (VI), Lagos',
-    'Ikeja, Lagos',
-    'Yaba, Lagos',
-    'Surulere, Lagos',
-    'Ikoyi, Lagos',
-    'Ajah, Lagos',
-    'Maryland, Lagos',
-    'Gbagada, Lagos',
-    'Magodo, Lagos',
-    'Festac Town, Lagos',
-    'Ojodu Berger, Lagos',
-  ];
-
-  Widget _buildPopularList() => ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        itemCount: _popular.length,
-        separatorBuilder: (_, __) => const Divider(height: 1, indent: 44),
-        itemBuilder: (_, i) => ListTile(
-          leading: Container(
-            width: 32, height: 32,
-            decoration: BoxDecoration(color: GodropColors.blue.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.location_on_rounded, color: GodropColors.blue, size: 16),
-          ),
-          title: Text(_popular[i], style: const TextStyle(fontSize: 14, color: GodropColors.ink, fontWeight: FontWeight.w500)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          dense: true,
-          onTap: () => _select(_popular[i]),
-        ),
-      );
-}
-
-// ── Payment method bottom sheet ───────────────────────────────────────────────
-
-class _PaymentMethodSheet extends StatelessWidget {
-  final String current;
-  final int walletBalanceKobo;
-  final int totalKobo;
-  final bool codEnabled;
-  final ValueChanged<String> onSelected;
-  const _PaymentMethodSheet({
-    required this.current,
-    required this.walletBalanceKobo,
-    required this.totalKobo,
-    required this.codEnabled,
-    required this.onSelected,
-  });
-
-  String _fmt(int kobo) =>
-      '₦${(kobo / 100).toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',')}';
-
-  @override
-  Widget build(BuildContext context) {
-    final walletSuffix = walletBalanceKobo > 0 ? ' (${_fmt(walletBalanceKobo)})' : ' (empty)';
-    final walletCoversAll = walletBalanceKobo >= totalKobo;
-    final cardRemainder = max(0, totalKobo - walletBalanceKobo);
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: GodropColors.border, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Payment method', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: GodropColors.ink)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _PaymentOption(
-              icon: Icons.credit_card_rounded,
-              label: 'Pay online',
-              subtitle: 'Card, bank transfer via Paystack',
-              value: 'card',
-              current: current,
-              onTap: () { onSelected('card'); Navigator.pop(context); },
-            ),
-            const Divider(height: 1, indent: 20, endIndent: 20),
-            _PaymentOption(
-              icon: Icons.account_balance_wallet_rounded,
-              label: 'Pay from wallet$walletSuffix',
-              subtitle: walletCoversAll
-                  ? 'Instantly deducted, no Paystack needed'
-                  : 'Insufficient balance (need ${_fmt(totalKobo)})',
-              value: 'wallet',
-              current: current,
-              disabled: walletBalanceKobo <= 0,
-              onTap: walletBalanceKobo > 0 ? () { onSelected('wallet'); Navigator.pop(context); } : null,
-            ),
-            if (walletBalanceKobo > 0 && !walletCoversAll) ...[
-              const Divider(height: 1, indent: 20, endIndent: 20),
-              _PaymentOption(
-                icon: Icons.credit_card_rounded,
-                label: 'Wallet + Card',
-                subtitle: 'Use ${_fmt(walletBalanceKobo)} from wallet, pay ${_fmt(cardRemainder)} via card',
-                value: 'wallet_card',
-                current: current,
-                onTap: () { onSelected('wallet_card'); Navigator.pop(context); },
-              ),
-            ],
-            if (codEnabled) ...[
-              const Divider(height: 1, indent: 20, endIndent: 20),
-              _PaymentOption(
-                icon: Icons.money_rounded,
-                label: 'Cash on delivery',
-                subtitle: 'Pay the rider when your order arrives',
-                value: 'cash',
-                current: current,
-                onTap: () { onSelected('cash'); Navigator.pop(context); },
-              ),
-            ],
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _PaymentOption extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1112,21 +874,65 @@ class _PaymentOption extends StatelessWidget {
     final selected = value == current;
     return Opacity(
       opacity: disabled ? 0.4 : 1,
-      child: ListTile(
-        leading: Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(
-            color: selected ? GodropColors.blue.withValues(alpha: 0.1) : GodropColors.background,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: selected ? GodropColors.blue : GodropColors.slate, size: 22),
-        ),
-        title: Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: selected ? GodropColors.blue : GodropColors.ink)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: GodropColors.mute)),
-        trailing: selected
-            ? const Icon(Icons.check_circle_rounded, color: GodropColors.blue, size: 22)
-            : const Icon(Icons.radio_button_off_rounded, color: GodropColors.mute, size: 22),
+      child: GestureDetector(
         onTap: disabled ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: selected
+                ? GodropColors.blue.withValues(alpha: 0.04)
+                : GodropColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? GodropColors.blue : GodropColors.border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? GodropColors.blue.withValues(alpha: 0.1)
+                      : GodropColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon,
+                    color: selected ? GodropColors.blue : GodropColors.slate,
+                    size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: selected
+                                ? GodropColors.blue
+                                : GodropColors.ink)),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: const TextStyle(
+                            fontSize: 12, color: GodropColors.mute)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                selected
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_off_rounded,
+                color: selected ? GodropColors.blue : GodropColors.mute,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1242,7 +1048,10 @@ class _SectionCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+            color: GodropColors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: GodropColors.softShadow),
         child: Row(
           children: [
             Text('$title  ', style: const TextStyle(fontSize: 13, color: GodropColors.slate, fontWeight: FontWeight.w500)),

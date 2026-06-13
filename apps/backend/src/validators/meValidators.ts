@@ -35,3 +35,7 @@ export const topUpSchema = z.object({
 });
 
 export const verifyTopUpSchema = z.object({ reference: z.string() });
+
+export const toggleFavoriteSchema = z.object({
+  vendorId: z.string().min(1),
+});

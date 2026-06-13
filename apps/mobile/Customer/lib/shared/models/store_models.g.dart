@@ -14,6 +14,7 @@ Store _$StoreFromJson(Map<String, dynamic> json) => Store(
       deliveryFeeKobo: (json['deliveryFeeKobo'] as num?)?.toInt(),
       estimatedMinutes: (json['estimatedMinutes'] as num?)?.toInt(),
       isOpen: json['isOpen'] as bool,
+      isOpenNow: json['isOpenNow'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$StoreToJson(Store instance) => <String, dynamic>{
@@ -24,6 +25,7 @@ Map<String, dynamic> _$StoreToJson(Store instance) => <String, dynamic>{
       'deliveryFeeKobo': instance.deliveryFeeKobo,
       'estimatedMinutes': instance.estimatedMinutes,
       'isOpen': instance.isOpen,
+      'isOpenNow': instance.isOpenNow,
     };
 
 StoreListResponse _$StoreListResponseFromJson(Map<String, dynamic> json) =>

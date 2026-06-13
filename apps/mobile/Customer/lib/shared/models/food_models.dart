@@ -13,6 +13,8 @@ class Restaurant {
   final int deliveryFeeKobo;
   final int estimatedMinutes;
   final bool isOpen;
+  @JsonKey(defaultValue: true)
+  final bool isOpenNow;
 
   const Restaurant({
     required this.id,
@@ -23,6 +25,7 @@ class Restaurant {
     required this.deliveryFeeKobo,
     required this.estimatedMinutes,
     required this.isOpen,
+    this.isOpenNow = true,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) =>

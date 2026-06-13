@@ -11,6 +11,8 @@ class PartnerItem extends Equatable {
   final int? deliveryFeeKobo;
   final int? estimatedMinutes;
   final bool isOpen;
+  final bool isOpenNow;
+  final bool isFavorite;
   final List<String> cuisines;
   final PartnerType partnerType;
 
@@ -22,11 +24,14 @@ class PartnerItem extends Equatable {
     this.deliveryFeeKobo,
     this.estimatedMinutes,
     required this.isOpen,
+    this.isOpenNow = true,
+    this.isFavorite = false,
     this.cuisines = const [],
     required this.partnerType,
   });
 
-  factory PartnerItem.fromRestaurant(Restaurant r) => PartnerItem(
+  factory PartnerItem.fromRestaurant(Restaurant r, {bool isFavorite = false}) =>
+      PartnerItem(
         id: r.id,
         name: r.name,
         logoUrl: r.logoUrl,
@@ -34,11 +39,15 @@ class PartnerItem extends Equatable {
         deliveryFeeKobo: r.deliveryFeeKobo,
         estimatedMinutes: r.estimatedMinutes,
         isOpen: r.isOpen,
+        isOpenNow: r.isOpenNow,
+        isFavorite: isFavorite,
         cuisines: r.cuisines,
         partnerType: PartnerType.restaurant,
       );
 
-  factory PartnerItem.fromStore(Store s, PartnerType type) => PartnerItem(
+  factory PartnerItem.fromStore(Store s, PartnerType type,
+          {bool isFavorite = false}) =>
+      PartnerItem(
         id: s.id,
         name: s.name,
         logoUrl: s.logoUrl,
@@ -46,12 +55,28 @@ class PartnerItem extends Equatable {
         deliveryFeeKobo: s.deliveryFeeKobo,
         estimatedMinutes: s.estimatedMinutes,
         isOpen: s.isOpen,
+        isOpenNow: s.isOpenNow,
+        isFavorite: isFavorite,
         partnerType: type,
       );
 
   String get deliveryTimeLabel =>
       estimatedMinutes != null ? '$estimatedMinutes min' : '—';
 
+  PartnerItem copyWith({bool? isFavorite}) => PartnerItem(
+        id: id,
+        name: name,
+        logoUrl: logoUrl,
+        rating: rating,
+        deliveryFeeKobo: deliveryFeeKobo,
+        estimatedMinutes: estimatedMinutes,
+        isOpen: isOpen,
+        isOpenNow: isOpenNow,
+        isFavorite: isFavorite ?? this.isFavorite,
+        cuisines: cuisines,
+        partnerType: partnerType,
+      );
+
   @override
-  List<Object?> get props => [id, partnerType];
+  List<Object?> get props => [id, partnerType, isFavorite, isOpenNow];
 }

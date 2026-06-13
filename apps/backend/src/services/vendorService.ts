@@ -4,6 +4,7 @@ import { haversineKm } from "../utils/distance";
 import { paginate } from "../utils/pagination";
 import { generateTrackingCode } from "../utils/generateTrackingCode";
 import { sendEmail, vendorNewOrderEmail } from "./emailService";
+import { computeIsOpenNow } from "../utils/vendorHours";
 
 async function getCoverageRadiusKm(): Promise<number> {
   const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
@@ -41,7 +42,9 @@ async function listByType(
     total = vendors.length;
   }
 
-  return { data: vendors, total, page, limit };
+  const data = vendors.map((v) => ({ ...v, isOpenNow: computeIsOpenNow(v) }));
+
+  return { data, total, page, limit };
 }
 
 export async function listRestaurants(opts: Parameters<typeof listByType>[1]) {
@@ -61,7 +64,7 @@ export async function listPharmacies(opts: Parameters<typeof listByType>[1]) {
 }
 
 export async function getVendorWithCategories(id: string) {
-  return prisma.vendor.findUnique({
+  const vendor = await prisma.vendor.findUnique({
     where: { id },
     include: {
       categories: {
@@ -71,6 +74,8 @@ export async function getVendorWithCategories(id: string) {
       },
     },
   });
+  if (!vendor) return vendor;
+  return { ...vendor, isOpenNow: computeIsOpenNow(vendor) };
 }
 
 export async function getMenuItems(vendorId: string, categoryId?: string) {

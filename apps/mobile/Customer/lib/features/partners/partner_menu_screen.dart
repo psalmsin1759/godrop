@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_places_flutter/google_places_flutter.dart';
-import 'package:google_places_flutter/model/prediction.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/api/places_service.dart';
 import '../../shared/bloc/delivery_address_cubit.dart';
+import '../../shared/bloc/saved_addresses_cubit.dart';
 import '../food/bloc/cart_cubit.dart';
 import '../food/bloc/cart_state.dart';
 import '../food/models/restaurant_data.dart';
+import '../parcel/models/parcel_location.dart';
+import '../parcel/widgets/location_picker_sheet.dart';
 import 'bloc/menu_cubit.dart';
 import 'bloc/menu_state.dart';
 import 'models/partner_item.dart';
-
-const _kPlacesApiKey = 'AIzaSyDQrymY31J4gl5ws6SStg42Vpk_AfWFt_U';
 
 class PartnerMenuScreen extends StatefulWidget {
   final PartnerItem partner;
@@ -32,6 +31,7 @@ class PartnerMenuScreen extends StatefulWidget {
 
 class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
   late final MenuCubit _menuCubit;
+  late final SavedAddressesCubit _savedAddressesCubit;
 
   PartnerItem get _p => widget.partner;
 
@@ -39,6 +39,7 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
   void initState() {
     super.initState();
     _menuCubit = MenuCubit(_p)..load();
+    _savedAddressesCubit = SavedAddressesCubit();
     // If a delivery address was passed in (from navigation), update the global cubit
     if (widget.deliveryAddress != null &&
         widget.deliveryAddress!.isNotEmpty &&
@@ -82,21 +83,25 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
   @override
   void dispose() {
     _menuCubit.close();
+    _savedAddressesCubit.close();
     super.dispose();
   }
 
-  void _showDeliverySheet() {
-    final current = context.read<DeliveryAddressCubit>().state;
-    showModalBottomSheet(
+  void _showDeliverySheet() async {
+    final saved = _savedAddressesCubit.state.addresses;
+    final result = await showModalBottomSheet<ParcelLocation>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _DeliverySheet(
-        onAddressSelected: (addr) =>
-            context.read<DeliveryAddressCubit>().setAddress(addr),
-        currentAddress: current,
+      builder: (_) => LocationPickerSheet(
+        title: 'Set delivery address',
+        showCurrentLocation: true,
+        savedAddresses: saved,
       ),
     );
+    if (result != null && mounted) {
+      context.read<DeliveryAddressCubit>().setAddress(result.name);
+    }
   }
 
   String _fmt(int kobo) =>
@@ -107,8 +112,11 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
     final color = _p.partnerType.color;
     final icon = _p.partnerType.icon;
 
-    return BlocProvider.value(
-      value: _menuCubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _menuCubit),
+        BlocProvider.value(value: _savedAddressesCubit),
+      ],
       child: BlocBuilder<CartCubit, CartState>(
         builder: (context, cartState) {
           final vendorCart = cartState.cartFor(_p.id);
@@ -202,16 +210,40 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
         children: [
           Stack(
             children: [
-              _p.logoUrl != null
-                  ? Image.network(
-                      _p.logoUrl!,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          _HeaderPlaceholder(color: color, icon: icon),
-                    )
-                  : _HeaderPlaceholder(color: color, icon: icon),
+              ClipRect(
+                child: SizedBox(
+                  height: 200,
+                  width: double.infinity,
+                  child: _p.logoUrl != null
+                      ? Image.network(
+                          _p.logoUrl!,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              _HeaderPlaceholder(color: color, icon: icon),
+                        )
+                      : _HeaderPlaceholder(color: color, icon: icon),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 80,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0),
+                        Colors.black.withValues(alpha: 0.35),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               Positioned(
                 top: MediaQuery.of(context).padding.top + 8,
                 left: 12,
@@ -222,11 +254,38 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
                     height: 36,
                     decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: GodropColors.softShadow),
                     child: const Icon(Icons.chevron_left_rounded, size: 22),
                   ),
                 ),
               ),
+              if (!_p.isOpenNow)
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: GodropColors.ink.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.access_time_filled_rounded,
+                            size: 13, color: Colors.white),
+                        SizedBox(width: 5),
+                        Text('Closed',
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
           Padding(
@@ -234,30 +293,11 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(_p.name,
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: GodropColors.ink)),
-                    ),
-                    if (!_p.isOpen)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                            color: GodropColors.mute.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(6)),
-                        child: const Text('Closed',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: GodropColors.mute,
-                                fontWeight: FontWeight.w600)),
-                      ),
-                  ],
-                ),
+                Text(_p.name,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.ink)),
                 const SizedBox(height: 4),
                 Text(_p.partnerType.label,
                     style: const TextStyle(
@@ -473,7 +513,7 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
     MenuState menu,
   ) {
     final vendorCart = cartState.cartFor(_p.id);
-    final isRestaurantClosed = !_p.isOpen;
+    final isRestaurantClosed = !_p.isOpenNow;
 
     return DefaultTabController(
       length: menu.categories.length,
@@ -484,20 +524,20 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
             SliverToBoxAdapter(
               child: Container(
                 width: double.infinity,
-                color: const Color(0xFFFF4444).withOpacity(0.08),
+                color: GodropColors.error.withValues(alpha: 0.08),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(Icons.access_time_rounded,
-                        size: 16, color: Color(0xFFFF4444)),
-                    const SizedBox(width: 8),
-                    const Expanded(
+                    Icon(Icons.access_time_filled_rounded,
+                        size: 16, color: GodropColors.error),
+                    SizedBox(width: 8),
+                    Expanded(
                       child: Text(
                         'This partner is currently closed',
                         style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFFFF4444),
+                            color: GodropColors.error,
                             fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -661,7 +701,10 @@ class _MenuItemCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-            color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
+          color: GodropColors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: GodropColors.softShadow,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -682,17 +725,25 @@ class _MenuItemCard extends StatelessWidget {
                         Container(
                           margin: const EdgeInsets.only(left: 8),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            color: GodropColors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Text(
-                            'Unavailable',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.red,
-                                fontWeight: FontWeight.w600),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.block_rounded,
+                                  size: 11, color: GodropColors.error),
+                              SizedBox(width: 4),
+                              Text(
+                                'Unavailable',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: GodropColors.error,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ],
                           ),
                         ),
                     ],
@@ -720,12 +771,12 @@ class _MenuItemCard extends StatelessWidget {
               alignment: Alignment.bottomRight,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   child: item.imageUrl != null
                       ? Image.network(
                           item.imageUrl!,
-                          width: 72,
-                          height: 72,
+                          width: 84,
+                          height: 84,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) =>
                               _ItemImagePlaceholder(color: accentColor),
@@ -798,11 +849,11 @@ class _ItemImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 72,
-      height: 72,
-      color: color.withOpacity(0.08),
+      width: 84,
+      height: 84,
+      color: color.withValues(alpha: 0.08),
       child: Icon(Icons.image_outlined,
-          size: 28, color: color.withOpacity(0.3)),
+          size: 30, color: color.withValues(alpha: 0.3)),
     );
   }
 }
@@ -818,14 +869,24 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: iconColor),
-        const SizedBox(width: 3),
-        Text(label,
-            style:
-                const TextStyle(fontSize: 12, color: GodropColors.slate)),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: GodropColors.background,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: iconColor),
+          const SizedBox(width: 4),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: GodropColors.slate)),
+        ],
+      ),
     );
   }
 }
@@ -840,216 +901,12 @@ class _HeaderPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 180,
+      height: 200,
       width: double.infinity,
-      color: color.withOpacity(0.08),
+      color: color.withValues(alpha: 0.08),
       child: Center(
-          child: Icon(icon, size: 72, color: color.withOpacity(0.3))),
+          child: Icon(icon, size: 72, color: color.withValues(alpha: 0.3))),
     );
   }
 }
 
-// ── Delivery address bottom sheet ─────────────────────────────────────────────
-
-class _DeliverySheet extends StatefulWidget {
-  final ValueChanged<String> onAddressSelected;
-  final String currentAddress;
-  const _DeliverySheet(
-      {required this.onAddressSelected, required this.currentAddress});
-
-  @override
-  State<_DeliverySheet> createState() => _DeliverySheetState();
-}
-
-class _DeliverySheetState extends State<_DeliverySheet> {
-  late final TextEditingController _ctrl;
-  bool _locationLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.currentAddress);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _useCurrentLocation() async {
-    setState(() => _locationLoading = true);
-    try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        if (mounted) setState(() => _locationLoading = false);
-        return;
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.medium),
-      );
-      final address =
-          await PlacesService.reverseGeocode(pos.latitude, pos.longitude);
-      if (mounted) {
-        widget.onAddressSelected(address ?? 'Current location');
-        Navigator.of(context).pop();
-      }
-    } catch (_) {
-      if (mounted) setState(() => _locationLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final viewInset = MediaQuery.of(context).viewInsets.bottom;
-    final bottomPad = MediaQuery.of(context).padding.bottom;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: viewInset),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.55,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPad + 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: GodropColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Row(
-              children: [
-                const Text(
-                  'Deliver to',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: GodropColors.ink,
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: GodropColors.background,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.close_rounded,
-                        size: 18, color: GodropColors.slate),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            InkWell(
-              onTap: _locationLoading ? null : _useCurrentLocation,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                decoration: BoxDecoration(
-                  color: GodropColors.blue.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: GodropColors.blue.withOpacity(0.15)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: GodropColors.blue.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: _locationLoading
-                          ? const Padding(
-                              padding: EdgeInsets.all(7),
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: GodropColors.blue))
-                          : const Icon(Icons.my_location_rounded,
-                              color: GodropColors.blue, size: 15),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text('Use my current location',
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: GodropColors.blue)),
-                    ),
-                    const Icon(Icons.chevron_right_rounded,
-                        size: 18, color: GodropColors.blue),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            GooglePlaceAutoCompleteTextField(
-              textEditingController: _ctrl,
-              googleAPIKey: _kPlacesApiKey,
-              inputDecoration: InputDecoration(
-                hintText: 'Search for an address...',
-                hintStyle:
-                    const TextStyle(color: GodropColors.mute, fontSize: 15),
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: GodropColors.slate, size: 20),
-                filled: true,
-                fillColor: GodropColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: GodropColors.blue, width: 1.5),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              textStyle:
-                  const TextStyle(fontSize: 15, color: GodropColors.ink),
-              debounceTime: 400,
-              countries: const ['ng'],
-              isLatLngRequired: false,
-              getPlaceDetailWithLatLng: (_) {},
-              itemClick: (Prediction prediction) {
-                final name = prediction.description ?? '';
-                if (name.isEmpty) return;
-                _ctrl
-                  ..text = name
-                  ..selection = TextSelection.fromPosition(
-                    TextPosition(offset: name.length),
-                  );
-                widget.onAddressSelected(name);
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

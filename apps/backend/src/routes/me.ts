@@ -12,6 +12,7 @@ import {
   markNotificationsReadSchema,
   topUpSchema,
   verifyTopUpSchema,
+  toggleFavoriteSchema,
 } from "../validators/meValidators";
 
 const router = Router();
@@ -43,5 +44,9 @@ router.delete("/notifications/:id", meController.deleteNotification);
 router.get("/cards", meController.listCards);
 router.delete("/cards/:id", meController.deleteCard);
 router.patch("/cards/:id/default", meController.setDefaultCard);
+
+router.get("/favorites", meController.listFavorites);
+router.post("/favorites", validate(toggleFavoriteSchema), meController.addFavorite);
+router.delete("/favorites/:vendorId", meController.removeFavorite);
 
 export default router;

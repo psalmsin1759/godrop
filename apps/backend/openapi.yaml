@@ -138,6 +138,7 @@ components:
         deliveryFeeKobo: { type: integer }
         estimatedMinutes: { type: integer }
         isOpen: { type: boolean }
+        isOpenNow: { type: boolean, description: "Computed: isOpen AND within openingHours (if configured)" }
 
     MenuItem:
       type: object
@@ -364,8 +365,14 @@ components:
         deliveryFeeKobo: { type: integer }
         estimatedMinutes: { type: integer }
         isOpen: { type: boolean }
+        isOpenNow: { type: boolean, description: "Computed: isOpen AND within openingHours (if configured)" }
         isActive: { type: boolean }
-        openingHours: { type: object }
+        openingHours:
+          type: object
+          description: >
+            Per-day opening hours map, e.g. { "mon": {"open":"08:00","close":"22:00"}, "sun": null }.
+            3-letter lowercase day keys (sun-sat), Africa/Lagos wall-clock, null/absent = closed that day.
+            Supports overnight ranges where close <= open.
         rejectionReason: { type: string }
         documents:
           type: object
@@ -1610,6 +1617,69 @@ paths:
                   message: { type: string }
         "404":
           description: Address not found
+
+  # ─ Favorites ──────────────────────────────────────────────────
+  /me/favorites:
+    get:
+      tags: [Profile]
+      summary: List favorited vendor IDs
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Favorite vendor IDs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  vendorIds: { type: array, items: { type: string } }
+    post:
+      tags: [Profile]
+      summary: Add a vendor to favorites
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vendorId]
+              properties:
+                vendorId: { type: string }
+      responses:
+        "201":
+          description: Added to favorites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        "404":
+          description: Vendor not found
+
+  /me/favorites/{vendorId}:
+    delete:
+      tags: [Profile]
+      summary: Remove a vendor from favorites
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: vendorId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Removed from favorites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
 
   # ─ Wallet ─────────────────────────────────────────────────────
   /me/wallet:

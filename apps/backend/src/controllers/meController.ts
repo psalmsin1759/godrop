@@ -276,3 +276,46 @@ export async function setDefaultCard(req: Request, res: Response, next: NextFunc
     next(err);
   }
 }
+
+// ─── Favorites ────────────────────────────────────────────────
+
+export async function listFavorites(req: Request, res: Response, next: NextFunction) {
+  try {
+    const favorites = await prisma.favorite.findMany({
+      where: { userId: req.user!.id },
+      orderBy: { createdAt: "desc" },
+    });
+    ok(res, { vendorIds: favorites.map((f) => f.vendorId) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function addFavorite(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.id;
+    const { vendorId } = req.body;
+    const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+    if (!vendor) return fail(res, "Vendor not found", 404);
+
+    await prisma.favorite.upsert({
+      where: { userId_vendorId: { userId, vendorId } },
+      create: { userId, vendorId },
+      update: {},
+    });
+    created(res, { message: "Added to favorites" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function removeFavorite(req: Request, res: Response, next: NextFunction) {
+  try {
+    await prisma.favorite.deleteMany({
+      where: { userId: req.user!.id, vendorId: req.params.vendorId },
+    });
+    ok(res, { message: "Removed from favorites" });
+  } catch (err) {
+    next(err);
+  }
+}

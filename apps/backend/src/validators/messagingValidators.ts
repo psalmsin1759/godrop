@@ -27,3 +27,9 @@ export const sendEmailAllCustomersSchema = emailBase;
 export const sendEmailAllVendorsSchema = emailBase;
 
 export const sendEmailAllRidersSchema = emailBase;
+
+export const requestSmsSenderIdSchema = z.object({
+  senderId: z.string().min(1).max(11),
+  useCase: z.string().min(1).max(500),
+  company: z.string().min(1).max(200),
+});

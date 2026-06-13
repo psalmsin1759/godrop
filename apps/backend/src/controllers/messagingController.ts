@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
 import { sendEmail, adminBroadcastEmail } from "../services/emailService";
-import { getTermiiSenderIds } from "../services/sms";
+import { getTermiiSenderIds, requestTermiiSenderId } from "../services/sms";
 import { ok, fail } from "../utils/response";
 
 function smtpError(err: any): string | null {
@@ -152,6 +152,16 @@ export async function listSmsSenderIds(req: Request, res: Response, next: NextFu
   try {
     const senderIds = await getTermiiSenderIds();
     ok(res, { senderIds });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function requestSmsSenderId(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { senderId, useCase, company } = req.body;
+    const message = await requestTermiiSenderId(senderId, useCase, company);
+    ok(res, { message });
   } catch (err) {
     next(err);
   }

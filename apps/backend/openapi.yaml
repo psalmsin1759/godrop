@@ -7382,6 +7382,38 @@ paths:
                             country: { type: string, example: "Nigeria" }
                             createdAt: { type: string, example: "2025-05-12 10:20:27" }
 
+  /admin/messaging/sms/sender-ids/request:
+    post:
+      summary: Request a new Termii sender ID (ADMIN+)
+      tags: [System Admin — Messaging]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [senderId, useCase, company]
+              properties:
+                senderId: { type: string, maxLength: 11, example: "Godrop" }
+                useCase: { type: string, example: "Your OTP code is 123456" }
+                company: { type: string, example: "Godrop Logistics Ltd" }
+      responses:
+        "200":
+          description: Sender ID request submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Sender Id requested. You will be contacted by your account manager."
+
   # ─── System Admin — Push Notifications ───────────────────────
 
   /admin/push/customers/broadcast:

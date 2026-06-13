@@ -36,6 +36,7 @@ import {
   sendEmailAllCustomersSchema,
   sendEmailAllVendorsSchema,
   sendEmailAllRidersSchema,
+  requestSmsSenderIdSchema,
 } from "../validators/messagingValidators";
 import {
   sendToSingleSchema,
@@ -251,6 +252,7 @@ router.post("/messaging/email/all-riders", requireSystemRole("ADMIN"), validate(
 
 // ─── SMS Messaging (ADMIN+) ───────────────────────────────────
 router.get("/messaging/sms/sender-ids", requireSystemRole("ADMIN"), messagingCtrl.listSmsSenderIds);
+router.post("/messaging/sms/sender-ids/request", requireSystemRole("ADMIN"), validate(requestSmsSenderIdSchema), messagingCtrl.requestSmsSenderId);
 
 // ─── Push Notifications (ADMIN+) ─────────────────────────────
 router.post("/push/customers/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToCustomers);

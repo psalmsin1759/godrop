@@ -50,4 +50,25 @@ export class TermiiSmsProvider implements SmsProvider {
       throw err;
     }
   }
+
+  async requestSenderId(senderId: string, useCase: string, company: string): Promise<string> {
+    const apiKey = process.env.TERMII_API_KEY;
+    if (!apiKey) throw new Error("TERMII_API_KEY is not set");
+
+    const baseUrl = process.env.TERMII_BASE_URL ?? "https://v3.api.termii.com";
+
+    try {
+      const { data } = await axios.post(`${baseUrl}/api/sender-id/request`, {
+        api_key: apiKey,
+        sender_id: senderId,
+        use_case: useCase,
+        company,
+      });
+      return data.message;
+    } catch (err: any) {
+      const detail = err?.response?.data ?? err?.message;
+      console.error("[sms:termii] Request sender ID failed:", detail);
+      throw err;
+    }
+  }
 }

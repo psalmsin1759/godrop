@@ -21,10 +21,14 @@ export async function sendSms(to: string, message: string): Promise<void> {
   return getSmsProvider().sendSms(to, message);
 }
 
-// Termii-specific lookup, used by the System Admin SMS settings page
+// Termii-specific lookups, used by the System Admin SMS settings page
 // regardless of which provider is currently active.
 export async function getTermiiSenderIds(): Promise<TermiiSenderId[]> {
   return new TermiiSmsProvider().getSenderIds();
+}
+
+export async function requestTermiiSenderId(senderId: string, useCase: string, company: string): Promise<string> {
+  return new TermiiSmsProvider().requestSenderId(senderId, useCase, company);
 }
 
 export type { SmsProvider } from "./smsProvider";

@@ -6,6 +6,37 @@ interface DayHours {
 }
 type OpeningHours = Partial<Record<DayKey, DayHours | null>>;
 
+// Accepts both 3-letter abbreviations ("sat") and full day names ("saturday"), any case.
+const DAY_NAME_TO_KEY: Record<string, DayKey> = {
+  sun: "sun",
+  sunday: "sun",
+  mon: "mon",
+  monday: "mon",
+  tue: "tue",
+  tues: "tue",
+  tuesday: "tue",
+  wed: "wed",
+  weds: "wed",
+  wednesday: "wed",
+  thu: "thu",
+  thur: "thu",
+  thurs: "thu",
+  thursday: "thu",
+  fri: "fri",
+  friday: "fri",
+  sat: "sat",
+  saturday: "sat",
+};
+
+function normalizeOpeningHours(openingHours: Record<string, unknown>): OpeningHours {
+  const normalized: OpeningHours = {};
+  for (const [key, value] of Object.entries(openingHours)) {
+    const dayKey = DAY_NAME_TO_KEY[key.trim().toLowerCase()];
+    if (dayKey) normalized[dayKey] = value as DayHours | null;
+  }
+  return normalized;
+}
+
 function lagosNow(): { day: DayKey; minutes: number } {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -40,7 +71,7 @@ function toMinutes(hhmm: string): number {
  */
 export function isWithinOpeningHours(openingHours: unknown): boolean | null {
   if (!openingHours || typeof openingHours !== "object") return null;
-  const hours = openingHours as OpeningHours;
+  const hours = normalizeOpeningHours(openingHours as Record<string, unknown>);
   const { day, minutes } = lagosNow();
   const today = hours[day];
   if (today === null || today === undefined) return false;

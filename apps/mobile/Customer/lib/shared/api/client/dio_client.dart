@@ -19,7 +19,7 @@ class DioClient {
   static Dio _build() {
     final refreshDio = Dio(
       BaseOptions(
-        baseUrl: 'https://godrop-production.up.railway.app/api/v1',
+        baseUrl: 'https://api.naijagodrop.com/api/v1',
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},
@@ -28,7 +28,7 @@ class DioClient {
 
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'https://godrop-production.up.railway.app/api/v1',
+        baseUrl: 'https://api.naijagodrop.com/api/v1',
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},

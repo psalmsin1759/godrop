@@ -24,6 +24,21 @@ class GodropColors {
     end: Alignment.bottomRight,
   );
 
+  static const LinearGradient orangeGradient = LinearGradient(
+    colors: [Color(0xFFFF8A4C), Color(0xFFFF5A1F)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  /// Soft shadow used to lift cards off the background.
+  static List<BoxShadow> get softShadow => [
+        BoxShadow(
+          color: ink.withValues(alpha: 0.05),
+          blurRadius: 16,
+          offset: const Offset(0, 6),
+        ),
+      ];
+
   static const LinearGradient splashGradient = LinearGradient(
     colors: [Color(0xFF1A3CCC), Color(0xFF0D1F6E)],
     begin: Alignment.topCenter,
@@ -93,14 +108,17 @@ class GodropTheme {
         foregroundColor: GodropColors.ink,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleTextStyle: GoogleFonts.inter(color: GodropColors.ink, fontSize: 17, fontWeight: FontWeight.w600),
+        titleTextStyle: GoogleFonts.inter(
+            color: GodropColors.ink, fontSize: 17, fontWeight: FontWeight.w600),
       ),
-      dividerTheme: const DividerThemeData(color: GodropColors.divider, space: 1, thickness: 1),
+      dividerTheme: const DividerThemeData(
+          color: GodropColors.divider, space: 1, thickness: 1),
       cardTheme: const CardThemeData(
         color: GodropColors.card,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16))),
       ),
     );
   }
@@ -120,13 +138,17 @@ class GodropTheme {
         foregroundColor: GodropColors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleTextStyle: GoogleFonts.inter(color: GodropColors.white, fontSize: 17, fontWeight: FontWeight.w600),
+        titleTextStyle: GoogleFonts.inter(
+            color: GodropColors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w600),
       ),
       cardTheme: const CardThemeData(
         color: Color(0xFF1C2130),
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16))),
       ),
     );
   }

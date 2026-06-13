@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../app/theme.dart';
+import '../../shared/widgets/background_blobs.dart';
 import '../../shared/widgets/godrop_button.dart';
+import '../../shared/widgets/step_indicator.dart';
 import 'bloc/auth_cubit.dart';
 import 'bloc/auth_state.dart';
 
@@ -49,7 +51,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       nameErr = 'Please enter your first and last name';
     }
 
-    if (email.isNotEmpty && !RegExp(r'^[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
+    if (email.isNotEmpty &&
+        !RegExp(r'^[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
       emailErr = 'Please enter a valid email address';
     }
 
@@ -74,13 +77,13 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     final phone = ctx.read<AuthCubit>().pendingPhone ?? '';
 
     ctx.read<AuthCubit>().register(
-      phone: phone,
-      firstName: firstName,
-      lastName: lastName,
-      email: _emailCtrl.text.trim(),
-      referralCode: _referralCtrl.text.trim(),
-      password: _passwordCtrl.text.isNotEmpty ? _passwordCtrl.text : null,
-    );
+          phone: phone,
+          firstName: firstName,
+          lastName: lastName,
+          email: _emailCtrl.text.trim(),
+          referralCode: _referralCtrl.text.trim(),
+          password: _passwordCtrl.text.isNotEmpty ? _passwordCtrl.text : null,
+        );
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -114,7 +117,10 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             const SizedBox(height: 20),
             const Text(
               'Profile photo',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: GodropColors.ink),
+              style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: GodropColors.ink),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -127,14 +133,18 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: GodropColors.blue.withOpacity(0.08),
+                  color: GodropColors.blue.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.camera_alt_rounded, color: GodropColors.blue, size: 20),
+                child: const Icon(Icons.camera_alt_rounded,
+                    color: GodropColors.blue, size: 20),
               ),
               title: const Text(
                 'Take a photo',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: GodropColors.ink),
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: GodropColors.ink),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -146,14 +156,18 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: GodropColors.blue.withOpacity(0.08),
+                  color: GodropColors.blue.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.photo_library_rounded, color: GodropColors.blue, size: 20),
+                child: const Icon(Icons.photo_library_rounded,
+                    color: GodropColors.blue, size: 20),
               ),
               title: const Text(
                 'Upload from gallery',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: GodropColors.ink),
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: GodropColors.ink),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -179,7 +193,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               content: Text(state.message),
               backgroundColor: Colors.red.shade700,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               margin: const EdgeInsets.all(16),
             ),
           );
@@ -189,126 +204,169 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       builder: (ctx, state) {
         final loading = state is AuthLoading;
         return Scaffold(
-          backgroundColor: GodropColors.white,
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
-                  Row(children: List.generate(3, (i) => Expanded(
-                    child: Container(
-                      height: 3,
-                      margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
-                      decoration: BoxDecoration(
-                        color: i < 2 ? GodropColors.blue : GodropColors.border,
-                        borderRadius: BorderRadius.circular(2),
+          backgroundColor: GodropColors.background,
+          body: Stack(
+            children: [
+              const BackgroundBlobs(
+                  topColor: GodropColors.blue,
+                  bottomColor: GodropColors.orange),
+              SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      const StepIndicator(totalSteps: 3, currentStep: 2),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'STEP 2 OF 3',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: GodropColors.mute,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8,
+                        ),
                       ),
-                    ),
-                  ))),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'STEP 2 OF 3',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: GodropColors.mute,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Tell us about you',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: GodropColors.ink,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'This helps riders and drivers recognize you.',
-                    style: TextStyle(fontSize: 15, color: GodropColors.slate),
-                  ),
-                  const SizedBox(height: 28),
-                  Center(
-                    child: GestureDetector(
-                      onTap: _showImagePickerSheet,
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: const BoxDecoration(shape: BoxShape.circle),
-                            clipBehavior: Clip.antiAlias,
-                            child: _pickedImage != null
-                                ? Image.file(_pickedImage!, fit: BoxFit.cover)
-                                : Image.asset('assets/images/user.png', fit: BoxFit.cover),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              width: 26,
-                              height: 26,
-                              decoration: BoxDecoration(
-                                gradient: GodropColors.blueGradient,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Tell us about you',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: GodropColors.ink,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'This helps riders and drivers recognize you.',
+                        style:
+                            TextStyle(fontSize: 15, color: GodropColors.slate),
+                      ),
+                      const SizedBox(height: 28),
+                      Center(
+                        child: GestureDetector(
+                          onTap: _showImagePickerSheet,
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 92,
+                                height: 92,
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: GodropColors.blueGradient,
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: GodropColors.blue
+                                            .withValues(alpha: 0.25),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 8)),
+                                  ],
+                                ),
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: GodropColors.card),
+                                  padding: const EdgeInsets.all(3),
+                                  child: ClipOval(
+                                    child: _pickedImage != null
+                                        ? Image.file(_pickedImage!,
+                                            fit: BoxFit.cover)
+                                        : Image.asset('assets/images/user.png',
+                                            fit: BoxFit.cover),
+                                  ),
+                                ),
                               ),
-                              child: const Icon(Icons.add_rounded, color: Colors.white, size: 15),
-                            ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    gradient: GodropColors.blueGradient,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: GodropColors.card, width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: GodropColors.blue
+                                              .withValues(alpha: 0.35),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2)),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.add_rounded,
+                                      color: GodropColors.white, size: 16),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 28),
+                      _FieldLabel('FULL NAME'),
+                      const SizedBox(height: 6),
+                      _InputField(
+                        controller: _nameCtrl,
+                        placeholder: 'Your Full Name',
+                        error: _nameError,
+                        onChanged: (_) {
+                          if (_nameError != null)
+                            setState(() => _nameError = null);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _FieldLabel('EMAIL (OPTIONAL)'),
+                      const SizedBox(height: 6),
+                      _InputField(
+                        controller: _emailCtrl,
+                        placeholder: 'Your Email',
+                        keyboard: TextInputType.emailAddress,
+                        error: _emailError,
+                        onChanged: (_) {
+                          if (_emailError != null)
+                            setState(() => _emailError = null);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      _FieldLabel('PASSWORD'),
+                      const SizedBox(height: 6),
+                      _PasswordInputField(
+                        controller: _passwordCtrl,
+                        error: _passwordError,
+                        obscure: _obscurePassword,
+                        onToggle: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                        onChanged: (_) {
+                          if (_passwordError != null)
+                            setState(() => _passwordError = null);
+                        },
+                      ),
+                      const SizedBox(height: 4),
+                      const Text('Set a password to log in later without OTP.',
+                          style: TextStyle(
+                              fontSize: 12, color: GodropColors.mute)),
+                      const SizedBox(height: 16),
+                      _FieldLabel('REFERRAL CODE (OPTIONAL)'),
+                      const SizedBox(height: 6),
+                      _InputField(
+                          controller: _referralCtrl,
+                          placeholder: 'XXXX',
+                          isHighlighted: true),
+                      const SizedBox(height: 32),
+                      GodropButton(
+                        label: loading ? 'Creating account...' : 'Continue →',
+                        onTap: loading ? null : () => _continue(ctx),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
                   ),
-                  const SizedBox(height: 28),
-                  _FieldLabel('FULL NAME'),
-                  const SizedBox(height: 6),
-                  _InputField(
-                    controller: _nameCtrl,
-                    placeholder: 'Your Full Name',
-                    error: _nameError,
-                    onChanged: (_) { if (_nameError != null) setState(() => _nameError = null); },
-                  ),
-                  const SizedBox(height: 16),
-                  _FieldLabel('EMAIL (OPTIONAL)'),
-                  const SizedBox(height: 6),
-                  _InputField(
-                    controller: _emailCtrl,
-                    placeholder: 'Your Email',
-                    keyboard: TextInputType.emailAddress,
-                    error: _emailError,
-                    onChanged: (_) { if (_emailError != null) setState(() => _emailError = null); },
-                  ),
-                  const SizedBox(height: 16),
-                  _FieldLabel('PASSWORD (OPTIONAL)'),
-                  const SizedBox(height: 6),
-                  _PasswordInputField(
-                    controller: _passwordCtrl,
-                    error: _passwordError,
-                    obscure: _obscurePassword,
-                    onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
-                    onChanged: (_) { if (_passwordError != null) setState(() => _passwordError = null); },
-                  ),
-                  const SizedBox(height: 4),
-                  const Text('Set a password to log in later without OTP.', style: TextStyle(fontSize: 12, color: GodropColors.mute)),
-                  const SizedBox(height: 16),
-                  _FieldLabel('REFERRAL CODE (OPTIONAL)'),
-                  const SizedBox(height: 6),
-                  _InputField(controller: _referralCtrl, placeholder: 'XXXX', isHighlighted: true),
-                  const SizedBox(height: 32),
-                  GodropButton(
-                    label: loading ? 'Creating account...' : 'Continue →',
-                    onTap: loading ? null : () => _continue(ctx),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },
@@ -360,25 +418,47 @@ class _InputField extends StatelessWidget {
           controller: controller,
           keyboardType: keyboard,
           onChanged: onChanged,
-          style: const TextStyle(fontSize: 15, color: GodropColors.ink, fontWeight: FontWeight.w400),
+          style: const TextStyle(
+              fontSize: 15,
+              color: GodropColors.ink,
+              fontWeight: FontWeight.w400),
           decoration: InputDecoration(
             hintText: placeholder,
-            hintStyle: const TextStyle(color: GodropColors.mute, fontWeight: FontWeight.w400),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            hintStyle: const TextStyle(
+                color: GodropColors.mute, fontWeight: FontWeight.w400),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: hasError ? Colors.red : (isHighlighted ? GodropColors.blue : GodropColors.border), width: 1.5),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: hasError
+                      ? Colors.red
+                      : (isHighlighted
+                          ? GodropColors.blue
+                          : GodropColors.border),
+                  width: 1.5),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: hasError ? Colors.red : (isHighlighted ? GodropColors.blue : GodropColors.border), width: 1.5),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: hasError
+                      ? Colors.red
+                      : (isHighlighted
+                          ? GodropColors.blue
+                          : GodropColors.border),
+                  width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: hasError ? Colors.red : GodropColors.blue, width: 1.5),
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: hasError ? Colors.red : GodropColors.blue, width: 1.5),
             ),
             filled: true,
-            fillColor: hasError ? Colors.red.withOpacity(0.04) : (isHighlighted ? GodropColors.blue.withOpacity(0.04) : GodropColors.white),
+            fillColor: hasError
+                ? Colors.red.withValues(alpha: 0.04)
+                : (isHighlighted
+                    ? GodropColors.blue.withValues(alpha: 0.04)
+                    : GodropColors.card),
           ),
         ),
         if (hasError) ...[
@@ -396,7 +476,12 @@ class _PasswordInputField extends StatelessWidget {
   final bool obscure;
   final VoidCallback onToggle;
   final ValueChanged<String>? onChanged;
-  const _PasswordInputField({required this.controller, this.error, required this.obscure, required this.onToggle, this.onChanged});
+  const _PasswordInputField(
+      {required this.controller,
+      this.error,
+      required this.obscure,
+      required this.onToggle,
+      this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -412,13 +497,33 @@ class _PasswordInputField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: 'Create a password',
             hintStyle: const TextStyle(color: GodropColors.mute),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            suffixIcon: GestureDetector(onTap: onToggle, child: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: GodropColors.mute)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? Colors.red : GodropColors.border, width: 1.5)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? Colors.red : GodropColors.border, width: 1.5)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasError ? Colors.red : GodropColors.blue, width: 1.5)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            suffixIcon: GestureDetector(
+                onTap: onToggle,
+                child: Icon(
+                    obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                    color: GodropColors.mute)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                    color: hasError ? Colors.red : GodropColors.border,
+                    width: 1.5)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                    color: hasError ? Colors.red : GodropColors.border,
+                    width: 1.5)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                    color: hasError ? Colors.red : GodropColors.blue,
+                    width: 1.5)),
             filled: true,
-            fillColor: GodropColors.white,
+            fillColor: GodropColors.card,
           ),
         ),
         if (hasError) ...[

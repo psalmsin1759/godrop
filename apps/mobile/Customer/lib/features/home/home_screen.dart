@@ -15,34 +15,52 @@ import '../../shared/api/places_service.dart';
 
 String _homeOrderLabel(String orderType) {
   switch (orderType) {
-    case 'grocery': return 'Grocery Order';
-    case 'retail': return 'Retail Order';
-    case 'pharmacy': return 'Pharmacy Order';
-    case 'truck': return 'Truck';
-    case 'parcel': return 'Parcel';
-    default: return 'Food Order';
+    case 'grocery':
+      return 'Grocery Order';
+    case 'retail':
+      return 'Retail Order';
+    case 'pharmacy':
+      return 'Pharmacy Order';
+    case 'truck':
+      return 'Truck';
+    case 'parcel':
+      return 'Parcel';
+    default:
+      return 'Food Order';
   }
 }
 
 IconData _homeOrderIcon(String orderType) {
   switch (orderType) {
-    case 'grocery': return Icons.shopping_basket_rounded;
-    case 'retail': return Icons.storefront_rounded;
-    case 'pharmacy': return Icons.medication_rounded;
-    case 'truck': return Icons.local_shipping_rounded;
-    case 'parcel': return Icons.inventory_2_rounded;
-    default: return Icons.restaurant_rounded;
+    case 'grocery':
+      return Icons.shopping_basket_rounded;
+    case 'retail':
+      return Icons.storefront_rounded;
+    case 'pharmacy':
+      return Icons.medication_rounded;
+    case 'truck':
+      return Icons.local_shipping_rounded;
+    case 'parcel':
+      return Icons.inventory_2_rounded;
+    default:
+      return Icons.restaurant_rounded;
   }
 }
 
 Color _homeOrderColor(String orderType) {
   switch (orderType) {
-    case 'grocery': return const Color(0xFF0EA5E9);
-    case 'retail': return const Color(0xFF8B5CF6);
-    case 'pharmacy': return const Color(0xFF10B981);
-    case 'truck': return GodropColors.orange;
-    case 'parcel': return GodropColors.blue;
-    default: return GodropColors.orange;
+    case 'grocery':
+      return const Color(0xFF0EA5E9);
+    case 'retail':
+      return const Color(0xFF8B5CF6);
+    case 'pharmacy':
+      return const Color(0xFF10B981);
+    case 'truck':
+      return GodropColors.orange;
+    case 'parcel':
+      return GodropColors.blue;
+    default:
+      return GodropColors.orange;
   }
 }
 
@@ -117,20 +135,22 @@ class _HomeScreenState extends State<HomeScreen> {
         slivers: [
           SliverToBoxAdapter(child: _HomeHeader()),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const _SectionHeader(title: 'What do you need?'),
+                  const SizedBox(height: 12),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 1.05,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.95,
                     ),
                     itemCount: _categories.length,
                     itemBuilder: (_, i) => AnimatedEntrance(
@@ -138,91 +158,169 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _CategoryCard(cat: _categories[i]),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   AnimatedEntrance(
                     delay: const Duration(milliseconds: 440),
                     child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: GodropColors.orange,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('LIMITED · ENDS SOON',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.8)),
-                              const SizedBox(height: 6),
-                              const Text('NO delivery on\nparcels under 5kg',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.25)),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.18),
-                                    borderRadius: BorderRadius.circular(12)),
-                                child: Text('Use code GODROP5',
-                                    style: TextStyle(
-                                        color: Colors.white.withOpacity(0.8),
-                                        fontSize: 12, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: GodropColors.orangeGradient,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: GodropColors.orange.withValues(alpha: 0.32),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(14)),
-                          child: const Icon(Icons.inventory_2_rounded,
-                              color: Colors.white, size: 48),
-                        ),
-                      ],
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: -30,
+                            right: -20,
+                            child: Container(
+                              width: 130,
+                              height: 130,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.10),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: -40,
+                            right: 50,
+                            child: Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.22),
+                                            borderRadius:
+                                                BorderRadius.circular(20)),
+                                        child: const Text('LIMITED · ENDS SOON',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.8)),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                          'FREE delivery on\nparcels under 5kg',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w800,
+                                              height: 1.25,
+                                              letterSpacing: -0.3)),
+                                      const SizedBox(height: 10),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(20)),
+                                        child: const Text('Use code GODROP5',
+                                            style: TextStyle(
+                                                color: GodropColors.orange,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w800)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(18),
+                                  decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.18),
+                                      borderRadius: BorderRadius.circular(18)),
+                                  child: const Icon(Icons.inventory_2_rounded,
+                                      color: Colors.white, size: 44),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                   ), // AnimatedEntrance closes
                   BlocBuilder<RemoteOrdersCubit, RemoteOrdersState>(
                     builder: (context, remoteState) {
-                      final apiOrders = remoteState is RemoteOrdersLoaded ? remoteState.active : <dynamic>[];
+                      final apiOrders = remoteState is RemoteOrdersLoaded
+                          ? remoteState.active
+                          : <dynamic>[];
                       if (apiOrders.isEmpty) return const SizedBox.shrink();
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(children: [
-                                const Text('Active orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: GodropColors.ink)),
-                                if (apiOrders.length > 1) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                    decoration: BoxDecoration(color: GodropColors.blue, borderRadius: BorderRadius.circular(20)),
-                                    child: Text('${apiOrders.length}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                                  ),
-                                ],
-                              ]),
-                              TextButton(
-                                onPressed: () => context.go('/active-orders'),
-                                child: const Text('See all', style: TextStyle(color: GodropColors.blue, fontSize: 14)),
+                              Container(
+                                width: 4,
+                                height: 18,
+                                decoration: BoxDecoration(
+                                  gradient: GodropColors.blueGradient,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text('Active orders',
+                                  style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: GodropColors.ink,
+                                      letterSpacing: -0.3)),
+                              if (apiOrders.length > 1) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                      color: GodropColors.blue,
+                                      borderRadius: BorderRadius.circular(20)),
+                                  child: Text('${apiOrders.length}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700)),
+                                ),
+                              ],
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () => context.go('/active-orders'),
+                                child: const Text('See all',
+                                    style: TextStyle(
+                                        color: GodropColors.blue,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600)),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           ...apiOrders.take(3).map((order) {
                             final id = order.id as String;
                             final trackingCode = order.trackingCode ?? '';
@@ -331,9 +429,8 @@ class _HomeHeaderState extends State<_HomeHeader> {
 
     return BlocBuilder<DeliveryAddressCubit, String>(
       builder: (context, deliveryAddress) {
-        final addrDisplay = deliveryAddress.isEmpty
-            ? 'Set delivery address'
-            : deliveryAddress;
+        final addrDisplay =
+            deliveryAddress.isEmpty ? 'Set delivery address' : deliveryAddress;
 
         return BlocBuilder<CartCubit, CartState>(
           builder: (context, cartState) {
@@ -343,8 +440,8 @@ class _HomeHeaderState extends State<_HomeHeader> {
               children: [
                 // Blue gradient — full background
                 Container(
-                  decoration: const BoxDecoration(
-                      gradient: GodropColors.blueGradient),
+                  decoration:
+                      const BoxDecoration(gradient: GodropColors.blueGradient),
                   padding: EdgeInsets.fromLTRB(16, topPadding + 14, 16, 80),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,7 +465,7 @@ class _HomeHeaderState extends State<_HomeHeader> {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.18),
+                                  color: Colors.white.withValues(alpha: 0.18),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.notifications_outlined,
@@ -385,13 +482,11 @@ class _HomeHeaderState extends State<_HomeHeader> {
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.18),
+                                    color: Colors.white.withValues(alpha: 0.18),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
-                                      Icons.shopping_bag_outlined,
-                                      color: Colors.white,
-                                      size: 20),
+                                  child: const Icon(Icons.shopping_bag_outlined,
+                                      color: Colors.white, size: 20),
                                 ),
                                 if (cartVendors > 0)
                                   Positioned(
@@ -435,8 +530,7 @@ class _HomeHeaderState extends State<_HomeHeader> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.location_on_rounded,
-                                color:
-                                    Theme.of(context).colorScheme.secondary,
+                                color: Theme.of(context).colorScheme.secondary,
                                 size: 14),
                             const SizedBox(width: 4),
                             Text(
@@ -478,8 +572,7 @@ class _HomeHeaderState extends State<_HomeHeader> {
                                 begin: const Offset(0, 0.4),
                                 end: Offset.zero,
                               ).animate(CurvedAnimation(
-                                  parent: animation,
-                                  curve: Curves.easeOut)),
+                                  parent: animation, curve: Curves.easeOut)),
                               child: child,
                             ),
                           ),
@@ -507,12 +600,19 @@ class _HomeHeaderState extends State<_HomeHeader> {
                   left: 0,
                   right: 0,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
+                    decoration: BoxDecoration(
+                      color: GodropColors.card,
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(30),
                         topRight: Radius.circular(30),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: GodropColors.ink.withValues(alpha: 0.10),
+                          blurRadius: 20,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
                     ),
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                     child: Row(
@@ -522,13 +622,11 @@ class _HomeHeaderState extends State<_HomeHeader> {
                             readOnly: true,
                             onTap: () => context.push('/search'),
                             decoration: InputDecoration(
-                              hintText:
-                                  'Search restaurants, shops, parcels...',
+                              hintText: 'Search restaurants, shops, parcels...',
                               hintStyle: const TextStyle(
                                   color: GodropColors.mute, fontSize: 14),
                               prefixIcon: const Padding(
-                                padding:
-                                    EdgeInsets.only(left: 14, right: 8),
+                                padding: EdgeInsets.only(left: 14, right: 8),
                                 child: Icon(Icons.search_rounded,
                                     color: GodropColors.mute, size: 20),
                               ),
@@ -539,13 +637,13 @@ class _HomeHeaderState extends State<_HomeHeader> {
                               contentPadding:
                                   const EdgeInsets.symmetric(vertical: 14),
                               border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide.none),
                               enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide.none),
                               focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide.none),
                             ),
                           ),
@@ -554,11 +652,19 @@ class _HomeHeaderState extends State<_HomeHeader> {
                         GestureDetector(
                           onTap: () {},
                           child: Container(
-                            width: 48,
-                            height: 48,
+                            width: 50,
+                            height: 50,
                             decoration: BoxDecoration(
-                              color: GodropColors.blue,
-                              borderRadius: BorderRadius.circular(12),
+                              gradient: GodropColors.blueGradient,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      GodropColors.blue.withValues(alpha: 0.35),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
                             child: const Icon(Icons.tune_rounded,
                                 color: Colors.white, size: 20),
@@ -590,8 +696,8 @@ class _CartSummarySheet extends StatelessWidget {
         return Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius:
-                BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24), topRight: Radius.circular(24)),
           ),
           child: SafeArea(
             child: Column(
@@ -643,7 +749,8 @@ class _CartSummarySheet extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                              color: vc.partnerType.color.withOpacity(0.1),
+                              color:
+                                  vc.partnerType.color.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10)),
                           child: Icon(vc.partnerType.icon,
                               color: vc.partnerType.color, size: 20),
@@ -727,18 +834,29 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
 
   void _loadPopularAreas() async {
     final areas = await PlacesService.fetchPopularAreas();
-    if (mounted) setState(() { _popularAreas = areas; _loadingPopular = false; });
+    if (mounted)
+      setState(() {
+        _popularAreas = areas;
+        _loadingPopular = false;
+      });
   }
 
   void _onTextChanged() async {
     final q = _controller.text.trim();
     if (q.length < 2) {
-      setState(() { _suggestions = []; _loading = false; });
+      setState(() {
+        _suggestions = [];
+        _loading = false;
+      });
       return;
     }
     setState(() => _loading = true);
     final results = await PlacesService.autocomplete(q);
-    if (mounted) setState(() { _suggestions = results; _loading = false; });
+    if (mounted)
+      setState(() {
+        _suggestions = results;
+        _loading = false;
+      });
   }
 
   @override
@@ -860,7 +978,9 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
                 ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _controller,
                   builder: (_, value, __) => Text(
-                    value.text.isEmpty ? 'Popular areas in Lagos' : 'Suggestions',
+                    value.text.isEmpty
+                        ? 'Popular areas in Lagos'
+                        : 'Suggestions',
                     style: const TextStyle(
                         fontSize: 12,
                         color: GodropColors.mute,
@@ -895,7 +1015,8 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: GodropColors.blue.withOpacity(0.08),
+                                color:
+                                    GodropColors.blue.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(Icons.place_rounded,
@@ -909,8 +1030,7 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
                             subtitle: p.secondaryText.isNotEmpty
                                 ? Text(p.secondaryText,
                                     style: const TextStyle(
-                                        fontSize: 12,
-                                        color: GodropColors.mute))
+                                        fontSize: 12, color: GodropColors.mute))
                                 : null,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 4, vertical: 2),
@@ -931,7 +1051,8 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 32),
-          child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2),
+          child: CircularProgressIndicator(
+              color: GodropColors.blue, strokeWidth: 2),
         ),
       );
     }
@@ -939,7 +1060,8 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 32),
-          child: Text('No areas found', style: TextStyle(fontSize: 14, color: GodropColors.mute)),
+          child: Text('No areas found',
+              style: TextStyle(fontSize: 14, color: GodropColors.mute)),
         ),
       );
     }
@@ -954,7 +1076,7 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: GodropColors.blue.withOpacity(0.08),
+              color: GodropColors.blue.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.location_on_rounded,
@@ -971,6 +1093,36 @@ class _AddressBottomSheetState extends State<_AddressBottomSheet> {
           onTap: () => _select(area),
         );
       },
+    );
+  }
+}
+
+// ── Section header ────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            gradient: GodropColors.blueGradient,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(title,
+            style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: GodropColors.ink,
+                letterSpacing: -0.3)),
+      ],
     );
   }
 }
@@ -1010,8 +1162,7 @@ class _CategoryCardState extends State<_CategoryCard>
     duration: const Duration(milliseconds: 100),
     reverseDuration: const Duration(milliseconds: 200),
   );
-  late final Animation<double> _scale =
-      Tween(begin: 1.0, end: 0.93).animate(
+  late final Animation<double> _scale = Tween(begin: 1.0, end: 0.93).animate(
     CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
   );
 
@@ -1024,6 +1175,7 @@ class _CategoryCardState extends State<_CategoryCard>
   @override
   Widget build(BuildContext context) {
     final cat = widget.cat;
+    final accent = cat.iconColor ?? GodropColors.blue;
     return GestureDetector(
       onTapDown: (_) => _ctrl.forward(),
       onTapUp: (_) => _ctrl.reverse(),
@@ -1032,63 +1184,84 @@ class _CategoryCardState extends State<_CategoryCard>
       child: ScaleTransition(
         scale: _scale,
         child: Container(
-        decoration: BoxDecoration(
-            color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
-        padding: const EdgeInsets.all(12),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                      color: (cat.iconColor ?? GodropColors.blue)
-                          .withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Icon(cat.icon,
-                      color: cat.iconColor ?? GodropColors.blue, size: 20),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(cat.label,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: GodropColors.ink,
-                            fontSize: 13)),
-                    Text(cat.sub,
-                        style: const TextStyle(
-                            fontSize: 10, color: GodropColors.mute),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ],
-            ),
-            if (cat.tag != null)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: cat.tagColor,
-                      borderRadius: BorderRadius.circular(5)),
-                  child: Text(cat.tag!,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.w700)),
-                ),
+          decoration: BoxDecoration(
+            color: GodropColors.card,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: GodropColors.border, width: 1),
+            boxShadow: GodropColors.softShadow,
+          ),
+          padding: const EdgeInsets.all(12),
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          accent.withValues(alpha: 0.18),
+                          accent.withValues(alpha: 0.08),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(cat.icon, color: accent, size: 22),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(cat.label,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: GodropColors.ink,
+                              fontSize: 13,
+                              letterSpacing: -0.2)),
+                      const SizedBox(height: 1),
+                      Text(cat.sub,
+                          style: const TextStyle(
+                              fontSize: 10, color: GodropColors.mute),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ],
               ),
-          ],
+              if (cat.tag != null)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: cat.tagColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (cat.tagColor ?? GodropColors.blue)
+                                .withValues(alpha: 0.35),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]),
+                    child: Text(cat.tag!,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3)),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-      ),  // ScaleTransition
+      ), // ScaleTransition
     );
   }
 }
@@ -1104,8 +1277,12 @@ class _RemoteOrderCard extends StatelessWidget {
   final String dropoffAddress;
   final String? confirmationCode;
   const _RemoteOrderCard({
-    required this.id, required this.trackingCode, required this.type,
-    required this.status, required this.totalKobo, required this.dropoffAddress,
+    required this.id,
+    required this.trackingCode,
+    required this.type,
+    required this.status,
+    required this.totalKobo,
+    required this.dropoffAddress,
     this.confirmationCode,
   });
 
@@ -1116,22 +1293,36 @@ class _RemoteOrderCard extends StatelessWidget {
 
   Color _statusColor(String s) {
     switch (s.toUpperCase()) {
-      case 'PENDING': return Colors.orange;
-      case 'ACCEPTED': case 'PREPARING': case 'READY_FOR_PICKUP': return GodropColors.blue;
-      case 'IN_TRANSIT': case 'PICKED_UP': return GodropColors.success;
-      default: return GodropColors.mute;
+      case 'PENDING':
+        return Colors.orange;
+      case 'ACCEPTED':
+      case 'PREPARING':
+      case 'READY_FOR_PICKUP':
+        return GodropColors.blue;
+      case 'IN_TRANSIT':
+      case 'PICKED_UP':
+        return GodropColors.success;
+      default:
+        return GodropColors.mute;
     }
   }
 
   String _statusLabel(String s) {
     switch (s.toUpperCase()) {
-      case 'PENDING': return 'Waiting';
-      case 'ACCEPTED': return 'Confirmed';
-      case 'PREPARING': return 'Preparing';
-      case 'READY_FOR_PICKUP': return 'Ready';
-      case 'PICKED_UP': return 'Picked up';
-      case 'IN_TRANSIT': return 'On the way';
-      default: return s;
+      case 'PENDING':
+        return 'Waiting';
+      case 'ACCEPTED':
+        return 'Confirmed';
+      case 'PREPARING':
+        return 'Preparing';
+      case 'READY_FOR_PICKUP':
+        return 'Ready';
+      case 'PICKED_UP':
+        return 'Picked up';
+      case 'IN_TRANSIT':
+        return 'On the way';
+      default:
+        return s;
     }
   }
 
@@ -1143,29 +1334,72 @@ class _RemoteOrderCard extends StatelessWidget {
       onTap: () => context.go('/orders/$id'),
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
+        decoration: BoxDecoration(
+          color: GodropColors.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GodropColors.border, width: 1),
+          boxShadow: GodropColors.softShadow,
+        ),
         child: Row(children: [
           Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color, Color.lerp(color, Colors.black, 0.18)!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                    color: color.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3)),
+              ],
+            ),
             child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_homeOrderLabel(type.toLowerCase()), style: const TextStyle(fontWeight: FontWeight.w600, color: GodropColors.ink, fontSize: 14)),
-            const SizedBox(height: 2),
-            Text('#$trackingCode · ${_fmtKobo(totalKobo)}', style: const TextStyle(fontSize: 12, color: GodropColors.slate)),
-            if (dropoffAddress.isNotEmpty)
-              Text(dropoffAddress, style: const TextStyle(fontSize: 12, color: GodropColors.mute), maxLines: 1, overflow: TextOverflow.ellipsis),
-            if (confirmationCode != null && confirmationCode!.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text('Code: $confirmationCode', style: const TextStyle(fontSize: 11, color: GodropColors.orange, fontWeight: FontWeight.w600)),
-            ],
-          ])),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(_homeOrderLabel(type.toLowerCase()),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: GodropColors.ink,
+                        fontSize: 14)),
+                const SizedBox(height: 2),
+                Text('#$trackingCode · ${_fmtKobo(totalKobo)}',
+                    style: const TextStyle(
+                        fontSize: 12, color: GodropColors.slate)),
+                if (dropoffAddress.isNotEmpty)
+                  Text(dropoffAddress,
+                      style: const TextStyle(
+                          fontSize: 12, color: GodropColors.mute),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                if (confirmationCode != null &&
+                    confirmationCode!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text('Code: $confirmationCode',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: GodropColors.orange,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ])),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: _statusColor(status).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-            child: Text(_statusLabel(status), style: TextStyle(color: _statusColor(status), fontSize: 12, fontWeight: FontWeight.w600)),
+            decoration: BoxDecoration(
+                color: _statusColor(status).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20)),
+            child: Text(_statusLabel(status),
+                style: TextStyle(
+                    color: _statusColor(status),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
           ),
         ]),
       ),

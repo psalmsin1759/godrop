@@ -14,10 +14,12 @@ import '../../shared/api/api.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
 import '../../shared/models/order_models.dart';
+import '../../shared/widgets/godrop_button.dart';
 import 'models/parcel_location.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../orders/models/active_order.dart';
 import '../orders/bloc/order_cubit.dart';
+import '../orders/bloc/remote_orders_cubit.dart';
 
 enum _Phase { placing, searching, riderFound, error }
 
@@ -87,12 +89,14 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
         Marker(
           markerId: const MarkerId('pickup'),
           position: LatLng(_pickup.lat, _pickup.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         ),
         Marker(
           markerId: const MarkerId('dropoff'),
           position: LatLng(_dropoff.lat, _dropoff.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         ),
       };
 
@@ -161,10 +165,9 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
           address: _dropoff.name,
         ),
         vehicleTypeId: routeData?.vehicleTypeId,
-        packageDescription:
-            routeData?.packageDescription.isNotEmpty == true
-                ? routeData!.packageDescription
-                : 'Parcel delivery',
+        packageDescription: routeData?.packageDescription.isNotEmpty == true
+            ? routeData!.packageDescription
+            : 'Parcel delivery',
         paymentMethod: routeData?.paymentMethod ?? 'cash',
         recipientName: routeData?.recipientName.isNotEmpty == true
             ? routeData!.recipientName
@@ -210,7 +213,8 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
       final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
       return Uri.parse('ws://$host:4000/ws/orders/$orderId/tracking');
     }
-    return Uri.parse('wss://godrop-production.up.railway.app/ws/orders/$orderId/tracking');
+    return Uri.parse(
+        'wss://godrop-production.up.railway.app/ws/orders/$orderId/tracking');
   }
 
   void _connectWebSocket() {
@@ -260,7 +264,9 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
     final Map<String, dynamic> msg;
     try {
       msg = jsonDecode(raw as String) as Map<String, dynamic>;
-    } catch (_) { return; }
+    } catch (_) {
+      return;
+    }
 
     final type = msg['type'] as String?;
     final status = msg['status'] as String?;
@@ -300,7 +306,8 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
 
       final status = response.order.status;
       final rider = response.rider;
-      debugPrint('[FindingRider] Poll result | status=$status | hasRider=${rider != null}');
+      debugPrint(
+          '[FindingRider] Poll result | status=$status | hasRider=${rider != null}');
 
       if (status == 'ACCEPTED' && rider != null) {
         _stopSearch();
@@ -330,9 +337,26 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
     if (orderId != null) {
       try {
         final service = OrdersService(DioClient.instance);
-        await service.cancelOrder(orderId, const CancelOrderBody(reason: 'Customer cancelled'));
-      } catch (_) {}
+        await service.cancelOrder(
+            orderId, const CancelOrderBody(reason: 'Customer cancelled'));
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _cancelling = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e is DioException
+                ? _parseDioError(e)
+                : 'Failed to cancel order. Please try again.'),
+          ),
+        );
+        return;
+      }
     }
+
+    if (!mounted) return;
+    // Refresh the active-orders list so the cancelled order disappears
+    // from the home screen instead of lingering as "active".
+    await context.read<RemoteOrdersCubit>().load();
 
     if (!mounted) return;
     context.go('/home');
@@ -403,19 +427,13 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  )
-                ],
+                color: GodropColors.card,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: GodropColors.softShadow,
               ),
               child: Row(
                 children: [
-                  _buildStatusDot(),
+                  _buildStatusBadge(),
                   const SizedBox(width: 12),
                   Expanded(child: _buildStatusText()),
                 ],
@@ -428,9 +446,17 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
             left: 0,
             right: 0,
             child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              decoration: BoxDecoration(
+                color: GodropColors.card,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [
+                  BoxShadow(
+                    color: GodropColors.ink.withValues(alpha: 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, -8),
+                  ),
+                ],
               ),
               padding: EdgeInsets.fromLTRB(20, 20, 20, bottomPad + 20),
               child: Column(
@@ -449,39 +475,55 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
     );
   }
 
-  Widget _buildStatusDot() {
+  Widget _buildStatusBadge() {
     if (_phase == _Phase.riderFound) {
       return Container(
-        width: 8,
-        height: 8,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: GodropColors.success,
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: GodropColors.success.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
         ),
+        child: const Icon(Icons.check_rounded,
+            color: GodropColors.success, size: 22),
       );
     }
     if (_phase == _Phase.error) {
       return Container(
-        width: 8,
-        height: 8,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.red.shade600,
+          color: GodropColors.error.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
         ),
+        child: const Icon(Icons.error_outline_rounded,
+            color: GodropColors.error, size: 22),
       );
     }
     return AnimatedBuilder(
       animation: _shimmer,
       builder: (_, __) => Container(
-        width: 8,
-        height: 8,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Color.lerp(
-            GodropColors.blue,
-            GodropColors.orange,
-            _shimmer.value,
-          )!,
+          gradient: LinearGradient(
+            colors: [
+              Color.lerp(
+                  GodropColors.blue, GodropColors.orange, _shimmer.value)!,
+              Color.lerp(
+                  GodropColors.blueDark, GodropColors.orange, _shimmer.value)!,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          _phase == _Phase.placing
+              ? Icons.receipt_long_rounded
+              : Icons.search_rounded,
+          color: Colors.white,
+          size: 20,
         ),
       ),
     );
@@ -569,8 +611,15 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: GodropColors.blue,
-            borderRadius: BorderRadius.circular(12),
+            gradient: GodropColors.blueGradient,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: GodropColors.blue.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: const Icon(
             Icons.inventory_2_rounded,
@@ -612,10 +661,19 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
           children: [
             const Divider(height: 1, color: GodropColors.divider),
             const SizedBox(height: 20),
-            const Center(
-              child: CircularProgressIndicator(
-                color: GodropColors.blue,
-                strokeWidth: 2.5,
+            Center(
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: GodropColors.blue.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(14),
+                child: const CircularProgressIndicator(
+                  color: GodropColors.blue,
+                  strokeWidth: 2.5,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -686,24 +744,11 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
               vehicleType: _vehicleType,
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
+            GodropButton(
+              label: 'Track Order',
+              onTap: _onTrackOrder,
+              trailingIcon: Icons.arrow_forward_rounded,
               height: 50,
-              child: ElevatedButton(
-                onPressed: _onTrackOrder,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GodropColors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Track Order',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                ),
-              ),
             ),
           ],
         );
@@ -716,20 +761,29 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.shade200),
+                color: GodropColors.error.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: GodropColors.error.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline_rounded,
-                      color: Colors.red.shade600, size: 20),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: GodropColors.error.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.error_outline_rounded,
+                        color: GodropColors.error, size: 18),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _errorMessage ?? 'Something went wrong.',
-                      style: TextStyle(
-                          fontSize: 13, color: Colors.red.shade700),
+                      style: const TextStyle(
+                          fontSize: 13, color: GodropColors.slate),
                     ),
                   ),
                 ],
@@ -745,16 +799,18 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
     }
   }
 
-  Widget _cancelButton({required String label, required VoidCallback onPressed}) {
+  Widget _cancelButton(
+      {required String label, required VoidCallback onPressed}) {
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
+          backgroundColor: GodropColors.card,
           side: const BorderSide(color: GodropColors.border, width: 1.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
         child: Text(
@@ -790,8 +846,9 @@ class _RiderFoundCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: GodropColors.background,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: GodropColors.success.withValues(alpha: 0.4)),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Row(
         children: [
@@ -799,7 +856,7 @@ class _RiderFoundCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: const BoxDecoration(
-              color: GodropColors.ink,
+              gradient: GodropColors.blueGradient,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -834,7 +891,8 @@ class _RiderFoundCard extends StatelessWidget {
                   ),
                 Text(
                   vehicleType,
-                  style: const TextStyle(fontSize: 11, color: GodropColors.mute),
+                  style:
+                      const TextStyle(fontSize: 11, color: GodropColors.mute),
                 ),
               ],
             ),

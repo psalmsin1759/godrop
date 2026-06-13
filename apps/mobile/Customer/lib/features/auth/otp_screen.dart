@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../shared/widgets/background_blobs.dart';
+import '../../shared/widgets/godrop_back_button.dart';
 import '../../shared/widgets/godrop_button.dart';
 import 'bloc/auth_cubit.dart';
 import 'bloc/auth_state.dart';
@@ -75,7 +77,8 @@ class _OtpScreenState extends State<OtpScreen> {
               content: Text(state.message),
               backgroundColor: Colors.red.shade700,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               margin: const EdgeInsets.all(16),
             ),
           );
@@ -85,163 +88,236 @@ class _OtpScreenState extends State<OtpScreen> {
       builder: (ctx, state) {
         final loading = state is AuthLoading;
         return Scaffold(
-          backgroundColor: GodropColors.white,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () => ctx.go('/auth/phone'),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: GodropColors.background,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.chevron_left_rounded, color: GodropColors.ink, size: 22),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: GodropColors.blue.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.phone_outlined, color: GodropColors.blue, size: 24),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Enter the code',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: GodropColors.ink,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 15, color: GodropColors.slate),
-                      children: [
-                        TextSpan(text: 'We sent a 6-digit code to ${widget.phone}.\n'),
-                        WidgetSpan(
-                          child: GestureDetector(
-                            onTap: () => ctx.go('/auth/phone'),
-                            child: const Text(
-                              'Change',
-                              style: TextStyle(color: GodropColors.blue, fontWeight: FontWeight.w500, fontSize: 15),
-                            ),
-                          ),
+          backgroundColor: GodropColors.background,
+          body: Stack(
+            children: [
+              const BackgroundBlobs(
+                  topColor: GodropColors.blue,
+                  bottomColor: GodropColors.orange),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      GodropBackButton(onTap: () => ctx.go('/auth/phone')),
+                      const SizedBox(height: 32),
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: GodropColors.blueGradient,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                                color:
+                                    GodropColors.blue.withValues(alpha: 0.35),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6)),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    children: List.generate(6, (i) => Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: i < 5 ? 10 : 0),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          height: 56,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: _codes[i].text.isNotEmpty ? GodropColors.blue : GodropColors.border,
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            color: _codes[i].text.isNotEmpty
-                                ? GodropColors.blue.withOpacity(0.04)
-                                : GodropColors.white,
-                          ),
-                          child: Center(
-                            child: Focus(
-                              onKeyEvent: (node, event) {
-                                if (event is KeyDownEvent &&
-                                    event.logicalKey == LogicalKeyboardKey.backspace &&
-                                    _codes[i].text.isEmpty &&
-                                    i > 0) {
-                                  FocusScope.of(context).requestFocus(_focusNodes[i - 1]);
-                                  return KeyEventResult.handled;
-                                }
-                                return KeyEventResult.ignored;
-                              },
-                              child: TextField(
-                                controller: _codes[i],
-                                focusNode: _focusNodes[i],
-                                keyboardType: TextInputType.number,
-                                maxLength: 1,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w600,
-                                  color: GodropColors.ink,
+                        child: const Icon(Icons.sms_rounded,
+                            color: GodropColors.white, size: 24),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Enter the code',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: GodropColors.ink,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                              fontSize: 15, color: GodropColors.slate),
+                          children: [
+                            TextSpan(
+                                text:
+                                    'We sent a 6-digit code to ${widget.phone}.\n'),
+                            WidgetSpan(
+                              child: GestureDetector(
+                                onTap: () => ctx.go('/auth/phone'),
+                                child: const Text(
+                                  'Change',
+                                  style: TextStyle(
+                                      color: GodropColors.blue,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15),
                                 ),
-                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                decoration: const InputDecoration(
-                                  counterText: '',
-                                  border: InputBorder.none,
-                                ),
-                                onChanged: (v) {
-                                  setState(() {});
-                                  if (v.isNotEmpty && i < 5) {
-                                    FocusScope.of(context).requestFocus(_focusNodes[i + 1]);
-                                  } else if (v.isEmpty && i > 0) {
-                                    FocusScope.of(context).requestFocus(_focusNodes[i - 1]);
-                                  }
-                                },
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                    )),
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: _seconds > 0
-                        ? RichText(
-                            text: TextSpan(
-                              style: const TextStyle(fontSize: 14, color: GodropColors.slate),
-                              children: [
-                                const TextSpan(text: "Didn't get a code? Resend in "),
-                                TextSpan(
-                                  text: '0:${_seconds.toString().padLeft(2, '0')}',
-                                  style: const TextStyle(
-                                    color: GodropColors.blue,
-                                    fontWeight: FontWeight.w600,
+                      const SizedBox(height: 32),
+                      Row(
+                        children: List.generate(
+                            6,
+                            (i) => Expanded(
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.only(right: i < 5 ? 10 : 0),
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 150),
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: _codes[i].text.isNotEmpty
+                                              ? GodropColors.blue
+                                              : GodropColors.border,
+                                          width: 1.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(14),
+                                        color: _codes[i].text.isNotEmpty
+                                            ? GodropColors.blue
+                                                .withValues(alpha: 0.05)
+                                            : GodropColors.card,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: (_codes[i].text.isNotEmpty
+                                                    ? GodropColors.blue
+                                                    : GodropColors.ink)
+                                                .withValues(
+                                                    alpha: _codes[i]
+                                                            .text
+                                                            .isNotEmpty
+                                                        ? 0.12
+                                                        : 0.04),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: Focus(
+                                          onKeyEvent: (node, event) {
+                                            if (event is KeyDownEvent &&
+                                                event.logicalKey ==
+                                                    LogicalKeyboardKey
+                                                        .backspace &&
+                                                _codes[i].text.isEmpty &&
+                                                i > 0) {
+                                              FocusScope.of(context)
+                                                  .requestFocus(
+                                                      _focusNodes[i - 1]);
+                                              return KeyEventResult.handled;
+                                            }
+                                            return KeyEventResult.ignored;
+                                          },
+                                          child: TextField(
+                                            controller: _codes[i],
+                                            focusNode: _focusNodes[i],
+                                            keyboardType: TextInputType.number,
+                                            maxLength: 1,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.w600,
+                                              color: GodropColors.ink,
+                                            ),
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter
+                                                  .digitsOnly
+                                            ],
+                                            decoration: const InputDecoration(
+                                              counterText: '',
+                                              border: InputBorder.none,
+                                            ),
+                                            onChanged: (v) {
+                                              setState(() {});
+                                              if (v.isNotEmpty && i < 5) {
+                                                FocusScope.of(context)
+                                                    .requestFocus(
+                                                        _focusNodes[i + 1]);
+                                              } else if (v.isEmpty && i > 0) {
+                                                FocusScope.of(context)
+                                                    .requestFocus(
+                                                        _focusNodes[i - 1]);
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )),
+                      ),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: _seconds > 0
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: GodropColors.card,
+                                  borderRadius: BorderRadius.circular(100),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: GodropColors.ink
+                                            .withValues(alpha: 0.04),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2)),
+                                  ],
+                                ),
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: const TextStyle(
+                                        fontSize: 14,
+                                        color: GodropColors.slate),
+                                    children: [
+                                      const TextSpan(
+                                          text:
+                                              "Didn't get a code? Resend in "),
+                                      TextSpan(
+                                        text:
+                                            '0:${_seconds.toString().padLeft(2, '0')}',
+                                        style: const TextStyle(
+                                          color: GodropColors.blue,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          )
-                        : GestureDetector(
-                            onTap: loading ? null : () => _resend(ctx),
-                            child: const Text(
-                              'Resend code',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: GodropColors.blue,
-                                fontWeight: FontWeight.w600,
+                              )
+                            : GestureDetector(
+                                onTap: loading ? null : () => _resend(ctx),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: GodropColors.blue
+                                        .withValues(alpha: 0.06),
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: const Text(
+                                    'Resend code',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: GodropColors.blue,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
+                      ),
+                      const SizedBox(height: 32),
+                      GodropButton(
+                        label: loading ? 'Verifying...' : 'Verify',
+                        onTap: loading ? null : () => _verify(ctx),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  const SizedBox(height: 32),
-                  GodropButton(
-                    label: loading ? 'Verifying...' : 'Verify',
-                    onTap: loading ? null : () => _verify(ctx),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

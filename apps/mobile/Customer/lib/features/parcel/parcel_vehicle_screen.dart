@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
 import '../../shared/widgets/godrop_button.dart';
+import '../../shared/widgets/section_header.dart';
 import 'bloc/parcel_cubit.dart';
 import 'bloc/parcel_state.dart';
 import 'models/parcel_location.dart';
@@ -23,12 +24,14 @@ String _formatKobo(int kobo) {
 
 IconData _iconForVehicleType(String name) {
   final n = name.toLowerCase();
-  if (n.contains('bicycle') || n.contains('cycle')) return Icons.directions_bike_rounded;
+  if (n.contains('bicycle') || n.contains('cycle'))
+    return Icons.directions_bike_rounded;
   if (n.contains('motorcycle') || n.contains('motor') || n.contains('bike')) {
     return Icons.two_wheeler_rounded;
   }
   if (n.contains('van')) return Icons.airport_shuttle_rounded;
-  if (n.contains('truck') || n.contains('pickup')) return Icons.local_shipping_rounded;
+  if (n.contains('truck') || n.contains('pickup'))
+    return Icons.local_shipping_rounded;
   if (n.contains('car')) return Icons.directions_car_rounded;
   return Icons.delivery_dining_rounded;
 }
@@ -75,12 +78,14 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
         Marker(
           markerId: const MarkerId('pickup'),
           position: LatLng(_pickup.lat, _pickup.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         ),
         Marker(
           markerId: const MarkerId('dropoff'),
           position: LatLng(_dropoff.lat, _dropoff.lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         ),
       };
 
@@ -163,8 +168,10 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
     return BlocProvider(
       create: (_) => ParcelCubit()
         ..loadVehicleTypes(
-          pickup: LocationPoint(lat: _pickup.lat, lng: _pickup.lng, address: _pickup.name),
-          dropoff: LocationPoint(lat: _dropoff.lat, lng: _dropoff.lng, address: _dropoff.name),
+          pickup: LocationPoint(
+              lat: _pickup.lat, lng: _pickup.lng, address: _pickup.name),
+          dropoff: LocationPoint(
+              lat: _dropoff.lat, lng: _dropoff.lng, address: _dropoff.name),
         ),
       child: Scaffold(
         backgroundColor: GodropColors.white,
@@ -195,19 +202,15 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                     child: GestureDetector(
                       onTap: () => context.go('/parcel/addresses'),
                       child: Container(
-                        width: 36,
-                        height: 36,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 6,
-                            )
-                          ],
+                          color: GodropColors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: GodropColors.softShadow,
                         ),
-                        child: const Icon(Icons.chevron_left_rounded, size: 22),
+                        child: const Icon(Icons.chevron_left_rounded,
+                            color: GodropColors.ink, size: 24),
                       ),
                     ),
                   ),
@@ -217,35 +220,36 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                     right: 0,
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: GodropColors.card,
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 8,
-                            )
-                          ],
+                          boxShadow: GodropColors.softShadow,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.location_on_rounded,
-                                color: GodropColors.orange, size: 14),
-                            const SizedBox(width: 4),
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: const BoxDecoration(
+                                gradient: GodropColors.orangeGradient,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.location_on_rounded,
+                                  color: Colors.white, size: 12),
+                            ),
+                            const SizedBox(width: 8),
                             Flexible(
-                              child: Padding(
-                                padding: const EdgeInsets.all(4),
-                                child: Text(
-                                  '${_pickup.name.split(',').first} → ${_dropoff.name.split(',').first}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: GodropColors.ink,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                              child: Text(
+                                '${_pickup.name.split(',').first} → ${_dropoff.name.split(',').first}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: GodropColors.ink,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -259,10 +263,18 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                     right: 0,
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: GodropColors.ink,
+                          gradient: GodropColors.blueGradient,
                           borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: GodropColors.blue.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -292,7 +304,8 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                 builder: (ctx, state) {
                   if (state is ParcelVehicleTypesLoading) {
                     return const Center(
-                      child: CircularProgressIndicator(color: GodropColors.blue),
+                      child:
+                          CircularProgressIndicator(color: GodropColors.blue),
                     );
                   }
                   if (state is ParcelVehicleTypesError) {
@@ -314,12 +327,17 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                             const SizedBox(height: 16),
                             GodropButton(
                               label: 'Retry',
-                              onTap: () => ctx.read<ParcelCubit>().loadVehicleTypes(
-                                pickup: LocationPoint(
-                                    lat: _pickup.lat, lng: _pickup.lng, address: _pickup.name),
-                                dropoff: LocationPoint(
-                                    lat: _dropoff.lat, lng: _dropoff.lng, address: _dropoff.name),
-                              ),
+                              onTap: () =>
+                                  ctx.read<ParcelCubit>().loadVehicleTypes(
+                                        pickup: LocationPoint(
+                                            lat: _pickup.lat,
+                                            lng: _pickup.lng,
+                                            address: _pickup.name),
+                                        dropoff: LocationPoint(
+                                            lat: _dropoff.lat,
+                                            lng: _dropoff.lng,
+                                            address: _dropoff.name),
+                                      ),
                             ),
                           ],
                         ),
@@ -339,7 +357,8 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                       onPhoneChanged: (n) => _phoneNumber = n,
                       onPhoneValidated: (v) => _phoneValid = v,
                       bottomPad: bottomPad,
-                      onPaymentChanged: (v) => setState(() => _selectedPayment = v),
+                      onPaymentChanged: (v) =>
+                          setState(() => _selectedPayment = v),
                       onProceed: _proceed,
                     );
                   }
@@ -399,8 +418,10 @@ class _VehicleContent extends StatelessWidget {
     if (state.selectedTypeId == type.id && state.quote != null) return;
     context.read<ParcelCubit>().selectVehicleType(
           typeId: type.id,
-          pickup: LocationPoint(lat: pickup.lat, lng: pickup.lng, address: pickup.name),
-          dropoff: LocationPoint(lat: dropoff.lat, lng: dropoff.lng, address: dropoff.name),
+          pickup: LocationPoint(
+              lat: pickup.lat, lng: pickup.lng, address: pickup.name),
+          dropoff: LocationPoint(
+              lat: dropoff.lat, lng: dropoff.lng, address: dropoff.name),
         );
   }
 
@@ -416,14 +437,7 @@ class _VehicleContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Choose a vehicle',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: GodropColors.ink,
-                    ),
-                  ),
+                  const GodropSectionHeader(title: 'Choose a vehicle'),
                   const SizedBox(height: 12),
                   if (state.vehicleTypes.isEmpty)
                     const _EmptyVehiclesCard()
@@ -451,14 +465,7 @@ class _VehicleContent extends StatelessWidget {
                     _QuoteError(message: state.quoteError!),
                   ],
                   const SizedBox(height: 16),
-                  const Text(
-                    'Payment method',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: GodropColors.ink,
-                    ),
-                  ),
+                  const GodropSectionHeader(title: 'Payment method'),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -482,13 +489,7 @@ class _VehicleContent extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Recipient details',
-                    style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: GodropColors.ink),
-                  ),
+                  const GodropSectionHeader(title: 'Recipient details'),
                   const SizedBox(height: 12),
                   _InputField(
                     controller: recipientNameCtrl,
@@ -502,6 +503,7 @@ class _VehicleContent extends StatelessWidget {
                       color: GodropColors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: GodropColors.border),
+                      boxShadow: GodropColors.softShadow,
                     ),
                     child: InternationalPhoneNumberInput(
                       onInputChanged: onPhoneChanged,
@@ -528,8 +530,8 @@ class _VehicleContent extends StatelessWidget {
                         hintStyle:
                             TextStyle(color: GodropColors.mute, fontSize: 14),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 14),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                       ),
                     ),
                   ),
@@ -547,7 +549,16 @@ class _VehicleContent extends StatelessWidget {
         ),
         Container(
           padding: EdgeInsets.fromLTRB(16, 12, 16, bottomPad + 16),
-          color: GodropColors.white,
+          decoration: BoxDecoration(
+            color: GodropColors.white,
+            boxShadow: [
+              BoxShadow(
+                color: GodropColors.ink.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
           child: GodropButton(
             label: _buttonLabel(),
             onTap: () => onProceed(state),
@@ -587,11 +598,12 @@ class _VehicleCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: GodropColors.white,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected ? GodropColors.blue : GodropColors.border,
             width: selected ? 2 : 1,
           ),
+          boxShadow: GodropColors.softShadow,
         ),
         child: Row(
           children: [
@@ -599,14 +611,21 @@ class _VehicleCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: selected
-                    ? GodropColors.blue.withOpacity(0.08)
-                    : GodropColors.background,
-                borderRadius: BorderRadius.circular(12),
+                gradient: selected
+                    ? GodropColors.blueGradient
+                    : LinearGradient(
+                        colors: [
+                          GodropColors.slate.withValues(alpha: 0.12),
+                          GodropColors.slate.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(
                 _iconForVehicleType(type.name),
-                color: selected ? GodropColors.blue : GodropColors.slate,
+                color: selected ? Colors.white : GodropColors.slate,
                 size: 22,
               ),
             ),
@@ -755,19 +774,29 @@ class _PaymentOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: GodropColors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: selected ? GodropColors.blue : GodropColors.border,
             width: selected ? 2 : 1,
           ),
+          boxShadow: GodropColors.softShadow,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 18,
-                color: selected ? GodropColors.blue : GodropColors.slate),
-            const SizedBox(width: 8),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                gradient: selected ? GodropColors.blueGradient : null,
+                color: selected ? null : GodropColors.background,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon,
+                  size: 15,
+                  color: selected ? Colors.white : GodropColors.slate),
+            ),
+            const SizedBox(width: 10),
             Text(
               label,
               style: TextStyle(
@@ -798,28 +827,34 @@ class _InputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboard,
-      style: const TextStyle(fontSize: 14, color: GodropColors.ink),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: GodropColors.mute, fontSize: 14),
-        prefixIcon: Icon(icon, size: 18, color: GodropColors.slate),
-        filled: true,
-        fillColor: GodropColors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: GodropColors.border)),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: GodropColors.border)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: GodropColors.blue, width: 1.5)),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboard,
+        style: const TextStyle(fontSize: 14, color: GodropColors.ink),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: GodropColors.mute, fontSize: 14),
+          prefixIcon: Icon(icon, size: 18, color: GodropColors.slate),
+          filled: true,
+          fillColor: GodropColors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: GodropColors.border)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: GodropColors.border)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: GodropColors.blue, width: 1.5)),
+        ),
       ),
     );
   }

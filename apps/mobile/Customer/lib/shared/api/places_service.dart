@@ -34,7 +34,7 @@ class PlacesService {
           'locationBias': {
             'circle': {
               'center': {'latitude': 6.5244, 'longitude': 3.3792},
-              'radius': 100000.0,
+              'radius': 50000.0,
             },
           },
           'languageCode': 'en',
@@ -86,11 +86,11 @@ class PlacesService {
           'X-Goog-FieldMask': 'places.displayName,places.formattedAddress',
         },
         body: json.encode({
-          'includedTypes': ['sublocality'],
+          'includedTypes': ['locality'],
           'locationRestriction': {
             'circle': {
               'center': {'latitude': 6.5244, 'longitude': 3.3792},
-              'radius': 80000.0,
+              'radius': 50000.0,
             },
           },
           'maxResultCount': 15,

@@ -721,6 +721,47 @@ export function riderOnboardConfirmationEmail(opts: {
   };
 }
 
+export function customerOrderCancelledEmail(opts: {
+  firstName: string;
+  email: string;
+  trackingCode: string;
+  totalKobo: number;
+  reason?: string;
+  refunded: boolean;
+}): EmailOptions {
+  const fmt = (kobo: number) =>
+    `₦${(kobo / 100).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+  const html = emailLayout(
+    cardHeader("Order Cancelled", "#dc2626") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        Your order <strong>#${opts.trackingCode}</strong> has been cancelled.
+      </p>
+      ${infoTable([
+        ["Order #", `<strong style="font-family:monospace;letter-spacing:1px;">${opts.trackingCode}</strong>`],
+        ...(opts.reason ? [["Reason", opts.reason] as [string, string]] : []),
+        ["Amount", fmt(opts.totalKobo)],
+      ])}
+      ${opts.refunded
+        ? alertBox(`<strong>${fmt(opts.totalKobo)}</strong> has been refunded to your Godrop wallet and is available to use on your next order.`, "#16a34a", "#f0fdf4")
+        : ""}
+      <p style="margin:22px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Questions? Reach us at
+        <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: `Order #${opts.trackingCode} cancelled — Godrop`,
+    html,
+    text: `Hi ${opts.firstName}, your order #${opts.trackingCode} (${fmt(opts.totalKobo)}) has been cancelled.${opts.reason ? ` Reason: ${opts.reason}.` : ""}${opts.refunded ? ` ${fmt(opts.totalKobo)} has been refunded to your Godrop wallet.` : ""}`,
+  };
+}
+
 export function truckOrderConfirmationEmail(opts: {
   firstName: string;
   email: string;

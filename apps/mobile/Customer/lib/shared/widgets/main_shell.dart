@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../features/food/bloc/cart_cubit.dart';
+import '../../features/food/bloc/cart_state.dart';
 
 class MainShell extends StatelessWidget {
   final StatefulNavigationShell shell;
@@ -24,13 +27,17 @@ class _NavItemData {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  const _NavItemData(this.icon, this.activeIcon, this.label);
+  final bool showCartBadge;
+  const _NavItemData(this.icon, this.activeIcon, this.label,
+      {this.showCartBadge = false});
 }
 
 const _kNavItems = [
   _NavItemData(Icons.home_outlined, Icons.home_rounded, 'Home'),
   _NavItemData(
       Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Orders'),
+  _NavItemData(Icons.shopping_cart_outlined, Icons.shopping_cart_rounded,
+      'Cart', showCartBadge: true),
   _NavItemData(Icons.account_balance_wallet_outlined,
       Icons.account_balance_wallet_rounded, 'Wallet'),
   _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
@@ -144,11 +151,18 @@ class _NavItemState extends State<_NavItem>
                 children: [
                   ScaleTransition(
                     scale: _bounce,
-                    child: Icon(
-                      selected ? widget.data.activeIcon : widget.data.icon,
-                      color: color,
-                      size: 22,
-                    ),
+                    child: widget.data.showCartBadge
+                        ? _CartIcon(
+                            icon: selected
+                                ? widget.data.activeIcon
+                                : widget.data.icon,
+                            color: color,
+                          )
+                        : Icon(
+                            selected ? widget.data.activeIcon : widget.data.icon,
+                            color: color,
+                            size: 22,
+                          ),
                   ),
                   AnimatedSize(
                     duration: const Duration(milliseconds: 220),
@@ -173,6 +187,50 @@ class _NavItemState extends State<_NavItem>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CartIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  const _CartIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CartCubit, CartState>(
+      builder: (ctx, state) {
+        final count = state.activeCarts.fold(0, (s, c) => s + c.totalItems);
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(icon, color: color, size: 22),
+            if (count > 0)
+              Positioned(
+                top: -4,
+                right: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  constraints: const BoxConstraints(minWidth: 16),
+                  decoration: BoxDecoration(
+                    color: GodropColors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: GodropColors.white, width: 1.5),
+                  ),
+                  child: Text(
+                    count > 99 ? '99+' : '$count',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

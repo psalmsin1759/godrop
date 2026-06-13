@@ -1,9 +1,11 @@
 import { prisma } from "../lib/prisma";
-import { OrderStatus, OrderType, PaymentMethod } from "@prisma/client";
+import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from "@prisma/client";
 import { generateTrackingCode } from "../utils/generateTrackingCode";
 import { paginate } from "../utils/pagination";
 import * as pricingService from "./pricingService";
 import * as fcmService from "./fcmService";
+import * as walletService from "./walletService";
+import { sendEmail, customerOrderCancelledEmail } from "./emailService";
 import { broadcastNewOrder } from "../index";
 
 const STATUS_ALIASES: Record<string, OrderStatus> = {
@@ -66,7 +68,10 @@ export async function getOrder(id: string, customerId: string) {
 }
 
 export async function cancelOrder(id: string, customerId: string, reason?: string) {
-  const order = await prisma.order.findFirst({ where: { id, customerId } });
+  const order = await prisma.order.findFirst({
+    where: { id, customerId },
+    include: { customer: true },
+  });
   if (!order) return null;
 
   const cancellableStatuses: OrderStatus[] = [
@@ -77,16 +82,41 @@ export async function cancelOrder(id: string, customerId: string, reason?: strin
     throw new Error("Order cannot be cancelled at this stage");
   }
 
+  const isRefundable = order.paymentStatus === PaymentStatus.PAID;
+
   const updated = await prisma.order.update({
     where: { id },
     data: {
       status: OrderStatus.CANCELLED,
       cancellationReason: reason,
+      ...(isRefundable ? { paymentStatus: PaymentStatus.REFUNDED } : {}),
       events: {
         create: { status: OrderStatus.CANCELLED, description: reason ?? "Cancelled by customer" },
       },
     },
   });
+
+  if (isRefundable) {
+    await walletService.credit(
+      customerId,
+      order.totalKobo,
+      `Refund for cancelled order #${order.trackingCode}`,
+      order.id
+    );
+  }
+
+  if (order.customer.email) {
+    sendEmail(
+      customerOrderCancelledEmail({
+        firstName: order.customer.firstName ?? "there",
+        email: order.customer.email,
+        trackingCode: order.trackingCode,
+        totalKobo: order.totalKobo,
+        reason,
+        refunded: isRefundable,
+      })
+    ).catch((err) => console.error("Failed to send order cancellation email:", err));
+  }
 
   // Notify the assigned rider if there was one
   if (order.riderId) {
@@ -395,7 +425,7 @@ export async function adminUpdateOrderStatus(
 }
 
 export async function adminCancelOrder(orderId: string, reason?: string) {
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { customer: true } });
   if (!order) return null;
 
   const terminal: OrderStatus[] = [OrderStatus.DELIVERED, OrderStatus.CANCELLED, OrderStatus.FAILED];
@@ -403,11 +433,14 @@ export async function adminCancelOrder(orderId: string, reason?: string) {
     throw new Error("Order is already in a terminal state");
   }
 
-  return prisma.order.update({
+  const isRefundable = order.paymentStatus === PaymentStatus.PAID;
+
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: OrderStatus.CANCELLED,
       cancellationReason: reason,
+      ...(isRefundable ? { paymentStatus: PaymentStatus.REFUNDED } : {}),
       events: {
         create: { status: OrderStatus.CANCELLED, description: reason ?? "Force-cancelled by admin" },
       },
@@ -421,6 +454,34 @@ export async function adminCancelOrder(orderId: string, reason?: string) {
       apartmentType: true,
     },
   });
+
+  if (isRefundable) {
+    await walletService.credit(
+      order.customerId,
+      order.totalKobo,
+      `Refund for cancelled order #${order.trackingCode}`,
+      order.id
+    );
+  }
+
+  if (order.customer.email) {
+    sendEmail(
+      customerOrderCancelledEmail({
+        firstName: order.customer.firstName ?? "there",
+        email: order.customer.email,
+        trackingCode: order.trackingCode,
+        totalKobo: order.totalKobo,
+        reason,
+        refunded: isRefundable,
+      })
+    ).catch((err) => console.error("Failed to send order cancellation email:", err));
+  }
+
+  if (order.riderId) {
+    notifyRiderOrderCancelled(order.riderId, order).catch(() => {});
+  }
+
+  return updated;
 }
 
 export async function getTracking(orderId: string, customerId: string) {

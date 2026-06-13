@@ -28,6 +28,7 @@ import '../features/partners/models/partner_item.dart';
 import '../features/grocery/grocery_hub_screen.dart';
 import '../features/tracking/live_tracking_screen.dart';
 import '../features/orders/orders_screen.dart';
+import '../features/orders/cart_screen.dart';
 import '../features/orders/models/active_order.dart';
 import '../features/orders/order_detail_screen.dart';
 import '../features/orders/delivered_rate_screen.dart';
@@ -302,6 +303,9 @@ final GoRouter appRouter = GoRouter(
         ]),
         StatefulShellBranch(routes: [
           GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(path: '/cart', builder: (_, __) => const CartScreen()),
         ]),
         StatefulShellBranch(routes: [
           GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),

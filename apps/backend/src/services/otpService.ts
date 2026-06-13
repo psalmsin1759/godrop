@@ -1,5 +1,5 @@
-import axios from "axios";
 import { prisma } from "../lib/prisma";
+import { sendSms } from "./sms";
 
 const OTP_EXPIRY_MINUTES = 10;
 
@@ -17,20 +17,7 @@ export async function sendOtp(phone: string): Promise<{ expiresIn: number }> {
   // Log after DB write so the code is guaranteed to be stored
   console.log(`[OTP] ${phone} → ${code} (expires ${expiresAt.toISOString()})`);
 
-  // Send via Termii
-  /* if (process.env.TERMII_API_KEY) {
-    await axios.post("https://api.ng.termii.com/api/sms/send", {
-      to: phone,
-      from: process.env.TERMII_SENDER_ID || "Godrop",
-      sms: `Your Godrop verification code is ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`,
-      type: "plain",
-      api_key: process.env.TERMII_API_KEY,
-      channel: "generic",
-    });
-  } else {
-    // Dev fallback: log to console
-    console.log(`[OTP] ${phone} → ${code}`);
-  } */
+  await sendSms(phone, `Your Godrop verification code is ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`);
 
   return { expiresIn: OTP_EXPIRY_MINUTES * 60 };
 }

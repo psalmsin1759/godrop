@@ -276,6 +276,7 @@ components:
         distanceKm: { type: number, description: "Total route distance in km" }
         kmCostKobo: { type: integer, description: "Distance cost (distanceKm × perKmKobo)" }
         loadersCostKobo: { type: integer, description: "Loaders cost (numLoaders × perLoaderKobo)" }
+        truckCostKobo: { type: integer, description: "Fixed cost for the selected truck type (baseFeeKobo)" }
         totalKobo: { type: integer }
 
     # ─ Heroes ─────────────────────────────────────────────────
@@ -3024,6 +3025,7 @@ paths:
               required: [apartmentTypeId, pickup, dropoff]
               properties:
                 apartmentTypeId: { type: string }
+                truckTypeId: { type: string }
                 numLoaders: { type: integer, minimum: 0, default: 0 }
                 pickup: { $ref: "#/components/schemas/LocationInput" }
                 dropoff: { $ref: "#/components/schemas/LocationInput" }
@@ -3058,6 +3060,7 @@ paths:
               required: [apartmentTypeId, pickup, dropoff, paymentMethod]
               properties:
                 apartmentTypeId: { type: string }
+                truckTypeId: { type: string }
                 numLoaders: { type: integer, minimum: 0, default: 0 }
                 pickup: { $ref: "#/components/schemas/LocationInput" }
                 dropoff: { $ref: "#/components/schemas/LocationInput" }

@@ -209,6 +209,7 @@ TruckPriceBreakdown _$TruckPriceBreakdownFromJson(Map<String, dynamic> json) =>
       distanceKm: (json['distanceKm'] as num?)?.toDouble(),
       kmCostKobo: (json['kmCostKobo'] as num?)?.toInt(),
       loadersCostKobo: (json['loadersCostKobo'] as num?)?.toInt(),
+      truckCostKobo: (json['truckCostKobo'] as num?)?.toInt(),
       totalKobo: (json['totalKobo'] as num).toInt(),
     );
 
@@ -219,12 +220,14 @@ Map<String, dynamic> _$TruckPriceBreakdownToJson(
       'distanceKm': instance.distanceKm,
       'kmCostKobo': instance.kmCostKobo,
       'loadersCostKobo': instance.loadersCostKobo,
+      'truckCostKobo': instance.truckCostKobo,
       'totalKobo': instance.totalKobo,
     };
 
 TruckQuoteBody _$TruckQuoteBodyFromJson(Map<String, dynamic> json) =>
     TruckQuoteBody(
       apartmentTypeId: json['apartmentTypeId'] as String,
+      truckTypeId: json['truckTypeId'] as String?,
       numLoaders: (json['numLoaders'] as num?)?.toInt(),
       pickup: LocationPoint.fromJson(json['pickup'] as Map<String, dynamic>),
       dropoff: LocationPoint.fromJson(json['dropoff'] as Map<String, dynamic>),
@@ -236,6 +239,7 @@ TruckQuoteBody _$TruckQuoteBodyFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$TruckQuoteBodyToJson(TruckQuoteBody instance) =>
     <String, dynamic>{
       'apartmentTypeId': instance.apartmentTypeId,
+      if (instance.truckTypeId case final value?) 'truckTypeId': value,
       if (instance.numLoaders case final value?) 'numLoaders': value,
       'pickup': instance.pickup,
       'dropoff': instance.dropoff,
@@ -258,6 +262,7 @@ Map<String, dynamic> _$TruckQuoteResponseToJson(TruckQuoteResponse instance) =>
 TruckOrderBody _$TruckOrderBodyFromJson(Map<String, dynamic> json) =>
     TruckOrderBody(
       apartmentTypeId: json['apartmentTypeId'] as String,
+      truckTypeId: json['truckTypeId'] as String?,
       numLoaders: (json['numLoaders'] as num?)?.toInt(),
       pickup: LocationPoint.fromJson(json['pickup'] as Map<String, dynamic>),
       dropoff: LocationPoint.fromJson(json['dropoff'] as Map<String, dynamic>),
@@ -272,6 +277,7 @@ TruckOrderBody _$TruckOrderBodyFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$TruckOrderBodyToJson(TruckOrderBody instance) =>
     <String, dynamic>{
       'apartmentTypeId': instance.apartmentTypeId,
+      if (instance.truckTypeId case final value?) 'truckTypeId': value,
       if (instance.numLoaders case final value?) 'numLoaders': value,
       'pickup': instance.pickup,
       'dropoff': instance.dropoff,

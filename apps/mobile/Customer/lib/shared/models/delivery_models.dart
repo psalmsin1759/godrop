@@ -226,6 +226,7 @@ class TruckPriceBreakdown {
   final double? distanceKm;
   final int? kmCostKobo;
   final int? loadersCostKobo;
+  final int? truckCostKobo;
   final int totalKobo;
 
   const TruckPriceBreakdown({
@@ -233,6 +234,7 @@ class TruckPriceBreakdown {
     this.distanceKm,
     this.kmCostKobo,
     this.loadersCostKobo,
+    this.truckCostKobo,
     required this.totalKobo,
   });
 
@@ -244,6 +246,7 @@ class TruckPriceBreakdown {
 @JsonSerializable(includeIfNull: false)
 class TruckQuoteBody {
   final String apartmentTypeId;
+  final String? truckTypeId;
   final int? numLoaders;
   final LocationPoint pickup;
   final LocationPoint dropoff;
@@ -251,6 +254,7 @@ class TruckQuoteBody {
 
   const TruckQuoteBody({
     required this.apartmentTypeId,
+    this.truckTypeId,
     this.numLoaders,
     required this.pickup,
     required this.dropoff,
@@ -280,6 +284,7 @@ class TruckQuoteResponse {
 @JsonSerializable(includeIfNull: false)
 class TruckOrderBody {
   final String apartmentTypeId;
+  final String? truckTypeId;
   final int? numLoaders;
   final LocationPoint pickup;
   final LocationPoint dropoff;
@@ -290,6 +295,7 @@ class TruckOrderBody {
 
   const TruckOrderBody({
     required this.apartmentTypeId,
+    this.truckTypeId,
     this.numLoaders,
     required this.pickup,
     required this.dropoff,

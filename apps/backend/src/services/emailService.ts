@@ -720,3 +720,57 @@ export function riderOnboardConfirmationEmail(opts: {
     text: `Hi ${opts.firstName}, your Godrop rider application has been received. We'll contact you at ${opts.phone} within 24–48 hours.\n\nVehicle: ${opts.vehicleType}\nStatus: Under Review\n\nQuestions? admin.naijagodrop@gmail.com or +234 703 452 9789.`,
   };
 }
+
+export function truckOrderConfirmationEmail(opts: {
+  firstName: string;
+  email: string;
+  trackingCode: string;
+  truckTypeName?: string;
+  apartmentTypeName?: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  scheduledAt?: string | null;
+  totalKobo: number;
+}): EmailOptions {
+  const fmt = (kobo: number) =>
+    `₦${(kobo / 100).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+  const scheduledLabel = opts.scheduledAt
+    ? new Date(opts.scheduledAt).toLocaleString("en-NG", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Africa/Lagos",
+      })
+    : "As soon as possible";
+
+  const html = emailLayout(
+    cardHeader("Truck Booking Received", "#1E5FFF") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        We've received your truck booking request. Here's a summary of your move:
+      </p>
+      ${infoTable([
+        ["Booking #", `<strong style="font-family:monospace;letter-spacing:1px;">${opts.trackingCode}</strong>`],
+        ...(opts.truckTypeName ? [["Truck Type", opts.truckTypeName] as [string, string]] : []),
+        ...(opts.apartmentTypeName ? [["Apartment Size", opts.apartmentTypeName] as [string, string]] : []),
+        ["Moving From", opts.pickupAddress],
+        ["Moving To", opts.dropoffAddress],
+        ["Scheduled For", scheduledLabel],
+        ["Estimated Total", fmt(opts.totalKobo)],
+      ])}
+      ${alertBox("A Godrop customer representative will reach out to you shortly to confirm the details of your move.", "#1e40af", "#eff6ff")}
+      <p style="margin:22px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Questions in the meantime? Reach us at
+        <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: `Truck booking received — #${opts.trackingCode}`,
+    html,
+    text: `Hi ${opts.firstName}, we've received your truck booking #${opts.trackingCode}.\n\nMoving from: ${opts.pickupAddress}\nMoving to: ${opts.dropoffAddress}\nScheduled for: ${scheduledLabel}\nEstimated total: ${fmt(opts.totalKobo)}\n\nA Godrop customer representative will reach out to you shortly to confirm the details of your move.`,
+  };
+}

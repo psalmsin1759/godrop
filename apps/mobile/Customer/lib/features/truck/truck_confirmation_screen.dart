@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../shared/api/api.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
+import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../orders/bloc/order_cubit.dart';
 import '../orders/models/active_order.dart';
@@ -57,6 +58,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
 
       await service.bookTruck(TruckOrderBody(
         apartmentTypeId: b.apartmentTypeId ?? '',
+        truckTypeId: b.truckTypeId,
         numLoaders: b.loaderCount > 0 ? b.loaderCount : null,
         pickup: LocationPoint(
             lat: b.pickup.lat, lng: b.pickup.lng, address: b.pickup.name),
@@ -302,158 +304,177 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Move details card ──
-                  _SectionCard(
-                    title: 'Move Details',
-                    icon: Icons.local_shipping_rounded,
-                    children: [
-                      _DetailRow(
-                        icon: Icons.calendar_today_rounded,
-                        iconColor: GodropColors.blue,
-                        label: 'Date',
-                        value: b.scheduledDateLabel,
-                      ),
-                      _DetailRow(
-                        icon: Icons.access_time_rounded,
-                        iconColor: GodropColors.orange,
-                        label: 'Time',
-                        value: b.scheduledTimeLabel,
-                      ),
-                      if (b.apartmentTypeName != null)
+                  AnimatedEntrance(
+                    child: _SectionCard(
+                      title: 'Move Details',
+                      icon: Icons.local_shipping_rounded,
+                      children: [
                         _DetailRow(
-                          icon: Icons.home_rounded,
-                          iconColor: GodropColors.slate,
-                          label: 'Apartment',
-                          value: b.apartmentTypeName!,
-                        ),
-                      if (b.truckTypeName.isNotEmpty)
-                        _DetailRow(
-                          icon: Icons.airport_shuttle_rounded,
+                          icon: Icons.calendar_today_rounded,
                           iconColor: GodropColors.blue,
-                          label: 'Truck',
-                          value: b.truckTypeName,
+                          label: 'Date',
+                          value: b.scheduledDateLabel,
                         ),
-                      _DetailRow(
-                        icon: Icons.people_rounded,
-                        iconColor: GodropColors.slate,
-                        label: 'Loaders',
-                        value: '${b.loaderCount} loader${b.loaderCount != 1 ? 's' : ''}',
-                        isLast: true,
-                      ),
-                    ],
+                        _DetailRow(
+                          icon: Icons.access_time_rounded,
+                          iconColor: GodropColors.orange,
+                          label: 'Time',
+                          value: b.scheduledTimeLabel,
+                        ),
+                        if (b.apartmentTypeName != null)
+                          _DetailRow(
+                            icon: Icons.home_rounded,
+                            iconColor: GodropColors.slate,
+                            label: 'Apartment',
+                            value: b.apartmentTypeName!,
+                          ),
+                        if (b.truckTypeName.isNotEmpty)
+                          _DetailRow(
+                            icon: Icons.airport_shuttle_rounded,
+                            iconColor: GodropColors.blue,
+                            label: 'Truck',
+                            value: b.truckTypeName,
+                          ),
+                        _DetailRow(
+                          icon: Icons.people_rounded,
+                          iconColor: GodropColors.slate,
+                          label: 'Loaders',
+                          value: '${b.loaderCount} loader${b.loaderCount != 1 ? 's' : ''}',
+                          isLast: true,
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
 
                   // ── Price breakdown card ──
-                  _SectionCard(
-                    title: 'Price Breakdown',
-                    icon: Icons.receipt_long_rounded,
-                    children: bd != null
-                        ? [
-                            if (bd.apartmentCostKobo != null)
-                              _PriceRow(
-                                label: b.apartmentTypeName ?? 'Apartment',
-                                value: _fmt(bd.apartmentCostKobo!),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 60),
+                    child: _SectionCard(
+                      title: 'Price Breakdown',
+                      icon: Icons.receipt_long_rounded,
+                      children: bd != null
+                          ? [
+                              if (bd.truckCostKobo != null &&
+                                  bd.truckCostKobo! > 0)
+                                _PriceRow(
+                                  label: b.truckTypeName.isNotEmpty
+                                      ? b.truckTypeName
+                                      : 'Truck',
+                                  value: _fmt(bd.truckCostKobo!),
+                                ),
+                              if (bd.apartmentCostKobo != null)
+                                _PriceRow(
+                                  label: b.apartmentTypeName ?? 'Apartment',
+                                  value: _fmt(bd.apartmentCostKobo!),
+                                ),
+                              if (bd.kmCostKobo != null && bd.distanceKm != null)
+                                _PriceRow(
+                                  label:
+                                      '${bd.distanceKm!.toStringAsFixed(1)} km distance',
+                                  value: _fmt(bd.kmCostKobo!),
+                                ),
+                              if (bd.loadersCostKobo != null &&
+                                  bd.loadersCostKobo! > 0)
+                                _PriceRow(
+                                  label:
+                                      '${b.loaderCount} loader${b.loaderCount != 1 ? 's' : ''}',
+                                  value: _fmt(bd.loadersCostKobo!),
+                                ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: Divider(
+                                    height: 1, color: GodropColors.border),
                               ),
-                            if (bd.kmCostKobo != null && bd.distanceKm != null)
                               _PriceRow(
-                                label:
-                                    '${bd.distanceKm!.toStringAsFixed(1)} km distance',
-                                value: _fmt(bd.kmCostKobo!),
+                                label: 'Total',
+                                value: _fmt(bd.totalKobo),
+                                isTotal: true,
                               ),
-                            if (bd.loadersCostKobo != null &&
-                                bd.loadersCostKobo! > 0)
-                              _PriceRow(
-                                label:
-                                    '${b.loaderCount} loader${b.loaderCount != 1 ? 's' : ''}',
-                                value: _fmt(bd.loadersCostKobo!),
-                              ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                              child: Divider(
-                                  height: 1, color: GodropColors.border),
-                            ),
-                            _PriceRow(
-                              label: 'Total',
-                              value: _fmt(bd.totalKobo),
-                              isTotal: true,
-                            ),
-                          ]
-                        : [
-                            Shimmer.fromColors(
-                              baseColor: Colors.grey.shade200,
-                              highlightColor: Colors.grey.shade50,
-                              child: Column(
-                                children: List.generate(
-                                  3,
-                                  (_) => Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 6),
-                                    child: Container(
-                                      height: 16,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(4),
+                            ]
+                          : [
+                              Shimmer.fromColors(
+                                baseColor: Colors.grey.shade200,
+                                highlightColor: Colors.grey.shade50,
+                                child: Column(
+                                  children: List.generate(
+                                    3,
+                                    (_) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 6),
+                                      child: Container(
+                                        height: 16,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
 
                   // ── Payment method ──
-                  _SectionCard(
-                    title: 'Payment Method',
-                    icon: Icons.payments_rounded,
-                    children: [
-                      _PaymentOption(
-                        icon: Icons.credit_card_rounded,
-                        label: 'Pay with Card',
-                        sublabel: 'Paystack · Debit / Credit card',
-                        selected: _paymentMethod == 0,
-                        onTap: () => setState(() => _paymentMethod = 0),
-                      ),
-                      const SizedBox(height: 10),
-                      _PaymentOption(
-                        icon: Icons.money_rounded,
-                        label: 'Cash on Delivery',
-                        sublabel: 'Pay the driver in cash',
-                        selected: _paymentMethod == 1,
-                        onTap: () => setState(() => _paymentMethod = 1),
-                      ),
-                    ],
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 120),
+                    child: _SectionCard(
+                      title: 'Payment Method',
+                      icon: Icons.payments_rounded,
+                      children: [
+                        _PaymentOption(
+                          icon: Icons.credit_card_rounded,
+                          label: 'Pay with Card',
+                          sublabel: 'Paystack · Debit / Credit card',
+                          selected: _paymentMethod == 0,
+                          onTap: () => setState(() => _paymentMethod = 0),
+                        ),
+                        const SizedBox(height: 10),
+                        _PaymentOption(
+                          icon: Icons.money_rounded,
+                          label: 'Cash on Delivery',
+                          sublabel: 'Pay the driver in cash',
+                          selected: _paymentMethod == 1,
+                          onTap: () => setState(() => _paymentMethod = 1),
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: GodropColors.blue.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: GodropColors.blue.withValues(alpha: 0.15)),
-                    ),
-                    child: const Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info_outline_rounded,
-                            size: 16, color: GodropColors.blue),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'A driver will be assigned to your booking and you\'ll get a notification with their details before your move.',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: GodropColors.blue,
-                                height: 1.4),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 180),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: GodropColors.blue.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: GodropColors.blue.withValues(alpha: 0.15)),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline_rounded,
+                              size: 16, color: GodropColors.blue),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'A driver will be assigned to your booking and you\'ll get a notification with their details before your move.',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: GodropColors.blue,
+                                  height: 1.4),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -542,12 +563,22 @@ class _SectionCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  gradient: GodropColors.blueGradient,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
               Icon(icon, size: 15, color: GodropColors.blue),
               const SizedBox(width: 6),
               Text(
@@ -706,14 +737,13 @@ class _PaymentOption extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: selected
-                    ? GodropColors.blue.withValues(alpha: 0.1)
-                    : Colors.white,
+                gradient: selected ? GodropColors.blueGradient : null,
+                color: selected ? null : Colors.white,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon,
                   size: 20,
-                  color: selected ? GodropColors.blue : GodropColors.slate),
+                  color: selected ? Colors.white : GodropColors.slate),
             ),
             const SizedBox(width: 12),
             Expanded(

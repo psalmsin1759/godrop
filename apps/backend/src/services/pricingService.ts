@@ -47,7 +47,8 @@ export function truckQuote(
   pickup: { lat: number; lng: number },
   dropoff: { lat: number; lng: number },
   numLoaders: number = 0,
-  stops: { lat: number; lng: number }[] = []
+  stops: { lat: number; lng: number }[] = [],
+  truckType?: { baseFeeKobo: number }
 ) {
   const points = [pickup, ...stops, dropoff];
   let distanceKm = 0;
@@ -58,6 +59,7 @@ export function truckQuote(
   const apartmentCostKobo = apartmentType.priceKobo;
   const kmCostKobo = Math.round(distanceKm * perKmKobo);
   const loadersCostKobo = numLoaders * perLoaderKobo;
+  const truckCostKobo = truckType?.baseFeeKobo ?? 0;
 
   return {
     priceBreakdown: {
@@ -65,7 +67,8 @@ export function truckQuote(
       distanceKm: Math.round(distanceKm * 10) / 10,
       kmCostKobo,
       loadersCostKobo,
-      totalKobo: apartmentCostKobo + kmCostKobo + loadersCostKobo,
+      truckCostKobo,
+      totalKobo: apartmentCostKobo + kmCostKobo + loadersCostKobo + truckCostKobo,
     },
     estimatedMinutes: calcEstimatedMinutes(distanceKm),
   };

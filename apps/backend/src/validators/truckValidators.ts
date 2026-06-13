@@ -38,6 +38,7 @@ export const setPerLoaderSchema = z.object({
 
 export const truckQuoteSchema = z.object({
   apartmentTypeId: z.string(),
+  truckTypeId: z.string().optional(),
   numLoaders: z.number().int().nonnegative().default(0),
   pickup: locationSchema,
   dropoff: locationSchema,
@@ -46,6 +47,7 @@ export const truckQuoteSchema = z.object({
 
 export const bookTruckSchema = z.object({
   apartmentTypeId: z.string(),
+  truckTypeId: z.string().optional(),
   numLoaders: z.number().int().nonnegative().default(0),
   pickup: locationSchema,
   dropoff: locationSchema,

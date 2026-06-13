@@ -1,24 +1,24 @@
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_places_flutter/google_places_flutter.dart';
-import 'package:google_places_flutter/model/prediction.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
+import '../../shared/api/places_service.dart';
+import '../../shared/bloc/saved_addresses_cubit.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
+import '../../shared/widgets/animated_entrance.dart';
+import '../../shared/widgets/godrop_back_button.dart';
 import '../../shared/widgets/godrop_button.dart';
+import '../../shared/widgets/section_header.dart';
 import '../parcel/models/parcel_location.dart';
+import '../parcel/widgets/location_picker_sheet.dart';
 import 'bloc/truck_cubit.dart';
 import 'bloc/truck_state.dart';
 import 'models/truck_booking_data.dart';
-
-const _kApiKey = 'AIzaSyDQrymY31J4gl5ws6SStg42Vpk_AfWFt_U';
 
 const _kFallback = ParcelLocation(
   lat: 6.5244,
@@ -31,8 +31,11 @@ class TruckBookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => TruckCubit()..load(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => TruckCubit()..load()),
+        BlocProvider(create: (_) => SavedAddressesCubit()),
+      ],
       child: const _TruckBookingBody(),
     );
   }
@@ -86,7 +89,7 @@ class _TruckBookingBodyState extends State<_TruckBookingBody> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
-      final address = await _reverseGeocode(position.latitude, position.longitude);
+      final address = await PlacesService.reverseGeocode(position.latitude, position.longitude);
       if (mounted) {
         setState(() {
           _pickup = ParcelLocation(
@@ -103,30 +106,17 @@ class _TruckBookingBodyState extends State<_TruckBookingBody> {
     }
   }
 
-  Future<String?> _reverseGeocode(double lat, double lng) async {
-    try {
-      final uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
-        'latlng': '$lat,$lng',
-        'key': _kApiKey,
-        'language': 'en',
-        'result_type': 'street_address|route|sublocality',
-      });
-      final res = await http.get(uri);
-      final data = json.decode(res.body) as Map<String, dynamic>;
-      if (data['status'] == 'OK') {
-        final results = data['results'] as List;
-        if (results.isNotEmpty) return results[0]['formatted_address'] as String;
-      }
-    } catch (_) {}
-    return null;
-  }
-
   // ── Quote ─────────────────────────────────────────────────────────────────
 
   void _tryFetchQuote() {
     if (_dropoff == null || _selectedApartmentId == null) return;
+    final state = context.read<TruckCubit>().state;
+    final truckTypeId = state is TruckLoaded && _selectedTruckIndex >= 0
+        ? state.truckTypes[_selectedTruckIndex].id
+        : null;
     context.read<TruckCubit>().fetchQuote(
       apartmentTypeId: _selectedApartmentId!,
+      truckTypeId: truckTypeId,
       numLoaders: _loaderCount,
       pickup: LocationPoint(lat: _pickup.lat, lng: _pickup.lng, address: _pickup.name),
       dropoff: LocationPoint(lat: _dropoff!.lat, lng: _dropoff!.lng, address: _dropoff!.name),
@@ -208,12 +198,15 @@ class _TruckBookingBodyState extends State<_TruckBookingBody> {
   }
 
   Future<void> _openAddressPicker({required bool isPickup}) async {
+    final saved = context.read<SavedAddressesCubit>().state.addresses;
     final result = await showModalBottomSheet<ParcelLocation>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _AddressPickerSheet(
+      builder: (_) => LocationPickerSheet(
         title: isPickup ? 'Change pickup address' : 'Set drop-off address',
+        showCurrentLocation: isPickup,
+        savedAddresses: saved,
       ),
     );
     if (result != null) {
@@ -328,56 +321,85 @@ class _TruckBookingBodyState extends State<_TruckBookingBody> {
                 Positioned(
                   top: topPad + 12,
                   left: 12,
-                  child: GestureDetector(
-                    onTap: () => context.go('/home'),
+                  child: GodropBackButton(onTap: () => context.go('/home')),
+                ),
+                Positioned(
+                  top: topPad + 12,
+                  left: 0,
+                  right: 0,
+                  child: Center(
                     child: Container(
-                      width: 38,
-                      height: 38,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.12),
-                            blurRadius: 8,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: GodropColors.softShadow,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: const BoxDecoration(
+                              gradient: GodropColors.orangeGradient,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.local_shipping_rounded,
+                                color: Colors.white, size: 12),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Book a Truck',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: GodropColors.ink,
+                              letterSpacing: -0.2,
+                            ),
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.chevron_left_rounded, size: 24),
                     ),
                   ),
                 ),
                 if (dist != null)
                   Positioned(
-                    top: topPad + 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.12),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.straighten_rounded,
-                              size: 14, color: GodropColors.blue),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${dist.toStringAsFixed(1)} km',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: GodropColors.ink,
+                    bottom: 12,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: GodropColors.blueGradient,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: GodropColors.blue.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.straighten_rounded,
+                                size: 14, color: Colors.white),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${dist.toStringAsFixed(1)} km',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -395,171 +417,181 @@ class _TruckBookingBodyState extends State<_TruckBookingBody> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Book a Truck',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: GodropColors.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
                         'Set your route, pick a truck and add helpers',
                         style: TextStyle(fontSize: 14, color: GodropColors.slate),
                       ),
                       const SizedBox(height: 16),
 
                       // ── Route ──
-                      _RouteSection(
-                        pickup: _pickup,
-                        dropoff: _dropoff,
-                        locating: _locating,
-                        distKm: dist,
-                        onPickupTap: () => _openAddressPicker(isPickup: true),
-                        onDropoffTap: () => _openAddressPicker(isPickup: false),
+                      AnimatedEntrance(
+                        child: _RouteSection(
+                          pickup: _pickup,
+                          dropoff: _dropoff,
+                          locating: _locating,
+                          distKm: dist,
+                          onPickupTap: () => _openAddressPicker(isPickup: true),
+                          onDropoffTap: () => _openAddressPicker(isPickup: false),
+                        ),
                       ),
 
                       const SizedBox(height: 22),
 
                       // ── Apartment type ──
-                      const Text(
-                        'What kind of apartment are you moving from?',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: GodropColors.ink,
+                      const AnimatedEntrance(
+                        delay: Duration(milliseconds: 60),
+                        child: GodropSectionHeader(
+                          title: 'What kind of apartment are you moving from?',
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Helps us calculate the right price',
-                        style: TextStyle(fontSize: 13, color: GodropColors.slate),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12),
+                        child: Text(
+                          'Helps us calculate the right price',
+                          style: TextStyle(fontSize: 13, color: GodropColors.slate),
+                        ),
                       ),
                       const SizedBox(height: 12),
 
-                      if (state is TruckLoading || state is TruckInitial)
-                        _ApartmentShimmer()
-                      else if (state is TruckError)
-                        _ErrorRetry(
-                          message: state.message,
-                          onRetry: () => context.read<TruckCubit>().load(),
-                        )
-                      else if (state is TruckLoaded)
-                        _ApartmentGrid(
-                          types: state.apartmentTypes,
-                          selectedId: _selectedApartmentId,
-                          onSelect: (type) {
-                            setState(() {
-                              _selectedApartmentId = type.id;
-                              _selectedApartmentName = type.name;
-                            });
-                            _tryFetchQuote();
-                          },
-                        ),
+                      AnimatedEntrance(
+                        delay: const Duration(milliseconds: 60),
+                        child: state is TruckLoading || state is TruckInitial
+                            ? _ApartmentShimmer()
+                            : state is TruckError
+                                ? _ErrorRetry(
+                                    message: state.message,
+                                    onRetry: () =>
+                                        context.read<TruckCubit>().load(),
+                                  )
+                                : state is TruckLoaded
+                                    ? _ApartmentGrid(
+                                        types: state.apartmentTypes,
+                                        selectedId: _selectedApartmentId,
+                                        onSelect: (type) {
+                                          setState(() {
+                                            _selectedApartmentId = type.id;
+                                            _selectedApartmentName = type.name;
+                                          });
+                                          _tryFetchQuote();
+                                        },
+                                      )
+                                    : const SizedBox.shrink(),
+                      ),
 
                       const SizedBox(height: 22),
 
                       // ── Truck type ──
-                      const Text(
-                        'Choose your truck',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: GodropColors.ink,
-                        ),
+                      const AnimatedEntrance(
+                        delay: Duration(milliseconds: 120),
+                        child: GodropSectionHeader(title: 'Choose your truck'),
                       ),
                       const SizedBox(height: 12),
 
-                      if (state is TruckLoading || state is TruckInitial)
-                        _TruckListShimmer()
-                      else if (state is TruckLoaded) ...[
-                        if (state.truckTypes.isEmpty)
-                          const _EmptyTruckTypes()
-                        else
-                          ...state.truckTypes.asMap().entries.map(
-                                (e) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: _TruckCard(
-                                    truckType: e.value,
-                                    selected: _selectedTruckIndex == e.key,
-                                    onTap: () =>
-                                        setState(() => _selectedTruckIndex = e.key),
-                                  ),
-                                ),
-                              ),
-                      ],
+                      AnimatedEntrance(
+                        delay: const Duration(milliseconds: 120),
+                        child: state is TruckLoading || state is TruckInitial
+                            ? _TruckListShimmer()
+                            : state is TruckLoaded
+                                ? Column(
+                                    children: state.truckTypes.isEmpty
+                                        ? const [_EmptyTruckTypes()]
+                                        : state.truckTypes
+                                            .asMap()
+                                            .entries
+                                            .map(
+                                              (e) => Padding(
+                                                padding: const EdgeInsets.only(
+                                                    bottom: 10),
+                                                child: _TruckCard(
+                                                  truckType: e.value,
+                                                  selected:
+                                                      _selectedTruckIndex == e.key,
+                                                  onTap: () => setState(() =>
+                                                      _selectedTruckIndex = e.key),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                  )
+                                : const SizedBox.shrink(),
+                      ),
 
                       const SizedBox(height: 22),
 
                       // ── Date & time ──
-                      const Text(
-                        'When are you moving?',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: GodropColors.ink,
-                        ),
+                      const AnimatedEntrance(
+                        delay: Duration(milliseconds: 180),
+                        child: GodropSectionHeader(title: 'When are you moving?'),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Pick a date and time for your move',
-                        style: TextStyle(fontSize: 13, color: GodropColors.slate),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12),
+                        child: Text(
+                          'Pick a date and time for your move',
+                          style: TextStyle(fontSize: 13, color: GodropColors.slate),
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: _pickDate,
-                              child: _DateTimePicker(
-                                icon: Icons.calendar_today_rounded,
-                                iconColor: GodropColors.blue,
-                                label: 'DATE',
-                                value: _dateLabel,
+                      AnimatedEntrance(
+                        delay: const Duration(milliseconds: 180),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: _pickDate,
+                                child: _DateTimePicker(
+                                  icon: Icons.calendar_today_rounded,
+                                  iconColor: GodropColors.blue,
+                                  label: 'DATE',
+                                  value: _dateLabel,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: _pickTime,
-                              child: _DateTimePicker(
-                                icon: Icons.access_time_rounded,
-                                iconColor: GodropColors.orange,
-                                label: 'TIME',
-                                value: _timeLabel,
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: _pickTime,
+                                child: _DateTimePicker(
+                                  icon: Icons.access_time_rounded,
+                                  iconColor: GodropColors.orange,
+                                  label: 'TIME',
+                                  value: _timeLabel,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
 
                       const SizedBox(height: 22),
 
                       // ── Loaders ──
-                      const Text(
-                        'How many loaders do you need?',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: GodropColors.ink,
-                        ),
+                      const AnimatedEntrance(
+                        delay: Duration(milliseconds: 240),
+                        child: GodropSectionHeader(
+                            title: 'How many loaders do you need?'),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Loaders help carry and load your items',
-                        style: TextStyle(fontSize: 13, color: GodropColors.slate),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12),
+                        child: Text(
+                          'Loaders help carry and load your items',
+                          style: TextStyle(fontSize: 13, color: GodropColors.slate),
+                        ),
                       ),
                       const SizedBox(height: 12),
-                      _LoadersCard(
-                        count: _loaderCount,
-                        perLoaderKobo: state is TruckLoaded
-                            ? state.perLoaderKobo
-                            : 500000,
-                        onChanged: (v) {
-                          setState(() => _loaderCount = v);
-                          _tryFetchQuote();
-                        },
+                      AnimatedEntrance(
+                        delay: const Duration(milliseconds: 240),
+                        child: _LoadersCard(
+                          count: _loaderCount,
+                          perLoaderKobo: state is TruckLoaded
+                              ? state.perLoaderKobo
+                              : 500000,
+                          onChanged: (v) {
+                            setState(() => _loaderCount = v);
+                            _tryFetchQuote();
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -580,6 +612,9 @@ class _TruckBookingBodyState extends State<_TruckBookingBody> {
                 truckTypeName: state is TruckLoaded && _selectedTruckIndex >= 0
                     ? state.truckTypes[_selectedTruckIndex].name
                     : '',
+                truckTypeId: state is TruckLoaded && _selectedTruckIndex >= 0
+                    ? state.truckTypes[_selectedTruckIndex].id
+                    : null,
                 loaderCount: _loaderCount,
                 perLoaderKobo: state is TruckLoaded ? state.perLoaderKobo : 500000,
                 pickup: _pickup,
@@ -622,14 +657,22 @@ class _RouteSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.route_rounded, size: 15, color: GodropColors.blue),
-              const SizedBox(width: 6),
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  gradient: GodropColors.blueGradient,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
               const Text(
                 'YOUR ROUTE',
                 style: TextStyle(
@@ -658,30 +701,38 @@ class _RouteSection extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 14),
-          GestureDetector(
-            onTap: locating ? null : onPickupTap,
-            child: _AddressRow(
-              label: 'MOVING FROM',
-              address: locating ? 'Getting your location...' : pickup.name,
-              dotColor: GodropColors.orange,
-              hasAddress: !locating,
-              loading: locating,
-              actionLabel: locating ? null : 'Edit',
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: GodropColors.background,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GodropColors.border),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 11),
-            child: Container(width: 1.5, height: 20, color: GodropColors.border),
-          ),
-          GestureDetector(
-            onTap: onDropoffTap,
-            child: _AddressRow(
-              label: 'MOVING TO',
-              address: dropoff?.name ?? 'Tap to add destination',
-              dotColor: GodropColors.blue,
-              hasAddress: dropoff != null,
-              actionLabel: dropoff != null ? 'Edit' : null,
+            child: Column(
+              children: [
+                _AddressRow(
+                  icon: Icons.my_location_rounded,
+                  color: GodropColors.orange,
+                  label: 'MOVING FROM',
+                  address: locating ? 'Getting your location...' : pickup.name,
+                  hasAddress: !locating,
+                  loading: locating,
+                  onTap: locating ? null : onPickupTap,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 17),
+                  child: Container(width: 2, height: 16, color: GodropColors.border),
+                ),
+                _AddressRow(
+                  icon: Icons.flag_rounded,
+                  color: GodropColors.blue,
+                  label: 'MOVING TO',
+                  address: dropoff?.name ?? 'Tap to add destination',
+                  hasAddress: dropoff != null,
+                  onTap: onDropoffTap,
+                ),
+              ],
             ),
           ),
         ],
@@ -693,84 +744,84 @@ class _RouteSection extends StatelessWidget {
 // ── Address row ───────────────────────────────────────────────────────────────
 
 class _AddressRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
   final String label;
   final String address;
-  final Color dotColor;
   final bool hasAddress;
-  final String? actionLabel;
   final bool loading;
+  final VoidCallback? onTap;
 
   const _AddressRow({
+    required this.icon,
+    required this.color,
     required this.label,
     required this.address,
-    required this.dotColor,
     required this.hasAddress,
-    this.actionLabel,
     this.loading = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: GodropColors.mute,
-                  letterSpacing: 0.4,
-                ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 2),
-              Row(
+              child: Icon(icon, size: 16, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      address,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: hasAddress ? GodropColors.ink : GodropColors.mute,
-                        fontWeight: hasAddress ? FontWeight.w500 : FontWeight.w400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: GodropColors.mute,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  if (loading) ...[
-                    const SizedBox(width: 8),
-                    const SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 1.5, color: GodropColors.mute),
+                  const SizedBox(height: 2),
+                  Text(
+                    address,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: hasAddress ? GodropColors.ink : GodropColors.mute,
+                      fontWeight: hasAddress ? FontWeight.w600 : FontWeight.w400,
                     ),
-                  ] else if (actionLabel != null) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      actionLabel!,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          color: GodropColors.blue,
-                          fontWeight: FontWeight.w500),
-                    ),
-                  ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            if (loading)
+              const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                    strokeWidth: 1.5, color: GodropColors.mute),
+              )
+            else
+              const Icon(Icons.chevron_right_rounded,
+                  color: GodropColors.mute, size: 20),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -825,20 +876,39 @@ class _ApartmentGrid extends StatelessWidget {
                 color: isSelected ? GodropColors.blue : GodropColors.border,
                 width: isSelected ? 1.5 : 1,
               ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: GodropColors.blue.withValues(alpha: 0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : GodropColors.softShadow,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon,
-                    size: 24,
-                    color:
-                        isSelected ? GodropColors.blue : GodropColors.slate),
-                const SizedBox(height: 5),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: isSelected ? GodropColors.blueGradient : null,
+                    color: isSelected
+                        ? null
+                        : GodropColors.slate.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon,
+                      size: 18,
+                      color: isSelected ? Colors.white : GodropColors.slate),
+                ),
+                const SizedBox(height: 6),
                 Text(
                   t.name,
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     color: isSelected ? GodropColors.blue : GodropColors.ink,
                   ),
                   textAlign: TextAlign.center,
@@ -913,6 +983,15 @@ class _TruckCard extends StatelessWidget {
             color: selected ? GodropColors.orange : GodropColors.border,
             width: selected ? 2 : 1,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: GodropColors.orange.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : GodropColors.softShadow,
         ),
         child: Row(
           children: [
@@ -920,11 +999,12 @@ class _TruckCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: GodropColors.background,
-                borderRadius: BorderRadius.circular(10),
+                gradient: selected ? GodropColors.orangeGradient : null,
+                color: selected ? null : GodropColors.background,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.local_shipping_rounded,
-                  color: GodropColors.blue, size: 22),
+              child: Icon(Icons.local_shipping_rounded,
+                  color: selected ? Colors.white : GodropColors.blue, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1009,6 +1089,7 @@ class _EmptyTruckTypes extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: const Center(
         child: Text(
@@ -1043,6 +1124,7 @@ class _DateTimePicker extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Row(
         children: [
@@ -1111,6 +1193,7 @@ class _LoadersCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Row(
         children: [
@@ -1240,6 +1323,7 @@ class _CtaBar extends StatelessWidget {
   final String? selectedApartmentId;
   final String? selectedApartmentName;
   final String truckTypeName;
+  final String? truckTypeId;
   final int loaderCount;
   final int perLoaderKobo;
   final ParcelLocation pickup;
@@ -1254,6 +1338,7 @@ class _CtaBar extends StatelessWidget {
     required this.selectedApartmentId,
     required this.selectedApartmentName,
     required this.truckTypeName,
+    this.truckTypeId,
     required this.loaderCount,
     required this.perLoaderKobo,
     required this.pickup,
@@ -1350,6 +1435,7 @@ class _CtaBar extends StatelessWidget {
                             dropoff: dropoff!,
                             distanceKm: distKm ?? 0,
                             truckTypeName: truckTypeName,
+                            truckTypeId: truckTypeId,
                             apartmentTypeId: selectedApartmentId,
                             apartmentTypeName: selectedApartmentName,
                             loaderCount: loaderCount,
@@ -1363,6 +1449,7 @@ class _CtaBar extends StatelessWidget {
                     : quoteError != null
                         ? () => context.read<TruckCubit>().fetchQuote(
                               apartmentTypeId: selectedApartmentId!,
+                              truckTypeId: truckTypeId,
                               numLoaders: loaderCount,
                               pickup: LocationPoint(
                                 lat: pickup.lat,
@@ -1401,6 +1488,7 @@ class _ErrorRetry extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         children: [
@@ -1426,140 +1514,6 @@ class _ErrorRetry extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Address picker sheet ──────────────────────────────────────────────────────
-
-class _AddressPickerSheet extends StatefulWidget {
-  final String title;
-  const _AddressPickerSheet({required this.title});
-
-  @override
-  State<_AddressPickerSheet> createState() => _AddressPickerSheetState();
-}
-
-class _AddressPickerSheetState extends State<_AddressPickerSheet> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onPlaceSelected(Prediction prediction) {
-    final lat = double.tryParse(prediction.lat ?? '');
-    final lng = double.tryParse(prediction.lng ?? '');
-    if (lat != null && lng != null && mounted) {
-      Navigator.of(context).pop(ParcelLocation(
-        lat: lat,
-        lng: lng,
-        name: prediction.description ?? _controller.text,
-      ));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final viewInset = MediaQuery.of(context).viewInsets.bottom;
-    final bottomPad = MediaQuery.of(context).padding.bottom;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: viewInset),
-      child: Container(
-        height: screenHeight * 0.5,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: EdgeInsets.fromLTRB(16, 16, 16, bottomPad + 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: GodropColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Row(
-              children: [
-                Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: GodropColors.ink,
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: GodropColors.background,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.close_rounded,
-                        size: 18, color: GodropColors.slate),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            GooglePlaceAutoCompleteTextField(
-              textEditingController: _controller,
-              googleAPIKey: _kApiKey,
-              inputDecoration: InputDecoration(
-                hintText: 'Search for an address...',
-                hintStyle:
-                    const TextStyle(color: GodropColors.mute, fontSize: 15),
-                prefixIcon: const Icon(Icons.search_rounded,
-                    color: GodropColors.slate, size: 20),
-                filled: true,
-                fillColor: GodropColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: GodropColors.blue, width: 1.5),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              textStyle:
-                  const TextStyle(fontSize: 15, color: GodropColors.ink),
-              debounceTime: 500,
-              countries: const ['ng'],
-              isLatLngRequired: true,
-              getPlaceDetailWithLatLng: _onPlaceSelected,
-              itemClick: (Prediction prediction) {
-                _controller
-                  ..text = prediction.description ?? ''
-                  ..selection = TextSelection.fromPosition(
-                    TextPosition(offset: _controller.text.length),
-                  );
-              },
-            ),
-          ],
-        ),
       ),
     );
   }

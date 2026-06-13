@@ -269,6 +269,7 @@ export async function placeTruckOrder(
   customerId: string,
   data: {
     apartmentTypeId: string;
+    truckTypeId?: string;
     numLoaders: number;
     pickup: { lat: number; lng: number; address: string };
     dropoff: { lat: number; lng: number; address: string };
@@ -280,6 +281,7 @@ export async function placeTruckOrder(
       apartmentCostKobo: number;
       kmCostKobo: number;
       loadersCostKobo: number;
+      truckCostKobo: number;
       totalKobo: number;
     };
     estimatedMinutes: number;
@@ -295,6 +297,7 @@ export async function placeTruckOrder(
       type: OrderType.TRUCK,
       status: OrderStatus.READY_FOR_PICKUP,
       apartmentTypeId: data.apartmentTypeId,
+      truckTypeId: data.truckTypeId,
       numLoaders: data.numLoaders,
       pickupAddress: data.pickup.address,
       pickupLat: data.pickup.lat,
@@ -304,7 +307,7 @@ export async function placeTruckOrder(
       dropoffLng: data.dropoff.lng,
       stops: data.stops ?? [],
       paymentMethod: data.paymentMethod.toUpperCase() as PaymentMethod,
-      subtotalKobo: data.priceBreakdown.apartmentCostKobo,
+      subtotalKobo: data.priceBreakdown.apartmentCostKobo + data.priceBreakdown.truckCostKobo,
       deliveryFeeKobo: data.priceBreakdown.kmCostKobo + data.priceBreakdown.loadersCostKobo,
       totalKobo: data.priceBreakdown.totalKobo,
       estimatedMinutes: data.estimatedMinutes,
@@ -312,7 +315,7 @@ export async function placeTruckOrder(
       notes: data.notes,
       events: { create: { status: OrderStatus.READY_FOR_PICKUP, description: "Truck booking placed" } },
     },
-    include: { apartmentType: true },
+    include: { apartmentType: true, truckType: true },
   });
 }
 

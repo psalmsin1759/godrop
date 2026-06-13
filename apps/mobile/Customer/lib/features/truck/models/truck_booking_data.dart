@@ -8,6 +8,7 @@ class TruckBookingData {
   final double distanceKm;
 
   final String truckTypeName;
+  final String? truckTypeId;
 
   final String? apartmentTypeId;
   final String? apartmentTypeName;
@@ -26,6 +27,7 @@ class TruckBookingData {
     required this.dropoff,
     required this.distanceKm,
     required this.truckTypeName,
+    this.truckTypeId,
     this.apartmentTypeId,
     this.apartmentTypeName,
     required this.loaderCount,

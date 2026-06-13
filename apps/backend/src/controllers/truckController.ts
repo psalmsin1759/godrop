@@ -5,6 +5,7 @@ import * as orderService from "../services/orderService";
 import { ok, created, fail } from "../utils/response";
 import { Prisma } from "@prisma/client";
 import { uploadBuffer } from "../services/cloudinaryService";
+import { sendEmail, truckOrderConfirmationEmail } from "../services/emailService";
 
 // ─── Apartment Types (public) ─────────────────────────────────
 
@@ -129,10 +130,11 @@ export async function getPricingSummary(_req: Request, res: Response, next: Next
 
 export async function getQuote(req: Request, res: Response, next: NextFunction) {
   try {
-    const { apartmentTypeId, numLoaders = 0, pickup, dropoff, stops } = req.body;
+    const { apartmentTypeId, truckTypeId, numLoaders = 0, pickup, dropoff, stops } = req.body;
 
-    const [apartmentType, config] = await Promise.all([
+    const [apartmentType, truckType, config] = await Promise.all([
       prisma.apartmentType.findUnique({ where: { id: apartmentTypeId } }),
+      truckTypeId ? prisma.truckType.findUnique({ where: { id: truckTypeId } }) : null,
       getOrInitConfig(),
     ]);
     if (!apartmentType) return fail(res, "Apartment type not found", 404);
@@ -144,7 +146,8 @@ export async function getQuote(req: Request, res: Response, next: NextFunction) 
       pickup,
       dropoff,
       numLoaders,
-      stops
+      stops,
+      truckType ?? undefined
     );
     ok(res, result);
   } catch (err) {
@@ -156,10 +159,11 @@ export async function getQuote(req: Request, res: Response, next: NextFunction) 
 
 export async function bookTruck(req: Request, res: Response, next: NextFunction) {
   try {
-    const { apartmentTypeId, numLoaders = 0, pickup, dropoff, stops, scheduledAt, paymentMethod, notes } = req.body;
+    const { apartmentTypeId, truckTypeId, numLoaders = 0, pickup, dropoff, stops, scheduledAt, paymentMethod, notes } = req.body;
 
-    const [apartmentType, config] = await Promise.all([
+    const [apartmentType, truckType, config] = await Promise.all([
       prisma.apartmentType.findUnique({ where: { id: apartmentTypeId } }),
+      truckTypeId ? prisma.truckType.findUnique({ where: { id: truckTypeId } }) : null,
       getOrInitConfig(),
     ]);
     if (!apartmentType) return fail(res, "Apartment type not found", 404);
@@ -171,11 +175,13 @@ export async function bookTruck(req: Request, res: Response, next: NextFunction)
       pickup,
       dropoff,
       numLoaders,
-      stops
+      stops,
+      truckType ?? undefined
     );
 
     const order = await orderService.placeTruckOrder(req.user!.id, {
       apartmentTypeId,
+      truckTypeId,
       numLoaders,
       pickup,
       dropoff,
@@ -186,6 +192,22 @@ export async function bookTruck(req: Request, res: Response, next: NextFunction)
       priceBreakdown,
       estimatedMinutes,
     });
+
+    if (req.user!.email && req.user!.firstName) {
+      sendEmail(
+        truckOrderConfirmationEmail({
+          firstName: req.user!.firstName,
+          email: req.user!.email,
+          trackingCode: order.trackingCode,
+          truckTypeName: truckType?.name,
+          apartmentTypeName: apartmentType.name,
+          pickupAddress: pickup.address,
+          dropoffAddress: dropoff.address,
+          scheduledAt: scheduledAt ?? null,
+          totalKobo: priceBreakdown.totalKobo,
+        })
+      ).catch((err) => console.error("[email] truck order confirmation failed:", err));
+    }
 
     created(res, { order });
   } catch (err) {

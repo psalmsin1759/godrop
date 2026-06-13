@@ -35,6 +35,7 @@ class TruckCubit extends Cubit<TruckState> {
 
   Future<void> fetchQuote({
     required String apartmentTypeId,
+    String? truckTypeId,
     required int numLoaders,
     required LocationPoint pickup,
     required LocationPoint dropoff,
@@ -49,6 +50,7 @@ class TruckCubit extends Cubit<TruckState> {
     try {
       final res = await _service.getQuote(TruckQuoteBody(
         apartmentTypeId: apartmentTypeId,
+        truckTypeId: truckTypeId,
         numLoaders: numLoaders > 0 ? numLoaders : null,
         pickup: pickup,
         dropoff: dropoff,

@@ -1,9 +1,36 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import ChapterLabel from "@/components/ui/ChapterLabel";
 import AppStoreButtons from "@/components/ui/AppStoreButtons";
 import { fadeUp, scaleIn, staggerContainer, inViewProps } from "@/lib/animations";
+
+const SCREENSHOTS = [
+  {
+    src: "/images/app-screenshots/order-tracking.png",
+    alt: "Live order tracking screen in the Godrop app, showing a rider en route on the map",
+  },
+  {
+    src: "/images/app-screenshots/app-home.png",
+    alt: "Godrop app home screen with delivery categories: parcel, truck, food, grocery, retail and pharmacy",
+  },
+  {
+    src: "/images/app-screenshots/truck-booking.png",
+    alt: "Truck booking screen in the Godrop app with vehicle options and pricing",
+  },
+];
+
+// Where a "tap" lands on each screen before navigating to the next one
+const TAP_POINTS = [
+  { x: 9, y: 9 }, // order-tracking: back button -> home
+  { x: 50, y: 56 }, // app-home: "Truck" tile -> truck booking
+  { x: 8, y: 8 }, // truck-booking: back -> order tracking
+];
+
+const HOLD_MS = 2600;
+const PRESS_MS = 380;
 
 const FEATURES = [
   {
@@ -29,6 +56,23 @@ const FEATURES = [
 ];
 
 function PhoneMock() {
+  const [active, setActive] = useState(0);
+  const [tapping, setTapping] = useState(false);
+
+  useEffect(() => {
+    const pressTimer = setTimeout(() => setTapping(true), HOLD_MS);
+    const switchTimer = setTimeout(() => {
+      setActive((i) => (i + 1) % SCREENSHOTS.length);
+      setTapping(false);
+    }, HOLD_MS + PRESS_MS);
+    return () => {
+      clearTimeout(pressTimer);
+      clearTimeout(switchTimer);
+    };
+  }, [active]);
+
+  const tap = TAP_POINTS[active];
+
   return (
     <div className="relative mx-auto w-[290px] sm:w-[320px]">
       {/* Glow */}
@@ -37,50 +81,60 @@ function PhoneMock() {
         style={{ background: "radial-gradient(circle, rgba(30,95,255,0.28) 0%, transparent 65%)" }}
       />
       <div className="relative rounded-[3rem] border border-white/10 bg-[#101014] p-2.5 shadow-[0_60px_120px_rgba(0,0,0,0.6)]">
-        <div className="relative aspect-[9/19] overflow-hidden rounded-[2.4rem] bg-[#0B1226]">
-          {/* Status bar + notch */}
-          <div className="absolute left-1/2 top-2.5 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-black" />
-          <div className="absolute left-5 top-3.5 z-10 font-mono text-[11px] font-bold text-white">9:41</div>
+        <div className="relative aspect-[1080/2424] overflow-hidden rounded-[2.4rem] bg-[#0B1226]">
+          {/* Screenshot carousel */}
+          <AnimatePresence initial={false}>
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, scale: 1.03 }}
+              animate={{ opacity: 1, scale: tapping ? 0.97 : 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              transition={{ duration: tapping ? PRESS_MS / 1000 : 0.18, ease: "easeOut" }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={SCREENSHOTS[active].src}
+                alt={SCREENSHOTS[active].alt}
+                fill
+                priority={active === 0}
+                sizes="(min-width: 640px) 320px, 290px"
+                className="object-cover"
+              />
+            </motion.div>
+          </AnimatePresence>
 
-          {/* Map */}
-          <svg viewBox="0 0 320 480" className="absolute inset-0 h-[72%] w-full" aria-hidden="true">
-            <rect width="320" height="480" fill="#0B1226" />
-            <path d="M0 120 H320 M0 240 H320 M0 360 H320 M80 0 V480 M160 0 V480 M240 0 V480" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
-            <path d="M-20 300 Q 90 280, 140 220 T 300 120" stroke="rgba(255,255,255,0.08)" strokeWidth="14" fill="none" strokeLinecap="round" />
-            <path d="M30 400 Q 110 350, 165 255 T 295 105" stroke="#FF6A2C" strokeWidth="4" fill="none" strokeLinecap="round" strokeDasharray="2 8" />
-            <circle cx="30" cy="400" r="9" fill="#FF6A2C" stroke="#fff" strokeWidth="2.5" />
-            <circle cx="295" cy="105" r="9" fill="#1E5FFF" stroke="#fff" strokeWidth="2.5" />
-            <g transform="translate(165 255)">
-              <circle r="16" fill="#fff" />
-              <path d="M-5 4 L0 -6 L5 4 Z" fill="#1E5FFF" />
-            </g>
-          </svg>
+          {/* Tap illusion */}
+          <AnimatePresence>
+            {tapping && (
+              <motion.div
+                key="tap-ripple"
+                className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${tap.x}%`, top: `${tap.y}%` }}
+                initial={{ opacity: 0, scale: 0.4 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.6 }}
+                transition={{ duration: PRESS_MS / 1000, ease: "easeOut" }}
+              >
+                <span className="absolute inset-0 rounded-full bg-white/50 animate-ping" />
+                <span className="block h-9 w-9 rounded-full border-2 border-white/80 bg-white/10" />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Tracking sheet */}
-          <div className="absolute inset-x-2.5 bottom-2.5 rounded-3xl border border-white/10 bg-[#15151A]/95 p-4 backdrop-blur">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              <span className="font-mono text-[10px] font-bold tracking-widest text-white/70">
-                LIVE · ORDER A4782
-              </span>
-              <span className="ml-auto font-mono text-[10px] text-white/50">4:32 PM</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent font-mono text-xs font-bold text-white">
-                EM
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-white">Emeka O. · 4.9★</p>
-                <p className="font-mono text-[10px] text-white/50">LAG 342 KJA · Bike</p>
-              </div>
-              <div className="text-right">
-                <p className="font-mono text-[9px] uppercase tracking-widest text-white/50">ETA</p>
-                <p className="font-mono text-lg font-bold text-accent">6 min</p>
-              </div>
-            </div>
+          {/* Dots */}
+          <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center gap-1.5">
+            {SCREENSHOTS.map((s, i) => (
+              <button
+                key={s.src}
+                type="button"
+                onClick={() => setActive(i)}
+                aria-label={`Show screenshot ${i + 1} of ${SCREENSHOTS.length}`}
+                aria-current={i === active}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === active ? "w-6 bg-white" : "w-1.5 bg-white/40"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../app/theme.dart';
 import '../../shared/models/wallet_models.dart';
+import '../../shared/widgets/animated_entrance.dart';
+import '../../shared/widgets/godrop_button.dart';
 import 'bloc/wallet_cubit.dart';
 import 'bloc/wallet_state.dart';
 
@@ -15,6 +18,8 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
+  bool _hideBalance = false;
+
   @override
   void initState() {
     super.initState();
@@ -122,195 +127,185 @@ class _WalletScreenState extends State<WalletScreen> {
             onRefresh: () => ctx.read<WalletCubit>().refresh(),
             color: GodropColors.blue,
             child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 16, 16, 20),
-                  decoration: const BoxDecoration(gradient: GodropColors.blueGradient),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Expanded(child: Text('Wallet', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700))),
-                          Icon(Icons.more_horiz_rounded, color: Colors.white.withValues(alpha: 0.8)),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.19), borderRadius: BorderRadius.circular(14)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 32),
+                    decoration: const BoxDecoration(
+                      gradient: GodropColors.blueGradient,
+                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Text('GODROP WALLET BALANCE', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13, letterSpacing: 0.8, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 6),
-                            loading
-                                ? const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 14),
-                                    child: SizedBox(
-                                      width: 28,
-                                      height: 28,
-                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                    ),
-                                  )
-                                : Row(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      const Text('₦ ', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w400)),
-                                      Text(
-                                        balParts[0],
-                                        style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800, letterSpacing: -1),
-                                      ),
-                                      Text(
-                                        '.${balParts.length > 1 ? balParts[1] : '00'}',
-                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 22, fontWeight: FontWeight.w400),
-                                      ),
-                                    ],
-                                  ),
-                            const SizedBox(height: 20),
-                            Row(
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text('My Wallet', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 22),
+                        AnimatedEntrance(
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: _WalletBtn(
-                                    label: toppingUp ? '...' : '↑ Top up',
-                                    onTap: toppingUp || loading ? null : _showTopUpSheet,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'AVAILABLE BALANCE',
+                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1),
+                                    ),
+                                    const Spacer(),
+                                    if (!loading)
+                                      GestureDetector(
+                                        onTap: () => setState(() => _hideBalance = !_hideBalance),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), shape: BoxShape.circle),
+                                          child: Icon(
+                                            _hideBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                            color: Colors.white.withValues(alpha: 0.8),
+                                            size: 16,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                loading
+                                    ? Shimmer.fromColors(
+                                        baseColor: Colors.white.withValues(alpha: 0.15),
+                                        highlightColor: Colors.white.withValues(alpha: 0.35),
+                                        child: Container(
+                                          width: 150,
+                                          height: 38,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                      )
+                                    : _hideBalance
+                                        ? const Text(
+                                            '₦ • • • • • •',
+                                            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: 2),
+                                          )
+                                        : Row(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              const Padding(
+                                                padding: EdgeInsets.only(bottom: 5),
+                                                child: Text('₦', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w500)),
+                                              ),
+                                              const SizedBox(width: 2),
+                                              Text(
+                                                balParts[0],
+                                                style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800, letterSpacing: -1),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(bottom: 5),
+                                                child: Text(
+                                                  '.${balParts.length > 1 ? balParts[1] : '00'}',
+                                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 20, fontWeight: FontWeight.w600),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                const SizedBox(height: 22),
+                                GodropButton(
+                                  label: toppingUp ? 'Processing…' : 'Top up wallet',
+                                  onTap: toppingUp || loading ? null : _showTopUpSheet,
+                                  color: Colors.white,
+                                  textColor: GodropColors.blue,
+                                  trailingIcon: Icons.add_circle_rounded,
+                                  height: 50,
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Recent activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: GodropColors.ink)),
-                          Text('See all', style: TextStyle(fontSize: 14, color: GodropColors.blue)),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      if (loading)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32),
-                            child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2),
-                          ),
-                        )
-                      else if (transactions.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 40),
-                          alignment: Alignment.center,
-                          child: const Text('No transactions yet', style: TextStyle(fontSize: 14, color: GodropColors.mute)),
-                        )
-                      else
-                        Container(
-                          decoration: BoxDecoration(color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
-                          child: Column(
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 22, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Recent activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: GodropColors.ink)),
+                            if (!loading && transactions.isNotEmpty)
+                              Text(
+                                '${transactions.length} ${transactions.length == 1 ? 'transaction' : 'transactions'}',
+                                style: const TextStyle(fontSize: 12, color: GodropColors.mute),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        if (loading)
+                          Column(
+                            children: List.generate(4, (i) => _TxSkeleton(key: ValueKey('skeleton_$i'))),
+                          )
+                        else if (transactions.isEmpty)
+                          const _EmptyTransactions()
+                        else
+                          Column(
                             children: transactions.asMap().entries.map((e) {
                               final tx = e.value;
-                              final typeUpper = tx.type.toUpperCase();
-                              // Determine credit/debit from the actual transaction type
-                              final isCredit = typeUpper == 'TOPUP' || typeUpper == 'REFUND';
-                              final sign = isCredit ? '+' : '-';
-                              final amtStr = '$sign₦${_fmtKobo(tx.amountKobo.abs())}';
-
-                              // Pick icon and colour by transaction type
-                              final IconData txIcon;
-                              final Color txIconColor;
-                              final Color txIconBg;
-                              switch (typeUpper) {
-                                case 'TOPUP':
-                                  txIcon = Icons.account_balance_wallet_rounded;
-                                  txIconColor = GodropColors.success;
-                                  txIconBg = GodropColors.success.withValues(alpha: 0.08);
-                                case 'REFUND':
-                                  txIcon = Icons.undo_rounded;
-                                  txIconColor = GodropColors.blue;
-                                  txIconBg = GodropColors.blue.withValues(alpha: 0.08);
-                                case 'PAYMENT':
-                                  txIcon = Icons.shopping_bag_outlined;
-                                  txIconColor = GodropColors.orange;
-                                  txIconBg = GodropColors.orange.withValues(alpha: 0.08);
-                                default:
-                                  txIcon = isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
-                                  txIconColor = isCredit ? GodropColors.success : GodropColors.slate;
-                                  txIconBg = isCredit ? GodropColors.success.withValues(alpha: 0.08) : GodropColors.background;
-                              }
-
-                              return Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 38,
-                                          height: 38,
-                                          decoration: BoxDecoration(
-                                            color: txIconBg,
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Icon(txIcon, size: 18, color: txIconColor),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(tx.description, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: GodropColors.ink)),
-                                              Text(_fmtDate(tx.createdAt), style: const TextStyle(fontSize: 12, color: GodropColors.mute)),
-                                            ],
-                                          ),
-                                        ),
-                                        Text(
-                                          amtStr,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                            color: isCredit ? GodropColors.success : GodropColors.ink,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (e.key < transactions.length - 1) const Divider(height: 1, indent: 62),
-                                ],
+                              return AnimatedEntrance(
+                                delay: Duration(milliseconds: 60 * e.key.clamp(0, 6)),
+                                child: _TransactionCard(
+                                  tx: tx,
+                                  amountLabel: _fmtKobo(tx.amountKobo.abs()),
+                                  dateLabel: _fmtDate(tx.createdAt),
+                                ),
                               );
                             }).toList(),
                           ),
-                        ),
-                      if (state is WalletError && state.balanceKobo != null) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.error_outline_rounded, color: GodropColors.orange, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(state.message, style: const TextStyle(fontSize: 12, color: GodropColors.slate))),
-                            TextButton(
-                              onPressed: () => ctx.read<WalletCubit>().load(),
-                              child: const Text('Retry', style: TextStyle(color: GodropColors.blue, fontSize: 12)),
-                            ),
-                          ],
-                        ),
+                        if (state is WalletError && state.balanceKobo != null) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Icon(Icons.error_outline_rounded, color: GodropColors.orange, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(state.message, style: const TextStyle(fontSize: 12, color: GodropColors.slate))),
+                              TextButton(
+                                onPressed: () => ctx.read<WalletCubit>().load(),
+                                child: const Text('Retry', style: TextStyle(color: GodropColors.blue, fontSize: 12)),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         );
       },
@@ -346,6 +341,196 @@ class _WalletScreenState extends State<WalletScreen> {
         amountKobo: state.topUpAmountKobo,
         newBalanceKobo: state.balanceKobo,
         onDone: () => Navigator.pop(sheetCtx),
+      ),
+    );
+  }
+}
+
+// ── Transaction card ──────────────────────────────────────────────────────────
+
+class _TransactionCard extends StatelessWidget {
+  final WalletTx tx;
+  final String amountLabel;
+  final String dateLabel;
+
+  const _TransactionCard({
+    required this.tx,
+    required this.amountLabel,
+    required this.dateLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final typeUpper = tx.type.toUpperCase();
+    final isCredit = typeUpper == 'TOPUP' || typeUpper == 'REFUND';
+    final sign = isCredit ? '+' : '-';
+    final amtStr = '$sign₦$amountLabel';
+
+    final IconData txIcon;
+    final Color txIconColor;
+    final Color txIconBg;
+    switch (typeUpper) {
+      case 'TOPUP':
+        txIcon = Icons.account_balance_wallet_rounded;
+        txIconColor = GodropColors.success;
+        txIconBg = GodropColors.success.withValues(alpha: 0.08);
+      case 'REFUND':
+        txIcon = Icons.undo_rounded;
+        txIconColor = GodropColors.blue;
+        txIconBg = GodropColors.blue.withValues(alpha: 0.08);
+      case 'PAYMENT':
+        txIcon = Icons.shopping_bag_outlined;
+        txIconColor = GodropColors.orange;
+        txIconBg = GodropColors.orange.withValues(alpha: 0.08);
+      default:
+        txIcon = isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded;
+        txIconColor = isCredit ? GodropColors.success : GodropColors.slate;
+        txIconBg = isCredit ? GodropColors.success.withValues(alpha: 0.08) : GodropColors.background;
+    }
+
+    final statusLower = tx.status.toLowerCase();
+    final showStatus = statusLower != 'completed' && statusLower != 'success';
+    final statusColor = statusLower == 'failed' ? GodropColors.error : GodropColors.orange;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: GodropColors.card,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: txIconBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(txIcon, size: 19, color: txIconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tx.description,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: GodropColors.ink),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Text(dateLabel, style: const TextStyle(fontSize: 12, color: GodropColors.mute)),
+                    if (showStatus) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          tx.status[0].toUpperCase() + tx.status.substring(1).toLowerCase(),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: statusColor),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            amtStr,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isCredit ? GodropColors.success : GodropColors.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Skeleton / empty states ─────────────────────────────────────────────────────
+
+class _TxSkeleton extends StatelessWidget {
+  const _TxSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: GodropColors.card,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey.shade200,
+        highlightColor: Colors.grey.shade50,
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(height: 13, width: 130, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                  const SizedBox(height: 8),
+                  Container(height: 11, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(height: 13, width: 56, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyTransactions extends StatelessWidget {
+  const _EmptyTransactions();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 44),
+      decoration: BoxDecoration(
+        color: GodropColors.card,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(color: GodropColors.blue.withValues(alpha: 0.08), shape: BoxShape.circle),
+            child: const Icon(Icons.receipt_long_rounded, color: GodropColors.blue, size: 28),
+          ),
+          const SizedBox(height: 14),
+          const Text('No transactions yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: GodropColors.ink)),
+          const SizedBox(height: 4),
+          const Text('Your wallet activity will show up here', style: TextStyle(fontSize: 12, color: GodropColors.mute)),
+        ],
       ),
     );
   }
@@ -449,17 +634,10 @@ class _TopUpSheetState extends State<_TopUpSheet> {
               )).toList(),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GodropColors.blue,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: const Text('Continue to payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
-              ),
+            GodropButton(
+              label: 'Continue to payment',
+              onTap: _submit,
+              height: 54,
             ),
           ],
         ),
@@ -651,48 +829,12 @@ class _TopUpSuccessSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onDone,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GodropColors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Done', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
-            ),
+          GodropButton(
+            label: 'Done',
+            onTap: onDone,
+            height: 54,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _WalletBtn extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  const _WalletBtn({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        decoration: BoxDecoration(
-          color: GodropColors.orange,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: onTap == null ? Colors.white54 : Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
       ),
     );
   }

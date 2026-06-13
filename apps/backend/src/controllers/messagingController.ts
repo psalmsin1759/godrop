@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
 import { sendEmail, adminBroadcastEmail } from "../services/emailService";
+import { getTermiiSenderIds } from "../services/sms";
 import { ok, fail } from "../utils/response";
 
 function smtpError(err: any): string | null {
@@ -142,6 +143,15 @@ export async function sendEmailAllRiders(req: Request, res: Response, next: Next
     }
 
     ok(res, { message: "Rider broadcast email complete", sent, failed, total: emails.length });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listSmsSenderIds(req: Request, res: Response, next: NextFunction) {
+  try {
+    const senderIds = await getTermiiSenderIds();
+    ok(res, { senderIds });
   } catch (err) {
     next(err);
   }

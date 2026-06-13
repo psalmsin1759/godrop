@@ -249,6 +249,9 @@ router.post("/messaging/email/all-customers", requireSystemRole("ADMIN"), valida
 router.post("/messaging/email/all-vendors", requireSystemRole("ADMIN"), validate(sendEmailAllVendorsSchema), messagingCtrl.sendEmailAllVendors);
 router.post("/messaging/email/all-riders", requireSystemRole("ADMIN"), validate(sendEmailAllRidersSchema), messagingCtrl.sendEmailAllRiders);
 
+// ─── SMS Messaging (ADMIN+) ───────────────────────────────────
+router.get("/messaging/sms/sender-ids", requireSystemRole("ADMIN"), messagingCtrl.listSmsSenderIds);
+
 // ─── Push Notifications (ADMIN+) ─────────────────────────────
 router.post("/push/customers/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToCustomers);
 router.post("/push/customers/batch", requireSystemRole("ADMIN"), validate(sendToCustomerBatchSchema), fcmCtrl.notifyCustomerBatch);

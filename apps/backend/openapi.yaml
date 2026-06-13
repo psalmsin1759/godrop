@@ -7353,6 +7353,35 @@ paths:
                   failed: { type: integer }
                   total: { type: integer }
 
+  # ─── System Admin — SMS Messaging ────────────────────────────
+
+  /admin/messaging/sms/sender-ids:
+    get:
+      summary: List registered Termii sender IDs (ADMIN+)
+      tags: [System Admin — Messaging]
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Registered sender IDs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      senderIds:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sender_id: { type: string, example: "Godrop" }
+                            status: { type: string, example: "active" }
+                            country: { type: string, example: "Nigeria" }
+                            createdAt: { type: string, example: "2025-05-12 10:20:27" }
+
   # ─── System Admin — Push Notifications ───────────────────────
 
   /admin/push/customers/broadcast:

@@ -1,6 +1,13 @@
 import axios from "axios";
 import { SmsProvider } from "./smsProvider";
 
+export interface TermiiSenderId {
+  sender_id: string;
+  status: string;
+  country: string;
+  createdAt: string;
+}
+
 // Termii Messaging API — https://developer.termii.com/messaging-api
 export class TermiiSmsProvider implements SmsProvider {
   async sendSms(to: string, message: string): Promise<void> {
@@ -22,6 +29,24 @@ export class TermiiSmsProvider implements SmsProvider {
     } catch (err: any) {
       const detail = err?.response?.data ?? err?.message;
       console.error("[sms:termii] Send failed:", detail);
+      throw err;
+    }
+  }
+
+  async getSenderIds(): Promise<TermiiSenderId[]> {
+    const apiKey = process.env.TERMII_API_KEY;
+    if (!apiKey) throw new Error("TERMII_API_KEY is not set");
+
+    const baseUrl = process.env.TERMII_BASE_URL ?? "https://v3.api.termii.com";
+
+    try {
+      const { data } = await axios.get(`${baseUrl}/api/sender-id`, {
+        params: { api_key: apiKey },
+      });
+      return data.content ?? [];
+    } catch (err: any) {
+      const detail = err?.response?.data ?? err?.message;
+      console.error("[sms:termii] Fetch sender IDs failed:", detail);
       throw err;
     }
   }

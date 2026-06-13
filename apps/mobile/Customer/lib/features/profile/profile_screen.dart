@@ -5,8 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import '../../app/theme.dart';
 import '../../shared/api/client/dio_client.dart';
 import '../../shared/services/user_prefs.dart';
+import '../../shared/widgets/animated_entrance.dart';
 import '../auth/bloc/auth_cubit.dart';
 import '../auth/bloc/auth_state.dart';
+import 'bloc/notifications_cubit.dart';
+import 'bloc/notifications_state.dart';
 import 'bloc/profile_cubit.dart';
 import 'bloc/profile_state.dart';
 
@@ -25,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     context.read<ProfileCubit>().load();
+    context.read<NotificationsCubit>().load();
   }
 
   Future<void> _pickAndUploadAvatar() async {
@@ -40,18 +44,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: GodropColors.border, borderRadius: BorderRadius.circular(2))),
+            Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: GodropColors.border,
+                    borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
-            const Text('Update photo', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: GodropColors.ink)),
+            const Text('Update photo',
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: GodropColors.ink)),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.camera_alt_rounded, color: GodropColors.blue),
-              title: const Text('Take a photo', style: TextStyle(fontSize: 15, color: GodropColors.ink)),
+              leading: const Icon(Icons.camera_alt_rounded,
+                  color: GodropColors.blue),
+              title: const Text('Take a photo',
+                  style: TextStyle(fontSize: 15, color: GodropColors.ink)),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_rounded, color: GodropColors.blue),
-              title: const Text('Choose from gallery', style: TextStyle(fontSize: 15, color: GodropColors.ink)),
+              leading: const Icon(Icons.photo_library_rounded,
+                  color: GodropColors.blue),
+              title: const Text('Choose from gallery',
+                  style: TextStyle(fontSize: 15, color: GodropColors.ink)),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -60,7 +77,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (choice == null) return;
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: choice, imageQuality: 85, maxWidth: 800);
+    final file =
+        await picker.pickImage(source: choice, imageQuality: 85, maxWidth: 800);
     if (file == null || !mounted) return;
     setState(() => _uploadingAvatar = true);
     await context.read<ProfileCubit>().uploadAvatar(file.path);
@@ -76,7 +94,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _fmtKobo(int kobo) {
     final naira = kobo / 100;
-    final formatted = naira.toStringAsFixed(0)
+    final formatted = naira
+        .toStringAsFixed(0)
         .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
     return '₦$formatted';
   }
@@ -107,19 +126,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Sign out?', style: TextStyle(fontWeight: FontWeight.w700, color: GodropColors.ink)),
-        content: const Text('You will need to sign in again to access your account.', style: TextStyle(color: GodropColors.slate)),
+        title: const Text('Sign out?',
+            style: TextStyle(
+                fontWeight: FontWeight.w700, color: GodropColors.ink)),
+        content: const Text(
+            'You will need to sign in again to access your account.',
+            style: TextStyle(color: GodropColors.slate)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Cancel', style: TextStyle(color: GodropColors.slate)),
+            child: const Text('Cancel',
+                style: TextStyle(color: GodropColors.slate)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogCtx);
               ctx.read<AuthCubit>().logout();
             },
-            child: const Text('Sign out', style: TextStyle(color: GodropColors.error, fontWeight: FontWeight.w600)),
+            child: const Text('Sign out',
+                style: TextStyle(
+                    color: GodropColors.error, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -131,19 +157,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: ctx,
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete account?', style: TextStyle(fontWeight: FontWeight.w700, color: GodropColors.ink)),
-        content: const Text('This will permanently deactivate your account. This action cannot be undone.', style: TextStyle(color: GodropColors.slate)),
+        title: const Text('Delete account?',
+            style: TextStyle(
+                fontWeight: FontWeight.w700, color: GodropColors.ink)),
+        content: const Text(
+            'This will permanently deactivate your account. This action cannot be undone.',
+            style: TextStyle(color: GodropColors.slate)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Cancel', style: TextStyle(color: GodropColors.slate)),
+            child: const Text('Cancel',
+                style: TextStyle(color: GodropColors.slate)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(dialogCtx);
               ctx.read<AuthCubit>().deleteAccount();
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+            child: const Text('Delete',
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -158,7 +191,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ctx.go('/onboarding');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(ctx).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating),
+            SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating),
           );
           ctx.read<AuthCubit>().reset();
         }
@@ -166,8 +202,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           final profile = state is ProfileLoaded ? state.profile : null;
-          final walletBalance = profile != null ? _fmtKobo(profile.walletBalanceKobo) : '—';
-          final name = profile != null ? '${profile.firstName} ${profile.lastName}' : '';
+          final walletBalance =
+              profile != null ? _fmtKobo(profile.walletBalanceKobo) : '—';
+          final name =
+              profile != null ? '${profile.firstName} ${profile.lastName}' : '';
           final email = profile?.email ?? '';
           final initials = name.isNotEmpty ? _initials(name) : 'G';
 
@@ -177,20 +215,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
               slivers: [
                 SliverToBoxAdapter(
                   child: Container(
-                    decoration: const BoxDecoration(gradient: GodropColors.blueGradient),
-                    padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 24),
+                    decoration: const BoxDecoration(
+                      gradient: GodropColors.blueGradient,
+                      borderRadius:
+                          BorderRadius.vertical(bottom: Radius.circular(28)),
+                    ),
+                    padding: EdgeInsets.fromLTRB(
+                        20, MediaQuery.of(context).padding.top + 16, 20, 28),
                     child: Column(
                       children: [
                         Row(
                           children: [
-                            const Expanded(child: Text('Profile', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700))),
-                            GestureDetector(
-                              onTap: () => context.go('/settings'),
-                              child: Icon(Icons.settings_outlined, color: Colors.white.withOpacity(0.8), size: 22),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.person_rounded,
+                                  color: Colors.white, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                                child: Text('Profile',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700))),
+                            BlocBuilder<NotificationsCubit, NotificationsState>(
+                              builder: (context, notifState) {
+                                final unread = notifState is NotificationsLoaded
+                                    ? notifState.unreadCount
+                                    : 0;
+                                return GestureDetector(
+                                  onTap: () => context.go('/notifications'),
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.16),
+                                            shape: BoxShape.circle),
+                                        child: const Icon(
+                                            Icons.notifications_outlined,
+                                            color: Colors.white,
+                                            size: 20),
+                                      ),
+                                      if (unread > 0)
+                                        Positioned(
+                                          top: -2,
+                                          right: -2,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(3),
+                                            constraints: const BoxConstraints(
+                                                minWidth: 18, minHeight: 18),
+                                            decoration: BoxDecoration(
+                                              color: GodropColors.orange,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                  color: GodropColors.blueDark,
+                                                  width: 1.5),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                unread > 9 ? '9+' : '$unread',
+                                                style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 9,
+                                                    fontWeight:
+                                                        FontWeight.w700),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         Row(
                           children: [
                             GestureDetector(
@@ -198,66 +307,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Stack(
                                 children: [
                                   Container(
-                                    width: 64,
-                                    height: 64,
-                                    decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Color(0xFF7B4FA3), Color(0xFFC4478A)])),
-                                    child: _uploadingAvatar
-                                        ? const Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
-                                        : profile?.avatarUrl != null
-                                            ? ClipOval(child: Image.network(profile!.avatarUrl!, fit: BoxFit.cover, width: 64, height: 64, errorBuilder: (_, __, ___) => Center(child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)))))
-                                            : state is ProfileLoading
-                                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                                : Center(child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700))),
+                                    width: 72,
+                                    height: 72,
+                                    padding: const EdgeInsets.all(2.5),
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.35),
+                                            width: 2)),
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(colors: [
+                                            Color(0xFF7B4FA3),
+                                            Color(0xFFC4478A)
+                                          ])),
+                                      child: _uploadingAvatar
+                                          ? const Center(
+                                              child: SizedBox(
+                                                  width: 24,
+                                                  height: 24,
+                                                  child: CircularProgressIndicator(
+                                                      color: Colors.white,
+                                                      strokeWidth: 2)))
+                                          : profile?.avatarUrl != null
+                                              ? ClipOval(
+                                                  child: Image.network(
+                                                      profile!.avatarUrl!,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (_, __, ___) => Center(
+                                                          child: Text(initials,
+                                                              style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 22,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700)))))
+                                              : state is ProfileLoading
+                                                  ? const Center(
+                                                      child: SizedBox(
+                                                          width: 24,
+                                                          height: 24,
+                                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+                                                  : Center(child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700))),
+                                    ),
                                   ),
                                   Positioned(
                                     bottom: 0,
                                     right: 0,
                                     child: Container(
-                                      width: 20,
-                                      height: 20,
-                                      decoration: const BoxDecoration(color: GodropColors.orange, shape: BoxShape.circle),
-                                      child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.white),
+                                      width: 22,
+                                      height: 22,
+                                      decoration: BoxDecoration(
+                                          color: GodropColors.orange,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                              color: GodropColors.blueDark,
+                                              width: 2)),
+                                      child: const Icon(
+                                          Icons.camera_alt_rounded,
+                                          size: 12,
+                                          color: Colors.white),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             const SizedBox(width: 14),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name.isNotEmpty ? name : 'Loading...',
-                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-                                ),
-                                Text(
-                                  email.isNotEmpty ? email : (profile?.phone ?? ''),
-                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                                ),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
-                                  child: const Text('GODROP MEMBER', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
-                                ),
-                              ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name.isNotEmpty ? name : 'Loading...',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    email.isNotEmpty
+                                        ? email
+                                        : (profile?.phone ?? ''),
+                                    style: TextStyle(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.7),
+                                        fontSize: 13),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.16),
+                                        borderRadius:
+                                            BorderRadius.circular(20)),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.verified_rounded,
+                                            size: 12, color: Colors.white),
+                                        SizedBox(width: 4),
+                                        Text('GODROP MEMBER',
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.5)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 22),
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          decoration: BoxDecoration(color: Colors.black.withOpacity(0.19), borderRadius: BorderRadius.circular(14)),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.16)),
+                          ),
                           child: Row(
                             children: [
-                              Expanded(child: _StatItem(
-                                value: state is ProfileLoaded ? '${state.orderCount}' : '—',
+                              Expanded(
+                                  child: _StatItem(
+                                value: state is ProfileLoaded
+                                    ? '${state.orderCount}'
+                                    : '—',
                                 label: 'Orders',
                               )),
                               const _StatDivider(),
-                              const Expanded(child: _StatItem(value: '—', label: 'Avg rating')),
-                              _StatDivider(),
-                              Expanded(child: _StatItem(value: walletBalance, label: 'Wallet')),
+                              const Expanded(
+                                  child: _StatItem(
+                                      value: '—', label: 'Avg rating')),
+                              const _StatDivider(),
+                              Expanded(
+                                  child: _StatItem(
+                                      value: walletBalance, label: 'Wallet')),
                             ],
                           ),
                         ),
@@ -271,73 +467,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _PSectionLabel('ACCOUNT'),
-                        const SizedBox(height: 8),
-                        _PGroup(children: [
-                          _PTile(
-                            icon: Icons.person_outline_rounded,
-                            label: 'Edit profile',
-                            onTap: () => _showEditProfile(context),
+                        AnimatedEntrance(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _PSectionLabel('ACCOUNT'),
+                              const SizedBox(height: 8),
+                              _PGroup(children: [
+                                _PTile(
+                                  icon: Icons.person_outline_rounded,
+                                  iconColor: GodropColors.blue,
+                                  label: 'Edit profile',
+                                  onTap: () => _showEditProfile(context),
+                                ),
+                                const Divider(height: 1, indent: 60),
+                                _PTile(
+                                  icon: Icons.lock_outline_rounded,
+                                  iconColor: GodropColors.blue,
+                                  label: 'Change password',
+                                  trailing: const Text('Update',
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: GodropColors.blue,
+                                          fontWeight: FontWeight.w500)),
+                                  onTap: () => _showChangePassword(context),
+                                ),
+                                const Divider(height: 1, indent: 60),
+                                _PTile(
+                                  icon: Icons.credit_card_rounded,
+                                  iconColor: GodropColors.orange,
+                                  label: 'Saved cards',
+                                  onTap: () => context.push('/cards'),
+                                ),
+                                const Divider(height: 1, indent: 60),
+                                _PTile(
+                                  icon: Icons.settings_outlined,
+                                  iconColor: GodropColors.slate,
+                                  label: 'Settings',
+                                  onTap: () => context.push('/settings'),
+                                ),
+                              ]),
+                            ],
                           ),
-                          const Divider(height: 1, indent: 52),
-                          _PTile(
-                            icon: Icons.lock_outline_rounded,
-                            label: 'Change password',
-                            trailing: const Text('Update', style: TextStyle(fontSize: 13, color: GodropColors.blue, fontWeight: FontWeight.w500)),
-                            onTap: () => _showChangePassword(context),
-                          ),
-                          const Divider(height: 1, indent: 52),
-                          _PTile(
-                            icon: Icons.credit_card_rounded,
-                            label: 'Saved cards',
-                            onTap: () => context.push('/cards'),
-                          ),
-                        ]),
+                        ),
                         const SizedBox(height: 20),
-                        _PSectionLabel('PREFERENCES'),
-                        const SizedBox(height: 8),
-                        _PGroup(children: [
-                          _PToggle(
-                            icon: Icons.notifications_outlined,
-                            label: 'Push notifications',
-                            value: _pushNotifications,
-                            onChanged: (v) => setState(() => _pushNotifications = v),
+                        AnimatedEntrance(
+                          delay: const Duration(milliseconds: 60),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _PSectionLabel('PREFERENCES'),
+                              const SizedBox(height: 8),
+                              _PGroup(children: [
+                                _PToggle(
+                                  icon: Icons.notifications_outlined,
+                                  iconColor: GodropColors.blue,
+                                  label: 'Push notifications',
+                                  value: _pushNotifications,
+                                  onChanged: (v) =>
+                                      setState(() => _pushNotifications = v),
+                                ),
+                              ]),
+                            ],
                           ),
-                        ]),
+                        ),
                         const SizedBox(height: 20),
-                        _PSectionLabel('LEGAL'),
-                        const SizedBox(height: 8),
-                        _PGroup(children: [
-                          _PTile(
-                            icon: Icons.privacy_tip_outlined,
-                            label: 'Privacy policy',
-                            onTap: () => context.push('/webview?url=${Uri.encodeComponent('https://naijagodrop.com/privacy-policy')}&title=Privacy+Policy'),
+                        AnimatedEntrance(
+                          delay: const Duration(milliseconds: 120),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _PSectionLabel('LEGAL'),
+                              const SizedBox(height: 8),
+                              _PGroup(children: [
+                                _PTile(
+                                  icon: Icons.privacy_tip_outlined,
+                                  iconColor: GodropColors.slate,
+                                  label: 'Privacy policy',
+                                  onTap: () => context.push(
+                                      '/webview?url=${Uri.encodeComponent('https://naijagodrop.com/privacy-policy')}&title=Privacy+Policy'),
+                                ),
+                                const Divider(height: 1, indent: 60),
+                                _PTile(
+                                  icon: Icons.article_outlined,
+                                  iconColor: GodropColors.slate,
+                                  label: 'Terms of service',
+                                  onTap: () => context.push(
+                                      '/webview?url=${Uri.encodeComponent('https://naijagodrop.com/terms-of-service')}&title=Terms+of+Service'),
+                                ),
+                              ]),
+                            ],
                           ),
-                          const Divider(height: 1, indent: 52),
-                          _PTile(
-                            icon: Icons.article_outlined,
-                            label: 'Terms of service',
-                            onTap: () => context.push('/webview?url=${Uri.encodeComponent('https://naijagodrop.com/terms-of-service')}&title=Terms+of+Service'),
-                          ),
-                        ]),
+                        ),
                         const SizedBox(height: 20),
-                        _PGroup(children: [
-                          _PTile(
-                            icon: Icons.logout_rounded,
-                            label: 'Sign out',
-                            labelColor: GodropColors.error,
-                            iconColor: GodropColors.error,
-                            onTap: () => _confirmSignOut(context),
-                          ),
-                          const Divider(height: 1, indent: 52),
-                          _PTile(
-                            icon: Icons.delete_forever_rounded,
-                            label: 'Delete account',
-                            labelColor: Colors.red,
-                            iconColor: Colors.red,
-                            onTap: () => _showDeleteAccount(context),
-                          ),
-                        ]),
+                        AnimatedEntrance(
+                          delay: const Duration(milliseconds: 180),
+                          child: _PGroup(children: [
+                            _PTile(
+                              icon: Icons.logout_rounded,
+                              labelColor: GodropColors.error,
+                              iconColor: GodropColors.error,
+                              label: 'Sign out',
+                              onTap: () => _confirmSignOut(context),
+                            ),
+                            const Divider(height: 1, indent: 60),
+                            _PTile(
+                              icon: Icons.delete_forever_rounded,
+                              labelColor: Colors.red,
+                              iconColor: Colors.red,
+                              label: 'Delete account',
+                              onTap: () => _showDeleteAccount(context),
+                            ),
+                          ]),
+                        ),
                         const SizedBox(height: 28),
                       ],
                     ),
@@ -349,12 +591,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline_rounded, color: GodropColors.orange, size: 16),
+                          const Icon(Icons.error_outline_rounded,
+                              color: GodropColors.orange, size: 16),
                           const SizedBox(width: 8),
-                          Expanded(child: Text(state.message, style: const TextStyle(fontSize: 12, color: GodropColors.slate))),
+                          Expanded(
+                              child: Text(state.message,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: GodropColors.slate))),
                           TextButton(
-                            onPressed: () => context.read<ProfileCubit>().load(),
-                            child: const Text('Retry', style: TextStyle(color: GodropColors.blue, fontSize: 12)),
+                            onPressed: () =>
+                                context.read<ProfileCubit>().load(),
+                            child: const Text('Retry',
+                                style: TextStyle(
+                                    color: GodropColors.blue, fontSize: 12)),
                           ),
                         ],
                       ),
@@ -381,8 +631,14 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700)),
+        Text(label,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
       ],
     );
   }
@@ -393,7 +649,8 @@ class _StatDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(width: 1, height: 28, color: Colors.white.withOpacity(0.2));
+    return Container(
+        width: 1, height: 28, color: Colors.white.withValues(alpha: 0.2));
   }
 }
 
@@ -405,7 +662,12 @@ class _PSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: GodropColors.mute, letterSpacing: 0.8));
+    return Text(text,
+        style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: GodropColors.mute,
+            letterSpacing: 0.8));
   }
 }
 
@@ -416,8 +678,29 @@ class _PGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+          color: GodropColors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: GodropColors.softShadow),
       child: Column(children: children),
+    );
+  }
+}
+
+class _PIconBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  const _PIconBadge({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10)),
+      child: Icon(icon, size: 18, color: color),
     );
   }
 }
@@ -429,21 +712,34 @@ class _PTile extends StatelessWidget {
   final Color? labelColor;
   final Color? iconColor;
   final VoidCallback onTap;
-  const _PTile({required this.icon, required this.label, this.trailing, this.labelColor, this.iconColor, required this.onTap});
+  const _PTile(
+      {required this.icon,
+      required this.label,
+      this.trailing,
+      this.labelColor,
+      this.iconColor,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: iconColor ?? GodropColors.slate),
+            _PIconBadge(icon: icon, color: iconColor ?? GodropColors.slate),
             const SizedBox(width: 14),
-            Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: labelColor ?? GodropColors.ink, fontWeight: FontWeight.w500))),
+            Expanded(
+                child: Text(label,
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: labelColor ?? GodropColors.ink,
+                        fontWeight: FontWeight.w500))),
             if (trailing != null) trailing!,
-            if (trailing == null) const Icon(Icons.chevron_right_rounded, size: 18, color: GodropColors.mute),
+            if (trailing == null)
+              const Icon(Icons.chevron_right_rounded,
+                  size: 18, color: GodropColors.mute),
           ],
         ),
       ),
@@ -453,20 +749,31 @@ class _PTile extends StatelessWidget {
 
 class _PToggle extends StatelessWidget {
   final IconData icon;
+  final Color? iconColor;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
-  const _PToggle({required this.icon, required this.label, required this.value, required this.onChanged});
+  const _PToggle(
+      {required this.icon,
+      this.iconColor,
+      required this.label,
+      required this.value,
+      required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: GodropColors.slate),
+          _PIconBadge(icon: icon, color: iconColor ?? GodropColors.slate),
           const SizedBox(width: 14),
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: GodropColors.ink, fontWeight: FontWeight.w500))),
+          Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: GodropColors.ink,
+                      fontWeight: FontWeight.w500))),
           Switch(
             value: value,
             onChanged: onChanged,
@@ -508,13 +815,17 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
   Future<void> _submit() async {
     if (_newCtrl.text != _confirmCtrl.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Passwords do not match'),
+            backgroundColor: Colors.red),
       );
       return;
     }
     if (_newCtrl.text.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Password must be at least 6 characters'),
+            backgroundColor: Colors.red),
       );
       return;
     }
@@ -530,7 +841,9 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
         if (state is AuthPasswordChanged) {
           Navigator.pop(ctx);
           ScaffoldMessenger.of(ctx).showSnackBar(
-            const SnackBar(content: Text('Password changed successfully'), backgroundColor: Colors.green),
+            const SnackBar(
+                content: Text('Password changed successfully'),
+                backgroundColor: Colors.green),
           );
           ctx.read<AuthCubit>().reset();
         } else if (state is AuthError) {
@@ -545,20 +858,44 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+        padding: EdgeInsets.fromLTRB(
+            24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: GodropColors.border, borderRadius: BorderRadius.circular(2)))),
+            Center(
+                child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: GodropColors.border,
+                        borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
-            const Text('Change password', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: GodropColors.ink)),
+            const Text('Change password',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: GodropColors.ink)),
             const SizedBox(height: 20),
-            _PwField(controller: _currentCtrl, hint: 'Current password', obscure: _obscureCurrent, onToggle: () => setState(() => _obscureCurrent = !_obscureCurrent)),
+            _PwField(
+                controller: _currentCtrl,
+                hint: 'Current password',
+                obscure: _obscureCurrent,
+                onToggle: () =>
+                    setState(() => _obscureCurrent = !_obscureCurrent)),
             const SizedBox(height: 12),
-            _PwField(controller: _newCtrl, hint: 'New password', obscure: _obscureNew, onToggle: () => setState(() => _obscureNew = !_obscureNew)),
+            _PwField(
+                controller: _newCtrl,
+                hint: 'New password',
+                obscure: _obscureNew,
+                onToggle: () => setState(() => _obscureNew = !_obscureNew)),
             const SizedBox(height: 12),
-            _PwField(controller: _confirmCtrl, hint: 'Confirm new password', obscure: _obscureNew, onToggle: () => setState(() => _obscureNew = !_obscureNew)),
+            _PwField(
+                controller: _confirmCtrl,
+                hint: 'Confirm new password',
+                obscure: _obscureNew,
+                onToggle: () => setState(() => _obscureNew = !_obscureNew)),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -567,11 +904,20 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GodropColors.blue,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _saving
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Update password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Update password',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15)),
               ),
             ),
           ],
@@ -586,7 +932,11 @@ class _PwField extends StatelessWidget {
   final String hint;
   final bool obscure;
   final VoidCallback onToggle;
-  const _PwField({required this.controller, required this.hint, required this.obscure, required this.onToggle});
+  const _PwField(
+      {required this.controller,
+      required this.hint,
+      required this.obscure,
+      required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -596,11 +946,25 @@ class _PwField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: GodropColors.mute),
-        suffixIcon: GestureDetector(onTap: onToggle, child: Icon(obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: GodropColors.mute)),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: GodropColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: GodropColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: GodropColors.blue)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        suffixIcon: GestureDetector(
+            onTap: onToggle,
+            child: Icon(
+                obscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                size: 20,
+                color: GodropColors.mute)),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: GodropColors.border)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: GodropColors.border)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: GodropColors.blue)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
     );
   }
@@ -655,7 +1019,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Profile updated'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -672,23 +1037,40 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      padding: EdgeInsets.fromLTRB(
+          24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: GodropColors.border, borderRadius: BorderRadius.circular(2)))),
+          Center(
+              child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: GodropColors.border,
+                      borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 20),
-          const Text('Edit profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: GodropColors.ink)),
+          const Text('Edit profile',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: GodropColors.ink)),
           const SizedBox(height: 20),
           _ProfileField(controller: _firstNameCtrl, hint: 'First name'),
           const SizedBox(height: 12),
           _ProfileField(controller: _lastNameCtrl, hint: 'Last name'),
           const SizedBox(height: 12),
-          _ProfileField(controller: _emailCtrl, hint: 'Email address', keyboard: TextInputType.emailAddress),
+          _ProfileField(
+              controller: _emailCtrl,
+              hint: 'Email address',
+              keyboard: TextInputType.emailAddress),
           const SizedBox(height: 8),
-          const Text('Phone number cannot be changed.', style: TextStyle(fontSize: 12, color: GodropColors.mute)),
+          const Text('Phone number cannot be changed.',
+              style: TextStyle(fontSize: 12, color: GodropColors.mute)),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -697,11 +1079,20 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: GodropColors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
               child: _saving
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Save changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Text('Save changes',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15)),
             ),
           ),
         ],
@@ -714,7 +1105,10 @@ class _ProfileField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final TextInputType keyboard;
-  const _ProfileField({required this.controller, required this.hint, this.keyboard = TextInputType.text});
+  const _ProfileField(
+      {required this.controller,
+      required this.hint,
+      this.keyboard = TextInputType.text});
 
   @override
   Widget build(BuildContext context) {
@@ -724,10 +1118,17 @@ class _ProfileField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: GodropColors.mute),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: GodropColors.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: GodropColors.border)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: GodropColors.blue)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: GodropColors.border)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: GodropColors.border)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: GodropColors.blue)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
     );
   }

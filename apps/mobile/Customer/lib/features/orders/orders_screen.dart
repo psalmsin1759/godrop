@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/order_models.dart';
 import '../../shared/widgets/animated_entrance.dart';
+import '../../shared/widgets/godrop_button.dart';
 import '../food/bloc/cart_cubit.dart';
 import '../food/bloc/cart_state.dart';
 import '../food/models/restaurant_data.dart';
@@ -37,85 +38,147 @@ class _OrdersScreenState extends State<OrdersScreen>
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: GodropColors.background,
-      appBar: AppBar(
-        backgroundColor: GodropColors.white,
-        title: const Text('Orders'),
-        bottom: TabBar(
-          controller: _tabs,
-          labelColor: GodropColors.blue,
-          unselectedLabelColor: GodropColors.slate,
-          indicatorColor: GodropColors.blue,
-          tabs: [
-            const Tab(text: 'Active'),
-            const Tab(text: 'Completed'),
-            Tab(
-              child: BlocBuilder<CartCubit, CartState>(
-                builder: (ctx, cs) {
-                  final total =
-                      cs.activeCarts.fold(0, (s, c) => s + c.totalItems);
-                  if (total == 0) return const Text('My Cart');
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('My Cart'),
-                      const SizedBox(width: 5),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: GodropColors.blue,
-                          borderRadius: BorderRadius.circular(10),
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: GodropColors.blueGradient,
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.receipt_long_rounded,
+                          color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text('My Orders',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: TabBar(
+                    controller: _tabs,
+                    indicator: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    splashBorderRadius: BorderRadius.circular(11),
+                    labelColor: GodropColors.blue,
+                    unselectedLabelColor: Colors.white,
+                    labelStyle: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                    unselectedLabelStyle: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
+                    tabs: [
+                      const Tab(text: 'Active'),
+                      const Tab(text: 'Completed'),
+                      Tab(
+                        child: BlocBuilder<CartCubit, CartState>(
+                          builder: (ctx, cs) {
+                            final total = cs.activeCarts
+                                .fold(0, (s, c) => s + c.totalItems);
+                            if (total == 0) return const Text('My Cart');
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('My Cart'),
+                                const SizedBox(width: 5),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: GodropColors.orange,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text('$total',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700)),
+                                ),
+                              ],
+                            );
+                          },
                         ),
-                        child: Text('$total',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700)),
                       ),
                     ],
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-      body: BlocBuilder<RemoteOrdersCubit, RemoteOrdersState>(
-        builder: (ctx, remoteState) {
-          Future<void> onRefresh() => ctx.read<RemoteOrdersCubit>().load();
-          return TabBarView(
-            controller: _tabs,
-            children: [
-              _RemoteOrdersList(
-                orders:
-                    remoteState is RemoteOrdersLoaded ? remoteState.active : [],
-                loading: remoteState is RemoteOrdersLoading,
-                error: remoteState is RemoteOrdersError
-                    ? remoteState.message
-                    : null,
-                emptyText: 'No active orders',
-                onRetry: onRefresh,
-                onRefresh: onRefresh,
-                isActive: true,
-              ),
-              _RemoteOrdersList(
-                orders: remoteState is RemoteOrdersLoaded
-                    ? remoteState.completed
-                    : [],
-                loading: remoteState is RemoteOrdersLoading,
-                error: remoteState is RemoteOrdersError
-                    ? remoteState.message
-                    : null,
-                emptyText: 'No completed orders',
-                onRetry: onRefresh,
-                onRefresh: onRefresh,
-              ),
-              const _MyCartTab(),
-            ],
-          );
-        },
+          ),
+          Expanded(
+            child: BlocBuilder<RemoteOrdersCubit, RemoteOrdersState>(
+              builder: (ctx, remoteState) {
+                Future<void> onRefresh() =>
+                    ctx.read<RemoteOrdersCubit>().load();
+                return TabBarView(
+                  controller: _tabs,
+                  children: [
+                    _RemoteOrdersList(
+                      orders: remoteState is RemoteOrdersLoaded
+                          ? remoteState.active
+                          : [],
+                      loading: remoteState is RemoteOrdersLoading,
+                      error: remoteState is RemoteOrdersError
+                          ? remoteState.message
+                          : null,
+                      emptyIcon: Icons.local_shipping_outlined,
+                      emptyText: 'No active orders',
+                      emptySubtitle:
+                          'Orders you place will show up here so you can track them live.',
+                      onRetry: onRefresh,
+                      onRefresh: onRefresh,
+                      isActive: true,
+                    ),
+                    _RemoteOrdersList(
+                      orders: remoteState is RemoteOrdersLoaded
+                          ? remoteState.completed
+                          : [],
+                      loading: remoteState is RemoteOrdersLoading,
+                      error: remoteState is RemoteOrdersError
+                          ? remoteState.message
+                          : null,
+                      emptyIcon: Icons.receipt_long_rounded,
+                      emptyText: 'No completed orders yet',
+                      emptySubtitle:
+                          'Your delivered and cancelled orders will appear here.',
+                      onRetry: onRefresh,
+                      onRefresh: onRefresh,
+                    ),
+                    const _MyCartTab(),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -125,7 +188,9 @@ class _RemoteOrdersList extends StatelessWidget {
   final List<Order> orders;
   final bool loading;
   final String? error;
+  final IconData emptyIcon;
   final String emptyText;
+  final String emptySubtitle;
   final VoidCallback onRetry;
   final Future<void> Function()? onRefresh;
   final bool isActive;
@@ -134,7 +199,9 @@ class _RemoteOrdersList extends StatelessWidget {
     required this.orders,
     required this.loading,
     required this.error,
+    this.emptyIcon = Icons.inbox_rounded,
     required this.emptyText,
+    this.emptySubtitle = '',
     required this.onRetry,
     this.onRefresh,
     this.isActive = false,
@@ -302,43 +369,78 @@ class _RemoteOrdersList extends StatelessWidget {
     }
     if (error != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline_rounded,
-                color: GodropColors.mute, size: 40),
-            const SizedBox(height: 12),
-            Text(error!,
-                style: const TextStyle(fontSize: 14, color: GodropColors.mute)),
-            const SizedBox(height: 16),
-            TextButton(
-                onPressed: onRetry,
-                child: const Text('Retry',
-                    style: TextStyle(color: GodropColors.blue))),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: GodropColors.error.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.error_outline_rounded,
+                    color: GodropColors.error, size: 32),
+              ),
+              const SizedBox(height: 16),
+              Text(error!,
+                  textAlign: TextAlign.center,
+                  style:
+                      const TextStyle(fontSize: 14, color: GodropColors.slate)),
+              const SizedBox(height: 20),
+              GodropButton(label: 'Retry', onTap: onRetry, fullWidth: false),
+            ],
+          ),
         ),
       );
     }
     if (orders.isEmpty) {
+      final empty = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: GodropColors.blue.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(emptyIcon, color: GodropColors.blue, size: 38),
+              ),
+              const SizedBox(height: 18),
+              Text(emptyText,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: GodropColors.ink)),
+              if (emptySubtitle.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(emptySubtitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 13, color: GodropColors.mute)),
+              ],
+            ],
+          ),
+        ),
+      );
       return onRefresh != null
           ? RefreshIndicator(
               onRefresh: onRefresh!,
               color: GodropColors.blue,
               child: ListView(
                 children: [
-                  SizedBox(
-                    height: 300,
-                    child: Center(
-                      child: Text(emptyText,
-                          style: const TextStyle(color: GodropColors.mute)),
-                    ),
-                  ),
+                  SizedBox(height: 320, child: empty),
                 ],
               ),
             )
-          : Center(
-              child: Text(emptyText,
-                  style: const TextStyle(color: GodropColors.mute)));
+          : empty;
     }
 
     final list = ListView.separated(
@@ -435,14 +537,17 @@ class _OrderCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-            color: GodropColors.white, borderRadius: BorderRadius.circular(14)),
+          color: GodropColors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: GodropColors.softShadow,
+        ),
         child: Row(
           children: [
             Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                    color: iconBg, borderRadius: BorderRadius.circular(10)),
+                    color: iconBg, borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: Colors.white, size: 20)),
             const SizedBox(width: 12),
             Expanded(
@@ -509,8 +614,8 @@ class _OrderCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6)),
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20)),
                     child: Text(status,
                         style: TextStyle(
                             color: statusColor,
@@ -627,7 +732,7 @@ class _TypeSectionHeader extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: type.color.withOpacity(0.12),
+            color: type.color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(type.icon, color: type.color, size: 15),
@@ -670,6 +775,7 @@ class _VendorCartCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -683,7 +789,7 @@ class _VendorCartCard extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: cart.partnerType.color.withOpacity(0.12),
+                    color: cart.partnerType.color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(cart.partnerType.icon,
@@ -713,7 +819,7 @@ class _VendorCartCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: GodropColors.error.withOpacity(0.07),
+                      color: GodropColors.error.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text('Clear',
@@ -877,9 +983,9 @@ class _GrandTotalCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: GodropColors.blue.withOpacity(0.06),
+        color: GodropColors.blue.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: GodropColors.blue.withOpacity(0.15)),
+        border: Border.all(color: GodropColors.blue.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -928,7 +1034,7 @@ class _MiniQtyBtn extends StatelessWidget {
         height: 26,
         decoration: BoxDecoration(
           color: isDelete
-              ? GodropColors.error.withOpacity(0.08)
+              ? GodropColors.error.withValues(alpha: 0.08)
               : GodropColors.background,
           borderRadius: BorderRadius.circular(7),
         ),
@@ -971,7 +1077,7 @@ class _ClearCartSheet extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: GodropColors.error.withOpacity(0.08),
+                color: GodropColors.error.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.delete_outline_rounded,

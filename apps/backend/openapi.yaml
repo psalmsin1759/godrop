@@ -1397,6 +1397,68 @@ paths:
                   refreshToken: { type: string }
                   user: { $ref: "#/components/schemas/User" }
 
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password reset link
+      description: >
+        Sends a password reset email containing a one-time link
+        (`{APP_DOMAIN}/reset-password?token=...`) if an account exists with the given email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: Reset link sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        "404":
+          description: No account exists with that email address
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password using a token from the forgot-password email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 6 }
+      responses:
+        "200":
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+        "400":
+          description: Invalid or expired reset token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
   /auth/refresh:
     post:
       tags: [Auth]

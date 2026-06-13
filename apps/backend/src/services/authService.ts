@@ -1,9 +1,10 @@
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
+import crypto from "crypto";
 import { prisma } from "../lib/prisma";
 import { User, UserStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { sendEmail } from "./emailService";
+import { sendEmail, customerPasswordResetEmail } from "./emailService";
 
 const ACCESS_TTL = "1y"; // TODO: restore to "15m" before production
 const REFRESH_TTL_DAYS = 30;
@@ -84,25 +85,26 @@ export async function loginWithPassword(identifier: string, password: string): P
 
 export async function sendPasswordReset(email: string): Promise<void> {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return; // silent — no enumeration
-  const token = nanoid(64);
+  if (!user) throw new Error("EMAIL_NOT_FOUND");
+
+  const rawToken = nanoid(64);
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
   const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordResetToken: token, passwordResetExpiry: expiry },
+    data: { passwordResetToken: hashedToken, passwordResetExpiry: expiry },
   });
-  const resetUrl = `${process.env.APP_DOMAIN ?? "https://naijagodrop.com"}/reset-password?token=${token}`;
-  await sendEmail({
-    to: email,
-    subject: "Reset your GoDrop password",
-    html: `<p>Hi ${user.firstName ?? "there"},</p><p>Click the link below to reset your password. It expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, ignore this email.</p>`,
-    text: `Reset your GoDrop password: ${resetUrl}`,
-  });
+
+  const resetUrl = `${process.env.APP_DOMAIN ?? "https://naijagodrop.com"}/reset-password?token=${rawToken}`;
+  await sendEmail(
+    customerPasswordResetEmail({ firstName: user.firstName ?? "there", email, resetLink: resetUrl })
+  );
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   const user = await prisma.user.findFirst({
-    where: { passwordResetToken: token, passwordResetExpiry: { gt: new Date() } },
+    where: { passwordResetToken: hashedToken, passwordResetExpiry: { gt: new Date() } },
   });
   if (!user) return false;
   const passwordHash = await bcrypt.hash(newPassword, 12);

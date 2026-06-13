@@ -101,7 +101,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        "We'll text you a code to verify. Standard SMS rates\napply.",
+                        "We'll text you a code to verify.",
                         style: TextStyle(
                             fontSize: 15,
                             color: GodropColors.slate,

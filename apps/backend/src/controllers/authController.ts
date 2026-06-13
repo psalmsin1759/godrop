@@ -118,9 +118,11 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
   try {
     const { email } = req.body;
     await authService.sendPasswordReset(email);
-    // Always return success to avoid email enumeration
-    ok(res, { message: "If an account exists with that email, a reset link has been sent." });
-  } catch (err) {
+    ok(res, { message: "A password reset link has been sent to your email address." });
+  } catch (err: any) {
+    if (err.message === "EMAIL_NOT_FOUND") {
+      return fail(res, "No Godrop account was found with that email address", 404);
+    }
     next(err);
   }
 }

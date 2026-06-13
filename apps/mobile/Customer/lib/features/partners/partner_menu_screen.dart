@@ -6,12 +6,9 @@ import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/api/places_service.dart';
 import '../../shared/bloc/delivery_address_cubit.dart';
-import '../../shared/bloc/saved_addresses_cubit.dart';
 import '../food/bloc/cart_cubit.dart';
 import '../food/bloc/cart_state.dart';
 import '../food/models/restaurant_data.dart';
-import '../parcel/models/parcel_location.dart';
-import '../parcel/widgets/location_picker_sheet.dart';
 import 'bloc/menu_cubit.dart';
 import 'bloc/menu_state.dart';
 import 'models/partner_item.dart';
@@ -31,7 +28,6 @@ class PartnerMenuScreen extends StatefulWidget {
 
 class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
   late final MenuCubit _menuCubit;
-  late final SavedAddressesCubit _savedAddressesCubit;
 
   PartnerItem get _p => widget.partner;
 
@@ -39,7 +35,6 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
   void initState() {
     super.initState();
     _menuCubit = MenuCubit(_p)..load();
-    _savedAddressesCubit = SavedAddressesCubit();
     // If a delivery address was passed in (from navigation), update the global cubit
     if (widget.deliveryAddress != null &&
         widget.deliveryAddress!.isNotEmpty &&
@@ -83,25 +78,7 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
   @override
   void dispose() {
     _menuCubit.close();
-    _savedAddressesCubit.close();
     super.dispose();
-  }
-
-  void _showDeliverySheet() async {
-    final saved = _savedAddressesCubit.state.addresses;
-    final result = await showModalBottomSheet<ParcelLocation>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => LocationPickerSheet(
-        title: 'Set delivery address',
-        showCurrentLocation: true,
-        savedAddresses: saved,
-      ),
-    );
-    if (result != null && mounted) {
-      context.read<DeliveryAddressCubit>().setAddress(result.name);
-    }
   }
 
   String _fmt(int kobo) =>
@@ -112,11 +89,8 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
     final color = _p.partnerType.color;
     final icon = _p.partnerType.icon;
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _menuCubit),
-        BlocProvider.value(value: _savedAddressesCubit),
-      ],
+    return BlocProvider.value(
+      value: _menuCubit,
       child: BlocBuilder<CartCubit, CartState>(
         builder: (context, cartState) {
           final vendorCart = cartState.cartFor(_p.id);
@@ -337,50 +311,42 @@ class _PartnerMenuScreenState extends State<PartnerMenuScreen> {
                     final display = deliveryAddress.isEmpty
                         ? 'Set delivery address'
                         : deliveryAddress;
-                    return GestureDetector(
-                      onTap: _showDeliverySheet,
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: GodropColors.background,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: GodropColors.border, width: 1),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.location_on_rounded,
-                                size: 14, color: color),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Delivering to',
-                                    style: TextStyle(
-                                        fontSize: 10,
-                                        color: GodropColors.mute),
-                                  ),
-                                  Text(
-                                    display,
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: GodropColors.ink),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: GodropColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: GodropColors.border, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_on_rounded,
+                              size: 14, color: color),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Delivering to',
+                                  style: TextStyle(
+                                      fontSize: 10,
+                                      color: GodropColors.mute),
+                                ),
+                                Text(
+                                  display,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: GodropColors.ink),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 16,
-                                color: GodropColors.slate),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },

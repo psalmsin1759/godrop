@@ -6,7 +6,6 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../app/theme.dart';
 import '../../shared/api/api.dart';
 import '../../shared/bloc/delivery_address_cubit.dart';
-import '../../shared/bloc/saved_addresses_cubit.dart';
 import '../../shared/models/food_models.dart';
 import '../../shared/models/store_models.dart';
 import '../../shared/models/wallet_models.dart';
@@ -14,7 +13,6 @@ import '../../shared/widgets/godrop_button.dart';
 import '../orders/bloc/order_cubit.dart';
 import '../orders/models/active_order.dart';
 import '../../features/parcel/models/parcel_location.dart';
-import '../parcel/widgets/location_picker_sheet.dart';
 import 'bloc/cart_cubit.dart';
 import 'bloc/cart_state.dart';
 import 'models/restaurant_data.dart';
@@ -66,21 +64,12 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     return (100000 + rng.nextInt(900000)).toString();
   }
 
-  late final SavedAddressesCubit _savedAddressesCubit;
-
   @override
   void initState() {
     super.initState();
-    _savedAddressesCubit = SavedAddressesCubit();
     _loadConfig();
     _loadVendorCod();
     _loadWalletBalance();
-  }
-
-  @override
-  void dispose() {
-    _savedAddressesCubit.close();
-    super.dispose();
   }
 
   Future<void> _loadConfig() async {
@@ -110,29 +99,12 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     } catch (_) {}
   }
 
-  void _showDeliverySheet() async {
-    final saved = _savedAddressesCubit.state.addresses;
-    final result = await showModalBottomSheet<ParcelLocation>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => LocationPickerSheet(
-        title: 'Set delivery address',
-        showCurrentLocation: true,
-        savedAddresses: saved,
-      ),
-    );
-    if (result != null && mounted) {
-      context.read<DeliveryAddressCubit>().setAddress(result.name);
-    }
-  }
-
   Future<void> _placeOrder(VendorCart cart, String deliveryAddress) async {
     if (deliveryAddress.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please set a delivery address to continue.')),
       );
-      _showDeliverySheet();
+      context.go(cart.partnerType.listRoute);
       return;
     }
     final total = cart.subtotalKobo + _config.standardDeliveryFeeKobo + _config.serviceChargeKobo;
@@ -325,9 +297,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _savedAddressesCubit,
-      child: BlocBuilder<CartCubit, CartState>(
+    return BlocBuilder<CartCubit, CartState>(
       builder: (context, cartState) {
         final cart = cartState.cartFor(widget.partnerId);
 
@@ -526,7 +496,6 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                           // Delivery address
                           _SectionCard(
                             title: 'Delivery',
-                            onTap: _showDeliverySheet,
                             child: Row(
                               children: [
                                 const Icon(Icons.location_on_rounded,
@@ -535,7 +504,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                                 Expanded(
                                   child: Text(
                                     deliveryAddress.isEmpty
-                                        ? 'Tap to set delivery address'
+                                        ? 'No delivery address set'
                                         : deliveryAddress,
                                     style: TextStyle(
                                         fontSize: 14,
@@ -545,11 +514,6 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Text('Change',
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        color: GodropColors.blue,
-                                        fontWeight: FontWeight.w500)),
                               ],
                             ),
                           ),
@@ -678,7 +642,6 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
           },
         );
       },
-      ),
     );
   }
 
@@ -1039,25 +1002,21 @@ class _QtyBtn extends StatelessWidget {
 class _SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
-  final VoidCallback? onTap;
-  const _SectionCard({required this.title, required this.child, this.onTap});
+  const _SectionCard({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-            color: GodropColors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: GodropColors.softShadow),
-        child: Row(
-          children: [
-            Text('$title  ', style: const TextStyle(fontSize: 13, color: GodropColors.slate, fontWeight: FontWeight.w500)),
-            Expanded(child: child),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+          color: GodropColors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: GodropColors.softShadow),
+      child: Row(
+        children: [
+          Text('$title  ', style: const TextStyle(fontSize: 13, color: GodropColors.slate, fontWeight: FontWeight.w500)),
+          Expanded(child: child),
+        ],
       ),
     );
   }

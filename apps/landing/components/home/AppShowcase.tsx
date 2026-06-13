@@ -20,13 +20,43 @@ const SCREENSHOTS = [
     src: "/images/app-screenshots/truck-booking.png",
     alt: "Truck booking screen in the Godrop app with vehicle options and pricing",
   },
+  {
+    src: "/images/app-screenshots/restaurant-menu.png",
+    alt: "Restaurant menu screen in the Godrop app showing Rice & Swallow dishes with prices",
+  },
+  {
+    src: "/images/app-screenshots/restaurant-menu-cart.png",
+    alt: "Restaurant menu screen with items added to cart and a view cart button",
+  },
+  {
+    src: "/images/app-screenshots/cart-checkout.png",
+    alt: "Checkout screen in the Godrop app showing order items, payment method and total",
+  },
+  {
+    src: "/images/app-screenshots/order-placed.png",
+    alt: "Order placed confirmation screen with a delivery confirmation code",
+  },
+  {
+    src: "/images/app-screenshots/wallet.png",
+    alt: "Godrop wallet screen showing available balance and recent transaction activity",
+  },
+  {
+    src: "/images/app-screenshots/profile.png",
+    alt: "Profile screen in the Godrop app showing account details, orders and wallet balance",
+  },
 ];
 
 // Where a "tap" lands on each screen before navigating to the next one
 const TAP_POINTS = [
   { x: 9, y: 9 }, // order-tracking: back button -> home
   { x: 50, y: 56 }, // app-home: "Truck" tile -> truck booking
-  { x: 8, y: 8 }, // truck-booking: back -> order tracking
+  { x: 8, y: 8 }, // truck-booking: back -> restaurant menu
+  { x: 91, y: 84 }, // restaurant-menu: "+" on a dish -> added to cart
+  { x: 50, y: 96 }, // restaurant-menu-cart: "View cart" -> checkout
+  { x: 50, y: 95 }, // cart-checkout: "Pay online" -> order placed
+  { x: 50, y: 92 }, // order-placed: "Track my order" -> wallet
+  { x: 74, y: 97 }, // wallet: bottom nav -> profile
+  { x: 74, y: 97 }, // profile: bottom nav -> back to order tracking
 ];
 
 const HOLD_MS = 2600;

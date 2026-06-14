@@ -115,11 +115,16 @@ export const locationUpdateSchema = z.object({
 });
 
 export const withdrawalSchema = z.object({
-  amountKobo: z.number().int().positive(),
+  amountKobo: z.number().int().positive().min(10000, "Minimum withdrawal is ₦100"),
   bankName: z.string().optional(),
   bankCode: z.string().optional(),
   accountNumber: z.string().optional(),
   accountName: z.string().optional(),
+});
+
+export const resolveAccountSchema = z.object({
+  accountNumber: z.string().length(10, "Account number must be exactly 10 digits").regex(/^\d+$/, "Account number must be numeric"),
+  bankCode: z.string().min(1),
 });
 
 export const earningsQuerySchema = z.object({

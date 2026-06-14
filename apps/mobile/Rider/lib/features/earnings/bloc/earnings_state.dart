@@ -34,9 +34,10 @@ class EarningsLoaded extends EarningsState {
 
 class EarningsError extends EarningsState {
   final String message;
-  const EarningsError(this.message);
+  final EarningsLoaded? loaded;
+  const EarningsError(this.message, {this.loaded});
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, loaded];
 }
 
 class WithdrawalSubmitting extends EarningsState {

@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
+import '../../shared/widgets/availability_toggle.dart';
+import '../../shared/widgets/rider_header.dart';
+import '../profile/bloc/profile_cubit.dart';
+import '../profile/bloc/profile_state.dart';
 import 'bloc/jobs_cubit.dart';
 import 'bloc/jobs_state.dart';
 
@@ -31,6 +35,9 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
     context.read<JobsCubit>()
       ..loadJobs()
       ..connectJobStream();
+    if (context.read<ProfileCubit>().state is ProfileInitial) {
+      context.read<ProfileCubit>().loadProfile();
+    }
     _lifecycleListener = AppLifecycleListener(
       onResume: () => context.read<JobsCubit>().loadJobs(),
     );
@@ -48,16 +55,46 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
     return Scaffold(
       backgroundColor: GodropColors.background,
       body: SafeArea(
+        top: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
+            BlocBuilder<ProfileCubit, ProfileState>(
+              builder: (ctx, state) {
+                final profile = switch (state) {
+                  ProfileLoaded(profile: final p) => p,
+                  ProfileSaving(profile: final p) => p,
+                  _ => null,
+                };
+                if (profile == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: AvailabilityToggle(
+                    isAvailable: profile.isAvailable,
+                    loading: state is ProfileSaving,
+                    onToggle: () => ctx.read<ProfileCubit>().toggleAvailability(),
+                  ),
+                );
+              },
+            ),
             Expanded(
               child: BlocBuilder<JobsCubit, JobsState>(
                 builder: (ctx, state) {
                   if (state is JobsLoading) return _buildShimmer();
                   if (state is JobsError) return _buildError(ctx, state.message);
-                  if (state is JobsLoaded) return _buildContent(ctx, state);
+                  if (state is JobsLoaded) {
+                    return BlocBuilder<ProfileCubit, ProfileState>(
+                      builder: (pctx, pstate) {
+                        final isAvailable = switch (pstate) {
+                          ProfileLoaded(profile: final p) => p.isAvailable,
+                          ProfileSaving(profile: final p) => p.isAvailable,
+                          _ => true,
+                        };
+                        return _buildContent(ctx, state, isAvailable);
+                      },
+                    );
+                  }
                   return const SizedBox.shrink();
                 },
               ),
@@ -69,56 +106,21 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
   }
 
   Widget _buildHeader() {
-    return Container(
-      color: GodropColors.white,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Available Jobs',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: GodropColors.ink,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Accept orders to start earning',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: GodropColors.mute,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          BlocBuilder<JobsCubit, JobsState>(
-            builder: (ctx, state) => GestureDetector(
-              onTap: () => ctx.read<JobsCubit>().loadJobs(),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: GodropColors.background,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.refresh_rounded,
-                    color: GodropColors.ink, size: 20),
-              ),
-            ),
-          ),
-        ],
+    return RiderHeader(
+      icon: Icons.work_rounded,
+      title: 'Available Jobs',
+      subtitle: 'Accept orders to start earning',
+      trailing: RiderHeaderAction(
+        icon: Icons.refresh_rounded,
+        onTap: () => context.read<JobsCubit>().loadJobs(),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext ctx, JobsLoaded state) {
+  Widget _buildContent(BuildContext ctx, JobsLoaded state, bool isAvailable) {
+    if (!isAvailable && state.assigned.isEmpty) {
+      return _buildOffline();
+    }
     if (state.pending.isEmpty && state.assigned.isEmpty) {
       return _buildEmpty();
     }
@@ -134,11 +136,72 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
             ...state.assigned.map((o) => _JobCard(order: o, isAssigned: true)),
             const SizedBox(height: 20),
           ],
-          if (state.pending.isNotEmpty) ...[
+          if (!isAvailable)
+            _offlineBanner()
+          else if (state.pending.isNotEmpty) ...[
             _sectionLabel('New Orders', GodropColors.blue),
             const SizedBox(height: 10),
             ...state.pending.map((o) => _JobCard(order: o, isAssigned: false)),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _offlineBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: GodropColors.mute.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GodropColors.border),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.power_settings_new_rounded,
+              color: GodropColors.mute, size: 18),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "You're offline. Go online to see new job requests.",
+              style: TextStyle(fontSize: 13, color: GodropColors.mute),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOffline() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: GodropColors.mute.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.power_settings_new_rounded,
+                color: GodropColors.mute, size: 32),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "You're offline",
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: GodropColors.ink,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Go online to start receiving job requests.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: GodropColors.mute, height: 1.5),
+          ),
         ],
       ),
     );
@@ -178,7 +241,7 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: GodropColors.blue.withOpacity(0.08),
+              color: GodropColors.blue.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.work_outline_rounded,
@@ -265,9 +328,10 @@ class _JobCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isAssigned
-                ? GodropColors.orange.withOpacity(0.3)
+                ? GodropColors.orange.withValues(alpha: 0.3)
                 : GodropColors.border,
           ),
+          boxShadow: GodropColors.softShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,7 +430,7 @@ class _JobCard extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: GodropColors.blue.withOpacity(0.08),
+        color: GodropColors.blue.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(iconData, color: GodropColors.blue, size: 20),
@@ -424,7 +488,7 @@ class _JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(

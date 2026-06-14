@@ -22,6 +22,7 @@ import {
   markFailedSchema,
   locationUpdateSchema,
   withdrawalSchema,
+  resolveAccountSchema,
   earningsQuerySchema,
   notificationsQuerySchema,
 } from "../validators/riderAppValidators";
@@ -63,6 +64,8 @@ router.post(
   ctrl.submitKyc
 );
 router.patch("/me/bank", validate(updateBankAccountSchema), ctrl.updateBankAccount);
+router.get("/wallet/banks", ctrl.getBanks);
+router.post("/wallet/resolve-account", validate(resolveAccountSchema), ctrl.resolveAccount);
 router.patch("/me/availability", validate(setAvailabilitySchema), ctrl.setAvailability);
 router.post("/me/location", validate(updateLocationSchema), ctrl.updateLocation);
 router.post("/me/push-token", validate(pushTokenSchema), ctrl.registerPushToken);

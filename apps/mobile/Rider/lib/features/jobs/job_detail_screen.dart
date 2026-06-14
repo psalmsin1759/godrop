@@ -179,7 +179,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 Text(
                   'Order total: ${_fmt(order.totalKobo)} · ${order.paymentMethod}',
                   style: TextStyle(
-                      color: GodropColors.white.withOpacity(0.7), fontSize: 13),
+                      color: GodropColors.white.withValues(alpha: 0.7), fontSize: 13),
                 ),
               ],
             ),
@@ -375,6 +375,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         decoration: BoxDecoration(
           color: GodropColors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GodropColors.border),
+          boxShadow: GodropColors.softShadow,
         ),
         child: child,
       );

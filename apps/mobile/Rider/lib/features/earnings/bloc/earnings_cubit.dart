@@ -54,7 +54,7 @@ class EarningsCubit extends Cubit<EarningsState> {
       final loaded = state;
       if (loaded is EarningsLoaded) emit(WithdrawalSuccess(loaded));
     } on DioException catch (e) {
-      emit(EarningsError(_parseError(e)));
+      emit(EarningsError(_parseError(e), loaded: current));
     }
   }
 

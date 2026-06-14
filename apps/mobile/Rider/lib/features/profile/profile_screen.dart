@@ -5,7 +5,11 @@ import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
 import '../../shared/widgets/animated_entrance.dart';
+import '../../shared/widgets/availability_toggle.dart';
+import '../../shared/widgets/rider_header.dart';
 import '../auth/bloc/auth_cubit.dart';
+import '../notifications/bloc/notifications_cubit.dart';
+import '../notifications/bloc/notifications_state.dart';
 import 'bloc/profile_cubit.dart';
 import 'bloc/profile_state.dart';
 
@@ -32,29 +36,27 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: GodropColors.background,
-      body: SafeArea(
-        child: BlocConsumer<ProfileCubit, ProfileState>(
-          listener: (ctx, state) {
-            if (state is ProfileError) {
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(state.message),
-                backgroundColor: GodropColors.error,
-                behavior: SnackBarBehavior.floating,
-              ));
-            }
-          },
-          builder: (ctx, state) {
-            if (state is ProfileLoading) return _shimmer();
-            if (state is ProfileLoaded || state is ProfileSaving) {
-              final profile = state is ProfileLoaded
-                  ? state.profile
-                  : (state as ProfileSaving).profile;
-              final saving = state is ProfileSaving;
-              return _buildContent(ctx, profile, saving);
-            }
-            return const SizedBox.shrink();
-          },
-        ),
+      body: BlocConsumer<ProfileCubit, ProfileState>(
+        listener: (ctx, state) {
+          if (state is ProfileError) {
+            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+              content: Text(state.message),
+              backgroundColor: GodropColors.error,
+              behavior: SnackBarBehavior.floating,
+            ));
+          }
+        },
+        builder: (ctx, state) {
+          if (state is ProfileLoading) return _shimmer();
+          if (state is ProfileLoaded || state is ProfileSaving) {
+            final profile = state is ProfileLoaded
+                ? state.profile
+                : (state as ProfileSaving).profile;
+            final saving = state is ProfileSaving;
+            return _buildContent(ctx, profile, saving);
+          }
+          return const SizedBox.shrink();
+        },
       ),
     );
   }
@@ -63,41 +65,50 @@ class _ProfileScreenState extends State<ProfileScreen>
     return RefreshIndicator(
       onRefresh: () => ctx.read<ProfileCubit>().loadProfile(),
       color: GodropColors.blue,
-      child: ListView(
-        children: [
-          AnimatedEntrance(
-            child: _buildHeader(ctx, profile, saving),
-          ),
-          Padding(
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildHeader(ctx, profile)),
+          SliverPadding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                AnimatedEntrance(
-                  delay: const Duration(milliseconds: 60),
-                  child: _kycCard(ctx, profile),
-                ),
-                const SizedBox(height: 12),
-                AnimatedEntrance(
-                  delay: const Duration(milliseconds: 100),
-                  child: _vehicleCard(profile),
-                ),
-                const SizedBox(height: 12),
-                AnimatedEntrance(
-                  delay: const Duration(milliseconds: 130),
-                  child: _bankCard(ctx, profile),
-                ),
-                const SizedBox(height: 12),
-                AnimatedEntrance(
-                  delay: const Duration(milliseconds: 160),
-                  child: _menuSection(ctx),
-                ),
-                const SizedBox(height: 24),
-                AnimatedEntrance(
-                  delay: const Duration(milliseconds: 200),
-                  child: _logoutButton(ctx),
-                ),
-                const SizedBox(height: 24),
-              ],
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  AnimatedEntrance(
+                    child: AvailabilityToggle(
+                      isAvailable: profile.isAvailable,
+                      loading: saving,
+                      onToggle: () =>
+                          ctx.read<ProfileCubit>().toggleAvailability(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 60),
+                    child: _kycCard(ctx, profile),
+                  ),
+                  const SizedBox(height: 12),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 100),
+                    child: _vehicleCard(profile),
+                  ),
+                  const SizedBox(height: 12),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 130),
+                    child: _bankCard(ctx, profile),
+                  ),
+                  const SizedBox(height: 12),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 160),
+                    child: _menuSection(ctx),
+                  ),
+                  const SizedBox(height: 24),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 200),
+                    child: _logoutButton(ctx),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ],
@@ -105,26 +116,89 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildHeader(BuildContext ctx, RiderProfile profile, bool saving) {
+  Widget _buildHeader(BuildContext ctx, RiderProfile profile) {
     return Container(
-      color: GodropColors.white,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: GodropColors.blueGradient,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          20, MediaQuery.of(ctx).padding.top + 16, 20, 28),
       child: Column(
         children: [
           Row(
             children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: GodropColors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.person_rounded,
+                    color: GodropColors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Profile',
+                  style: TextStyle(
+                    color: GodropColors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+              ),
+              BlocBuilder<NotificationsCubit, NotificationsState>(
+                builder: (context, notifState) {
+                  final unread = notifState is NotificationsLoaded
+                      ? notifState.unreadCount
+                      : 0;
+                  return RiderHeaderAction(
+                    icon: Icons.notifications_outlined,
+                    onTap: () => ctx.push('/notifications'),
+                    badge: unread > 0 ? _unreadBadge(unread) : null,
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
               Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: GodropColors.blue.withOpacity(0.1),
-                    backgroundImage: profile.avatarUrl != null
-                        ? NetworkImage(profile.avatarUrl!)
-                        : null,
-                    child: profile.avatarUrl == null
-                        ? const Icon(Icons.person_rounded,
-                            color: GodropColors.blue, size: 34)
-                        : null,
+                  Container(
+                    width: 72,
+                    height: 72,
+                    padding: const EdgeInsets.all(2.5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: GodropColors.white.withValues(alpha: 0.35),
+                          width: 2),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: GodropColors.white.withValues(alpha: 0.16),
+                      ),
+                      child: profile.avatarUrl != null
+                          ? ClipOval(
+                              child: Image.network(
+                                profile.avatarUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.person_rounded,
+                                    color: GodropColors.white,
+                                    size: 32),
+                              ),
+                            )
+                          : const Icon(Icons.person_rounded,
+                              color: GodropColors.white, size: 32),
+                    ),
                   ),
                   Positioned(
                     bottom: 0,
@@ -137,8 +211,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                             ? GodropColors.success
                             : GodropColors.mute,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                            color: GodropColors.white, width: 2),
+                        border:
+                            Border.all(color: GodropColors.blueDark, width: 2),
                       ),
                     ),
                   ),
@@ -152,46 +226,106 @@ class _ProfileScreenState extends State<ProfileScreen>
                     Text(
                       profile.fullName,
                       style: const TextStyle(
+                        color: GodropColors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: GodropColors.ink,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       profile.phone,
-                      style: const TextStyle(
-                          fontSize: 13, color: GodropColors.mute),
+                      style: TextStyle(
+                          color: GodropColors.white.withValues(alpha: 0.7),
+                          fontSize: 13),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            color: GodropColors.orange, size: 14),
-                        const SizedBox(width: 3),
-                        Text(
-                          profile.rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: GodropColors.ink),
-                        ),
-                        Text(' (${profile.ratingCount})',
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: GodropColors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.local_shipping_rounded,
+                              size: 12, color: GodropColors.white),
+                          const SizedBox(width: 4),
+                          Text(
+                            profile.isAvailable ? 'ONLINE' : 'OFFLINE',
                             style: const TextStyle(
-                                fontSize: 12, color: GodropColors.mute)),
-                      ],
+                              color: GodropColors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _AvailabilityToggle(
-            isAvailable: profile.isAvailable,
-            loading: saving,
-            onToggle: () => ctx.read<ProfileCubit>().toggleAvailability(),
+          const SizedBox(height: 22),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              color: GodropColors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                  color: GodropColors.white.withValues(alpha: 0.16)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _StatItem(
+                    value: profile.rating.toStringAsFixed(1),
+                    label: 'Rating',
+                  ),
+                ),
+                const _StatDivider(),
+                Expanded(
+                  child: _StatItem(
+                    value: '${profile.ratingCount}',
+                    label: 'Reviews',
+                  ),
+                ),
+                const _StatDivider(),
+                Expanded(
+                  child: _StatItem(
+                    value: profile.isAvailable ? 'Online' : 'Offline',
+                    label: 'Status',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _unreadBadge(int unread) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      decoration: BoxDecoration(
+        color: GodropColors.orange,
+        shape: BoxShape.circle,
+        border: Border.all(color: GodropColors.blueDark, width: 1.5),
+      ),
+      child: Center(
+        child: Text(
+          unread > 9 ? '9+' : '$unread',
+          style: const TextStyle(
+              color: GodropColors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }
@@ -201,25 +335,25 @@ class _ProfileScreenState extends State<ProfileScreen>
       'VERIFIED' => (
           'KYC Verified',
           GodropColors.success,
-          GodropColors.success.withOpacity(0.1),
+          GodropColors.success.withValues(alpha: 0.1),
           Icons.verified_rounded
         ),
       'SUBMITTED' => (
           'KYC Under Review',
           GodropColors.orange,
-          GodropColors.orange.withOpacity(0.1),
+          GodropColors.orange.withValues(alpha: 0.1),
           Icons.hourglass_empty_rounded
         ),
       'REJECTED' => (
           'KYC Rejected — Resubmit',
           GodropColors.error,
-          GodropColors.error.withOpacity(0.1),
+          GodropColors.error.withValues(alpha: 0.1),
           Icons.cancel_rounded
         ),
       _ => (
           'Complete KYC Verification',
           GodropColors.blue,
-          GodropColors.blue.withOpacity(0.08),
+          GodropColors.blue.withValues(alpha: 0.08),
           Icons.assignment_rounded
         ),
     };
@@ -234,7 +368,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          boxShadow: GodropColors.softShadow,
         ),
         child: Row(
           children: [
@@ -264,6 +399,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,6 +443,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         decoration: BoxDecoration(
           color: GodropColors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GodropColors.border),
+          boxShadow: GodropColors.softShadow,
         ),
         child: Row(
           children: [
@@ -313,7 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: GodropColors.blue.withOpacity(0.08),
+                color: GodropColors.blue.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.account_balance_rounded,
@@ -355,23 +494,35 @@ class _ProfileScreenState extends State<ProfileScreen>
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         children: items.map((item) {
           final (icon, label, route) = item;
           return GestureDetector(
             onTap: () => ctx.push(route),
-            child: Container(
+            child: Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               child: Row(
                 children: [
-                  Icon(icon, color: GodropColors.slate, size: 20),
-                  const SizedBox(width: 12),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: GodropColors.slate.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, size: 18, color: GodropColors.slate),
+                  ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Text(label,
                         style: const TextStyle(
-                            fontSize: 14, color: GodropColors.ink)),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: GodropColors.ink)),
                   ),
                   const Icon(Icons.chevron_right_rounded,
                       color: GodropColors.mute, size: 18),
@@ -390,10 +541,9 @@ class _ProfileScreenState extends State<ProfileScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: GodropColors.error.withOpacity(0.08),
+          color: GodropColors.error.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: GodropColors.error.withOpacity(0.2)),
+          border: Border.all(color: GodropColors.error.withValues(alpha: 0.2)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -444,7 +594,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       child: ListView(
         children: [
           Container(
-              height: 140,
+              height: 240,
               color: GodropColors.white,
               margin: const EdgeInsets.only(bottom: 16)),
           Padding(
@@ -468,72 +618,39 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 }
 
-class _AvailabilityToggle extends StatelessWidget {
-  final bool isAvailable;
-  final bool loading;
-  final VoidCallback onToggle;
+// ── Stat widgets ──────────────────────────────────────────────────────────────
 
-  const _AvailabilityToggle({
-    required this.isAvailable,
-    required this.loading,
-    required this.onToggle,
-  });
+class _StatItem extends StatelessWidget {
+  final String value;
+  final String label;
+  const _StatItem({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: loading ? null : onToggle,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isAvailable
-              ? GodropColors.success.withOpacity(0.1)
-              : GodropColors.background,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isAvailable
-                ? GodropColors.success.withOpacity(0.4)
-                : GodropColors.border,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isAvailable
-                  ? Icons.radio_button_on_rounded
-                  : Icons.radio_button_off_rounded,
-              color: isAvailable ? GodropColors.success : GodropColors.mute,
-              size: 18,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                isAvailable ? 'You are Online — receiving orders' : 'You are Offline — go online to receive orders',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color:
-                      isAvailable ? GodropColors.success : GodropColors.mute,
-                ),
-              ),
-            ),
-            if (loading)
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: GodropColors.blue),
-              )
-            else
-              Switch(
-                value: isAvailable,
-                onChanged: (_) => onToggle(),
-                activeTrackColor: GodropColors.success,
-              ),
-          ],
-        ),
-      ),
+    return Column(
+      children: [
+        Text(value,
+            style: const TextStyle(
+                color: GodropColors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700)),
+        Text(label,
+            style: TextStyle(
+                color: GodropColors.white.withValues(alpha: 0.7),
+                fontSize: 12)),
+      ],
     );
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  const _StatDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: 1,
+        height: 28,
+        color: GodropColors.white.withValues(alpha: 0.2));
   }
 }

@@ -24,6 +24,7 @@ class RiderProfile {
   final String? driverLicenseExpiry;
   final String? vehicleInsuranceExpiry;
   final String? bankName;
+  final String? bankCode;
   final String? accountNumber;
   final String? accountName;
   final String kycStatus;
@@ -58,6 +59,7 @@ class RiderProfile {
     this.driverLicenseExpiry,
     this.vehicleInsuranceExpiry,
     this.bankName,
+    this.bankCode,
     this.accountNumber,
     this.accountName,
     required this.kycStatus,
@@ -337,4 +339,20 @@ class RiderNotification {
   factory RiderNotification.fromJson(Map<String, dynamic> json) =>
       _$RiderNotificationFromJson(json);
   Map<String, dynamic> toJson() => _$RiderNotificationToJson(this);
+}
+
+@JsonSerializable()
+class Bank {
+  final String name;
+  final String code;
+  final String slug;
+
+  const Bank({
+    required this.name,
+    required this.code,
+    required this.slug,
+  });
+
+  factory Bank.fromJson(Map<String, dynamic> json) => _$BankFromJson(json);
+  Map<String, dynamic> toJson() => _$BankToJson(this);
 }

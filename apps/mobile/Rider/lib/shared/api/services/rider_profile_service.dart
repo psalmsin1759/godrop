@@ -22,6 +22,12 @@ abstract class RiderProfileService {
   @PATCH('/rider/me/bank')
   Future<dynamic> updateBank(@Body() Map<String, dynamic> body);
 
+  @GET('/rider/wallet/banks')
+  Future<dynamic> getBanks();
+
+  @POST('/rider/wallet/resolve-account')
+  Future<dynamic> resolveAccount(@Body() Map<String, dynamic> body);
+
   @PATCH('/rider/me/availability')
   Future<dynamic> setAvailability(@Body() Map<String, dynamic> body);
 

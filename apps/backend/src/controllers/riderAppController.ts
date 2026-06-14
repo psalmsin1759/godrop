@@ -6,6 +6,7 @@ import * as riderAuthService from "../services/riderAuthService";
 import * as riderAppService from "../services/riderAppService";
 import * as riderOrderService from "../services/riderOrderService";
 import * as riderEarningService from "../services/riderEarningService";
+import * as paystackService from "../services/paystackService";
 import { uploadDocument } from "../services/cloudinaryService";
 import { submitKycBodySchema } from "../validators/riderAppValidators";
 import { onboardRiderSchema } from "../validators/riderOnboardingValidators";
@@ -228,6 +229,28 @@ export async function updateBankAccount(req: Request, res: Response, next: NextF
   }
 }
 
+export async function getBanks(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const banks = await paystackService.listBanks();
+    return ok(res, { banks });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resolveAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { accountNumber, bankCode } = req.body;
+    const result = await paystackService.resolveAccountNumber({ accountNumber, bankCode });
+    return ok(res, result);
+  } catch (err: any) {
+    if (err?.response?.status === 422 || err?.response?.data?.message?.toLowerCase().includes("account")) {
+      return fail(res, "Could not verify account number. Please check the details.", 422);
+    }
+    next(err);
+  }
+}
+
 export async function setAvailability(req: Request, res: Response, next: NextFunction) {
   try {
     const rider = await riderAppService.setAvailability(req.rider!.id, req.body.isAvailable);
@@ -270,6 +293,10 @@ export async function listAvailableOrders(req: Request, res: Response, next: Nex
   try {
     if (req.rider!.kycStatus !== "VERIFIED") {
       return fail(res, "Your account must be verified before you can receive orders", 403);
+    }
+    if (!req.rider!.isAvailable) {
+      const { page, limit } = paginate((req.query as any).page, (req.query as any).limit);
+      return ok(res, { data: [], meta: buildMeta(page, limit, 0) });
     }
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
@@ -442,7 +469,11 @@ export async function requestWithdrawal(req: Request, res: Response, next: NextF
     const withdrawal = await riderEarningService.requestWithdrawal(rider.id, amountKobo, bank);
     return ok(res, { data: withdrawal }, 201);
   } catch (err: any) {
-    if (err.message === "Insufficient balance" || err.message?.includes("Minimum withdrawal")) {
+    if (
+      err.message === "Insufficient balance" ||
+      err.message?.includes("Minimum withdrawal") ||
+      err.message?.includes("No bank account on file")
+    ) {
       return fail(res, err.message, 400);
     }
     next(err);

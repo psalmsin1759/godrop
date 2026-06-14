@@ -1,6 +1,8 @@
 import { prisma } from "../lib/prisma";
 import { paginate } from "../utils/pagination";
 import { creditBusinessWalletForEarning } from "./businessAdminService";
+import * as paystackService from "./paystackService";
+import { nanoid } from "nanoid";
 
 export async function createRiderEarning(riderId: string, orderId: string, amountKobo: number) {
   const earning = await prisma.riderEarning.upsert({
@@ -85,26 +87,65 @@ export async function requestWithdrawal(
 ) {
   const rider = await prisma.rider.findUniqueOrThrow({ where: { id: riderId } });
 
-  const pendingBalance = await prisma.riderEarning.aggregate({
+  const pendingEarnings = await prisma.riderEarning.findMany({
     where: { riderId, status: "PENDING" },
-    _sum: { amountKobo: true },
+    orderBy: { createdAt: "asc" },
   });
 
-  const available = pendingBalance._sum.amountKobo ?? 0;
+  const available = pendingEarnings.reduce((sum, e) => sum + e.amountKobo, 0);
   if (amountKobo > available) throw new Error("Insufficient balance");
   if (amountKobo < 100_00) throw new Error("Minimum withdrawal is ₦100 (10,000 kobo)");
 
-  const withdrawal = await prisma.riderWithdrawal.create({
-    data: {
-      riderId,
-      amountKobo,
-      bankName: bankDetails.bankName || rider.bankName!,
-      bankCode: bankDetails.bankCode || rider.bankCode!,
-      accountNumber: bankDetails.accountNumber || rider.accountNumber!,
-      accountName: bankDetails.accountName || rider.accountName!,
-      status: "PENDING",
-    },
+  const bankName = bankDetails.bankName || rider.bankName;
+  const bankCode = bankDetails.bankCode || rider.bankCode;
+  const accountNumber = bankDetails.accountNumber || rider.accountNumber;
+  const accountName = bankDetails.accountName || rider.accountName;
+  if (!bankName || !bankCode || !accountNumber || !accountName) {
+    throw new Error("No bank account on file. Please add a bank account first.");
+  }
+
+  const reference = `RWD-${nanoid(16)}`;
+
+  const recipientCode = await paystackService.createTransferRecipient({
+    name: accountName,
+    accountNumber,
+    bankCode,
   });
+
+  await paystackService.initiateTransfer({
+    amountKobo,
+    recipient: recipientCode,
+    reference,
+    reason: "Rider earnings withdrawal",
+  });
+
+  // Settle enough of the oldest PENDING earnings to cover the withdrawn amount
+  let remaining = amountKobo;
+  const toSettle: string[] = [];
+  for (const earning of pendingEarnings) {
+    if (remaining <= 0) break;
+    toSettle.push(earning.id);
+    remaining -= earning.amountKobo;
+  }
+
+  const [withdrawal] = await prisma.$transaction([
+    prisma.riderWithdrawal.create({
+      data: {
+        riderId,
+        amountKobo,
+        bankName,
+        bankCode,
+        accountNumber,
+        accountName,
+        reference,
+        status: "PROCESSING",
+      },
+    }),
+    prisma.riderEarning.updateMany({
+      where: { id: { in: toSettle } },
+      data: { status: "SETTLED", settledAt: new Date() },
+    }),
+  ]);
 
   return withdrawal;
 }

@@ -27,6 +27,7 @@ RiderProfile _$RiderProfileFromJson(Map<String, dynamic> json) => RiderProfile(
       driverLicenseExpiry: json['driverLicenseExpiry'] as String?,
       vehicleInsuranceExpiry: json['vehicleInsuranceExpiry'] as String?,
       bankName: json['bankName'] as String?,
+      bankCode: json['bankCode'] as String?,
       accountNumber: json['accountNumber'] as String?,
       accountName: json['accountName'] as String?,
       kycStatus: json['kycStatus'] as String,
@@ -63,6 +64,7 @@ Map<String, dynamic> _$RiderProfileToJson(RiderProfile instance) =>
       'driverLicenseExpiry': instance.driverLicenseExpiry,
       'vehicleInsuranceExpiry': instance.vehicleInsuranceExpiry,
       'bankName': instance.bankName,
+      'bankCode': instance.bankCode,
       'accountNumber': instance.accountNumber,
       'accountName': instance.accountName,
       'kycStatus': instance.kycStatus,
@@ -330,4 +332,16 @@ Map<String, dynamic> _$RiderNotificationToJson(RiderNotification instance) =>
       'data': instance.data,
       'isRead': instance.isRead,
       'createdAt': instance.createdAt,
+    };
+
+Bank _$BankFromJson(Map<String, dynamic> json) => Bank(
+      name: json['name'] as String,
+      code: json['code'] as String,
+      slug: json['slug'] as String,
+    );
+
+Map<String, dynamic> _$BankToJson(Bank instance) => <String, dynamic>{
+      'name': instance.name,
+      'code': instance.code,
+      'slug': instance.slug,
     };

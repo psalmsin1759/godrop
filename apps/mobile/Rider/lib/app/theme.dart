@@ -35,6 +35,15 @@ class GodropColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  /// Soft shadow used to lift cards off the background.
+  static List<BoxShadow> get softShadow => [
+        BoxShadow(
+          color: ink.withValues(alpha: 0.05),
+          blurRadius: 16,
+          offset: const Offset(0, 6),
+        ),
+      ];
 }
 
 class GodropTextStyles {

@@ -79,6 +79,7 @@ class _KycScreenState extends State<KycScreen> {
       builder: (ctx, state) {
         final saving = state is ProfileSaving;
         return Scaffold(
+          backgroundColor: GodropColors.background,
           appBar: AppBar(
             title: const Text('KYC Verification'),
             leading: GestureDetector(
@@ -89,42 +90,58 @@ class _KycScreenState extends State<KycScreen> {
           body: Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               children: [
-                _sectionTitle('Vehicle Information'),
-                const SizedBox(height: 12),
-                _dropdown(
-                  label: 'Vehicle Type',
-                  value: _vehicleType,
-                  items: ['BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN'],
-                  onChanged: (v) => setState(() => _vehicleType = v),
+                _sectionCard(
+                  title: 'Vehicle Information',
+                  children: [
+                    _dropdown(
+                      label: 'Vehicle Type',
+                      value: _vehicleType,
+                      items: ['BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN'],
+                      onChanged: (v) => setState(() => _vehicleType = v),
+                    ),
+                    const SizedBox(height: 12),
+                    _field(_plate, 'Plate Number', hint: 'LAG-123-AB'),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Expanded(
+                          child: _field(_model, 'Vehicle Model',
+                              hint: 'Honda CB300')),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: _field(_year, 'Year',
+                              hint: '2020', isNumber: true)),
+                    ]),
+                    const SizedBox(height: 12),
+                    _field(_color, 'Vehicle Color', hint: 'Black'),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _field(_plate, 'Plate Number', hint: 'LAG-123-AB'),
-                const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(child: _field(_model, 'Vehicle Model', hint: 'Honda CB300')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _field(_year, 'Year', hint: '2020', isNumber: true)),
-                ]),
-                const SizedBox(height: 12),
-                _field(_color, 'Vehicle Color', hint: 'Black'),
-                const SizedBox(height: 20),
-                _sectionTitle('Driver\'s License'),
-                const SizedBox(height: 12),
-                _field(_licenseNumber, 'License Number'),
-                const SizedBox(height: 12),
-                _dateField(_licenseExpiry, 'License Expiry Date'),
-                const SizedBox(height: 20),
-                _sectionTitle('Insurance'),
-                const SizedBox(height: 12),
-                _dateField(_insuranceExpiry, 'Insurance Expiry Date'),
-                const SizedBox(height: 20),
-                _sectionTitle('Identity (Optional)'),
-                const SizedBox(height: 12),
-                _field(_bvn, 'BVN', hint: '12345678901', required: false),
-                const SizedBox(height: 12),
-                _field(_nin, 'NIN', hint: '12345678901', required: false),
+                const SizedBox(height: 16),
+                _sectionCard(
+                  title: "Driver's License",
+                  children: [
+                    _field(_licenseNumber, 'License Number'),
+                    const SizedBox(height: 12),
+                    _dateField(_licenseExpiry, 'License Expiry Date'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _sectionCard(
+                  title: 'Insurance',
+                  children: [
+                    _dateField(_insuranceExpiry, 'Insurance Expiry Date'),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _sectionCard(
+                  title: 'Identity (Optional)',
+                  children: [
+                    _field(_bvn, 'BVN', hint: '12345678901', required: false),
+                    const SizedBox(height: 12),
+                    _field(_nin, 'NIN', hint: '12345678901', required: false),
+                  ],
+                ),
                 const SizedBox(height: 32),
                 GodropButton(
                   label: 'Submit KYC',
@@ -137,6 +154,26 @@ class _KycScreenState extends State<KycScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _sectionCard({required String title, required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: GodropColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(title),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
     );
   }
 

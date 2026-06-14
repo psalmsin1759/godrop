@@ -7,7 +7,7 @@ class DioClient {
   DioClient._();
 
   static const String _baseUrl =
-      'https://godrop-production.up.railway.app/api/v1';
+      'https://api.naijagodrop.com/api/v1';
 
   static Dio? _instance;
 

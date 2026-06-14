@@ -2,110 +2,113 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 
-class RiderShell extends StatefulWidget {
+class RiderShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   const RiderShell({super.key, required this.navigationShell});
 
   @override
-  State<RiderShell> createState() => _RiderShellState();
-}
-
-class _RiderShellState extends State<RiderShell> {
-  final List<_NavItem> _items = const [
-    _NavItem(icon: Icons.work_outline_rounded, activeIcon: Icons.work_rounded, label: 'Jobs'),
-    _NavItem(icon: Icons.local_shipping_outlined, activeIcon: Icons.local_shipping_rounded, label: 'Active'),
-    _NavItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet_rounded, label: 'Earnings'),
-    _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile'),
-  ];
-
-  void _onTap(int index) {
-    widget.navigationShell.goBranch(
-      index,
-      initialLocation: index == widget.navigationShell.currentIndex,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final currentIndex = widget.navigationShell.currentIndex;
     return Scaffold(
-      body: widget.navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: GodropColors.white,
-          border: Border(
-            top: BorderSide(color: GodropColors.border, width: 1),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              children: List.generate(_items.length, (i) {
-                final item = _items[i];
-                final active = i == currentIndex;
-                return Expanded(
-                  child: _NavTile(
-                    item: item,
-                    active: active,
-                    onTap: () => _onTap(i),
-                  ),
-                );
-              }),
-            ),
-          ),
+      backgroundColor: GodropColors.background,
+      body: navigationShell,
+      bottomNavigationBar: _RiderBottomNav(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (i) => navigationShell.goBranch(
+          i,
+          initialLocation: i == navigationShell.currentIndex,
         ),
       ),
     );
   }
 }
 
-class _NavItem {
+class _NavItemData {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-  });
+  const _NavItemData(this.icon, this.activeIcon, this.label);
 }
 
-class _NavTile extends StatefulWidget {
-  final _NavItem item;
-  final bool active;
+const _kNavItems = [
+  _NavItemData(Icons.work_outline_rounded, Icons.work_rounded, 'Jobs'),
+  _NavItemData(Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Active'),
+  _NavItemData(Icons.account_balance_wallet_outlined,
+      Icons.account_balance_wallet_rounded, 'Earnings'),
+  _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+];
+
+class _RiderBottomNav extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  const _RiderBottomNav({required this.currentIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPad > 0 ? bottomPad : 12),
+      child: Container(
+        height: 66,
+        decoration: BoxDecoration(
+          color: GodropColors.white,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: GodropColors.ink.withValues(alpha: 0.10),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: List.generate(_kNavItems.length, (i) {
+            return _NavItem(
+              data: _kNavItems[i],
+              selected: currentIndex == i,
+              onTap: () => onTap(i),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatefulWidget {
+  final _NavItemData data;
+  final bool selected;
   final VoidCallback onTap;
 
-  const _NavTile({
-    required this.item,
-    required this.active,
+  const _NavItem({
+    required this.data,
+    required this.selected,
     required this.onTap,
   });
 
   @override
-  State<_NavTile> createState() => _NavTileState();
+  State<_NavItem> createState() => _NavItemState();
 }
 
-class _NavTileState extends State<_NavTile>
+class _NavItemState extends State<_NavItem>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 300),
-    value: widget.active ? 1.0 : 0.0,
+    duration: const Duration(milliseconds: 380),
   );
 
-  late final Animation<double> _scale = TweenSequence<double>([
-    TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 40),
-    TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 60),
-  ]).animate(_ctrl);
+  // Bounce: 1.0 → 1.28 → 0.94 → 1.0
+  late final Animation<double> _bounce = TweenSequence<double>([
+    TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.28), weight: 35),
+    TweenSequenceItem(tween: Tween(begin: 1.28, end: 0.94), weight: 30),
+    TweenSequenceItem(tween: Tween(begin: 0.94, end: 1.0), weight: 35),
+  ]).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
 
   @override
-  void didUpdateWidget(covariant _NavTile old) {
+  void didUpdateWidget(_NavItem old) {
     super.didUpdateWidget(old);
-    if (widget.active && !old.active) {
+    if (widget.selected && !old.selected) {
       _ctrl.forward(from: 0);
     }
   }
@@ -118,45 +121,58 @@ class _NavTileState extends State<_NavTile>
 
   @override
   Widget build(BuildContext context) {
-    final active = widget.active;
-    return GestureDetector(
-      onTap: widget.onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedBuilder(
-        animation: _ctrl,
-        builder: (_, __) => Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Transform.scale(
-              scale: _scale.value,
-              child: Icon(
-                active ? widget.item.activeIcon : widget.item.icon,
-                color: active ? GodropColors.blue : GodropColors.mute,
-                size: 22,
-              ),
-            ),
-            const SizedBox(height: 3),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                color: active ? GodropColors.blue : GodropColors.mute,
-              ),
-              child: Text(widget.item.label),
-            ),
-            const SizedBox(height: 2),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOut,
-              width: active ? 16 : 0,
-              height: 3,
+    final selected = widget.selected;
+    final color = selected ? GodropColors.blue : GodropColors.mute;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: GodropColors.blue,
-                borderRadius: BorderRadius.circular(2),
+                color: selected
+                    ? GodropColors.blue.withValues(alpha: 0.10)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScaleTransition(
+                    scale: _bounce,
+                    child: Icon(
+                      selected ? widget.data.activeIcon : widget.data.icon,
+                      color: color,
+                      size: 22,
+                    ),
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    child: selected
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Text(
+                              widget.data.label,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: GodropColors.blue,
+                              ),
+                            ),
+                          )
+                        : const SizedBox(width: 0, height: 0),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

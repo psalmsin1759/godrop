@@ -1,16 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/animated_entrance.dart';
+import '../profile/bloc/profile_cubit.dart';
+import '../profile/bloc/profile_state.dart';
 import 'bloc/earnings_cubit.dart';
 import 'bloc/earnings_state.dart';
 
 String _fmt(int kobo) {
   final naira = kobo / 100;
   return '₦${naira.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}';
+}
+
+(String, String) _splitNaira(int kobo) {
+  final naira = kobo / 100;
+  final str = naira.toStringAsFixed(2);
+  final parts = str.split('.');
+  final intPart = parts[0]
+      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+  return (intPart, parts[1]);
 }
 
 class EarningsScreen extends StatefulWidget {
@@ -25,6 +37,8 @@ class _EarningsScreenState extends State<EarningsScreen>
   @override
   bool get wantKeepAlive => true;
 
+  bool _hideBalance = false;
+
   @override
   void initState() {
     super.initState();
@@ -36,150 +50,280 @@ class _EarningsScreenState extends State<EarningsScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: GodropColors.background,
-      body: SafeArea(
-        child: BlocConsumer<EarningsCubit, EarningsState>(
-          listener: (ctx, state) {
-            if (state is WithdrawalSuccess) {
-              ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                content: Text('Withdrawal request submitted!'),
-                backgroundColor: GodropColors.success,
-                behavior: SnackBarBehavior.floating,
-              ));
-            } else if (state is EarningsError) {
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(state.message),
-                backgroundColor: GodropColors.error,
-                behavior: SnackBarBehavior.floating,
-              ));
-            }
-          },
-          builder: (ctx, state) {
-            if (state is EarningsLoading) return _shimmer();
-            if (state is EarningsError) return _error(ctx, state.message);
+      body: BlocConsumer<EarningsCubit, EarningsState>(
+        listener: (ctx, state) {
+          if (state is WithdrawalSuccess) {
+            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+              content: Text('Withdrawal initiated!'),
+              backgroundColor: GodropColors.success,
+              behavior: SnackBarBehavior.floating,
+            ));
+          } else if (state is EarningsError) {
+            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+              content: Text(state.message),
+              backgroundColor: GodropColors.error,
+              behavior: SnackBarBehavior.floating,
+            ));
+          }
+        },
+        builder: (ctx, state) {
+          final loaded = switch (state) {
+            EarningsLoaded s => s,
+            WithdrawalSubmitting s => s.loaded,
+            WithdrawalSuccess s => s.loaded,
+            EarningsError s => s.loaded,
+            _ => null,
+          };
+          final loading = state is EarningsLoading;
+          final submitting = state is WithdrawalSubmitting;
+          final errorMessage = state is EarningsError ? state.message : null;
 
-            final loaded = state is EarningsLoaded
-                ? state
-                : state is WithdrawalSubmitting
-                    ? state.loaded
-                    : state is WithdrawalSuccess
-                        ? state.loaded
-                        : null;
-
-            if (loaded == null) return const SizedBox.shrink();
-
-            final submitting = state is WithdrawalSubmitting;
-            return _buildContent(ctx, loaded, submitting);
-          },
-        ),
+          return RefreshIndicator(
+            onRefresh: () => ctx.read<EarningsCubit>().load(),
+            color: GodropColors.blue,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildHeader(ctx, loaded, loading, submitting),
+                ),
+                SliverToBoxAdapter(
+                  child: loaded == null
+                      ? (loading ? _bodyShimmer() : _error(ctx, errorMessage ?? 'Something went wrong'))
+                      : _buildBody(ctx, loaded),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildContent(
-      BuildContext ctx, EarningsLoaded state, bool submitting) {
-    return RefreshIndicator(
-      onRefresh: () => ctx.read<EarningsCubit>().load(),
-      color: GodropColors.blue,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          AnimatedEntrance(
-            child: _summaryCard(ctx, state, submitting),
-          ),
-          const SizedBox(height: 20),
-          AnimatedEntrance(
-            delay: const Duration(milliseconds: 80),
-            child: _statsRow(state.summary),
-          ),
-          const SizedBox(height: 20),
-          if (state.withdrawals.isNotEmpty) ...[
-            AnimatedEntrance(
-              delay: const Duration(milliseconds: 120),
-              child: _section('Withdrawal History'),
-            ),
-            const SizedBox(height: 10),
-            ...state.withdrawals.asMap().entries.map((e) => AnimatedEntrance(
-                  delay: Duration(milliseconds: 140 + e.key * 40),
-                  child: _WithdrawalCard(w: e.value),
-                )),
-            const SizedBox(height: 20),
-          ],
-          if (state.earnings.isNotEmpty) ...[
-            AnimatedEntrance(
-              delay: const Duration(milliseconds: 160),
-              child: _section('Earnings Breakdown'),
-            ),
-            const SizedBox(height: 10),
-            ...state.earnings.asMap().entries.map((e) => AnimatedEntrance(
-                  delay: Duration(milliseconds: 180 + e.key * 30),
-                  child: _EarningCard(earning: e.value),
-                )),
-          ],
-        ],
-      ),
-    );
-  }
+  Widget _buildHeader(BuildContext ctx, EarningsLoaded? loaded, bool loading,
+      bool submitting) {
+    final pendingKobo = loaded?.summary.pendingBalanceKobo ?? 0;
+    final (intPart, decPart) = _splitNaira(pendingKobo);
+    final canWithdraw = !loading && !submitting && pendingKobo >= 10000;
 
-  Widget _summaryCard(
-      BuildContext ctx, EarningsLoaded state, bool submitting) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+          20, MediaQuery.of(ctx).padding.top + 16, 20, 32),
+      decoration: const BoxDecoration(
         gradient: GodropColors.blueGradient,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text(
-                'Pending Balance',
-                style: TextStyle(color: GodropColors.white, fontSize: 13),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.account_balance_wallet_rounded,
+                    color: Colors.white, size: 20),
               ),
-              const Spacer(),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Earnings',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700)),
+              ),
               GestureDetector(
                 onTap: () => ctx.read<EarningsCubit>().load(),
-                child: const Icon(Icons.refresh_rounded,
-                    color: GodropColors.white, size: 18),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.refresh_rounded,
+                      color: Colors.white, size: 18),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            _fmt(state.summary.pendingBalanceKobo),
-            style: const TextStyle(
-              color: GodropColors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Lifetime: ${_fmt(state.summary.totalKobo)} · ${state.summary.deliveryCount} deliveries',
-            style: TextStyle(
-                color: GodropColors.white.withOpacity(0.7), fontSize: 12),
-          ),
-          const SizedBox(height: 20),
-          GodropButton(
-            label: submitting ? 'Processing...' : 'Withdraw Earnings',
-            gradientColors: [GodropColors.orange, const Color(0xFFE05500)],
-            onTap: (state.summary.pendingBalanceKobo < 10000 || submitting)
-                ? null
-                : () => _showWithdrawDialog(ctx, state.summary.pendingBalanceKobo),
-            isLoading: submitting,
-          ),
-          if (state.summary.pendingBalanceKobo < 10000) ...[
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                'Minimum withdrawal is ₦100',
-                style: TextStyle(
-                    color: GodropColors.white.withOpacity(0.6), fontSize: 12),
+          const SizedBox(height: 22),
+          AnimatedEntrance(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'PENDING BALANCE',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.65),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1),
+                      ),
+                      const Spacer(),
+                      if (!loading)
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => _hideBalance = !_hideBalance),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                shape: BoxShape.circle),
+                            child: Icon(
+                              _hideBalance
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  loading
+                      ? Shimmer.fromColors(
+                          baseColor: Colors.white.withValues(alpha: 0.15),
+                          highlightColor: Colors.white.withValues(alpha: 0.35),
+                          child: Container(
+                            width: 150,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        )
+                      : _hideBalance
+                          ? const Text(
+                              '₦ • • • • • •',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 2),
+                            )
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(bottom: 5),
+                                  child: Text('₦',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w500)),
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  intPart,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -1),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 5),
+                                  child: Text(
+                                    '.$decPart',
+                                    style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.6),
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                  const SizedBox(height: 4),
+                  Text(
+                    loaded == null
+                        ? ' '
+                        : 'Lifetime: ${_fmt(loaded.summary.totalKobo)} · ${loaded.summary.deliveryCount} deliveries',
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+                  ),
+                  const SizedBox(height: 20),
+                  GodropButton(
+                    label: submitting ? 'Processing…' : 'Withdraw Earnings',
+                    onTap: canWithdraw
+                        ? () => _onWithdrawTap(ctx, pendingKobo)
+                        : null,
+                    gradientColors: const [Colors.white, Colors.white],
+                    textColor: GodropColors.blue,
+                    icon: Icons.north_east_rounded,
+                    isLoading: submitting,
+                  ),
+                  if (!loading && pendingKobo < 10000) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'Minimum withdrawal is ₦100',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext ctx, EarningsLoaded state) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 22, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 60),
+            child: _statsRow(state.summary),
+          ),
+          const SizedBox(height: 20),
+          if (state.withdrawals.isNotEmpty) ...[
+            AnimatedEntrance(
+              delay: const Duration(milliseconds: 100),
+              child: _section('Withdrawal History'),
+            ),
+            const SizedBox(height: 10),
+            ...state.withdrawals.asMap().entries.map((e) => AnimatedEntrance(
+                  delay: Duration(milliseconds: 120 + e.key * 40),
+                  child: _WithdrawalCard(w: e.value),
+                )),
+            const SizedBox(height: 20),
           ],
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 140),
+            child: _section('Earnings Breakdown'),
+          ),
+          const SizedBox(height: 10),
+          if (state.earnings.isEmpty)
+            const _EmptyEarnings()
+          else
+            ...state.earnings.asMap().entries.map((e) => AnimatedEntrance(
+                  delay: Duration(milliseconds: 160 + e.key * 30),
+                  child: _EarningCard(earning: e.value),
+                )),
         ],
       ),
     );
@@ -203,6 +347,8 @@ class _EarningsScreenState extends State<EarningsScreen>
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         children: [
@@ -228,6 +374,70 @@ class _EarningsScreenState extends State<EarningsScreen>
           color: GodropColors.ink,
         ),
       );
+
+  void _onWithdrawTap(BuildContext ctx, int maxKobo) {
+    final profileState = ctx.read<ProfileCubit>().state;
+    final profile = profileState is ProfileLoaded ? profileState.profile : null;
+    final hasBankAccount = profile?.bankCode != null &&
+        profile?.accountNumber != null &&
+        profile?.accountName != null;
+
+    if (!hasBankAccount) {
+      _showNoBankAccountSheet(ctx);
+      return;
+    }
+    _showWithdrawDialog(ctx, maxKobo);
+  }
+
+  void _showNoBankAccountSheet(BuildContext ctx) {
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: GodropColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(bctx).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: GodropColors.blue.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.account_balance_rounded,
+                  color: GodropColors.blue, size: 22),
+            ),
+            const SizedBox(height: 14),
+            const Text('Add a bank account',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: GodropColors.ink)),
+            const SizedBox(height: 6),
+            const Text(
+              'You need to add a bank account before you can withdraw your earnings.',
+              style: TextStyle(fontSize: 13, color: GodropColors.slate),
+            ),
+            const SizedBox(height: 20),
+            GodropButton(
+              label: 'Add Bank Account',
+              onTap: () {
+                Navigator.pop(bctx);
+                ctx.push('/profile/bank');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _showWithdrawDialog(BuildContext ctx, int maxKobo) {
     final controller = TextEditingController();
@@ -287,50 +497,100 @@ class _EarningsScreenState extends State<EarningsScreen>
   }
 
   Widget _error(BuildContext ctx, String message) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error_outline, color: GodropColors.mute, size: 40),
-          const SizedBox(height: 12),
-          Text(message,
-              style: const TextStyle(color: GodropColors.slate, fontSize: 14)),
-          const SizedBox(height: 16),
-          TextButton(
-              onPressed: () => ctx.read<EarningsCubit>().load(),
-              child: const Text('Retry')),
-        ],
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: GodropColors.mute, size: 40),
+            const SizedBox(height: 12),
+            Text(message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: GodropColors.slate, fontSize: 14)),
+            const SizedBox(height: 16),
+            TextButton(
+                onPressed: () => ctx.read<EarningsCubit>().load(),
+                child: const Text('Retry')),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _shimmer() {
+  Widget _bodyShimmer() {
     return Shimmer.fromColors(
       baseColor: GodropColors.border,
       highlightColor: GodropColors.white,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-              height: 200,
-              decoration: BoxDecoration(
-                  color: GodropColors.white,
-                  borderRadius: BorderRadius.circular(20))),
-          const SizedBox(height: 16),
-          Row(
-            children: List.generate(
-              3,
-              (_) => Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  height: 72,
-                  decoration: BoxDecoration(
-                      color: GodropColors.white,
-                      borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 22, 16, 16),
+        child: Column(
+          children: [
+            Row(
+              children: List.generate(
+                3,
+                (_) => Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    height: 72,
+                    decoration: BoxDecoration(
+                        color: GodropColors.white,
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+            ...List.generate(
+              4,
+              (_) => Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                height: 68,
+                decoration: BoxDecoration(
+                    color: GodropColors.white,
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyEarnings extends StatelessWidget {
+  const _EmptyEarnings();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 44),
+      decoration: BoxDecoration(
+        color: GodropColors.card,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+                color: GodropColors.orange.withValues(alpha: 0.08),
+                shape: BoxShape.circle),
+            child: const Icon(Icons.local_shipping_outlined,
+                color: GodropColors.orange, size: 28),
           ),
+          const SizedBox(height: 14),
+          const Text('No earnings yet',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: GodropColors.ink)),
+          const SizedBox(height: 4),
+          const Text('Complete deliveries to start earning',
+              style: TextStyle(fontSize: 12, color: GodropColors.mute)),
         ],
       ),
     );
@@ -344,9 +604,9 @@ class _WithdrawalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, bg) = switch (w.status) {
-      'COMPLETED' => (GodropColors.success, GodropColors.success.withOpacity(0.1)),
-      'PENDING' || 'PROCESSING' => (GodropColors.orange, GodropColors.orange.withOpacity(0.1)),
-      _ => (GodropColors.error, GodropColors.error.withOpacity(0.1)),
+      'COMPLETED' => (GodropColors.success, GodropColors.success.withValues(alpha: 0.1)),
+      'PENDING' || 'PROCESSING' => (GodropColors.orange, GodropColors.orange.withValues(alpha: 0.1)),
+      _ => (GodropColors.error, GodropColors.error.withValues(alpha: 0.1)),
     };
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -354,6 +614,8 @@ class _WithdrawalCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Row(
         children: [
@@ -416,6 +678,8 @@ class _EarningCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Row(
         children: [
@@ -423,7 +687,7 @@ class _EarningCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: GodropColors.orange.withOpacity(0.1),
+              color: GodropColors.orange.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.local_shipping_rounded,

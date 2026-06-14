@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/animated_entrance.dart';
+import '../../shared/widgets/rider_header.dart';
 import 'bloc/active_cubit.dart';
 import 'bloc/active_state.dart';
 
@@ -58,6 +59,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
     return Scaffold(
       backgroundColor: GodropColors.background,
       body: SafeArea(
+        top: false,
         child: BlocConsumer<ActiveCubit, ActiveState>(
           listener: (ctx, state) {
             if (state is ActiveError) {
@@ -76,24 +78,46 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
             }
           },
           builder: (ctx, state) {
-            if (state is ActiveLoading || state is ActiveInitial) {
-              return const Center(
-                  child: CircularProgressIndicator(color: GodropColors.blue));
-            }
-            if (state is ActiveNone) return _buildNoActive(ctx);
-            if (state is ActiveLoaded || state is ActiveActionLoading) {
-              final order = state is ActiveLoaded
-                  ? state.order
-                  : (state as ActiveActionLoading).order;
-              final loading = state is ActiveActionLoading;
-              return _buildActive(ctx, order, loading);
-            }
-            if (state is ActiveError) return _buildNoActive(ctx);
-            return const SizedBox.shrink();
+            return Column(
+              children: [
+                _buildHeader(state),
+                Expanded(child: _buildBody(ctx, state)),
+              ],
+            );
           },
         ),
       ),
     );
+  }
+
+  Widget _buildHeader(ActiveState state) {
+    RiderOrderDetail? order;
+    if (state is ActiveLoaded) order = state.order;
+    if (state is ActiveActionLoading) order = state.order;
+
+    return RiderHeader(
+      icon: Icons.local_shipping_rounded,
+      title: 'Active Delivery',
+      subtitle: order != null ? '#${order.trackingCode}' : 'Nothing in progress',
+      trailing: order != null ? _statusPillLight(order.status) : null,
+    );
+  }
+
+  Widget _buildBody(BuildContext ctx, ActiveState state) {
+    if (state is ActiveLoading || state is ActiveInitial) {
+      return const Center(
+          child: CircularProgressIndicator(color: GodropColors.blue));
+    }
+    if (state is ActiveNone) return _buildNoActive(ctx);
+    if (state is ActiveLoaded || state is ActiveActionLoading) {
+      final order = state is ActiveLoaded
+          ? state.order
+          : (state as ActiveActionLoading).order;
+      final loading = state is ActiveActionLoading;
+      return _buildActive(ctx, order, loading);
+    }
+    if (state is ActiveError) return _buildNoActive(ctx);
+    return const SizedBox.shrink();
   }
 
   Widget _buildNoActive(BuildContext ctx) {
@@ -112,7 +136,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: GodropColors.success.withOpacity(0.1),
+                      color: GodropColors.success.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.check_circle_outline_rounded,
@@ -145,95 +169,52 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
 
   Widget _buildActive(
       BuildContext ctx, RiderOrderDetail order, bool loading) {
-    return Column(
+    return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
-        // Header
-        Container(
-          color: GodropColors.white,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Active Delivery',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: GodropColors.ink,
-                      ),
-                    ),
-                    Text(
-                      '#${order.trackingCode}',
-                      style: const TextStyle(
-                          fontSize: 13, color: GodropColors.mute),
-                    ),
-                  ],
-                ),
-              ),
-              _statusPill(order.status),
-            ],
-          ),
+        AnimatedEntrance(
+          delay: const Duration(milliseconds: 50),
+          child: _earningsCard(order),
         ),
-
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              AnimatedEntrance(
-                delay: const Duration(milliseconds: 50),
-                child: _earningsCard(order),
-              ),
-              const SizedBox(height: 12),
-              AnimatedEntrance(
-                delay: const Duration(milliseconds: 100),
-                child: _routeCard(order),
-              ),
-              const SizedBox(height: 12),
-              AnimatedEntrance(
-                delay: const Duration(milliseconds: 150),
-                child: _recipientCard(order),
-              ),
-              const SizedBox(height: 12),
-              AnimatedEntrance(
-                delay: const Duration(milliseconds: 200),
-                child: _actionCard(ctx, order, loading),
-              ),
-              const SizedBox(height: 20),
-              AnimatedEntrance(
-                delay: const Duration(milliseconds: 250),
-                child: _failedButton(ctx, order, loading),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
+        const SizedBox(height: 12),
+        AnimatedEntrance(
+          delay: const Duration(milliseconds: 100),
+          child: _routeCard(order),
         ),
+        const SizedBox(height: 12),
+        AnimatedEntrance(
+          delay: const Duration(milliseconds: 150),
+          child: _recipientCard(order),
+        ),
+        const SizedBox(height: 12),
+        AnimatedEntrance(
+          delay: const Duration(milliseconds: 200),
+          child: _actionCard(ctx, order, loading),
+        ),
+        const SizedBox(height: 20),
+        AnimatedEntrance(
+          delay: const Duration(milliseconds: 250),
+          child: _failedButton(ctx, order, loading),
+        ),
+        const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _statusPill(String status) {
-    final (color, bg) = switch (status) {
-      'ACCEPTED' => (GodropColors.blue, GodropColors.blue.withOpacity(0.1)),
-      'READY_FOR_PICKUP' => (GodropColors.orange, GodropColors.orange.withOpacity(0.1)),
-      'PICKED_UP' => (GodropColors.success, GodropColors.success.withOpacity(0.1)),
-      'IN_TRANSIT' => (GodropColors.success, GodropColors.success.withOpacity(0.1)),
-      _ => (GodropColors.slate, GodropColors.background),
-    };
+  /// Status pill rendered on the gradient header.
+  Widget _statusPillLight(String status) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: bg,
+        color: GodropColors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(
         status.replaceAll('_', ' '),
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: color,
+          color: GodropColors.white,
         ),
       ),
     );
@@ -276,7 +257,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
               Text(
                 _fmt(order.totalKobo),
                 style: TextStyle(
-                    color: GodropColors.white.withOpacity(0.75),
+                    color: GodropColors.white.withValues(alpha: 0.75),
                     fontSize: 14,
                     fontWeight: FontWeight.w500),
               ),
@@ -284,7 +265,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: GodropColors.white.withOpacity(0.2),
+                  color: GodropColors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
@@ -306,6 +287,8 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,6 +364,8 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Row(
         children: [
@@ -388,7 +373,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: GodropColors.blue.withOpacity(0.08),
+              color: GodropColors.blue.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.person_outline_rounded,
@@ -423,7 +408,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: GodropColors.success.withOpacity(0.1),
+                  color: GodropColors.success.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.phone_rounded,

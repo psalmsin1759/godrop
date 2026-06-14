@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
+import '../../shared/widgets/rider_header.dart';
 import 'bloc/history_cubit.dart';
 import 'bloc/history_state.dart';
 
@@ -69,21 +70,14 @@ class _HistoryScreenState extends State<HistoryScreen>
     return Scaffold(
       backgroundColor: GodropColors.background,
       body: SafeArea(
+        top: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              color: GodropColors.white,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: const Text(
-                'Delivery History',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: GodropColors.ink,
-                  letterSpacing: -0.4,
-                ),
-              ),
+            const RiderHeader(
+              icon: Icons.history_rounded,
+              title: 'Delivery History',
+              subtitle: 'Your completed deliveries',
             ),
             Expanded(
               child: BlocBuilder<HistoryCubit, HistoryState>(
@@ -138,7 +132,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: GodropColors.blue.withOpacity(0.08),
+              color: GodropColors.blue.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.history_rounded,
@@ -210,6 +204,8 @@ class _HistoryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: GodropColors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
       ),
       child: Row(
         children: [
@@ -217,7 +213,7 @@ class _HistoryCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: GodropColors.success.withOpacity(0.1),
+              color: GodropColors.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.check_circle_outline_rounded,

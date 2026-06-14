@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
+import '../../shared/widgets/rider_header.dart';
 import 'bloc/notifications_cubit.dart';
 import 'bloc/notifications_state.dart';
 
@@ -39,33 +40,59 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GodropColors.background,
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          BlocBuilder<NotificationsCubit, NotificationsState>(
-            builder: (ctx, state) {
-              if (state is! NotificationsLoaded || state.unreadCount == 0) {
-                return const SizedBox.shrink();
-              }
-              return TextButton(
-                onPressed: () => ctx.read<NotificationsCubit>().markAllRead(),
-                child: const Text('Mark all read',
-                    style: TextStyle(color: GodropColors.blue, fontSize: 13)),
-              );
-            },
-          ),
-        ],
-      ),
-      body: BlocBuilder<NotificationsCubit, NotificationsState>(
-        builder: (ctx, state) {
-          if (state is NotificationsLoading) return _shimmer();
-          if (state is NotificationsError) return _error(ctx, state.message);
-          if (state is NotificationsLoaded) {
-            if (state.notifications.isEmpty) return _empty();
-            return _list(ctx, state);
-          }
-          return const SizedBox.shrink();
-        },
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            BlocBuilder<NotificationsCubit, NotificationsState>(
+              builder: (ctx, state) {
+                final unread =
+                    state is NotificationsLoaded ? state.unreadCount : 0;
+                return RiderHeader(
+                  icon: Icons.notifications_rounded,
+                  title: 'Notifications',
+                  subtitle:
+                      unread > 0 ? '$unread unread' : "You're all caught up",
+                  trailing: unread > 0
+                      ? GestureDetector(
+                          onTap: () =>
+                              ctx.read<NotificationsCubit>().markAllRead(),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: GodropColors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: const Text(
+                              'Mark all read',
+                              style: TextStyle(
+                                color: GodropColors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
+            Expanded(
+              child: BlocBuilder<NotificationsCubit, NotificationsState>(
+                builder: (ctx, state) {
+                  if (state is NotificationsLoading) return _shimmer();
+                  if (state is NotificationsError) return _error(ctx, state.message);
+                  if (state is NotificationsLoaded) {
+                    if (state.notifications.isEmpty) return _empty();
+                    return _list(ctx, state);
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -160,13 +187,14 @@ class _NotifCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: notif.isRead ? GodropColors.white : GodropColors.blue.withOpacity(0.05),
+          color: notif.isRead ? GodropColors.white : GodropColors.blue.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: notif.isRead
                 ? GodropColors.border
-                : GodropColors.blue.withOpacity(0.2),
+                : GodropColors.blue.withValues(alpha: 0.2),
           ),
+          boxShadow: GodropColors.softShadow,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +205,7 @@ class _NotifCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: notif.isRead
                     ? GodropColors.background
-                    : GodropColors.blue.withOpacity(0.1),
+                    : GodropColors.blue.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

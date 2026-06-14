@@ -913,6 +913,7 @@ components:
         driverLicenseExpiry: { type: string, format: date-time, nullable: true }
         vehicleInsuranceExpiry: { type: string, format: date-time, nullable: true }
         bankName: { type: string, nullable: true }
+        bankCode: { type: string, nullable: true }
         accountNumber: { type: string, nullable: true }
         accountName: { type: string, nullable: true }
         kycStatus: { type: string, enum: [PENDING, SUBMITTED, VERIFIED, REJECTED] }
@@ -1017,8 +1018,10 @@ components:
         id: { type: string }
         amountKobo: { type: integer }
         bankName: { type: string }
+        bankCode: { type: string }
         accountNumber: { type: string }
         accountName: { type: string }
+        reference: { type: string, nullable: true }
         status: { type: string, enum: [PENDING, PROCESSING, COMPLETED, FAILED] }
         notes: { type: string, nullable: true }
         processedAt: { type: string, format: date-time, nullable: true }
@@ -6380,6 +6383,60 @@ paths:
                   success: { type: boolean, example: true }
                   data: { $ref: "#/components/schemas/RiderProfile" }
 
+  /rider/wallet/banks:
+    get:
+      tags: [Rider App — Profile]
+      summary: List Nigerian banks (from Paystack)
+      description: Returns a list of supported Nigerian banks with their codes for bank account setup.
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Bank list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  banks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string, example: Access Bank }
+                        code: { type: string, example: "044" }
+                        slug: { type: string, example: access-bank }
+
+  /rider/wallet/resolve-account:
+    post:
+      tags: [Rider App — Profile]
+      summary: Resolve / verify a bank account number
+      description: Calls Paystack to verify an account number and return the registered account name.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountNumber, bankCode]
+              properties:
+                accountNumber: { type: string, minLength: 10, maxLength: 10, example: "0123456789" }
+                bankCode: { type: string, example: "044" }
+      responses:
+        "200":
+          description: Account verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accountName: { type: string, example: JOHN DOE }
+                  accountNumber: { type: string, example: "0123456789" }
+        "422":
+          description: Could not verify account number
+
   /rider/me/availability:
     patch:
       tags: [Rider App — Profile]
@@ -6795,8 +6852,12 @@ paths:
       tags: [Rider App — Earnings]
       summary: Request withdrawal of pending earnings to bank account
       description: |
-        Creates a `RiderWithdrawal` record in PENDING status. A system admin then approves
-        or rejects via `PATCH /admin/riders/:id/withdrawals/:withdrawalId`.
+        Initiates a Paystack transfer to the rider's bank account and creates a
+        `RiderWithdrawal` record in PROCESSING status. The oldest PENDING `RiderEarning`
+        records covering the withdrawn amount are marked SETTLED.
+
+        Requires a bank account on file (via `PATCH /rider/me/bank`) unless bank
+        details are supplied in the request body.
 
         Minimum withdrawal: ₦100 (10,000 kobo).
         Amount cannot exceed current pending balance.
@@ -6816,7 +6877,7 @@ paths:
                 accountName: { type: string, description: "Override saved account name" }
       responses:
         "201":
-          description: Withdrawal request created
+          description: Withdrawal initiated, status PROCESSING
           content:
             application/json:
               schema:
@@ -6825,7 +6886,7 @@ paths:
                   success: { type: boolean, example: true }
                   data: { $ref: "#/components/schemas/RiderWithdrawal" }
         "400":
-          description: Insufficient balance or below minimum withdrawal amount
+          description: Insufficient balance, below minimum withdrawal amount, or no bank account on file
 
   /rider/earnings/withdrawals:
     get:

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
 import '../../shared/widgets/godrop_button.dart';
+import '../active/bloc/active_cubit.dart';
 import 'bloc/jobs_cubit.dart';
 import 'bloc/jobs_state.dart';
 
@@ -100,12 +101,16 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               backgroundColor: GodropColors.success,
               behavior: SnackBarBehavior.floating,
             ));
+            ctx.read<JobsCubit>().loadJobs();
+            ctx.read<ActiveCubit>().loadActiveOrder();
+            ctx.pop();
             ctx.go('/active');
           } else {
             ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
               content: Text('Order rejected.'),
               behavior: SnackBarBehavior.floating,
             ));
+            ctx.read<JobsCubit>().loadJobs();
             ctx.pop();
           }
         } else if (state is JobDetailError) {
@@ -117,7 +122,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         }
       },
       builder: (ctx, state) {
-        if (state is JobDetailLoading || state is JobDetailInitial) {
+        if (state is JobDetailLoading ||
+            state is JobDetailInitial ||
+            state is JobActionSuccess) {
           return const Scaffold(
             body: Center(
                 child: CircularProgressIndicator(color: GodropColors.blue)),

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { RiderWithdrawalStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { creditBusinessWalletForEarning } from "./businessAdminService";
 import * as paystackService from "./paystackService";
@@ -42,6 +43,9 @@ export async function listEarnings(riderId: string, page: number, limit: number)
   return { data, total, page, limit };
 }
 
+// Withdrawals that have removed (or will remove) money from the rider's balance
+const ACTIVE_WITHDRAWAL_STATUSES: RiderWithdrawalStatus[] = ["PENDING", "PROCESSING", "COMPLETED"];
+
 export async function getEarningsSummary(riderId: string) {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -49,33 +53,43 @@ export async function getEarningsSummary(riderId: string) {
   weekStart.setDate(todayStart.getDate() - todayStart.getDay());
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [total, today, thisWeek, thisMonth, pendingBalance, deliveryCount] = await prisma.$transaction([
-    prisma.riderEarning.aggregate({ where: { riderId }, _sum: { amountKobo: true } }),
-    prisma.riderEarning.aggregate({
-      where: { riderId, createdAt: { gte: todayStart } },
-      _sum: { amountKobo: true },
-    }),
-    prisma.riderEarning.aggregate({
-      where: { riderId, createdAt: { gte: weekStart } },
-      _sum: { amountKobo: true },
-    }),
-    prisma.riderEarning.aggregate({
-      where: { riderId, createdAt: { gte: monthStart } },
-      _sum: { amountKobo: true },
-    }),
-    prisma.riderEarning.aggregate({
-      where: { riderId, status: "PENDING" },
-      _sum: { amountKobo: true },
-    }),
-    prisma.riderEarning.count({ where: { riderId } }),
-  ]);
+  const [total, today, thisWeek, thisMonth, pendingEarnings, deliveryCount, activeWithdrawals] =
+    await prisma.$transaction([
+      prisma.riderEarning.aggregate({ where: { riderId }, _sum: { amountKobo: true } }),
+      prisma.riderEarning.aggregate({
+        where: { riderId, createdAt: { gte: todayStart } },
+        _sum: { amountKobo: true },
+      }),
+      prisma.riderEarning.aggregate({
+        where: { riderId, createdAt: { gte: weekStart } },
+        _sum: { amountKobo: true },
+      }),
+      prisma.riderEarning.aggregate({
+        where: { riderId, createdAt: { gte: monthStart } },
+        _sum: { amountKobo: true },
+      }),
+      prisma.riderEarning.aggregate({
+        where: { riderId, status: "PENDING" },
+        _sum: { amountKobo: true },
+      }),
+      prisma.riderEarning.count({ where: { riderId } }),
+      prisma.riderWithdrawal.aggregate({
+        where: { riderId, status: { in: ACTIVE_WITHDRAWAL_STATUSES } },
+        _sum: { amountKobo: true },
+      }),
+    ]);
+
+  const pendingBalanceKobo = Math.max(
+    0,
+    (pendingEarnings._sum.amountKobo ?? 0) - (activeWithdrawals._sum?.amountKobo ?? 0)
+  );
 
   return {
     totalKobo: total._sum.amountKobo ?? 0,
     todayKobo: today._sum.amountKobo ?? 0,
     thisWeekKobo: thisWeek._sum.amountKobo ?? 0,
     thisMonthKobo: thisMonth._sum.amountKobo ?? 0,
-    pendingBalanceKobo: pendingBalance._sum.amountKobo ?? 0,
+    pendingBalanceKobo,
     deliveryCount,
   };
 }
@@ -87,12 +101,19 @@ export async function requestWithdrawal(
 ) {
   const rider = await prisma.rider.findUniqueOrThrow({ where: { id: riderId } });
 
-  const pendingEarnings = await prisma.riderEarning.findMany({
-    where: { riderId, status: "PENDING" },
-    orderBy: { createdAt: "asc" },
-  });
+  const [pendingEarnings, activeWithdrawals] = await prisma.$transaction([
+    prisma.riderEarning.aggregate({
+      where: { riderId, status: "PENDING" },
+      _sum: { amountKobo: true },
+    }),
+    prisma.riderWithdrawal.aggregate({
+      where: { riderId, status: { in: ACTIVE_WITHDRAWAL_STATUSES } },
+      _sum: { amountKobo: true },
+    }),
+  ]);
 
-  const available = pendingEarnings.reduce((sum, e) => sum + e.amountKobo, 0);
+  const available =
+    (pendingEarnings._sum.amountKobo ?? 0) - (activeWithdrawals._sum?.amountKobo ?? 0);
   if (amountKobo > available) throw new Error("Insufficient balance");
   if (amountKobo < 100_00) throw new Error("Minimum withdrawal is ₦100 (10,000 kobo)");
 
@@ -119,33 +140,18 @@ export async function requestWithdrawal(
     reason: "Rider earnings withdrawal",
   });
 
-  // Settle enough of the oldest PENDING earnings to cover the withdrawn amount
-  let remaining = amountKobo;
-  const toSettle: string[] = [];
-  for (const earning of pendingEarnings) {
-    if (remaining <= 0) break;
-    toSettle.push(earning.id);
-    remaining -= earning.amountKobo;
-  }
-
-  const [withdrawal] = await prisma.$transaction([
-    prisma.riderWithdrawal.create({
-      data: {
-        riderId,
-        amountKobo,
-        bankName,
-        bankCode,
-        accountNumber,
-        accountName,
-        reference,
-        status: "PROCESSING",
-      },
-    }),
-    prisma.riderEarning.updateMany({
-      where: { id: { in: toSettle } },
-      data: { status: "SETTLED", settledAt: new Date() },
-    }),
-  ]);
+  const withdrawal = await prisma.riderWithdrawal.create({
+    data: {
+      riderId,
+      amountKobo,
+      bankName,
+      bankCode,
+      accountNumber,
+      accountName,
+      reference,
+      status: "PROCESSING",
+    },
+  });
 
   return withdrawal;
 }

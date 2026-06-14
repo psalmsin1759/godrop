@@ -277,7 +277,7 @@ export async function placeParcelOrder(
       confirmationCode,
       customerId,
       type: OrderType.PARCEL,
-      status: OrderStatus.READY_FOR_PICKUP,
+      status: OrderStatus.PENDING,
       pickupAddress: data.pickup.address,
       pickupLat: data.pickup.lat,
       pickupLng: data.pickup.lng,
@@ -296,45 +296,65 @@ export async function placeParcelOrder(
       totalKobo: priceBreakdown.totalKobo,
       estimatedMinutes,
       scheduledAt: data.scheduleAt ? new Date(data.scheduleAt) : undefined,
-      events: { create: { status: OrderStatus.READY_FOR_PICKUP, description: "Parcel order placed" } },
+      events: { create: { status: OrderStatus.PENDING, description: "Parcel order placed — awaiting payment" } },
     },
     include: { parcelVehicleType: { select: { id: true, name: true } } },
   });
 
+  // Not yet visible to riders or broadcast — that happens once payment is
+  // confirmed, via activateOrderAfterPayment().
+  return order;
+}
+
+/**
+ * Promotes a PENDING parcel order to READY_FOR_PICKUP once payment has been
+ * confirmed (or for payment methods that don't require upfront online
+ * payment, e.g. cash), and only then surfaces it to riders via FCM +
+ * WebSocket. This ensures riders never see — and can't accept — an order the
+ * customer hasn't actually paid for.
+ */
+export async function activateOrderAfterPayment(orderId: string): Promise<void> {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) return;
+  if (order.type !== OrderType.PARCEL || order.status !== OrderStatus.PENDING) return;
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: OrderStatus.READY_FOR_PICKUP,
+      events: { create: { status: OrderStatus.READY_FOR_PICKUP, description: "Payment confirmed — order ready for pickup" } },
+    },
+  });
+
   // Notify all online riders via FCM + WebSocket (fire-and-forget)
-  const fcmPayload = {
-    id: order.id,
-    trackingCode: order.trackingCode,
-    pickupAddress: order.pickupAddress,
-    dropoffAddress: order.dropoffAddress,
-    totalKobo: order.totalKobo,
-  };
-  fcmService.notifyOnlineRidersNewParcel(fcmPayload).catch((err) =>
-    console.error("FCM notify failed:", err)
-  );
+  fcmService.notifyOnlineRidersNewParcel({
+    id: updated.id,
+    trackingCode: updated.trackingCode,
+    pickupAddress: updated.pickupAddress,
+    dropoffAddress: updated.dropoffAddress,
+    totalKobo: updated.totalKobo,
+  }).catch((err) => console.error("FCM notify failed:", err));
 
   // WebSocket payload must match the RiderOrder model on the mobile app
   broadcastNewOrder({
-    id: order.id,
-    trackingCode: order.trackingCode,
-    type: order.type,
-    status: order.status,
-    pickupAddress: order.pickupAddress,
-    pickupLat: order.pickupLat,
-    pickupLng: order.pickupLng,
-    dropoffAddress: order.dropoffAddress,
-    dropoffLat: order.dropoffLat,
-    dropoffLng: order.dropoffLng,
-    deliveryFeeKobo: order.deliveryFeeKobo,
-    totalKobo: order.totalKobo,
-    paymentMethod: order.paymentMethod,
-    recipientName: order.recipientName ?? null,
-    recipientPhone: order.recipientPhone ?? null,
+    id: updated.id,
+    trackingCode: updated.trackingCode,
+    type: updated.type,
+    status: updated.status,
+    pickupAddress: updated.pickupAddress,
+    pickupLat: updated.pickupLat,
+    pickupLng: updated.pickupLng,
+    dropoffAddress: updated.dropoffAddress,
+    dropoffLat: updated.dropoffLat,
+    dropoffLng: updated.dropoffLng,
+    deliveryFeeKobo: updated.deliveryFeeKobo,
+    totalKobo: updated.totalKobo,
+    paymentMethod: updated.paymentMethod,
+    recipientName: updated.recipientName ?? null,
+    recipientPhone: updated.recipientPhone ?? null,
     vendor: null,
-    createdAt: order.createdAt.toISOString(),
+    createdAt: updated.createdAt.toISOString(),
   });
-
-  return order;
 }
 
 export async function placeTruckOrder(

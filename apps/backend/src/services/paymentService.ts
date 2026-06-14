@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { PaymentMethod, PaymentStatus, VendorWalletTxType } from "@prisma/client";
 import * as paystackService from "./paystackService";
 import * as walletService from "./walletService";
+import { activateOrderAfterPayment } from "./orderService";
 import { nanoid } from "nanoid";
 
 function paymentCallbackUrl(): string {
@@ -41,6 +42,7 @@ export async function initializePayment(userId: string, orderId: string, method:
       data: { paymentStatus: PaymentStatus.PAID, paymentMethod: m },
     });
     await fundVendorWallet(orderId, order.totalKobo).catch(() => {});
+    await activateOrderAfterPayment(orderId).catch(() => {});
     return { method: "wallet", reference: orderId, paid: true };
   }
 
@@ -61,6 +63,7 @@ export async function initializePayment(userId: string, orderId: string, method:
         data: { paymentStatus: PaymentStatus.PAID, paymentMethod: PaymentMethod.WALLET },
       });
       await fundVendorWallet(orderId, order.totalKobo).catch(() => {});
+      await activateOrderAfterPayment(orderId).catch(() => {});
       return { method: "wallet", reference: orderId, paid: true };
     }
 
@@ -84,6 +87,8 @@ export async function initializePayment(userId: string, orderId: string, method:
 
   if (m === PaymentMethod.CASH) {
     await prisma.order.update({ where: { id: orderId }, data: { paymentMethod: m } });
+    // Cash on delivery — no online payment to wait for, surface to riders now.
+    await activateOrderAfterPayment(orderId).catch(() => {});
     return { method: "cash", reference: null, paid: false };
   }
 
@@ -105,6 +110,7 @@ export async function initializePayment(userId: string, orderId: string, method:
       if (result.status === "success") {
         await prisma.order.update({ where: { id: orderId }, data: { paystackRef: reference, paymentStatus: PaymentStatus.PAID, paymentMethod: PaymentMethod.CARD } });
         await fundVendorWallet(orderId, order.totalKobo).catch(() => {});
+        await activateOrderAfterPayment(orderId).catch(() => {});
         return { method: "card", reference, paid: true };
       }
     }
@@ -140,6 +146,7 @@ export async function verifyPayment(reference: string, userId?: string) {
   });
 
   await fundVendorWallet(order.id, order.totalKobo).catch(() => {});
+  await activateOrderAfterPayment(order.id).catch(() => {});
 
   // Save card authorization if reusable
   if (tx.authorization?.reusable && userId) {

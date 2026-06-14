@@ -297,3 +297,39 @@ export async function notifyOnlineRidersNewParcel(order: {
     }),
   ]);
 }
+
+/**
+ * Notifies all online riders that a vendor order (food/grocery/retail/pharmacy)
+ * has been marked ready for pickup and is now available to accept. Uses the
+ * "NEW_ORDER" type so the rider app's existing FCM listener (which already
+ * reloads the job list on this type) picks it up.
+ */
+export async function notifyOnlineRidersNewOrder(order: {
+  id: string;
+  trackingCode: string;
+  type: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  totalKobo: number;
+}): Promise<void> {
+  const riders = await prisma.rider.findMany({
+    where: { isAvailable: true, isActive: true },
+    select: { id: true, pushTokens: { select: { token: true } } },
+  });
+
+  if (riders.length === 0) return;
+
+  const tokens = riders.flatMap((r) => r.pushTokens.map((t) => t.token));
+  const amountNaira = (order.totalKobo / 100).toLocaleString("en-NG");
+  const typeLabel = order.type.charAt(0) + order.type.slice(1).toLowerCase();
+  const title = `New ${typeLabel} Order`;
+  const body = `${order.pickupAddress} → ${order.dropoffAddress} • ₦${amountNaira}`;
+  const data = { type: "NEW_ORDER", orderId: order.id, trackingCode: order.trackingCode };
+
+  await Promise.all([
+    sendToTokens(tokens, { title, body }, data),
+    prisma.riderNotification.createMany({
+      data: riders.map((r) => ({ riderId: r.id, title, body, data })),
+    }),
+  ]);
+}

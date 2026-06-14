@@ -5,8 +5,8 @@ import { AdminRole, AdminType, VendorType, OrderStatus, PaymentStatus } from "@p
 import * as walletService from "./walletService";
 import { paginate } from "../utils/pagination";
 import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApplicationEmail } from "./emailService";
-import { notifyCustomerOrderUpdate } from "./fcmService";
-import { broadcastTracking } from "../index";
+import { notifyCustomerOrderUpdate, notifyOnlineRidersNewOrder } from "./fcmService";
+import { broadcastTracking, broadcastNewOrder } from "../index";
 import { uploadDocument, deleteImageByUrl } from "./cloudinaryService";
 
 const SALT_ROUNDS = 12;
@@ -358,6 +358,38 @@ async function transitionOrder(
       notif.body(order.trackingCode),
       notif.type
     ).catch(() => {});
+  }
+
+  // Order just became available for pickup — alert riders in real time,
+  // the same way a freshly-placed parcel order does.
+  if (newStatus === OrderStatus.READY_FOR_PICKUP) {
+    broadcastNewOrder({
+      id: order.id,
+      trackingCode: order.trackingCode,
+      type: order.type,
+      status: newStatus,
+      pickupAddress: order.pickupAddress,
+      pickupLat: order.pickupLat,
+      pickupLng: order.pickupLng,
+      dropoffAddress: order.dropoffAddress,
+      dropoffLat: order.dropoffLat,
+      dropoffLng: order.dropoffLng,
+      deliveryFeeKobo: order.deliveryFeeKobo,
+      totalKobo: order.totalKobo,
+      paymentMethod: order.paymentMethod,
+      recipientName: order.recipientName ?? null,
+      recipientPhone: order.recipientPhone ?? null,
+      vendor: vendorId,
+      createdAt: order.createdAt.toISOString(),
+    });
+    notifyOnlineRidersNewOrder({
+      id: order.id,
+      trackingCode: order.trackingCode,
+      type: order.type,
+      pickupAddress: order.pickupAddress,
+      dropoffAddress: order.dropoffAddress,
+      totalKobo: order.totalKobo,
+    }).catch((err) => console.error("FCM notify failed:", err));
   }
 
   return result;

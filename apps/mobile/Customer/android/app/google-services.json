@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "477210237354",
-    "project_id": "godrop-cd8da",
-    "storage_bucket": "godrop-cd8da.firebasestorage.app"
+    "project_number": "2691529395",
+    "project_id": "naijagodrop",
+    "storage_bucket": "naijagodrop.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:477210237354:android:baa89aed9c48828f48b3d3",
+        "mobilesdk_app_id": "1:2691529395:android:ec1ff8ad2a5428548e0ec6",
         "android_client_info": {
-          "package_name": "com.qnetix.godrop"
+          "package_name": "com.qnetix.naijagodrop"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCIV3M4DBgq6LelOL7EnNoudpqF2k5rhLo"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:477210237354:android:f7615f5e9d3465c848b3d3",
-        "android_client_info": {
-          "package_name": "com.qnetix.godrop_driver"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCIV3M4DBgq6LelOL7EnNoudpqF2k5rhLo"
+          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
         }
       ],
       "services": {

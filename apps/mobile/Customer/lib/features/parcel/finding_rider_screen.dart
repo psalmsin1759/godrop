@@ -824,6 +824,22 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
                     label: 'Cancel request',
                     onPressed: _cancelOrder,
                   ),
+            if (!_cancelling) ...[
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton(
+                  onPressed: () => context.go('/home'),
+                  child: const Text(
+                    'Continue searching in background',
+                    style: TextStyle(
+                      color: GodropColors.blue,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         );
 

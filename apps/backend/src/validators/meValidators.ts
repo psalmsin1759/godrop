@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toKobo } from "../utils/currency";
 
 export const updateProfileSchema = z.object({
   firstName: z.string().min(1).optional(),
@@ -31,8 +32,8 @@ export const markNotificationsReadSchema = z.object({
 });
 
 export const topUpSchema = z.object({
-  amountKobo: z.number().int().min(10000, "Minimum top-up is ₦100"),
-});
+  amount: z.number().positive().min(100, "Minimum top-up is ₦100"),
+}).transform((data) => ({ amountKobo: toKobo(data.amount) }));
 
 export const verifyTopUpSchema = z.object({ reference: z.string() });
 

@@ -13,6 +13,7 @@ import { onboardRiderSchema } from "../validators/riderOnboardingValidators";
 import { sendEmail, riderOnboardAdminEmail, riderOnboardConfirmationEmail } from "../services/emailService";
 import { prisma } from "../lib/prisma";
 import { OrderStatus } from "@prisma/client";
+import { toNaira, serializeMoney, serializeMoneyList } from "../utils/currency";
 
 // ─── Onboarding (public) ──────────────────────────────────────
 
@@ -439,7 +440,7 @@ export async function listEarnings(req: Request, res: Response, next: NextFuncti
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await riderEarningService.listEarnings(req.rider!.id, page, limit);
-    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+    return ok(res, { data: serializeMoneyList(result.data, ["amount"]), meta: buildMeta(result.page, result.limit, result.total) });
   } catch (err) {
     next(err);
   }
@@ -448,7 +449,16 @@ export async function listEarnings(req: Request, res: Response, next: NextFuncti
 export async function getEarningsSummary(req: Request, res: Response, next: NextFunction) {
   try {
     const summary = await riderEarningService.getEarningsSummary(req.rider!.id);
-    return ok(res, { data: summary });
+    return ok(res, {
+      data: {
+        total: toNaira(summary.totalKobo),
+        today: toNaira(summary.todayKobo),
+        thisWeek: toNaira(summary.thisWeekKobo),
+        thisMonth: toNaira(summary.thisMonthKobo),
+        pendingBalance: toNaira(summary.pendingBalanceKobo),
+        deliveryCount: summary.deliveryCount,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -468,7 +478,7 @@ export async function requestWithdrawal(req: Request, res: Response, next: NextF
       return fail(res, "Bank account details required", 400);
     }
     const withdrawal = await riderEarningService.requestWithdrawal(rider.id, amountKobo, bank);
-    return ok(res, { data: withdrawal }, 201);
+    return ok(res, { data: serializeMoney(withdrawal, ["amount"]) }, 201);
   } catch (err: any) {
     if (
       err.message === "Insufficient balance" ||
@@ -486,7 +496,7 @@ export async function listWithdrawals(req: Request, res: Response, next: NextFun
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await riderEarningService.listWithdrawals(req.rider!.id, page, limit);
-    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+    return ok(res, { data: serializeMoneyList(result.data, ["amount"]), meta: buildMeta(result.page, result.limit, result.total) });
   } catch (err) {
     next(err);
   }

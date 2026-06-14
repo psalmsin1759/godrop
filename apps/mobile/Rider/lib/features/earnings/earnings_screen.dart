@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
+import '../../shared/utils/currency.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../profile/bloc/profile_cubit.dart';
@@ -11,13 +12,7 @@ import '../profile/bloc/profile_state.dart';
 import 'bloc/earnings_cubit.dart';
 import 'bloc/earnings_state.dart';
 
-String _fmt(int kobo) {
-  final naira = kobo / 100;
-  return '₦${naira.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},')}';
-}
-
-(String, String) _splitNaira(int kobo) {
-  final naira = kobo / 100;
+(String, String) _splitNaira(double naira) {
   final str = naira.toStringAsFixed(2);
   final parts = str.split('.');
   final intPart = parts[0]
@@ -101,9 +96,9 @@ class _EarningsScreenState extends State<EarningsScreen>
 
   Widget _buildHeader(BuildContext ctx, EarningsLoaded? loaded, bool loading,
       bool submitting) {
-    final pendingKobo = loaded?.summary.pendingBalanceKobo ?? 0;
-    final (intPart, decPart) = _splitNaira(pendingKobo);
-    final canWithdraw = !loading && !submitting && pendingKobo >= 10000;
+    final pendingBalance = loaded?.summary.pendingBalance ?? 0;
+    final (intPart, decPart) = _splitNaira(pendingBalance);
+    final canWithdraw = !loading && !submitting && pendingBalance >= 100;
 
     return Container(
       width: double.infinity,
@@ -254,7 +249,7 @@ class _EarningsScreenState extends State<EarningsScreen>
                   Text(
                     loaded == null
                         ? ' '
-                        : 'Lifetime: ${_fmt(loaded.summary.totalKobo)} · ${loaded.summary.deliveryCount} deliveries',
+                        : 'Lifetime: ${formatNaira(loaded.summary.total, decimals: 0)} · ${loaded.summary.deliveryCount} deliveries',
                     style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
                   ),
@@ -262,14 +257,14 @@ class _EarningsScreenState extends State<EarningsScreen>
                   GodropButton(
                     label: submitting ? 'Processing…' : 'Withdraw Earnings',
                     onTap: canWithdraw
-                        ? () => _onWithdrawTap(ctx, pendingKobo)
+                        ? () => _onWithdrawTap(ctx, pendingBalance)
                         : null,
                     gradientColors: const [Colors.white, Colors.white],
                     textColor: GodropColors.blue,
                     icon: Icons.north_east_rounded,
                     isLoading: submitting,
                   ),
-                  if (!loading && pendingKobo < 10000) ...[
+                  if (!loading && pendingBalance < 100) ...[
                     const SizedBox(height: 8),
                     Center(
                       child: Text(
@@ -332,11 +327,11 @@ class _EarningsScreenState extends State<EarningsScreen>
   Widget _statsRow(RiderEarningsSummary s) {
     return Row(
       children: [
-        Expanded(child: _statBox('Today', _fmt(s.todayKobo))),
+        Expanded(child: _statBox('Today', formatNaira(s.today, decimals: 0))),
         const SizedBox(width: 10),
-        Expanded(child: _statBox('This Week', _fmt(s.thisWeekKobo))),
+        Expanded(child: _statBox('This Week', formatNaira(s.thisWeek, decimals: 0))),
         const SizedBox(width: 10),
-        Expanded(child: _statBox('This Month', _fmt(s.thisMonthKobo))),
+        Expanded(child: _statBox('This Month', formatNaira(s.thisMonth, decimals: 0))),
       ],
     );
   }
@@ -375,7 +370,7 @@ class _EarningsScreenState extends State<EarningsScreen>
         ),
       );
 
-  void _onWithdrawTap(BuildContext ctx, int maxKobo) {
+  void _onWithdrawTap(BuildContext ctx, double max) {
     final profileState = ctx.read<ProfileCubit>().state;
     final profile = profileState is ProfileLoaded ? profileState.profile : null;
     final hasBankAccount = profile?.bankCode != null &&
@@ -386,7 +381,7 @@ class _EarningsScreenState extends State<EarningsScreen>
       _showNoBankAccountSheet(ctx);
       return;
     }
-    _showWithdrawDialog(ctx, maxKobo);
+    _showWithdrawDialog(ctx, max);
   }
 
   void _showNoBankAccountSheet(BuildContext ctx) {
@@ -439,7 +434,7 @@ class _EarningsScreenState extends State<EarningsScreen>
     );
   }
 
-  void _showWithdrawDialog(BuildContext ctx, int maxKobo) {
+  void _showWithdrawDialog(BuildContext ctx, double max) {
     final controller = TextEditingController();
     showModalBottomSheet(
       context: context,
@@ -461,7 +456,7 @@ class _EarningsScreenState extends State<EarningsScreen>
                     fontWeight: FontWeight.w700,
                     color: GodropColors.ink)),
             const SizedBox(height: 4),
-            Text('Available: ${_fmt(maxKobo)}',
+            Text('Available: ${formatNaira(max, decimals: 0)}',
                 style: const TextStyle(
                     fontSize: 13, color: GodropColors.slate)),
             const SizedBox(height: 16),
@@ -484,10 +479,10 @@ class _EarningsScreenState extends State<EarningsScreen>
               label: 'Confirm Withdrawal',
               onTap: () {
                 final amount =
-                    int.tryParse(controller.text.replaceAll(',', ''));
+                    double.tryParse(controller.text.replaceAll(',', ''));
                 if (amount == null || amount < 100) return;
                 Navigator.pop(bctx);
-                ctx.read<EarningsCubit>().requestWithdrawal(amount * 100);
+                ctx.read<EarningsCubit>().requestWithdrawal(amount);
               },
             ),
           ],
@@ -644,7 +639,7 @@ class _WithdrawalCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(_fmt(w.amountKobo),
+              Text(formatNaira(w.amount, decimals: 0),
                   style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -720,7 +715,7 @@ class _EarningCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                _fmt(earning.amountKobo),
+                formatNaira(earning.amount, decimals: 0),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,

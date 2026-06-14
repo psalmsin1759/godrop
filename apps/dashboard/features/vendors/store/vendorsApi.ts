@@ -21,7 +21,7 @@ interface Pagination {
 export interface VendorWithdrawal {
   id: string
   vendorId: string
-  amountKobo: number
+  amount: number
   bankName: string
   bankCode: string
   accountNumber: string
@@ -79,7 +79,7 @@ export const vendorsApi = api.injectEndpoints({
       transformResponse: (res: Wrap<Vendor>) => res.data,
     }),
 
-    getVendorWalletBalance: build.query<{ balanceKobo: number }, string>({
+    getVendorWalletBalance: build.query<{ balance: number }, string>({
       query: (id) => `/admin/vendors/${id}/wallet`,
     }),
 

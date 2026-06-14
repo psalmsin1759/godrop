@@ -115,7 +115,7 @@ export async function requestWithdrawal(
   const available =
     (pendingEarnings._sum.amountKobo ?? 0) - (activeWithdrawals._sum?.amountKobo ?? 0);
   if (amountKobo > available) throw new Error("Insufficient balance");
-  if (amountKobo < 100_00) throw new Error("Minimum withdrawal is ₦100 (10,000 kobo)");
+  if (amountKobo < 100_00) throw new Error("Minimum withdrawal is ₦100");
 
   const bankName = bankDetails.bankName || rider.bankName;
   const bankCode = bankDetails.bankCode || rider.bankCode;

@@ -13,7 +13,7 @@ import {
   type VendorWalletTx,
   type PaystackBank,
 } from '@/store/services/vendorWalletApi'
-import { formatNaira, formatDateTime } from '@/lib/utils'
+import { formatAmount, formatDateTime } from '@/lib/utils'
 
 function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
@@ -43,7 +43,7 @@ function TxRow({ tx }: { tx: VendorWalletTx }) {
         <p className="text-[11px] text-[#9AA1B4]">{formatDateTime(tx.createdAt)}</p>
       </div>
       <span className={`text-xs font-semibold ${isCredit ? 'text-[#1DB980]' : 'text-[#FF3B30]'}`}>
-        {isCredit ? '+' : '-'}{formatNaira(tx.amountKobo)}
+        {isCredit ? '+' : '-'}{formatAmount(tx.amount)}
       </span>
     </div>
   )
@@ -246,7 +246,7 @@ function BankAccountSection() {
   )
 }
 
-function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
+function WithdrawSection({ balance }: { balance: number }) {
   const [withdraw, { isLoading }] = useWithdrawVendorWalletMutation()
   const [amountNaira, setAmountNaira] = useState('')
   const [done, setDone] = useState(false)
@@ -257,10 +257,9 @@ function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
     setError('')
     const naira = parseFloat(amountNaira)
     if (isNaN(naira) || naira < 100) { setError('Minimum withdrawal is ₦100'); return }
-    const kobo = Math.round(naira * 100)
-    if (kobo > balanceKobo) { setError(`Insufficient balance. Available: ${formatNaira(balanceKobo)}`); return }
+    if (naira > balance) { setError(`Insufficient balance. Available: ${formatAmount(balance)}`); return }
     try {
-      await withdraw({ amountKobo: kobo }).unwrap()
+      await withdraw({ amount: naira }).unwrap()
       setDone(true)
       setAmountNaira('')
       setTimeout(() => setDone(false), 3000)
@@ -279,17 +278,17 @@ function WithdrawSection({ balanceKobo }: { balanceKobo: number }) {
           type="number"
           min={100}
           step={50}
-          max={balanceKobo / 100}
+          max={balance}
           value={amountNaira}
           onChange={(e) => setAmountNaira(e.target.value)}
           placeholder="Enter amount in Naira"
           className="w-full px-3 py-2 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1DB980]"
         />
-        <p className="text-[11px] text-[#9AA1B4] mt-1">Available: {formatNaira(balanceKobo)}</p>
+        <p className="text-[11px] text-[#9AA1B4] mt-1">Available: {formatAmount(balance)}</p>
       </div>
       <button
         type="submit"
-        disabled={isLoading || !amountNaira || balanceKobo === 0}
+        disabled={isLoading || !amountNaira || balance === 0}
         className="w-full flex items-center justify-center gap-1.5 text-xs py-2.5 rounded text-white font-medium disabled:opacity-60 bg-[#0D1426]"
       >
         {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
@@ -303,7 +302,7 @@ export default function VendorWalletPage() {
   const { data: wallet, isLoading: walletLoading } = useGetVendorWalletQuery()
   const { data: txData, isLoading: txLoading } = useGetVendorWalletTransactionsQuery()
 
-  const balanceKobo = wallet?.balanceKobo ?? 0
+  const balance = wallet?.balance ?? 0
   const transactions = txData?.data ?? []
 
   return (
@@ -319,7 +318,7 @@ export default function VendorWalletPage() {
         </div>
       ) : (
         <>
-          <StatCard label="Wallet Balance" value={formatNaira(balanceKobo)} icon={<Wallet className="w-5 h-5" />} />
+          <StatCard label="Wallet Balance" value={formatAmount(balance)} icon={<Wallet className="w-5 h-5" />} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Transactions */}
@@ -347,7 +346,7 @@ export default function VendorWalletPage() {
                 <h2 className="text-sm font-semibold text-[#0D1426] flex items-center gap-2">
                   <ArrowUpRight className="w-4 h-4 text-[#1E5FFF]" /> Withdraw
                 </h2>
-                <WithdrawSection balanceKobo={balanceKobo} />
+                <WithdrawSection balance={balance} />
               </div>
             </div>
           </div>

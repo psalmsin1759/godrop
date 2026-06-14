@@ -7,7 +7,7 @@ import {
   useGetBusinessesQuery,
   useCreateBusinessMutation,
 } from '@/store/services/businessApi'
-import { formatNaira } from '@/lib/utils'
+import { formatAmount } from '@/lib/utils'
 import type { BusinessDocumentField, CreateBusinessRequest } from '@/types/api'
 
 // ─── Nigerian banks ───────────────────────────────────────────
@@ -459,7 +459,7 @@ export default function BusinessesPage() {
                     }`}>{b.status}</span>
                   </td>
                   <td className="px-5 py-3 text-right text-[#0D1426] font-medium">{b._count?.riders ?? 0}</td>
-                  <td className="px-5 py-3 text-right text-[#0D1426] font-medium">{formatNaira(b.wallet?.balanceKobo ?? 0)}</td>
+                  <td className="px-5 py-3 text-right text-[#0D1426] font-medium">{formatAmount(b.wallet?.balance ?? 0)}</td>
                   <td className="px-5 py-3 text-right text-[#0D1426] font-medium">{b._count?.admins ?? 0}</td>
                   <td className="px-5 py-3 text-right">
                     <Link href={`/businesses/${b.id}`} className="text-xs text-[#1E5FFF] hover:underline">

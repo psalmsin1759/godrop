@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../app/theme.dart';
 import '../../shared/models/wallet_models.dart';
+import '../../shared/utils/currency.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/widgets/godrop_button.dart';
 import 'bloc/wallet_cubit.dart';
@@ -24,17 +25,6 @@ class _WalletScreenState extends State<WalletScreen> {
   void initState() {
     super.initState();
     context.read<WalletCubit>().load();
-  }
-
-  String _fmtKobo(int kobo) {
-    final naira = kobo / 100;
-    final str = naira.toStringAsFixed(2);
-    final parts = str.split('.');
-    final intPart = parts[0].replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (_) => ',',
-    );
-    return '$intPart.${parts[1]}';
   }
 
   String _fmtDate(String iso) {
@@ -64,9 +54,9 @@ class _WalletScreenState extends State<WalletScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _TopUpSheet(
-        onTopUp: (amountKobo) {
+        onTopUp: (amount) {
           Navigator.pop(ctx);
-          context.read<WalletCubit>().initTopUp(amountKobo);
+          context.read<WalletCubit>().initTopUp(amount);
         },
       ),
     );
@@ -80,7 +70,7 @@ class _WalletScreenState extends State<WalletScreen> {
           _showPaystackWebView(ctx, state);
         } else if (state is WalletTopUpSuccess) {
           _showSuccessSheet(ctx, state);
-        } else if (state is WalletError && state.balanceKobo == null) {
+        } else if (state is WalletError && state.balance == null) {
           ScaffoldMessenger.of(ctx).showSnackBar(
             SnackBar(
               content: Text(state.message),
@@ -93,32 +83,32 @@ class _WalletScreenState extends State<WalletScreen> {
         }
       },
       builder: (ctx, state) {
-        int balanceKobo = 0;
+        double balance = 0;
         List<WalletTx> transactions = [];
         bool loading = false;
         bool toppingUp = false;
 
         if (state is WalletLoaded) {
-          balanceKobo = state.balanceKobo;
+          balance = state.balance;
           transactions = state.transactions;
         } else if (state is WalletTopUpSuccess) {
-          balanceKobo = state.balanceKobo;
+          balance = state.balance;
           transactions = state.transactions;
         } else if (state is WalletToppingUp) {
-          balanceKobo = state.balanceKobo;
+          balance = state.balance;
           transactions = state.transactions;
           toppingUp = true;
         } else if (state is WalletTopUpReady) {
-          balanceKobo = state.balanceKobo;
+          balance = state.balance;
           transactions = state.transactions;
         } else if (state is WalletLoading) {
           loading = true;
-        } else if (state is WalletError && state.balanceKobo != null) {
-          balanceKobo = state.balanceKobo!;
+        } else if (state is WalletError && state.balance != null) {
+          balance = state.balance!;
           transactions = state.transactions ?? [];
         }
 
-        final balStr = _fmtKobo(balanceKobo);
+        final balStr = formatNaira(balance).replaceFirst('₦', '');
         final balParts = balStr.split('.');
 
         return Scaffold(
@@ -280,13 +270,13 @@ class _WalletScreenState extends State<WalletScreen> {
                                 delay: Duration(milliseconds: 60 * e.key.clamp(0, 6)),
                                 child: _TransactionCard(
                                   tx: tx,
-                                  amountLabel: _fmtKobo(tx.amountKobo.abs()),
+                                  amountLabel: formatNaira(tx.amount.abs()).replaceFirst('₦', ''),
                                   dateLabel: _fmtDate(tx.createdAt),
                                 ),
                               );
                             }).toList(),
                           ),
-                        if (state is WalletError && state.balanceKobo != null) ...[
+                        if (state is WalletError && state.balance != null) ...[
                           const SizedBox(height: 12),
                           Row(
                             children: [
@@ -325,7 +315,7 @@ class _WalletScreenState extends State<WalletScreen> {
           Navigator.pop(sheetCtx);
           ctx.read<WalletCubit>().verifyTopUp(
             state.reference,
-            topUpAmountKobo: ctx.read<WalletCubit>().pendingTopUpAmountKobo,
+            topUpAmount: ctx.read<WalletCubit>().pendingTopUpAmount,
           );
         },
         onCancel: () => Navigator.pop(sheetCtx),
@@ -338,8 +328,8 @@ class _WalletScreenState extends State<WalletScreen> {
       context: ctx,
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => _TopUpSuccessSheet(
-        amountKobo: state.topUpAmountKobo,
-        newBalanceKobo: state.balanceKobo,
+        amount: state.topUpAmount,
+        newBalance: state.balance,
         onDone: () => Navigator.pop(sheetCtx),
       ),
     );
@@ -537,7 +527,7 @@ class _EmptyTransactions extends StatelessWidget {
 }
 
 class _TopUpSheet extends StatefulWidget {
-  final ValueChanged<int> onTopUp;
+  final ValueChanged<double> onTopUp;
   const _TopUpSheet({required this.onTopUp});
 
   @override
@@ -556,14 +546,14 @@ class _TopUpSheetState extends State<_TopUpSheet> {
 
   void _submit() {
     final text = _ctrl.text.replaceAll(',', '').trim();
-    final amount = int.tryParse(text);
+    final amount = double.tryParse(text);
     if (amount == null || amount < 100) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Enter a valid amount (min ₦100)')),
       );
       return;
     }
-    widget.onTopUp(amount * 100);
+    widget.onTopUp(amount);
   }
 
   @override
@@ -772,21 +762,14 @@ class _PaystackWebViewSheetState extends State<_PaystackWebViewSheet> {
 }
 
 class _TopUpSuccessSheet extends StatelessWidget {
-  final int amountKobo;
-  final int newBalanceKobo;
+  final double amount;
+  final double newBalance;
   final VoidCallback onDone;
   const _TopUpSuccessSheet({
-    required this.amountKobo,
-    required this.newBalanceKobo,
+    required this.amount,
+    required this.newBalance,
     required this.onDone,
   });
-
-  String _fmt(int kobo) {
-    final n = (kobo / 100).toStringAsFixed(2);
-    final parts = n.split('.');
-    final intPart = parts[0].replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
-    return '₦$intPart.${parts[1]}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -808,7 +791,7 @@ class _TopUpSuccessSheet extends StatelessWidget {
           const Text('Payment successful!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: GodropColors.ink)),
           const SizedBox(height: 8),
           Text(
-            '${_fmt(amountKobo)} has been added\nto your Godrop wallet.',
+            '${formatNaira(amount)} has been added\nto your Godrop wallet.',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 14, color: GodropColors.slate),
           ),
@@ -824,7 +807,7 @@ class _TopUpSuccessSheet extends StatelessWidget {
               children: [
                 const Text('New wallet balance', style: TextStyle(fontSize: 12, color: GodropColors.mute)),
                 const SizedBox(height: 4),
-                Text(_fmt(newBalanceKobo), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: GodropColors.ink)),
+                Text(formatNaira(newBalance), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: GodropColors.ink)),
               ],
             ),
           ),

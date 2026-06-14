@@ -16,7 +16,7 @@ import {
   useCreateBusinessOwnerMutation,
   useUpdateBusinessMutation,
 } from '@/store/services/businessApi'
-import { formatNaira, formatDate, formatDateTime } from '@/lib/utils'
+import { formatAmount, formatDate, formatDateTime } from '@/lib/utils'
 import type { Business, BusinessStatus } from '@/types/api'
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -182,7 +182,7 @@ function OverviewTab({ biz }: { biz: Business }) {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Wallet Balance', value: formatNaira(biz.wallet?.balanceKobo ?? 0), color: '#1DB980' },
+          { label: 'Wallet Balance', value: formatAmount(biz.wallet?.balance ?? 0), color: '#1DB980' },
           { label: 'Riders', value: String(biz._count?.riders ?? 0), color: '#1E5FFF' },
           { label: 'Team Members', value: String(biz._count?.admins ?? 0), color: '#E8930C' },
         ].map(({ label, value, color }) => (
@@ -330,7 +330,7 @@ function TransactionsTab({ businessId, walletBalance }: { businessId: string; wa
         </div>
         <div>
           <p className="text-xs text-[#9AA1B4]">Wallet Balance</p>
-          <p className="text-lg font-bold text-[#0D1426]">{formatNaira(walletBalance)}</p>
+          <p className="text-lg font-bold text-[#0D1426]">{formatAmount(walletBalance)}</p>
         </div>
       </div>
 
@@ -365,7 +365,7 @@ function TransactionsTab({ businessId, walletBalance }: { businessId: string; wa
                   </td>
                   <td className="px-5 py-3 text-xs text-[#525A72]">{tx.description ?? tx.reference ?? '—'}</td>
                   <td className={`px-5 py-3 text-right text-sm font-semibold ${tx.type === 'RIDER_EARNING' ? 'text-[#FF3B30]' : 'text-[#1DB980]'}`}>
-                    {tx.type === 'RIDER_EARNING' ? '-' : '+'}{formatNaira(tx.amountKobo)}
+                    {tx.type === 'RIDER_EARNING' ? '-' : '+'}{formatAmount(tx.amount)}
                   </td>
                   <td className="px-5 py-3 text-right text-xs text-[#9AA1B4]">{formatDateTime(tx.createdAt)}</td>
                 </tr>
@@ -523,7 +523,7 @@ export default function BusinessDetailPage({ businessId }: { businessId: string 
       {/* Tab content */}
       {tab === 'overview'     && <OverviewTab biz={biz} />}
       {tab === 'riders'       && <RidersTab businessId={businessId} />}
-      {tab === 'transactions' && <TransactionsTab businessId={businessId} walletBalance={biz.wallet?.balanceKobo ?? 0} />}
+      {tab === 'transactions' && <TransactionsTab businessId={businessId} walletBalance={biz.wallet?.balance ?? 0} />}
       {tab === 'team'         && <TeamTab businessId={businessId} />}
     </div>
   )

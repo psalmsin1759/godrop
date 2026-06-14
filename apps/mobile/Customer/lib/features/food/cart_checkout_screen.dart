@@ -9,6 +9,7 @@ import '../../shared/bloc/delivery_address_cubit.dart';
 import '../../shared/models/food_models.dart';
 import '../../shared/models/store_models.dart';
 import '../../shared/models/wallet_models.dart';
+import '../../shared/utils/currency.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../orders/bloc/order_cubit.dart';
 import '../orders/models/active_order.dart';
@@ -54,7 +55,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
 
   _PlatformConfig _config = const _PlatformConfig();
   bool _codEnabled = false;
-  int _walletBalanceKobo = 0;
+  double _walletBalance = 0;
 
   String _fmt(int kobo) =>
       '₦${(kobo / 100).toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',')}';
@@ -94,8 +95,8 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
     try {
       final res = await DioClient.instance.get('/me/wallet');
       final data = res.data as Map<String, dynamic>;
-      final balance = (data['balanceKobo'] as num?)?.toInt() ?? 0;
-      if (mounted) setState(() => _walletBalanceKobo = balance);
+      final balance = (data['balance'] as num?)?.toDouble() ?? 0;
+      if (mounted) setState(() => _walletBalance = balance);
     } catch (_) {}
   }
 
@@ -108,9 +109,10 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
       return;
     }
     final total = cart.subtotalKobo + _config.standardDeliveryFeeKobo + _config.serviceChargeKobo;
-    if (_paymentMethod == 'wallet' && _walletBalanceKobo < total) {
+    // TEMP BRIDGE: total is still Kobo (Orders domain not yet converted).
+    if (_paymentMethod == 'wallet' && _walletBalance < total / 100) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Insufficient wallet balance. You have ${_fmt(_walletBalanceKobo)} but need ${_fmt(total)}.')),
+        SnackBar(content: Text('Insufficient wallet balance. You have ${formatNaira(_walletBalance)} but need ${_fmt(total)}.')),
       );
       return;
     }
@@ -326,12 +328,16 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
         final serviceFee = _config.serviceChargeKobo;
         final total = subtotal + deliveryFee + serviceFee;
 
+        // TEMP BRIDGE: convert Naira wallet balance to Kobo to combine with
+        // still-Kobo `total` (Orders domain not yet converted).
+        final walletBalanceKobo = (_walletBalance * 100).round();
+
         // For wallet_card, show how much wallet covers
         final walletCovers = _paymentMethod == 'wallet_card'
-            ? min(_walletBalanceKobo, total)
+            ? min(walletBalanceKobo, total)
             : (_paymentMethod == 'wallet' ? total : 0);
         final cardCovers = _paymentMethod == 'wallet_card'
-            ? max(0, total - _walletBalanceKobo)
+            ? max(0, total - walletBalanceKobo)
             : (_paymentMethod == 'card' ? total : 0);
 
         return BlocBuilder<DeliveryAddressCubit, String>(
@@ -588,7 +594,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                   // Place order button
                   Builder(builder: (ctx) {
                     // Wallet-only payment is disabled when balance is insufficient
-                    final walletInsufficient = _paymentMethod == 'wallet' && _walletBalanceKobo < total;
+                    final walletInsufficient = _paymentMethod == 'wallet' && walletBalanceKobo < total;
                     final deliveryMissing = deliveryAddress.isEmpty;
                     final blocked = walletInsufficient;
 
@@ -649,10 +655,13 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   }
 
   Widget _buildPaymentOptions(int totalKobo) {
+    // TEMP BRIDGE: convert Naira wallet balance to Kobo to compare with
+    // still-Kobo `totalKobo` (Orders domain not yet converted).
+    final walletBalanceKobo = (_walletBalance * 100).round();
     final walletSuffix =
-        _walletBalanceKobo > 0 ? ' (${_fmt(_walletBalanceKobo)})' : ' (empty)';
-    final walletCoversAll = _walletBalanceKobo >= totalKobo;
-    final cardRemainder = max(0, totalKobo - _walletBalanceKobo);
+        _walletBalance > 0 ? ' (${formatNaira(_walletBalance)})' : ' (empty)';
+    final walletCoversAll = walletBalanceKobo >= totalKobo;
+    final cardRemainder = max(0, totalKobo - walletBalanceKobo);
 
     return Column(
       children: [
@@ -673,18 +682,18 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
               : 'Insufficient balance (need ${_fmt(totalKobo)})',
           value: 'wallet',
           current: _paymentMethod,
-          disabled: _walletBalanceKobo <= 0,
-          onTap: _walletBalanceKobo > 0
+          disabled: _walletBalance <= 0,
+          onTap: _walletBalance > 0
               ? () => setState(() => _paymentMethod = 'wallet')
               : null,
         ),
-        if (_walletBalanceKobo > 0 && !walletCoversAll) ...[
+        if (_walletBalance > 0 && !walletCoversAll) ...[
           const SizedBox(height: 10),
           _PaymentOption(
             icon: Icons.credit_card_rounded,
             label: 'Wallet + Card',
             subtitle:
-                'Use ${_fmt(_walletBalanceKobo)} from wallet, pay ${_fmt(cardRemainder)} via card',
+                'Use ${formatNaira(_walletBalance)} from wallet, pay ${_fmt(cardRemainder)} via card',
             value: 'wallet_card',
             current: _paymentMethod,
             onTap: () => setState(() => _paymentMethod = 'wallet_card'),

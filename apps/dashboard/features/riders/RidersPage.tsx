@@ -34,6 +34,7 @@ import {
   ExternalLink,
   FileCheck,
 } from 'lucide-react'
+import { formatAmount } from '@/lib/utils'
 
 function formatNaira(kobo: number) {
   return '₦' + (kobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -147,7 +148,7 @@ function RiderEarningsTab({ id }: { id: string }) {
       {data && (
         <div className="px-5 py-4 bg-[#F7F9FC] border-b border-[#EDF0F6]">
           <p className="text-[10px] text-[#9AA1B4] uppercase tracking-wide font-medium mb-1">Total Earned</p>
-          <p className="text-xl font-bold text-[#0D1426]">{formatNaira(data.totalEarnedKobo)}</p>
+          <p className="text-xl font-bold text-[#0D1426]">{formatAmount(data.totalEarned)}</p>
         </div>
       )}
       {earnings.length === 0 ? (
@@ -169,7 +170,7 @@ function RiderEarningsTab({ id }: { id: string }) {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs font-semibold text-[#0D1426]">{formatNaira(earning.amountKobo)}</p>
+                <p className="text-xs font-semibold text-[#0D1426]">{formatAmount(earning.amount)}</p>
                 <span
                   className="text-[10px] font-medium rounded-full px-2 py-0.5"
                   style={earning.status === 'SETTLED'

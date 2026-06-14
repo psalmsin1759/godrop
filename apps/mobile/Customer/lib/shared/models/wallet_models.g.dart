@@ -8,18 +8,18 @@ part of 'wallet_models.dart';
 
 WalletBalance _$WalletBalanceFromJson(Map<String, dynamic> json) =>
     WalletBalance(
-      balanceKobo: (json['balanceKobo'] as num).toInt(),
+      balance: (json['balance'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$WalletBalanceToJson(WalletBalance instance) =>
     <String, dynamic>{
-      'balanceKobo': instance.balanceKobo,
+      'balance': instance.balance,
     };
 
 WalletTx _$WalletTxFromJson(Map<String, dynamic> json) => WalletTx(
       id: json['id'] as String,
       type: json['type'] as String,
-      amountKobo: (json['amountKobo'] as num).toInt(),
+      amount: (json['amount'] as num).toDouble(),
       description: json['description'] as String,
       status: json['status'] as String? ?? 'completed',
       createdAt: json['createdAt'] as String,
@@ -28,7 +28,7 @@ WalletTx _$WalletTxFromJson(Map<String, dynamic> json) => WalletTx(
 Map<String, dynamic> _$WalletTxToJson(WalletTx instance) => <String, dynamic>{
       'id': instance.id,
       'type': instance.type,
-      'amountKobo': instance.amountKobo,
+      'amount': instance.amount,
       'description': instance.description,
       'status': instance.status,
       'createdAt': instance.createdAt,
@@ -52,12 +52,12 @@ Map<String, dynamic> _$WalletTxListResponseToJson(
 
 TopUpInitBody _$TopUpInitBodyFromJson(Map<String, dynamic> json) =>
     TopUpInitBody(
-      amountKobo: (json['amountKobo'] as num).toInt(),
+      amount: (json['amount'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$TopUpInitBodyToJson(TopUpInitBody instance) =>
     <String, dynamic>{
-      'amountKobo': instance.amountKobo,
+      'amount': instance.amount,
     };
 
 TopUpInitResponse _$TopUpInitResponseFromJson(Map<String, dynamic> json) =>
@@ -84,7 +84,7 @@ Map<String, dynamic> _$TopUpVerifyBodyToJson(TopUpVerifyBody instance) =>
 
 TopUpVerifyResponse _$TopUpVerifyResponseFromJson(Map<String, dynamic> json) =>
     TopUpVerifyResponse(
-      balanceKobo: (json['balanceKobo'] as num).toInt(),
+      balance: (json['balance'] as num).toDouble(),
       transaction:
           WalletTx.fromJson(json['transaction'] as Map<String, dynamic>),
     );
@@ -92,7 +92,7 @@ TopUpVerifyResponse _$TopUpVerifyResponseFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$TopUpVerifyResponseToJson(
         TopUpVerifyResponse instance) =>
     <String, dynamic>{
-      'balanceKobo': instance.balanceKobo,
+      'balance': instance.balance,
       'transaction': instance.transaction,
     };
 

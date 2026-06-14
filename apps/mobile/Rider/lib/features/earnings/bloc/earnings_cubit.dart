@@ -44,12 +44,12 @@ class EarningsCubit extends Cubit<EarningsState> {
     }
   }
 
-  Future<void> requestWithdrawal(int amountKobo) async {
+  Future<void> requestWithdrawal(double amount) async {
     final current = state;
     if (current is! EarningsLoaded) return;
     emit(WithdrawalSubmitting(current));
     try {
-      await _service.requestWithdrawal({'amountKobo': amountKobo});
+      await _service.requestWithdrawal({'amount': amount});
       await load();
       final loaded = state;
       if (loaded is EarningsLoaded) emit(WithdrawalSuccess(loaded));

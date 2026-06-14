@@ -11,7 +11,7 @@ import {
   useUpdateMyBusinessMutation,
   useUploadBusinessDocumentMutation,
 } from '@/store/services/businessApi'
-import { formatNaira, formatDateTime } from '@/lib/utils'
+import { formatAmount, formatDateTime } from '@/lib/utils'
 import type { BusinessDocumentField } from '@/types/api'
 
 function StatCard({ label, value, icon: Icon, iconColor, iconBg }: {
@@ -212,7 +212,7 @@ export default function BusinessOverviewPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Wallet Balance" value={walletLoading ? '—' : formatNaira(wallet?.balanceKobo ?? 0)} icon={Wallet} iconColor="#1E5FFF" iconBg="#E7EEFF" />
+        <StatCard label="Wallet Balance" value={walletLoading ? '—' : formatAmount(wallet?.balance ?? 0)} icon={Wallet} iconColor="#1E5FFF" iconBg="#E7EEFF" />
         <StatCard label="Total Riders" value={ridersLoading ? '—' : ridersData?.meta?.total ?? 0} icon={Bike} iconColor="#1DB980" iconBg="#DFF5EC" />
         <StatCard label="Active Riders" value={ridersLoading ? '—' : biz?._count?.riders ?? activeRiders} icon={TrendingUp} iconColor="#E8930C" iconBg="#FBEDD7" />
         <StatCard label="Team Members" value={team?.length ?? '—'} icon={Users} iconColor="#FF6A2C" iconBg="#FFEAE1" />

@@ -247,7 +247,7 @@ Map<String, dynamic> _$EarningOrderToJson(EarningOrder instance) =>
 
 RiderEarning _$RiderEarningFromJson(Map<String, dynamic> json) => RiderEarning(
       id: json['id'] as String,
-      amountKobo: (json['amountKobo'] as num).toInt(),
+      amount: (json['amount'] as num).toDouble(),
       status: json['status'] as String,
       settledAt: json['settledAt'] as String?,
       createdAt: json['createdAt'] as String,
@@ -259,7 +259,7 @@ RiderEarning _$RiderEarningFromJson(Map<String, dynamic> json) => RiderEarning(
 Map<String, dynamic> _$RiderEarningToJson(RiderEarning instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'amountKobo': instance.amountKobo,
+      'amount': instance.amount,
       'status': instance.status,
       'settledAt': instance.settledAt,
       'createdAt': instance.createdAt,
@@ -269,29 +269,29 @@ Map<String, dynamic> _$RiderEarningToJson(RiderEarning instance) =>
 RiderEarningsSummary _$RiderEarningsSummaryFromJson(
         Map<String, dynamic> json) =>
     RiderEarningsSummary(
-      totalKobo: (json['totalKobo'] as num).toInt(),
-      todayKobo: (json['todayKobo'] as num).toInt(),
-      thisWeekKobo: (json['thisWeekKobo'] as num).toInt(),
-      thisMonthKobo: (json['thisMonthKobo'] as num).toInt(),
-      pendingBalanceKobo: (json['pendingBalanceKobo'] as num).toInt(),
+      total: (json['total'] as num).toDouble(),
+      today: (json['today'] as num).toDouble(),
+      thisWeek: (json['thisWeek'] as num).toDouble(),
+      thisMonth: (json['thisMonth'] as num).toDouble(),
+      pendingBalance: (json['pendingBalance'] as num).toDouble(),
       deliveryCount: (json['deliveryCount'] as num).toInt(),
     );
 
 Map<String, dynamic> _$RiderEarningsSummaryToJson(
         RiderEarningsSummary instance) =>
     <String, dynamic>{
-      'totalKobo': instance.totalKobo,
-      'todayKobo': instance.todayKobo,
-      'thisWeekKobo': instance.thisWeekKobo,
-      'thisMonthKobo': instance.thisMonthKobo,
-      'pendingBalanceKobo': instance.pendingBalanceKobo,
+      'total': instance.total,
+      'today': instance.today,
+      'thisWeek': instance.thisWeek,
+      'thisMonth': instance.thisMonth,
+      'pendingBalance': instance.pendingBalance,
       'deliveryCount': instance.deliveryCount,
     };
 
 RiderWithdrawal _$RiderWithdrawalFromJson(Map<String, dynamic> json) =>
     RiderWithdrawal(
       id: json['id'] as String,
-      amountKobo: (json['amountKobo'] as num).toInt(),
+      amount: (json['amount'] as num).toDouble(),
       bankName: json['bankName'] as String,
       accountNumber: json['accountNumber'] as String,
       accountName: json['accountName'] as String,
@@ -304,7 +304,7 @@ RiderWithdrawal _$RiderWithdrawalFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$RiderWithdrawalToJson(RiderWithdrawal instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'amountKobo': instance.amountKobo,
+      'amount': instance.amount,
       'bankName': instance.bankName,
       'accountNumber': instance.accountNumber,
       'accountName': instance.accountName,

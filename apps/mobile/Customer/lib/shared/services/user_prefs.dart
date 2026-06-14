@@ -17,8 +17,8 @@ class UserPrefs {
     await _box?.put('onboarded', true);
   }
 
-  static int get walletBalanceKobo => _box?.get('wallet_balance_kobo', defaultValue: 0) ?? 0;
-  static Future<void> saveWalletBalance(int kobo) async => _box?.put('wallet_balance_kobo', kobo);
+  static double get walletBalance => (_box?.get('wallet_balance_naira', defaultValue: 0) ?? 0).toDouble();
+  static Future<void> saveWalletBalance(double naira) async => _box?.put('wallet_balance_naira', naira);
 
   static int get orderCount => _box?.get('order_count', defaultValue: 0) ?? 0;
   static Future<void> saveOrderCount(int count) async => _box?.put('order_count', count);

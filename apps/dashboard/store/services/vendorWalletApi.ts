@@ -3,7 +3,7 @@ import { api } from '@/store/baseApi'
 export interface VendorWalletTx {
   id: string
   type: string
-  amountKobo: number
+  amount: number
   reference: string | null
   description: string | null
   createdAt: string
@@ -32,7 +32,7 @@ interface Pagination {
 
 export const vendorWalletApi = api.injectEndpoints({
   endpoints: (build) => ({
-    getVendorWallet: build.query<{ balanceKobo: number }, void>({
+    getVendorWallet: build.query<{ balance: number }, void>({
       query: () => '/vendor-admin/wallet',
       providesTags: ['VendorWallet'],
     }),
@@ -60,7 +60,7 @@ export const vendorWalletApi = api.injectEndpoints({
       invalidatesTags: ['VendorWallet'],
     }),
 
-    withdrawVendorWallet: build.mutation<{ message: string }, { amountKobo: number }>({
+    withdrawVendorWallet: build.mutation<{ message: string }, { amount: number }>({
       query: (body) => ({ url: '/vendor-admin/wallet/withdraw', method: 'POST', body }),
       invalidatesTags: ['VendorWallet'],
     }),

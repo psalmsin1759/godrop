@@ -13,7 +13,7 @@ UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => UserProfile(
       phone: json['phone'] as String,
       email: json['email'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
-      walletBalanceKobo: (json['walletBalanceKobo'] as num?)?.toInt() ?? 0,
+      walletBalance: (json['walletBalance'] as num?)?.toDouble() ?? 0,
     );
 
 Map<String, dynamic> _$UserProfileToJson(UserProfile instance) =>
@@ -24,7 +24,7 @@ Map<String, dynamic> _$UserProfileToJson(UserProfile instance) =>
       'phone': instance.phone,
       'email': instance.email,
       'avatarUrl': instance.avatarUrl,
-      'walletBalanceKobo': instance.walletBalanceKobo,
+      'walletBalance': instance.walletBalance,
     };
 
 UserProfileResponse _$UserProfileResponseFromJson(Map<String, dynamic> json) =>

@@ -2,7 +2,7 @@
 
 import { Wallet, Loader2 } from 'lucide-react'
 import { useGetBusinessWalletQuery, useGetBusinessWalletTransactionsQuery } from '@/store/services/businessApi'
-import { formatNaira, formatDateTime } from '@/lib/utils'
+import { formatAmount, formatDateTime } from '@/lib/utils'
 import type { BusinessWalletTxType } from '@/types/api'
 
 const TX_LABEL: Record<BusinessWalletTxType, string> = {
@@ -36,7 +36,7 @@ export default function BusinessWalletPage() {
         {walletLoading ? (
           <Loader2 className="w-6 h-6 animate-spin" />
         ) : (
-          <p className="text-3xl font-bold">{formatNaira(wallet?.balanceKobo ?? 0)}</p>
+          <p className="text-3xl font-bold">{formatAmount(wallet?.balance ?? 0)}</p>
         )}
         <p className="text-xs mt-1 opacity-60">Accumulated from all rider earnings</p>
       </div>
@@ -69,7 +69,7 @@ export default function BusinessWalletPage() {
                   className="text-sm font-bold"
                   style={{ color: TX_COLOR[tx.type] ?? '#0D1426' }}
                 >
-                  {tx.type === 'WITHDRAWAL' ? '-' : '+'}{formatNaira(tx.amountKobo)}
+                  {tx.type === 'WITHDRAWAL' ? '-' : '+'}{formatAmount(tx.amount)}
                 </span>
               </div>
             ))}

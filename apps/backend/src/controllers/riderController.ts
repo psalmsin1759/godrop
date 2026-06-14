@@ -3,6 +3,7 @@ import { ok, fail } from "../utils/response";
 import * as svc from "../services/riderService";
 import { paginate, buildMeta } from "../utils/pagination";
 import { RiderKycStatus } from "@prisma/client";
+import { toNaira, serializeMoney, serializeMoneyList } from "../utils/currency";
 
 export async function listRiders(req: Request, res: Response, next: NextFunction) {
   try {
@@ -99,9 +100,9 @@ export async function getRiderEarnings(req: Request, res: Response, next: NextFu
     const { page, limit } = paginate(q.page, q.limit);
     const result = await svc.getRiderEarnings(req.params.id, { page, limit });
     return ok(res, {
-      data: result.data,
+      data: serializeMoneyList(result.data, ["amount"]),
       meta: buildMeta(result.page, result.limit, result.total),
-      totalEarnedKobo: result.totalEarnedKobo,
+      totalEarned: toNaira(result.totalEarnedKobo),
     });
   } catch (err: any) {
     if (err.message === "Rider not found") return fail(res, err.message, 404);
@@ -141,7 +142,7 @@ export async function listAvailableRiders(req: Request, res: Response, next: Nex
 export async function processWithdrawal(req: Request, res: Response, next: NextFunction) {
   try {
     const withdrawal = await svc.processWithdrawal(req.params.withdrawalId, req.body.action, req.body.notes);
-    return ok(res, { data: withdrawal });
+    return ok(res, { data: serializeMoney(withdrawal, ["amount"]) });
   } catch (err: any) {
     if (err.message === "Withdrawal not found") return fail(res, err.message, 404);
     if (err.message === "Withdrawal is not pending") return fail(res, err.message, 400);

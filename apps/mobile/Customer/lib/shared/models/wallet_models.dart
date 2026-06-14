@@ -5,9 +5,9 @@ part 'wallet_models.g.dart';
 
 @JsonSerializable()
 class WalletBalance {
-  final int balanceKobo;
+  final double balance;
 
-  const WalletBalance({required this.balanceKobo});
+  const WalletBalance({required this.balance});
 
   factory WalletBalance.fromJson(Map<String, dynamic> json) =>
       _$WalletBalanceFromJson(json);
@@ -18,7 +18,7 @@ class WalletBalance {
 class WalletTx {
   final String id;
   final String type;
-  final int amountKobo;
+  final double amount;
   final String description;
   @JsonKey(defaultValue: 'completed')
   final String status;
@@ -27,7 +27,7 @@ class WalletTx {
   const WalletTx({
     required this.id,
     required this.type,
-    required this.amountKobo,
+    required this.amount,
     required this.description,
     this.status = 'completed',
     required this.createdAt,
@@ -52,9 +52,9 @@ class WalletTxListResponse {
 
 @JsonSerializable()
 class TopUpInitBody {
-  final int amountKobo;
+  final double amount;
 
-  const TopUpInitBody({required this.amountKobo});
+  const TopUpInitBody({required this.amount});
 
   factory TopUpInitBody.fromJson(Map<String, dynamic> json) =>
       _$TopUpInitBodyFromJson(json);
@@ -89,11 +89,11 @@ class TopUpVerifyBody {
 
 @JsonSerializable()
 class TopUpVerifyResponse {
-  final int balanceKobo;
+  final double balance;
   final WalletTx transaction;
 
   const TopUpVerifyResponse({
-    required this.balanceKobo,
+    required this.balance,
     required this.transaction,
   });
 

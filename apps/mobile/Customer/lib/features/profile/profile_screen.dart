@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../app/theme.dart';
 import '../../shared/api/client/dio_client.dart';
 import '../../shared/services/user_prefs.dart';
+import '../../shared/utils/currency.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../auth/bloc/auth_cubit.dart';
 import '../auth/bloc/auth_state.dart';
@@ -90,14 +91,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     if (parts.isNotEmpty) return parts[0][0].toUpperCase();
     return 'G';
-  }
-
-  String _fmtKobo(int kobo) {
-    final naira = kobo / 100;
-    final formatted = naira
-        .toStringAsFixed(0)
-        .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
-    return '₦$formatted';
   }
 
   void _showEditProfile(BuildContext ctx) {
@@ -203,7 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, state) {
           final profile = state is ProfileLoaded ? state.profile : null;
           final walletBalance =
-              profile != null ? _fmtKobo(profile.walletBalanceKobo) : '—';
+              profile != null ? formatNaira(profile.walletBalance) : '—';
           final name =
               profile != null ? '${profile.firstName} ${profile.lastName}' : '';
           final email = profile?.email ?? '';

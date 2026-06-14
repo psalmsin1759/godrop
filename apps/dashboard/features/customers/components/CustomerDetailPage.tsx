@@ -9,7 +9,7 @@ import {
   useUpdateCustomerStatusMutation,
 } from '../store/customersApi'
 import type { CustomerStatus, OrderStatus, WalletTransactionType } from '@/types/api'
-import { formatNaira, formatNairaFull, formatDate, formatDateTime } from '@/lib/utils'
+import { formatNaira, formatAmount, formatAmountFull, formatDate, formatDateTime } from '@/lib/utils'
 import {
   ArrowLeft, Loader2, ChevronLeft, ChevronRight,
   Wallet, ShoppingBag, User, Shield, ShieldOff, UserX,
@@ -263,10 +263,10 @@ export default function CustomerDetailPage({ customerId }: { customerId: string 
             {customer.wallet ? (
               <>
                 <p className="text-2xl font-bold text-[#0D1426] mt-3">
-                  {formatNaira(customer.wallet.balanceKobo)}
+                  {formatAmount(customer.wallet.balance)}
                 </p>
                 <p className="text-[10px] text-[#9AA1B4] mt-1">
-                  {formatNairaFull(customer.wallet.balanceKobo)} · since {formatDate(customer.wallet.createdAt)}
+                  {formatAmountFull(customer.wallet.balance)} · since {formatDate(customer.wallet.createdAt)}
                 </p>
               </>
             ) : (
@@ -407,7 +407,7 @@ export default function CustomerDetailPage({ customerId }: { customerId: string 
                           className="text-xs font-bold"
                           style={{ color: isCredit ? '#1DB980' : '#FF3B30' }}
                         >
-                          {isCredit ? '+' : '-'}{formatNaira(tx.amountKobo)}
+                          {isCredit ? '+' : '-'}{formatAmount(tx.amount)}
                         </p>
                         <p className="text-[10px] text-[#9AA1B4]">{formatDateTime(tx.createdAt)}</p>
                       </div>

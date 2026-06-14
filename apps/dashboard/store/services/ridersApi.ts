@@ -55,10 +55,10 @@ export const ridersApi = api.injectEndpoints({
     getRiderEarnings: build.query<RiderEarningsResponse, { id: string; page?: number; limit?: number }>({
       query: ({ id, ...params }) => ({ url: `/admin/riders/${id}/earnings`, params }),
       providesTags: (_r, _e, { id }) => [{ type: 'Rider', id }],
-      transformResponse: (res: { success: boolean; data: RiderEarning[]; meta: RidersListMeta; totalEarnedKobo: number }) => ({
+      transformResponse: (res: { success: boolean; data: RiderEarning[]; meta: RidersListMeta; totalEarned: number }) => ({
         data: res.data ?? [],
         meta: res.meta,
-        totalEarnedKobo: res.totalEarnedKobo ?? 0,
+        totalEarned: res.totalEarned ?? 0,
       }),
     }),
 

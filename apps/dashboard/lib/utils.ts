@@ -5,16 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatNaira(kobo: number): string {
-  const naira = kobo / 100
+export function formatAmount(naira: number): string {
   if (naira >= 1_000_000) return `₦${(naira / 1_000_000).toFixed(2)}M`
   if (naira >= 1_000) return `₦${(naira / 1_000).toFixed(1)}K`
   return `₦${naira.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
-export function formatNairaFull(kobo: number): string {
-  const naira = kobo / 100
+export function formatAmountFull(naira: number): string {
   return `₦${naira.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/** @deprecated Input is Kobo (legacy). Use `formatAmount` for fields already converted to Naira. */
+export function formatNaira(kobo: number): string {
+  return formatAmount(kobo / 100)
+}
+
+/** @deprecated Input is Kobo (legacy). Use `formatAmountFull` for fields already converted to Naira. */
+export function formatNairaFull(kobo: number): string {
+  return formatAmountFull(kobo / 100)
 }
 
 export function formatNumber(n: number): string {

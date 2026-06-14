@@ -61,7 +61,7 @@ export interface Business {
   accountNumber: string | null
   createdAt: string
   updatedAt: string
-  wallet: { balanceKobo: number } | null
+  wallet: { balance: number } | null
   _count: { riders: number; admins: number }
 }
 
@@ -72,7 +72,7 @@ export interface BusinessWalletTransaction {
   walletId: string
   riderId: string | null
   type: BusinessWalletTxType
-  amountKobo: number
+  amount: number
   reference: string | null
   description: string | null
   createdAt: string
@@ -795,7 +795,7 @@ export interface AdminCustomer {
   isVerified: boolean
   status: CustomerStatus
   createdAt: string
-  wallet: { balanceKobo: number } | null
+  wallet: { balance: number } | null
   _count: { orders: number }
 }
 
@@ -811,13 +811,13 @@ export interface AdminCustomerDetail {
   status: CustomerStatus
   createdAt: string
   updatedAt: string
-  wallet: { id: string; balanceKobo: number; createdAt: string } | null
+  wallet: { id: string; balance: number; createdAt: string } | null
   _count: { orders: number; addresses: number }
 }
 
 export interface AdminWallet {
   id: string
-  balanceKobo: number
+  balance: number
   createdAt: string
   updatedAt: string
   user: { id: string; firstName: string; lastName: string; phone: string }
@@ -829,7 +829,7 @@ export interface AdminWalletTransaction {
   id: string
   walletId: string
   type: WalletTransactionType
-  amountKobo: number
+  amount: number
   reference: string | null
   description: string | null
   createdAt: string
@@ -1005,7 +1005,7 @@ export interface RiderOrdersParams {
 
 export interface RiderEarning {
   id: string
-  amountKobo: number
+  amount: number
   status: 'PENDING' | 'SETTLED'
   settledAt: string | null
   createdAt: string
@@ -1022,14 +1022,14 @@ export interface RiderEarning {
 export interface RiderEarningsResponse {
   data: RiderEarning[]
   meta: RidersListMeta
-  totalEarnedKobo: number
+  totalEarned: number
 }
 
 export type WithdrawalStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
 
 export interface RiderWithdrawal {
   id: string
-  amountKobo: number
+  amount: number
   bankName: string
   accountNumber: string
   accountName: string

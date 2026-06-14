@@ -4,6 +4,7 @@ import { buildMeta, paginate } from "../utils/pagination";
 import * as svc from "../services/businessAdminService";
 import { uploadDocument } from "../services/cloudinaryService";
 import { BusinessStatus } from "@prisma/client";
+import { serializeMoney, serializeMoneyList } from "../utils/currency";
 
 // ─── Me ───────────────────────────────────────────────────────
 
@@ -91,7 +92,11 @@ export async function getRiderOrders(req: Request, res: Response, next: NextFunc
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await svc.getRiderOrders(req.admin!.businessId!, req.params.riderId, { page, limit });
-    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+    const data = result.data.map((order: any) => ({
+      ...order,
+      earning: order.earning ? serializeMoney(order.earning, ["amount"]) : order.earning,
+    }));
+    return ok(res, { data, meta: buildMeta(result.page, result.limit, result.total) });
   } catch (err: any) {
     if (err.message === "Rider not found in this business") return fail(res, err.message, 404);
     next(err);
@@ -103,7 +108,7 @@ export async function getRiderOrders(req: Request, res: Response, next: NextFunc
 export async function getWallet(req: Request, res: Response, next: NextFunction) {
   try {
     const wallet = await svc.getWallet(req.admin!.businessId!);
-    return ok(res, { data: wallet });
+    return ok(res, { data: serializeMoney(wallet, ["balance"]) });
   } catch (err) {
     next(err);
   }
@@ -114,7 +119,7 @@ export async function listWalletTransactions(req: Request, res: Response, next: 
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await svc.listWalletTransactions(req.admin!.businessId!, { page, limit });
-    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+    return ok(res, { data: serializeMoneyList(result.data, ["amount"]), meta: buildMeta(result.page, result.limit, result.total) });
   } catch (err) {
     next(err);
   }

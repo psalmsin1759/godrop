@@ -96,10 +96,10 @@ export const businessApi = api.injectEndpoints({
     }),
 
     // ─── Business Admin: Wallet ──────────────────────────────────
-    getBusinessWallet: build.query<{ id: string; balanceKobo: number }, void>({
+    getBusinessWallet: build.query<{ id: string; balance: number }, void>({
       query: () => '/business-admin/wallet',
       providesTags: ['BusinessWallet'],
-      transformResponse: (res: Wrap<{ id: string; balanceKobo: number }>) => res.data,
+      transformResponse: (res: Wrap<{ id: string; balance: number }>) => res.data,
     }),
 
     getBusinessWalletTransactions: build.query<{ data: BusinessWalletTransaction[]; meta: RidersListMeta }, { page?: number; limit?: number }>({

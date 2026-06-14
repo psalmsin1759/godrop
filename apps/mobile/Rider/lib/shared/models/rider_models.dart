@@ -286,7 +286,7 @@ class EarningOrder {
 @JsonSerializable()
 class RiderEarning {
   final String id;
-  final int amountKobo;
+  final double amount;
   final String status;
   final String? settledAt;
   final String createdAt;
@@ -294,7 +294,7 @@ class RiderEarning {
 
   const RiderEarning({
     required this.id,
-    required this.amountKobo,
+    required this.amount,
     required this.status,
     this.settledAt,
     required this.createdAt,
@@ -308,19 +308,19 @@ class RiderEarning {
 
 @JsonSerializable()
 class RiderEarningsSummary {
-  final int totalKobo;
-  final int todayKobo;
-  final int thisWeekKobo;
-  final int thisMonthKobo;
-  final int pendingBalanceKobo;
+  final double total;
+  final double today;
+  final double thisWeek;
+  final double thisMonth;
+  final double pendingBalance;
   final int deliveryCount;
 
   const RiderEarningsSummary({
-    required this.totalKobo,
-    required this.todayKobo,
-    required this.thisWeekKobo,
-    required this.thisMonthKobo,
-    required this.pendingBalanceKobo,
+    required this.total,
+    required this.today,
+    required this.thisWeek,
+    required this.thisMonth,
+    required this.pendingBalance,
     required this.deliveryCount,
   });
 
@@ -332,7 +332,7 @@ class RiderEarningsSummary {
 @JsonSerializable()
 class RiderWithdrawal {
   final String id;
-  final int amountKobo;
+  final double amount;
   final String bankName;
   final String accountNumber;
   final String accountName;
@@ -343,7 +343,7 @@ class RiderWithdrawal {
 
   const RiderWithdrawal({
     required this.id,
-    required this.amountKobo,
+    required this.amount,
     required this.bankName,
     required this.accountNumber,
     required this.accountName,

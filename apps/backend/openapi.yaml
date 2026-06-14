@@ -103,7 +103,7 @@ components:
         phone: { type: string, example: "+2348012345678" }
         email: { type: string, format: email }
         avatarUrl: { type: string }
-        walletBalanceKobo: { type: integer }
+        walletBalance: { type: number, description: "Naira" }
 
     Address:
       type: object
@@ -121,7 +121,7 @@ components:
       properties:
         id: { type: string }
         type: { type: string, enum: [TOPUP, PAYMENT, REFUND] }
-        amountKobo: { type: integer }
+        amount: { type: number, description: "Naira" }
         reference: { type: string }
         description: { type: string }
         createdAt: { type: string, format: date-time }
@@ -476,7 +476,7 @@ components:
           type: object
           nullable: true
           properties:
-            balanceKobo: { type: integer }
+            balance: { type: number, description: "Naira" }
         _count:
           type: object
           properties:
@@ -504,7 +504,7 @@ components:
           nullable: true
           properties:
             id: { type: string }
-            balanceKobo: { type: integer }
+            balance: { type: number, description: "Naira" }
             createdAt: { type: string, format: date-time }
         _count:
           type: object
@@ -517,7 +517,7 @@ components:
       description: Customer wallet with owner summary
       properties:
         id: { type: string }
-        balanceKobo: { type: integer }
+        balance: { type: number, description: "Naira" }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         user:
@@ -536,7 +536,7 @@ components:
         type:
           type: string
           enum: [TOPUP, PAYMENT, REFUND]
-        amountKobo: { type: integer }
+        amount: { type: number, description: "Naira" }
         reference: { type: string, nullable: true }
         description: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
@@ -988,7 +988,7 @@ components:
       type: object
       properties:
         id: { type: string }
-        amountKobo: { type: integer }
+        amount: { type: number, description: "Naira" }
         status: { type: string, enum: [PENDING, SETTLED] }
         settledAt: { type: string, format: date-time, nullable: true }
         createdAt: { type: string, format: date-time }
@@ -1005,18 +1005,18 @@ components:
     RiderEarningsSummary:
       type: object
       properties:
-        totalKobo: { type: integer, description: "Lifetime earnings in kobo" }
-        todayKobo: { type: integer }
-        thisWeekKobo: { type: integer }
-        thisMonthKobo: { type: integer }
-        pendingBalanceKobo: { type: integer, description: "Balance not yet settled/withdrawn" }
+        total: { type: number, description: "Lifetime earnings in Naira" }
+        today: { type: number }
+        thisWeek: { type: number }
+        thisMonth: { type: number }
+        pendingBalance: { type: number, description: "Balance not yet settled/withdrawn, in Naira" }
         deliveryCount: { type: integer }
 
     RiderWithdrawal:
       type: object
       properties:
         id: { type: string }
-        amountKobo: { type: integer }
+        amount: { type: number, description: "Naira" }
         bankName: { type: string }
         bankCode: { type: string }
         accountNumber: { type: string }
@@ -1187,7 +1187,7 @@ components:
           nullable: true
           properties:
             id: { type: string }
-            balanceKobo: { type: integer, example: 150000 }
+            balance: { type: number, example: 1500, description: "Naira" }
         _count:
           type: object
           properties:
@@ -1199,7 +1199,7 @@ components:
       properties:
         id: { type: string }
         businessId: { type: string }
-        balanceKobo: { type: integer, example: 150000 }
+        balance: { type: number, example: 1500, description: "Naira" }
 
     BusinessWalletTransaction:
       type: object
@@ -1210,7 +1210,7 @@ components:
         type:
           type: string
           enum: [RIDER_EARNING, WITHDRAWAL]
-        amountKobo: { type: integer, example: 5000 }
+        amount: { type: number, example: 50, description: "Naira" }
         reference: { type: string }
         description: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
@@ -1534,7 +1534,7 @@ paths:
                   phone: { type: string }
                   email: { type: string, format: email }
                   avatarUrl: { type: string }
-                  walletBalanceKobo: { type: integer }
+                  walletBalance: { type: number, description: "Naira" }
     patch:
       tags: [Profile]
       summary: Update profile
@@ -1761,7 +1761,7 @@ paths:
                 type: object
                 properties:
                   success: { type: boolean }
-                  balanceKobo: { type: integer }
+                  balance: { type: number, description: "Naira" }
 
   /me/wallet/transactions:
     get:
@@ -1800,9 +1800,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amountKobo]
+              required: [amount]
               properties:
-                amountKobo: { type: integer, minimum: 10000 }
+                amount: { type: number, minimum: 100, description: "Naira" }
       responses:
         "200":
           description: Paystack checkout URL
@@ -1838,7 +1838,7 @@ paths:
                 type: object
                 properties:
                   success: { type: boolean }
-                  balanceKobo: { type: integer }
+                  balance: { type: number, description: "Naira" }
                   transaction: { $ref: "#/components/schemas/WalletTransaction" }
 
   # ─ Payments ───────────────────────────────────────────────────
@@ -4534,7 +4534,7 @@ paths:
                 type: object
                 properties:
                   success: { type: boolean }
-                  balanceKobo: { type: integer, example: 250000 }
+                  balance: { type: number, example: 2500, description: "Naira" }
 
   /vendor-admin/wallet/transactions:
     get:
@@ -4672,7 +4672,7 @@ paths:
       description: |
         Initiates a Paystack single transfer to the vendor's saved bank account and debits the wallet immediately.
         Requires the OWNER role — MANAGER and STAFF will receive 403.
-        Minimum withdrawal: ₦100 (10,000 kobo). Amount must not exceed current wallet balance.
+        Minimum withdrawal: ₦100. Amount must not exceed current wallet balance.
         Audit-logged as `WALLET_WITHDRAWAL`.
       security: [{ BearerAuth: [] }]
       requestBody:
@@ -4681,9 +4681,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amountKobo]
+              required: [amount]
               properties:
-                amountKobo: { type: integer, minimum: 10000, example: 50000 }
+                amount: { type: number, minimum: 100, example: 500, description: "Naira" }
       responses:
         "200":
           description: Transfer initiated and wallet debited
@@ -5313,14 +5313,14 @@ paths:
           schema: { type: string }
       responses:
         "200":
-          description: Vendor wallet balance in Kobo
+          description: Vendor wallet balance in Naira
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   success: { type: boolean }
-                  balanceKobo: { type: integer, example: 150000 }
+                  balance: { type: number, example: 1500 }
         "404":
           description: Vendor not found
 
@@ -5357,7 +5357,7 @@ paths:
                       properties:
                         id: { type: string }
                         vendorId: { type: string }
-                        amountKobo: { type: integer }
+                        amount: { type: number, description: "Naira" }
                         bankName: { type: string }
                         bankCode: { type: string }
                         accountNumber: { type: string }
@@ -6859,7 +6859,7 @@ paths:
         Requires a bank account on file (via `PATCH /rider/me/bank`) unless bank
         details are supplied in the request body.
 
-        Minimum withdrawal: ₦100 (10,000 kobo).
+        Minimum withdrawal: ₦100.
         Amount cannot exceed current pending balance.
       security: [{ BearerAuth: [] }]
       requestBody:
@@ -6868,9 +6868,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amountKobo]
+              required: [amount]
               properties:
-                amountKobo: { type: integer, minimum: 10000, description: "Amount in kobo. Min ₦100 = 10,000 kobo" }
+                amount: { type: number, minimum: 100, description: "Amount in Naira. Minimum ₦100" }
                 bankName: { type: string, description: "Override saved bank name" }
                 bankCode: { type: string, description: "Override saved bank code" }
                 accountNumber: { type: string, description: "Override saved account number" }
@@ -7353,7 +7353,7 @@ paths:
                     type: array
                     items: { $ref: "#/components/schemas/RiderEarning" }
                   meta: { $ref: "#/components/schemas/Pagination" }
-                  totalEarnedKobo: { type: integer }
+                  totalEarned: { type: number, description: "Naira" }
         "404":
           description: Rider not found
 
@@ -8371,7 +8371,7 @@ paths:
                           type: object
                           nullable: true
                           properties:
-                            amountKobo: { type: integer }
+                            amount: { type: number, description: "Naira" }
                             status: { type: string }
                   meta: { $ref: "#/components/schemas/Pagination" }
         "404":

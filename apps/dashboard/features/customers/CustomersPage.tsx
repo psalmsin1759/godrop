@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGetCustomersQuery } from './store/customersApi'
 import type { CustomerStatus } from '@/types/api'
-import { formatNaira, formatDate } from '@/lib/utils'
+import { formatAmount, formatDate } from '@/lib/utils'
 import {
   Search, ChevronLeft, ChevronRight, Loader2, Users,
   CheckCircle, ShieldOff, UserX, Eye,
@@ -143,7 +143,7 @@ export default function CustomersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-xs font-medium text-[#0D1426]">
-                      {c.wallet ? formatNaira(c.wallet.balanceKobo) : <span className="text-[#DDE2EC]">—</span>}
+                      {c.wallet ? formatAmount(c.wallet.balance) : <span className="text-[#DDE2EC]">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-[#525A72]">{c._count.orders}</td>
                     <td className="px-4 py-3 text-xs text-[#9AA1B4]">{formatDate(c.createdAt)}</td>

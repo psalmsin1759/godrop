@@ -4,6 +4,7 @@ import * as cloudinaryService from "../services/cloudinaryService";
 import * as walletService from "../services/walletService";
 import { ok, created, fail } from "../utils/response";
 import { paginate, buildMeta } from "../utils/pagination";
+import { toNaira, serializeMoney, serializeMoneyList } from "../utils/currency";
 
 // ─── Profile ──────────────────────────────────────────────────
 
@@ -18,7 +19,7 @@ export async function getProfile(req: Request, res: Response, next: NextFunction
       phone: user.phone,
       email: user.email,
       avatarUrl: user.avatarUrl,
-      walletBalanceKobo: wallet?.balanceKobo ?? 0,
+      walletBalance: toNaira(wallet?.balanceKobo ?? 0),
     });
   } catch (err) {
     next(err);
@@ -117,7 +118,7 @@ export async function deleteAddress(req: Request, res: Response, next: NextFunct
 export async function getWallet(req: Request, res: Response, next: NextFunction) {
   try {
     const balanceKobo = await walletService.getBalance(req.user!.id);
-    ok(res, { balanceKobo });
+    ok(res, { balance: toNaira(balanceKobo) });
   } catch (err) {
     next(err);
   }
@@ -127,7 +128,7 @@ export async function getWalletTransactions(req: Request, res: Response, next: N
   try {
     const { page, limit } = paginate(req.query.page, req.query.limit);
     const { data, total } = await walletService.getTransactions(req.user!.id, page, limit);
-    ok(res, { data, meta: buildMeta(page, limit, total) });
+    ok(res, { data: serializeMoneyList(data, ["amount"]), meta: buildMeta(page, limit, total) });
   } catch (err) {
     next(err);
   }
@@ -145,7 +146,10 @@ export async function initTopUp(req: Request, res: Response, next: NextFunction)
 export async function verifyTopUp(req: Request, res: Response, next: NextFunction) {
   try {
     const result = await walletService.verifyTopUp(req.user!.id, req.body.reference);
-    ok(res, result);
+    ok(res, {
+      balance: toNaira(result.balanceKobo),
+      transaction: serializeMoney(result.transaction, ["amount"]),
+    });
   } catch (err) {
     next(err);
   }

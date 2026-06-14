@@ -25,7 +25,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           lastName: nameParts.length > 1 ? nameParts.skip(1).join(' ') : '',
           phone: '',
           email: UserPrefs.email,
-          walletBalanceKobo: UserPrefs.walletBalanceKobo,
+          walletBalance: UserPrefs.walletBalance,
           avatarUrl: UserPrefs.avatarUrl,
         ),
         addresses: [],
@@ -50,7 +50,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         name: '${profile.firstName} ${profile.lastName}',
         email: profile.email ?? '',
       );
-      await UserPrefs.saveWalletBalance(profile.walletBalanceKobo);
+      await UserPrefs.saveWalletBalance(profile.walletBalance);
       await UserPrefs.saveOrderCount(orderCount);
       await UserPrefs.saveAvatarUrl(profile.avatarUrl);
 

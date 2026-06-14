@@ -11,7 +11,7 @@ class UserProfile {
   final String? email;
   final String? avatarUrl;
   @JsonKey(defaultValue: 0)
-  final int walletBalanceKobo;
+  final double walletBalance;
 
   const UserProfile({
     required this.id,
@@ -20,7 +20,7 @@ class UserProfile {
     required this.phone,
     this.email,
     this.avatarUrl,
-    this.walletBalanceKobo = 0,
+    this.walletBalance = 0,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) =>

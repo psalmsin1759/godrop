@@ -6,6 +6,7 @@ import { paginate, buildMeta } from "../utils/pagination";
 import { nanoid } from "nanoid";
 import { VendorWalletTxType } from "@prisma/client";
 import { logAction } from "../services/auditLogService";
+import { toNaira, serializeMoneyList } from "../utils/currency";
 
 function vendorId(req: Request): string {
   return req.admin?.vendorId ?? "";
@@ -18,7 +19,7 @@ export async function getWallet(req: Request, res: Response, next: NextFunction)
     if (!wallet) {
       wallet = await prisma.vendorWallet.create({ data: { vendorId: vid } });
     }
-    ok(res, { balanceKobo: wallet.balanceKobo });
+    ok(res, { balance: toNaira(wallet.balanceKobo) });
   } catch (err) {
     next(err);
   }
@@ -41,7 +42,7 @@ export async function getTransactions(req: Request, res: Response, next: NextFun
       prisma.vendorWalletTransaction.count({ where: { walletId: wallet.id } }),
     ]);
 
-    ok(res, { data, meta: buildMeta(page, limit, total) });
+    ok(res, { data: serializeMoneyList(data, ["amount"]), meta: buildMeta(page, limit, total) });
   } catch (err) {
     next(err);
   }

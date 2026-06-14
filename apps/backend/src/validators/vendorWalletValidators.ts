@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { toKobo } from "../utils/currency";
 
 export const saveBankAccountSchema = z.object({
   bankName: z.string().min(1).max(100),
@@ -8,8 +9,8 @@ export const saveBankAccountSchema = z.object({
 });
 
 export const withdrawSchema = z.object({
-  amountKobo: z.number().int().positive().min(10000, "Minimum withdrawal is ₦100"),
-});
+  amount: z.number().positive().min(100, "Minimum withdrawal is ₦100"),
+}).transform((data) => ({ amountKobo: toKobo(data.amount) }));
 
 export const resolveAccountSchema = z.object({
   accountNumber: z.string().length(10).regex(/^\d+$/),

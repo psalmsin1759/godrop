@@ -6,6 +6,7 @@ import * as notifSvc from "../services/notificationService";
 import { logAction } from "../services/auditLogService";
 import { paginate, buildMeta } from "../utils/pagination";
 import { prisma } from "../lib/prisma";
+import { toNaira, serializeMoney, serializeMoneyList } from "../utils/currency";
 
 // ─── Auth ─────────────────────────────────────────────────────
 
@@ -272,7 +273,7 @@ export async function getCustomerWallet(req: Request, res: Response, next: NextF
   try {
     const wallet = await svc.getCustomerWallet(req.params.id);
     if (!wallet) return ok(res, { data: null });
-    return ok(res, { data: wallet });
+    return ok(res, { data: serializeMoney(wallet, ["balance"]) });
   } catch (err) {
     next(err);
   }
@@ -283,7 +284,7 @@ export async function getCustomerWalletTransactions(req: Request, res: Response,
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await svc.getCustomerWalletTransactions(req.params.id, { type: q.type, page, limit });
-    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+    return ok(res, { data: serializeMoneyList(result.data, ["amount"]), meta: buildMeta(result.page, result.limit, result.total) });
   } catch (err) {
     next(err);
   }
@@ -426,7 +427,7 @@ export async function getVendorWithdrawals(req: Request, res: Response, next: Ne
       prisma.vendorWithdrawal.count({ where: { vendorId: id } }),
     ]);
 
-    return ok(res, { data, meta: buildMeta(page, limit, total) });
+    return ok(res, { data: serializeMoneyList(data, ["amount"]), meta: buildMeta(page, limit, total) });
   } catch (err) {
     next(err);
   }
@@ -436,7 +437,7 @@ export async function getVendorWalletBalance(req: Request, res: Response, next: 
   try {
     const { id } = req.params;
     const wallet = await prisma.vendorWallet.findUnique({ where: { vendorId: id } });
-    return ok(res, { balanceKobo: wallet?.balanceKobo ?? 0 });
+    return ok(res, { balance: toNaira(wallet?.balanceKobo ?? 0) });
   } catch (err) {
     next(err);
   }

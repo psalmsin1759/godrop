@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useGetVendorQuery, useApproveVendorMutation, useRejectVendorMutation, useSuspendVendorMutation, useReinstateVendorMutation, useGetVendorWithdrawalsQuery, useGetVendorWalletBalanceQuery, type VendorWithdrawal } from './store/vendorsApi'
 import type { VendorStatus } from '@/types/api'
-import { formatDate, formatDateTime, formatNaira } from '@/lib/utils'
+import { formatDate, formatDateTime, formatAmount } from '@/lib/utils'
 import {
   ArrowLeft, Loader2, Store, MapPin, Phone, Mail, Star,
   Clock, CheckCircle, XCircle, PauseCircle, RefreshCw,
@@ -31,7 +31,7 @@ function WithdrawalsSection({ vendorId }: { vendorId: string }) {
         </h3>
         {walletData && (
           <span className="text-xs font-semibold text-[#1DB980]">
-            Balance: {formatNaira(walletData.balanceKobo)}
+            Balance: {formatAmount(walletData.balance)}
           </span>
         )}
       </div>
@@ -49,7 +49,7 @@ function WithdrawalsSection({ vendorId }: { vendorId: string }) {
                   <ArrowUpRight className="w-4 h-4 text-[#FF3B30]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-[#0D1426]">{formatNaira(w.amountKobo)}</p>
+                  <p className="text-xs font-semibold text-[#0D1426]">{formatAmount(w.amount)}</p>
                   <p className="text-[11px] text-[#9AA1B4] truncate">
                     {w.accountName} · {w.bankName} ···{w.accountNumber.slice(-4)}
                   </p>

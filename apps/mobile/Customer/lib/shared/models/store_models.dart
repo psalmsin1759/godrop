@@ -211,11 +211,13 @@ class StorePlacedOrder {
   final String id;
   final String status;
   final int totalKobo;
+  final String? confirmationCode;
 
   const StorePlacedOrder({
     required this.id,
     required this.status,
     required this.totalKobo,
+    this.confirmationCode,
   });
 
   factory StorePlacedOrder.fromJson(Map<String, dynamic> json) =>

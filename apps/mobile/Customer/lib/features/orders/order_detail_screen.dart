@@ -257,6 +257,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final riderFirstName = _rider?['firstName'] as String? ?? '';
     final riderLastName = _rider?['lastName'] as String? ?? '';
     final riderPhone = _rider?['phone'] as String? ?? '';
+    final riderAvatarUrl = _rider?['avatarUrl'] as String?;
     final riderName = '$riderFirstName $riderLastName'.trim();
     final riderInitials = _initials(riderName);
 
@@ -370,7 +371,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               child: _RiderCard(
                                   name: riderName,
                                   phone: riderPhone,
-                                  initials: riderInitials),
+                                  initials: riderInitials,
+                                  avatarUrl: riderAvatarUrl),
                             ),
                             const SizedBox(height: 14),
                           ],
@@ -884,9 +886,13 @@ class _RiderCard extends StatelessWidget {
   final String name;
   final String phone;
   final String initials;
+  final String? avatarUrl;
 
   const _RiderCard(
-      {required this.name, required this.phone, required this.initials});
+      {required this.name,
+      required this.phone,
+      required this.initials,
+      this.avatarUrl});
 
   Future<void> _call() async {
     if (phone.isEmpty) return;
@@ -912,15 +918,33 @@ class _RiderCard extends StatelessWidget {
             height: 48,
             decoration: const BoxDecoration(
                 gradient: GodropColors.blueGradient, shape: BoxShape.circle),
-            child: Center(
-              child: Text(
-                initials,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700),
-              ),
-            ),
+            child: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                ? ClipOval(
+                    child: Image.network(
+                      avatarUrl!,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(

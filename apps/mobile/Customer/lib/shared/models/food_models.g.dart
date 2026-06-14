@@ -210,6 +210,7 @@ PlacedOrder _$PlacedOrderFromJson(Map<String, dynamic> json) => PlacedOrder(
       id: json['id'] as String,
       status: json['status'] as String,
       totalKobo: (json['totalKobo'] as num).toInt(),
+      confirmationCode: json['confirmationCode'] as String?,
     );
 
 Map<String, dynamic> _$PlacedOrderToJson(PlacedOrder instance) =>
@@ -217,6 +218,7 @@ Map<String, dynamic> _$PlacedOrderToJson(PlacedOrder instance) =>
       'id': instance.id,
       'status': instance.status,
       'totalKobo': instance.totalKobo,
+      'confirmationCode': instance.confirmationCode,
     };
 
 FoodOrderResponse _$FoodOrderResponseFromJson(Map<String, dynamic> json) =>

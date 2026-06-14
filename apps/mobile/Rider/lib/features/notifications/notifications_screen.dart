@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
@@ -53,6 +54,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   title: 'Notifications',
                   subtitle:
                       unread > 0 ? '$unread unread' : "You're all caught up",
+                  leading: RiderHeaderAction(
+                    icon: Icons.arrow_back_rounded,
+                    onTap: () => ctx.pop(),
+                  ),
                   trailing: unread > 0
                       ? GestureDetector(
                           onTap: () =>

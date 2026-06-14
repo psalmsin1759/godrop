@@ -226,6 +226,7 @@ StorePlacedOrder _$StorePlacedOrderFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       status: json['status'] as String,
       totalKobo: (json['totalKobo'] as num).toInt(),
+      confirmationCode: json['confirmationCode'] as String?,
     );
 
 Map<String, dynamic> _$StorePlacedOrderToJson(StorePlacedOrder instance) =>
@@ -233,6 +234,7 @@ Map<String, dynamic> _$StorePlacedOrderToJson(StorePlacedOrder instance) =>
       'id': instance.id,
       'status': instance.status,
       'totalKobo': instance.totalKobo,
+      'confirmationCode': instance.confirmationCode,
     };
 
 StoreOrderResponse _$StoreOrderResponseFromJson(Map<String, dynamic> json) =>

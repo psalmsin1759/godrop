@@ -61,7 +61,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
 
   String _generateCode() {
     final rng = Random();
-    return (100000 + rng.nextInt(900000)).toString();
+    return (1000 + rng.nextInt(9000)).toString();
   }
 
   @override
@@ -126,6 +126,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
 
       final String orderId;
       final int orderTotalKobo;
+      final String? confirmationCode;
 
       if (cart.partnerType == PartnerType.restaurant) {
         final items = cart.items
@@ -141,6 +142,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
         );
         orderId = response.order.id;
         orderTotalKobo = response.order.totalKobo;
+        confirmationCode = response.order.confirmationCode;
       } else {
         final items = cart.items
             .map((i) => StoreCheckoutItem(productId: i.id, quantity: i.quantity))
@@ -164,6 +166,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
         }
         orderId = response.order.id;
         orderTotalKobo = response.order.totalKobo;
+        confirmationCode = response.order.confirmationCode;
       }
 
       if (!mounted) return;
@@ -193,7 +196,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
         vehicleIndex: 0,
         orderType: cart.partnerType.orderTypeKey,
         restaurantName: cart.partnerName,
-        confirmationCode: _generateCode(),
+        confirmationCode: confirmationCode ?? _generateCode(),
         foodSummary: foodSummary,
       );
 

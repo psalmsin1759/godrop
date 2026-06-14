@@ -62,7 +62,20 @@ export async function getOrder(id: string, customerId: string) {
     include: {
       items: true,
       events: { orderBy: { createdAt: "asc" } },
-      rider: true,
+      rider: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatarUrl: true,
+          vehicleType: true,
+          vehiclePlate: true,
+          rating: true,
+          lat: true,
+          lng: true,
+        },
+      },
     },
   });
   return order;

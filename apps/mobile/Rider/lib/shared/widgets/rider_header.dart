@@ -8,6 +8,7 @@ class RiderHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+  final Widget? leading;
   final Widget? trailing;
 
   const RiderHeader({
@@ -15,6 +16,7 @@ class RiderHeader extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.leading,
     this.trailing,
   });
 
@@ -30,6 +32,10 @@ class RiderHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 12),
+          ],
           Container(
             width: 44,
             height: 44,

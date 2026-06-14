@@ -208,11 +208,13 @@ class PlacedOrder {
   final String id;
   final String status;
   final int totalKobo;
+  final String? confirmationCode;
 
   const PlacedOrder({
     required this.id,
     required this.status,
     required this.totalKobo,
+    this.confirmationCode,
   });
 
   factory PlacedOrder.fromJson(Map<String, dynamic> json) =>

@@ -220,6 +220,7 @@ async function createVendorOrder(
       status: true,
       totalKobo: true,
       trackingCode: true,
+      confirmationCode: true,
     },
   });
 

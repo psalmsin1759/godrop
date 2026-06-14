@@ -30,6 +30,8 @@ dependencies:
   firebase_core: ^3.0.0
   firebase_messaging: ^15.0.0
   flutter_local_notifications: ^18.0.0
+  flutter_native_splash: ^2.4.7
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +40,22 @@ dev_dependencies:
   build_runner: '>=2.4.9 <2.14.0'
   retrofit_generator: '>=9.1.4 <10.0.0'
   json_serializable: ^6.8.0
+
+flutter_native_splash:
+  color: "#1A3CCC"
+  image: assets/images/logo.png
+  color_dark: "#0D1F6E"
+  image_dark: assets/images/logo.png
+  android_12:
+    image: assets/images/logo.png
+    color: "#1A3CCC"
+    color_dark: "#0D1F6E"
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/launchicon.png"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true

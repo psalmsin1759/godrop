@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import '../../app/theme.dart';
+import '../../shared/widgets/background_blobs.dart';
 import '../../shared/widgets/godrop_button.dart';
 import 'bloc/auth_cubit.dart';
 import 'bloc/auth_state.dart';
@@ -51,99 +52,146 @@ class _PhoneScreenState extends State<PhoneScreen> {
       builder: (ctx, state) {
         final loading = state is AuthLoading;
         return Scaffold(
-          backgroundColor: GodropColors.white,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      gradient: GodropColors.blueGradient,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(Icons.local_shipping_rounded,
-                        color: GodropColors.white, size: 26),
-                  ),
-                  const SizedBox(height: 28),
-                  const Text(
-                    'Rider Login',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: GodropColors.ink,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Enter your registered phone number to receive a login code.',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: GodropColors.slate,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 36),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: GodropColors.border, width: 1.5),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: InternationalPhoneNumberInput(
-                      onInputChanged: (PhoneNumber number) {
-                        setState(() => _number = number);
-                      },
-                      onInputValidated: (bool valid) {
-                        setState(() => _valid = valid);
-                      },
-                      initialValue: _number,
-                      textFieldController: _controller,
-                      formatInput: true,
-                      keyboardType: const TextInputType.numberWithOptions(),
-                      inputDecoration: const InputDecoration(
-                        hintText: '080 0000 0000',
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(color: GodropColors.mute),
+          backgroundColor: GodropColors.background,
+          body: Stack(
+            children: [
+              const BackgroundBlobs(
+                  topColor: GodropColors.blue,
+                  bottomColor: GodropColors.orange),
+              SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 60),
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: GodropColors.blueGradient,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                                color:
+                                    GodropColors.blue.withValues(alpha: 0.35),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6)),
+                          ],
+                        ),
+                        child: const Icon(Icons.local_shipping_rounded,
+                            color: GodropColors.white, size: 26),
                       ),
-                      selectorConfig: const SelectorConfig(
-                        selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
-                        useEmoji: true,
-                        leadingPadding: 0,
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Rider Login',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: GodropColors.ink,
+                          letterSpacing: -0.4,
+                        ),
                       ),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        color: GodropColors.ink,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Enter your registered phone number to receive a login code.',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: GodropColors.slate,
+                          height: 1.45,
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  GodropButton(
-                    label: loading ? 'Sending code...' : 'Send Code',
-                    onTap: (_valid && !loading) ? () => _submit(ctx) : null,
-                    isLoading: loading,
-                  ),
-                  const SizedBox(height: 32),
-                  Center(
-                    child: Text(
-                      'Only registered riders can log in.\nContact your dispatcher if you need access.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: GodropColors.mute,
-                        height: 1.6,
+                      const SizedBox(height: 28),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: GodropColors.card,
+                          border: Border.all(
+                              color: GodropColors.border, width: 1.5),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                                color: GodropColors.ink.withValues(alpha: 0.04),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: InternationalPhoneNumberInput(
+                          onInputChanged: (PhoneNumber number) {
+                            setState(() => _number = number);
+                          },
+                          onInputValidated: (bool valid) {
+                            setState(() => _valid = valid);
+                          },
+                          initialValue: _number,
+                          textFieldController: _controller,
+                          formatInput: true,
+                          keyboardType: const TextInputType.numberWithOptions(),
+                          inputDecoration: const InputDecoration(
+                            hintText: '080 0000 0000',
+                            hintStyle: TextStyle(
+                                color: GodropColors.mute, fontSize: 15),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          inputBorder: InputBorder.none,
+                          spaceBetweenSelectorAndTextField: 0,
+                          selectorConfig: const SelectorConfig(
+                            selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
+                            useEmoji: true,
+                            leadingPadding: 0,
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            color: GodropColors.ink,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          selectorTextStyle: const TextStyle(
+                            fontSize: 15,
+                            color: GodropColors.ink,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          cursorColor: GodropColors.blue,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 28),
+                      GodropButton(
+                        label: loading ? 'Sending code...' : 'Send Code',
+                        onTap: (_valid && !loading) ? () => _submit(ctx) : null,
+                        isLoading: loading,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: GodropColors.card,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                                color: GodropColors.ink.withValues(alpha: 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3)),
+                          ],
+                        ),
+                        child: const Text(
+                          'Only registered riders can log in.\nContact your dispatcher if you need access.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: GodropColors.mute,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

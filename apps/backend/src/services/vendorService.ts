@@ -3,6 +3,7 @@ import { VendorType, VendorStatus, OrderType, PaymentMethod } from "@prisma/clie
 import { haversineKm } from "../utils/distance";
 import { paginate } from "../utils/pagination";
 import { generateTrackingCode } from "../utils/generateTrackingCode";
+import { generateConfirmationCode } from "../utils/generateConfirmationCode";
 import { sendEmail, vendorNewOrderEmail } from "./emailService";
 import { computeIsOpenNow } from "../utils/vendorHours";
 
@@ -195,7 +196,7 @@ async function createVendorOrder(
   const order = await prisma.order.create({
     data: {
       trackingCode: generateTrackingCode(),
-      confirmationCode: String(Math.floor(1000 + Math.random() * 9000)),
+      confirmationCode: generateConfirmationCode(),
       customerId: userId,
       vendorId,
       type,

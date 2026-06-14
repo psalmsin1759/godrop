@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { OrderStatus, OrderType, PaymentMethod, PaymentStatus } from "@prisma/client";
 import { generateTrackingCode } from "../utils/generateTrackingCode";
+import { generateConfirmationCode } from "../utils/generateConfirmationCode";
 import { paginate } from "../utils/pagination";
 import * as pricingService from "./pricingService";
 import * as fcmService from "./fcmService";
@@ -227,7 +228,7 @@ export async function placeParcelOrder(
     vehicleType ?? undefined
   );
   const trackingCode = generateTrackingCode();
-  const confirmationCode = String(Math.floor(1000 + Math.random() * 9000));
+  const confirmationCode = generateConfirmationCode();
 
   const order = await prisma.order.create({
     data: {
@@ -318,7 +319,7 @@ export async function placeTruckOrder(
   }
 ) {
   const trackingCode = generateTrackingCode();
-  const confirmationCode = String(Math.floor(1000 + Math.random() * 9000));
+  const confirmationCode = generateConfirmationCode();
   return prisma.order.create({
     data: {
       trackingCode,

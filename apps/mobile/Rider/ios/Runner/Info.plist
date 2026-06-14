@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Godrop Rider uses your location to show your position on the map and share it with customers during deliveries.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Godrop Rider needs your location in the background to keep tracking your delivery and sharing it with customers.</string>
 </dict>
 </plist>

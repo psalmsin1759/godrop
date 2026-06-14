@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
 import '../../shared/widgets/godrop_button.dart';
@@ -183,6 +185,11 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
         ),
         const SizedBox(height: 12),
         AnimatedEntrance(
+          delay: const Duration(milliseconds: 125),
+          child: _mapButton(ctx),
+        ),
+        const SizedBox(height: 12),
+        AnimatedEntrance(
           delay: const Duration(milliseconds: 150),
           child: _recipientCard(order),
         ),
@@ -358,6 +365,45 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
     );
   }
 
+  Widget _mapButton(BuildContext ctx) {
+    return GestureDetector(
+      onTap: () => ctx.push('/active/map'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: GodropColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GodropColors.border),
+          boxShadow: GodropColors.softShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: GodropColors.blue.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.map_rounded,
+                  color: GodropColors.blue, size: 18),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text('View Live Map',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: GodropColors.ink)),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: GodropColors.mute, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _recipientCard(RiderOrderDetail order) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -403,7 +449,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
           ),
           if (order.recipientPhone != null)
             GestureDetector(
-              onTap: () {/* launch phone dialer */},
+              onTap: () => _callCustomer(order.recipientPhone!),
               child: Container(
                 width: 40,
                 height: 40,
@@ -418,6 +464,19 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _callCustomer(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Could not open phone dialer'),
+        backgroundColor: GodropColors.error,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   Widget _actionCard(

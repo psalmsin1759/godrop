@@ -6,6 +6,7 @@ import '../features/auth/otp_screen.dart';
 import '../features/jobs/jobs_screen.dart';
 import '../features/jobs/job_detail_screen.dart';
 import '../features/active/active_delivery_screen.dart';
+import '../features/active/active_map_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/earnings/earnings_screen.dart';
 import '../features/profile/profile_screen.dart';
@@ -62,6 +63,13 @@ final router = GoRouter(
               path: '/active',
               pageBuilder: (ctx, state) =>
                   _fade(state, const ActiveDeliveryScreen()),
+              routes: [
+                GoRoute(
+                  path: 'map',
+                  pageBuilder: (ctx, state) =>
+                      _slide(state, const ActiveMapScreen()),
+                ),
+              ],
             ),
           ],
         ),

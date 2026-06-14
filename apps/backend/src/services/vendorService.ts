@@ -195,6 +195,7 @@ async function createVendorOrder(
   const order = await prisma.order.create({
     data: {
       trackingCode: generateTrackingCode(),
+      confirmationCode: String(Math.floor(1000 + Math.random() * 9000)),
       customerId: userId,
       vendorId,
       type,

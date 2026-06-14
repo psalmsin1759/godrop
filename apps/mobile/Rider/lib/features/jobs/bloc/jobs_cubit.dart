@@ -21,7 +21,7 @@ class JobsCubit extends Cubit<JobsState> {
 
   static Uri _buildWsUri(String? token) {
     final query = token != null ? '?token=${Uri.encodeComponent(token)}' : '';
-    return Uri.parse('wss://godrop-production.up.railway.app/ws/rider/jobs$query');
+    return Uri.parse('wss://api.naijagodrop.com/ws/rider/jobs$query');
   }
 
   void connectJobStream() {

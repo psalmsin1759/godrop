@@ -174,15 +174,43 @@ export async function rateOrder(
   });
   if (!order) throw new Error("Order not found or not delivered");
 
-  return prisma.review.create({
-    data: {
-      orderId,
-      userId: customerId,
-      vendorId: order.vendorId ?? undefined,
-      rating,
-      comment,
-    },
+  const { review, updatedRider } = await prisma.$transaction(async (tx) => {
+    const review = await tx.review.create({
+      data: {
+        orderId,
+        userId: customerId,
+        vendorId: order.vendorId ?? undefined,
+        riderId: order.riderId ?? undefined,
+        rating,
+        comment,
+      },
+    });
+
+    let updatedRider = null;
+    if (order.riderId) {
+      const rider = await tx.rider.findUnique({
+        where: { id: order.riderId },
+        select: { rating: true, ratingCount: true },
+      });
+      const newCount = (rider?.ratingCount ?? 0) + 1;
+      const newRating = ((rider?.rating ?? 0) * (rider?.ratingCount ?? 0) + rating) / newCount;
+      updatedRider = await tx.rider.update({
+        where: { id: order.riderId },
+        data: { rating: newRating, ratingCount: newCount },
+        select: { id: true, rating: true, ratingCount: true },
+      });
+    }
+
+    return { review, updatedRider };
   });
+
+  if (updatedRider) {
+    fcmService
+      .notifyRiderRated(updatedRider.id, rating, updatedRider.rating, updatedRider.ratingCount)
+      .catch(() => {});
+  }
+
+  return review;
 }
 
 export async function reorder(orderId: string, customerId: string) {

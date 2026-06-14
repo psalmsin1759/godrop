@@ -76,6 +76,46 @@ class RiderProfile {
 
   String get fullName => '$firstName $lastName';
 
+  /// Returns a copy with an updated rating/ratingCount — used to reflect a
+  /// new customer rating in real time without refetching the whole profile.
+  RiderProfile copyWithRating({required double rating, required int ratingCount}) {
+    return RiderProfile(
+      id: id,
+      firstName: firstName,
+      lastName: lastName,
+      phone: phone,
+      email: email,
+      avatarUrl: avatarUrl,
+      dateOfBirth: dateOfBirth,
+      gender: gender,
+      streetAddress: streetAddress,
+      city: city,
+      state: state,
+      vehicleType: vehicleType,
+      vehiclePlate: vehiclePlate,
+      vehicleColor: vehicleColor,
+      vehicleModel: vehicleModel,
+      vehicleYear: vehicleYear,
+      driverLicenseNumber: driverLicenseNumber,
+      driverLicenseExpiry: driverLicenseExpiry,
+      vehicleInsuranceExpiry: vehicleInsuranceExpiry,
+      bankName: bankName,
+      bankCode: bankCode,
+      accountNumber: accountNumber,
+      accountName: accountName,
+      kycStatus: kycStatus,
+      kycNotes: kycNotes,
+      emergencyContactName: emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone,
+      isAvailable: isAvailable,
+      isActive: isActive,
+      rating: rating,
+      ratingCount: ratingCount,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
   factory RiderProfile.fromJson(Map<String, dynamic> json) =>
       _$RiderProfileFromJson(json);
   Map<String, dynamic> toJson() => _$RiderProfileToJson(this);

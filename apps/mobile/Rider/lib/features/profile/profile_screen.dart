@@ -37,6 +37,22 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Scaffold(
       backgroundColor: GodropColors.background,
       body: BlocConsumer<ProfileCubit, ProfileState>(
+        listenWhen: (previous, current) {
+          if (current is ProfileError) return true;
+          final prevProfile = previous is ProfileLoaded
+              ? previous.profile
+              : previous is ProfileSaving
+                  ? previous.profile
+                  : null;
+          final currProfile = current is ProfileLoaded
+              ? current.profile
+              : current is ProfileSaving
+                  ? current.profile
+                  : null;
+          return prevProfile != null &&
+              currProfile != null &&
+              currProfile.ratingCount > prevProfile.ratingCount;
+        },
         listener: (ctx, state) {
           if (state is ProfileError) {
             ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
@@ -44,7 +60,16 @@ class _ProfileScreenState extends State<ProfileScreen>
               backgroundColor: GodropColors.error,
               behavior: SnackBarBehavior.floating,
             ));
+            return;
           }
+          final profile = state is ProfileLoaded
+              ? state.profile
+              : (state as ProfileSaving).profile;
+          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+            content: Text('New rating received! Your rating is now ${profile.rating.toStringAsFixed(1)}★'),
+            backgroundColor: GodropColors.success,
+            behavior: SnackBarBehavior.floating,
+          ));
         },
         builder: (ctx, state) {
           if (state is ProfileLoading) return _shimmer();

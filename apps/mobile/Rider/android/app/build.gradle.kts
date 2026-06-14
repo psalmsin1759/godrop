@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.qnetix.godrop_driver"
+        applicationId = "com.qnetix.naijagodroprider"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

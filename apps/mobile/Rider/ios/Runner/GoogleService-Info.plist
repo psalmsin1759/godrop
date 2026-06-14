@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyB-mLJxnCRKcK76G6cJ1KzcNljXx5WO7fA</string>
+	<string>AIzaSyDrU3YEj8rETxiTsTVxUc0nEUG25trXE8k</string>
 	<key>GCM_SENDER_ID</key>
-	<string>477210237354</string>
+	<string>2691529395</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.qnetix.godrop-rider</string>
+	<string>com.qnetix.naijagodroprider</string>
 	<key>PROJECT_ID</key>
-	<string>godrop-cd8da</string>
+	<string>naijagodrop</string>
 	<key>STORAGE_BUCKET</key>
-	<string>godrop-cd8da.firebasestorage.app</string>
+	<string>naijagodrop.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:477210237354:ios:beda713ac57cfae148b3d3</string>
+	<string>1:2691529395:ios:5d692f4957bfcaca8e0ec6</string>
 </dict>
 </plist>

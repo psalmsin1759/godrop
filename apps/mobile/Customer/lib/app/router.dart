@@ -99,8 +99,14 @@ CustomTransitionPage<void> _fade(GoRouterState state, Widget child) {
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
+/// Root navigator key — lets global listeners (e.g. the order-completion
+/// push notification handler) push routes regardless of which screen is
+/// currently visible.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/splash',
+  navigatorKey: rootNavigatorKey,
+  initialLocation: '/home',
   routes: [
     GoRoute(
       path: '/splash',
@@ -260,8 +266,11 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/orders/delivered',
-      pageBuilder: (_, state) => _fadeUp(state, const DeliveredRateScreen()),
+      path: '/orders/delivered/:id',
+      pageBuilder: (_, state) => _fadeUp(
+        state,
+        DeliveredRateScreen(orderId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/services',

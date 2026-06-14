@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../../shared/models/rider_models.dart';
@@ -6,9 +8,37 @@ import '../../../shared/services/rider_prefs.dart';
 import 'profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit() : super(const ProfileInitial());
+  ProfileCubit() : super(const ProfileInitial()) {
+    _ratingSub = FirebaseMessaging.onMessage.listen(_onRiderRated);
+    _ratingOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen(_onRiderRated);
+  }
 
   final _service = RiderProfileService(DioClient.instance);
+  StreamSubscription<RemoteMessage>? _ratingSub;
+  StreamSubscription<RemoteMessage>? _ratingOpenedSub;
+
+  /// Reflects a new customer rating in real time as soon as the FCM
+  /// "RIDER_RATED" push arrives — no need to reload the whole profile.
+  void _onRiderRated(RemoteMessage message) {
+    if (message.data['type'] != 'RIDER_RATED') return;
+    final rating = double.tryParse(message.data['rating'] ?? '');
+    final ratingCount = int.tryParse(message.data['ratingCount'] ?? '');
+    if (rating == null || ratingCount == null) return;
+
+    final current = state;
+    if (current is ProfileLoaded) {
+      emit(ProfileLoaded(current.profile.copyWithRating(rating: rating, ratingCount: ratingCount)));
+    } else if (current is ProfileSaving) {
+      emit(ProfileSaving(current.profile.copyWithRating(rating: rating, ratingCount: ratingCount)));
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _ratingSub?.cancel();
+    _ratingOpenedSub?.cancel();
+    return super.close();
+  }
 
   Future<void> loadProfile() async {
     emit(const ProfileLoading());

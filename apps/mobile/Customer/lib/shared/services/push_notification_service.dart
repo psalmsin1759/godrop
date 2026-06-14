@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../app/router.dart';
 import '../api/api.dart';
 import '../models/notification_models.dart';
 import 'user_prefs.dart';
@@ -65,6 +66,33 @@ void setupForegroundMessageListener() {
       ),
     );
   });
+}
+
+// ─── Order completion → global "rate your rider" prompt ─────────────────────
+
+/// Surfaces the order-complete / rate-rider screen on top of whatever screen
+/// the customer is currently on, in real time, whenever the backend reports
+/// an order as delivered.
+void setupOrderCompletionListener() {
+  void handle(RemoteMessage message) {
+    if (message.data['type'] != 'ORDER_DELIVERED') return;
+    final orderId = message.data['orderId'] as String?;
+    if (orderId == null || orderId.isEmpty) return;
+    _showOrderCompletion(orderId);
+  }
+
+  FirebaseMessaging.onMessage.listen(handle);
+  FirebaseMessaging.onMessageOpenedApp.listen(handle);
+  FirebaseMessaging.instance.getInitialMessage().then((message) {
+    if (message != null) handle(message);
+  });
+}
+
+void _showOrderCompletion(String orderId) {
+  final target = '/orders/delivered/$orderId';
+  final current = appRouter.routerDelegate.currentConfiguration.uri.path;
+  if (current == target) return;
+  appRouter.push(target);
 }
 
 // ─── Called after successful auth ────────────────────────────────────────────

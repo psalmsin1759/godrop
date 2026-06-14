@@ -219,6 +219,38 @@ export async function notifyCustomerOrderUpdate(
   ]);
 }
 
+// ─── Rider rating notification ─────────────────────────────────
+
+export async function notifyRiderRated(
+  riderId: string,
+  orderRating: number,
+  newRating: number,
+  ratingCount: number
+): Promise<void> {
+  console.log("[PUSH] Rider rated | rider=%s | rating=%d | newAvg=%f", riderId, orderRating, newRating);
+  const title = "New rating received";
+  const body = `A customer rated you ${orderRating}★. Your overall rating is now ${newRating.toFixed(1)} from ${ratingCount} ${ratingCount === 1 ? "rating" : "ratings"}.`;
+  const data = {
+    type: "RIDER_RATED",
+    rating: newRating.toFixed(2),
+    ratingCount: String(ratingCount),
+  };
+
+  const tokens = await prisma.riderPushToken.findMany({
+    where: { riderId },
+    select: { token: true },
+  });
+
+  await Promise.all([
+    tokens.length > 0
+      ? sendToRiderTokens(tokens.map((t) => t.token), { title, body }, data)
+      : Promise.resolve(),
+    prisma.riderNotification.create({
+      data: { riderId, title, body, data },
+    }),
+  ]);
+}
+
 // ─── Internal notification helpers ────────────────────────────
 
 export async function notifyOnlineRidersNewParcel(order: {

@@ -140,8 +140,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionHeader(title: 'What do you need?'),
                   const SizedBox(height: 12),
+                  const _SectionHeader(title: 'What do you need?'),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -1121,7 +1121,8 @@ class _SectionHeader extends StatelessWidget {
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: GodropColors.ink,
-                letterSpacing: -0.3)),
+                letterSpacing: -0.3,
+                height: 1.0)),
       ],
     );
   }

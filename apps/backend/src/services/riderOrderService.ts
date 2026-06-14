@@ -9,7 +9,7 @@ const RIDER_EARNING_RATE = parseFloat(process.env.RIDER_EARNING_RATE || "0.8");
 
 export async function listAvailableOrders(opts: { page: number; limit: number; type?: OrderType }) {
   const { skip } = paginate(opts.page, opts.limit);
-  const where: any = { riderId: null, status: "READY_FOR_PICKUP" };
+  const where: any = { riderId: null, status: "READY_FOR_PICKUP", type: { not: OrderType.TRUCK } };
   if (opts.type) where.type = opts.type;
 
   const [data, total] = await prisma.$transaction([
@@ -53,7 +53,7 @@ export async function listRiderOrders(
   }
 ) {
   const { skip } = paginate(opts.page, opts.limit);
-  const where: any = { riderId };
+  const where: any = { riderId, type: { not: OrderType.TRUCK } };
   if (opts.status) where.status = opts.status;
 
   const [data, total] = await prisma.$transaction([
@@ -93,6 +93,7 @@ export async function getActiveOrder(riderId: string) {
     where: {
       riderId,
       status: { in: ["ACCEPTED", "READY_FOR_PICKUP", "PICKED_UP", "IN_TRANSIT"] },
+      type: { not: OrderType.TRUCK },
     },
     include: {
       vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
@@ -112,6 +113,7 @@ export async function getRiderOrderDetail(riderId: string, orderId: string) {
     },
   });
   if (!order) throw new Error("Order not found");
+  if (order.type === OrderType.TRUCK) throw new Error("Order not found");
   // Allow if: assigned to this rider, OR still available (no rider, READY_FOR_PICKUP)
   const isAssignedToRider = order.riderId === riderId;
   const isAvailableToView = order.riderId === null && order.status === "READY_FOR_PICKUP";
@@ -135,6 +137,7 @@ export async function acceptOrder(riderId: string, orderId: string) {
   const order = await prisma.$transaction(async (tx) => {
     const existing = await tx.order.findUnique({ where: { id: orderId } });
     if (!existing) throw new Error("Order not found");
+    if (existing.type === OrderType.TRUCK) throw new Error("Truck orders cannot be accepted from the rider app");
     if (existing.status !== "READY_FOR_PICKUP") throw new Error("Order is not available for acceptance");
 
     // Atomic gate: only one rider wins — the WHERE filters riderId IS NULL so concurrent

@@ -7,7 +7,6 @@ import '../features/jobs/jobs_screen.dart';
 import '../features/jobs/job_detail_screen.dart';
 import '../features/active/active_delivery_screen.dart';
 import '../features/active/active_map_screen.dart';
-import '../features/history/history_screen.dart';
 import '../features/earnings/earnings_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/profile/kyc_screen.dart';
@@ -78,13 +77,6 @@ final router = GoRouter(
             GoRoute(
               path: '/earnings',
               pageBuilder: (ctx, state) => _fade(state, const EarningsScreen()),
-              routes: [
-                GoRoute(
-                  path: 'history',
-                  pageBuilder: (ctx, state) =>
-                      _slide(state, const HistoryScreen()),
-                ),
-              ],
             ),
           ],
         ),

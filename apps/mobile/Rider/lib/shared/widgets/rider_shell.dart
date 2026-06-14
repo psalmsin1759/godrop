@@ -32,7 +32,7 @@ class _NavItemData {
 
 const _kNavItems = [
   _NavItemData(Icons.work_outline_rounded, Icons.work_rounded, 'Jobs'),
-  _NavItemData(Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Active'),
+  _NavItemData(Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Orders'),
   _NavItemData(Icons.account_balance_wallet_outlined,
       Icons.account_balance_wallet_rounded, 'Earnings'),
   _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),

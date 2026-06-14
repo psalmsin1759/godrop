@@ -352,6 +352,7 @@ export async function acceptOrder(req: Request, res: Response, next: NextFunctio
   } catch (err: any) {
     if (err.message === "Order not found") return fail(res, err.message, 404);
     if (err.message === "Order is not available for acceptance") return fail(res, err.message, 400);
+    if (err.message === "Truck orders cannot be accepted from the rider app") return fail(res, err.message, 400);
     if (err.message === "Order has already been accepted by another rider") return fail(res, err.message, 409);
     if (err.message?.includes("already have an active order")) return fail(res, err.message, 409);
     next(err);

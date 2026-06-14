@@ -137,20 +137,6 @@ class _EarningsScreenState extends State<EarningsScreen>
                         fontWeight: FontWeight.w700)),
               ),
               GestureDetector(
-                onTap: () => ctx.push('/earnings/history'),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.history_rounded,
-                      color: Colors.white, size: 18),
-                ),
-              ),
-              GestureDetector(
                 onTap: () => ctx.read<EarningsCubit>().load(),
                 child: Container(
                   width: 36,

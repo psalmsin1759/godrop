@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
-import '../../shared/widgets/rider_header.dart';
 import 'bloc/history_cubit.dart';
 import 'bloc/history_state.dart';
 
@@ -27,14 +26,16 @@ String _relativeDate(String isoDate) {
   }
 }
 
-class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+/// List of the rider's completed deliveries — embedded as the "Completed"
+/// tab of the Orders screen.
+class HistoryListView extends StatefulWidget {
+  const HistoryListView({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  State<HistoryListView> createState() => _HistoryListViewState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen>
+class _HistoryListViewState extends State<HistoryListView>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -67,34 +68,16 @@ class _HistoryScreenState extends State<HistoryScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      backgroundColor: GodropColors.background,
-      body: SafeArea(
-        top: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const RiderHeader(
-              icon: Icons.history_rounded,
-              title: 'Delivery History',
-              subtitle: 'Your completed deliveries',
-            ),
-            Expanded(
-              child: BlocBuilder<HistoryCubit, HistoryState>(
-                builder: (ctx, state) {
-                  if (state is HistoryLoading) return _shimmer();
-                  if (state is HistoryError) return _error(ctx, state.message);
-                  if (state is HistoryLoaded) {
-                    if (state.orders.isEmpty) return _empty();
-                    return _list(ctx, state);
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+    return BlocBuilder<HistoryCubit, HistoryState>(
+      builder: (ctx, state) {
+        if (state is HistoryLoading) return _shimmer();
+        if (state is HistoryError) return _error(ctx, state.message);
+        if (state is HistoryLoaded) {
+          if (state.orders.isEmpty) return _empty();
+          return _list(ctx, state);
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -139,7 +122,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                 color: GodropColors.blue, size: 32),
           ),
           const SizedBox(height: 16),
-          const Text('No deliveries yet',
+          const Text('No completed deliveries yet',
               style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,

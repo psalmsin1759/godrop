@@ -9,6 +9,8 @@ import '../../shared/models/rider_models.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/widgets/rider_header.dart';
+import '../history/bloc/history_cubit.dart';
+import '../history/history_list_view.dart';
 import 'bloc/active_cubit.dart';
 import 'bloc/active_state.dart';
 
@@ -25,8 +27,9 @@ class ActiveDeliveryScreen extends StatefulWidget {
 }
 
 class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   StreamSubscription<RemoteMessage>? _fcmSub;
+  late final TabController _tabController;
 
   @override
   bool get wantKeepAlive => true;
@@ -34,7 +37,9 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     context.read<ActiveCubit>().loadActiveOrder();
+    context.read<HistoryCubit>().loadHistory();
     _fcmSub = FirebaseMessaging.onMessage.listen((message) {
       if (message.data['type'] == 'ORDER_CANCELLED' && mounted) {
         context.read<ActiveCubit>().loadActiveOrder();
@@ -52,6 +57,7 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
   @override
   void dispose() {
     _fcmSub?.cancel();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -62,46 +68,76 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
       backgroundColor: GodropColors.background,
       body: SafeArea(
         top: false,
-        child: BlocConsumer<ActiveCubit, ActiveState>(
-          listener: (ctx, state) {
-            if (state is ActiveError) {
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(state.message),
-                backgroundColor: GodropColors.error,
-                behavior: SnackBarBehavior.floating,
-              ));
-            }
-            if (state is ActiveLoaded && state.errorMessage != null) {
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: GodropColors.error,
-                behavior: SnackBarBehavior.floating,
-              ));
-            }
-          },
-          builder: (ctx, state) {
-            return Column(
-              children: [
-                _buildHeader(state),
-                Expanded(child: _buildBody(ctx, state)),
-              ],
-            );
-          },
+        child: Column(
+          children: [
+            const RiderHeader(
+              icon: Icons.local_shipping_rounded,
+              title: 'Orders',
+              subtitle: 'Active and completed deliveries',
+            ),
+            _buildTabBar(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildActiveTab(),
+                  const HistoryListView(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(ActiveState state) {
-    RiderOrderDetail? order;
-    if (state is ActiveLoaded) order = state.order;
-    if (state is ActiveActionLoading) order = state.order;
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: GodropColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GodropColors.border),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          gradient: GodropColors.blueGradient,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        labelColor: GodropColors.white,
+        unselectedLabelColor: GodropColors.slate,
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        tabs: const [
+          Tab(text: 'Active'),
+          Tab(text: 'Completed'),
+        ],
+      ),
+    );
+  }
 
-    return RiderHeader(
-      icon: Icons.local_shipping_rounded,
-      title: 'Active Delivery',
-      subtitle: order != null ? '#${order.trackingCode}' : 'Nothing in progress',
-      trailing: order != null ? _statusPillLight(order.status) : null,
+  Widget _buildActiveTab() {
+    return BlocConsumer<ActiveCubit, ActiveState>(
+      listener: (ctx, state) {
+        if (state is ActiveError) {
+          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+            content: Text(state.message),
+            backgroundColor: GodropColors.error,
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
+        if (state is ActiveLoaded && state.errorMessage != null) {
+          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+            content: Text(state.errorMessage!),
+            backgroundColor: GodropColors.error,
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
+      },
+      builder: (ctx, state) => _buildBody(ctx, state),
     );
   }
 
@@ -175,6 +211,10 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
       padding: const EdgeInsets.all(16),
       children: [
         AnimatedEntrance(
+          child: _orderStatusRow(order),
+        ),
+        const SizedBox(height: 12),
+        AnimatedEntrance(
           delay: const Duration(milliseconds: 50),
           child: _earningsCard(order),
         ),
@@ -208,20 +248,37 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
     );
   }
 
-  /// Status pill rendered on the gradient header.
-  Widget _statusPillLight(String status) {
+  Widget _orderStatusRow(RiderOrderDetail order) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '#${order.trackingCode}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: GodropColors.ink,
+            ),
+          ),
+        ),
+        _statusPill(order.status),
+      ],
+    );
+  }
+
+  Widget _statusPill(String status) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: GodropColors.white.withValues(alpha: 0.15),
+        color: GodropColors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(
         status.replaceAll('_', ' '),
         style: const TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: GodropColors.white,
+          color: GodropColors.blue,
         ),
       ),
     );

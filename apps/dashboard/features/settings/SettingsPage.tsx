@@ -183,7 +183,6 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
     description: '',
     phone: '',
     email: '',
-    deliveryFeeKobo: 0,
     estimatedMinutes: 30,
     isOpen: false,
     cashOnDeliveryEnabled: false,
@@ -197,7 +196,6 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
         description: settings.description ?? '',
         phone: settings.phone ?? '',
         email: settings.email ?? '',
-        deliveryFeeKobo: settings.deliveryFeeKobo ?? 0,
         estimatedMinutes: settings.estimatedMinutes ?? 30,
         isOpen: settings.isOpen ?? false,
         cashOnDeliveryEnabled: (settings as any).cashOnDeliveryEnabled ?? false,
@@ -261,15 +259,11 @@ function VendorStoreSettings({ isOwner }: { isOwner: boolean }) {
       <SectionCard title="Delivery Settings">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-[#525A72] mb-1">
-              Delivery Fee (Kobo)
-              {form.deliveryFeeKobo > 0 && (
-                <span className="ml-1 text-[#9AA1B4] font-normal">= {formatNaira(form.deliveryFeeKobo)}</span>
-              )}
-            </label>
-            <input disabled={disabled} type="number" min={0} value={form.deliveryFeeKobo}
-              onChange={(e) => setForm((f) => ({ ...f, deliveryFeeKobo: Number(e.target.value) }))}
-              className={inputCls('disabled:opacity-60')} />
+            <label className="block text-xs font-medium text-[#525A72] mb-1">Delivery Fee</label>
+            <div className={inputCls('opacity-60 flex items-center')}>
+              {formatNaira(settings?.deliveryFeeKobo ?? 0)}
+            </div>
+            <p className="text-[11px] text-[#9AA1B4] mt-1">Set platform-wide by Godrop admin — applies to all vendors.</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-[#525A72] mb-1">Estimated Delivery (minutes)</label>

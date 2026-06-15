@@ -135,7 +135,7 @@ components:
         logoUrl: { type: string }
         cuisines: { type: array, items: { type: string } }
         rating: { type: number }
-        deliveryFeeKobo: { type: integer }
+        deliveryFeeKobo: { type: integer, description: "Platform-wide standard delivery fee, set by system admin (read-only)" }
         estimatedMinutes: { type: integer }
         isOpen: { type: boolean }
         isOpenNow: { type: boolean, description: "Computed: isOpen AND within openingHours (if configured)" }
@@ -362,7 +362,7 @@ components:
         cuisines: { type: array, items: { type: string } }
         rating: { type: number }
         ratingCount: { type: integer }
-        deliveryFeeKobo: { type: integer }
+        deliveryFeeKobo: { type: integer, description: "Platform-wide standard delivery fee, set by system admin (read-only)" }
         estimatedMinutes: { type: integer }
         isOpen: { type: boolean }
         isOpenNow: { type: boolean, description: "Computed: isOpen AND within openingHours (if configured)" }
@@ -659,7 +659,7 @@ components:
         description: { type: string }
         phone: { type: string }
         email: { type: string }
-        deliveryFeeKobo: { type: integer }
+        deliveryFeeKobo: { type: integer, description: "Platform-wide standard delivery fee, set by system admin (read-only)" }
         estimatedMinutes: { type: integer }
         isOpen: { type: boolean }
         openingHours: { type: object }
@@ -1283,7 +1283,7 @@ paths:
                     properties:
                       coverageRadiusKm: { type: number, example: 15 }
                       paystackPublicKey: { type: string, example: "pk_live_xxx" }
-                      standardDeliveryFeeKobo: { type: integer, example: 75000, description: "Base delivery fee in Kobo (₦750)" }
+                      standardDeliveryFeeKobo: { type: integer, example: 75000, description: "Base delivery fee in Kobo (₦750), applied platform-wide to all vendor orders. Vendors cannot override this." }
                       serviceChargeKobo: { type: integer, example: 25000, description: "Platform service charge in Kobo (₦250)" }
                       costPerKmKobo: { type: integer, example: 10000, description: "Additional cost per km in Kobo (₦100/km)" }
 
@@ -4500,7 +4500,6 @@ paths:
                   type: string
                   pattern: '^\+234\d{10}$'
                 email: { type: string, format: email }
-                deliveryFeeKobo: { type: integer, minimum: 0 }
                 estimatedMinutes: { type: integer, minimum: 1, maximum: 300 }
                 isOpen: { type: boolean }
                 cashOnDeliveryEnabled: { type: boolean, description: "Allow customers to pay cash on delivery" }

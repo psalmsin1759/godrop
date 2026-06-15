@@ -232,7 +232,11 @@ export async function listCustomers(req: Request, res: Response, next: NextFunct
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await svc.listCustomers({ status: q.status, search: q.search, page, limit });
-    return ok(res, { data: result.data, meta: buildMeta(result.page, result.limit, result.total) });
+    const data = result.data.map((c: any) => ({
+      ...c,
+      wallet: c.wallet ? serializeMoney(c.wallet, ["balance"]) : null,
+    }));
+    return ok(res, { data, meta: buildMeta(result.page, result.limit, result.total) });
   } catch (err) {
     next(err);
   }
@@ -240,8 +244,12 @@ export async function listCustomers(req: Request, res: Response, next: NextFunct
 
 export async function getCustomer(req: Request, res: Response, next: NextFunction) {
   try {
-    const customer = await svc.getCustomerDetail(req.params.id);
-    return ok(res, { data: customer });
+    const customer: any = await svc.getCustomerDetail(req.params.id);
+    const data = {
+      ...customer,
+      wallet: customer.wallet ? serializeMoney(customer.wallet, ["balance"]) : null,
+    };
+    return ok(res, { data });
   } catch (err: any) {
     if (err.code === "P2025") return fail(res, "Customer not found", 404);
     next(err);

@@ -162,6 +162,7 @@ export interface Vendor {
   rating?: number
   isOpen?: boolean
   isActive?: boolean
+  /** Platform-wide standard delivery fee, set by system admin (read-only). */
   deliveryFeeKobo?: number
   estimatedMinutes?: number
   openingHours?: Record<string, { open: string; close: string }>
@@ -536,6 +537,7 @@ export interface VendorSettings {
   description?: string
   phone: string
   email: string
+  /** Platform-wide standard delivery fee, set by system admin (read-only). */
   deliveryFeeKobo: number
   estimatedMinutes: number
   isOpen: boolean
@@ -547,7 +549,6 @@ export interface UpdateVendorSettingsRequest {
   description?: string | null
   phone?: string
   email?: string
-  deliveryFeeKobo?: number
   estimatedMinutes?: number
   isOpen?: boolean
   openingHours?: Record<string, { open: string; close: string }>

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
 import { ok } from "../utils/response";
+import { getStandardDeliveryFeeKobo } from "../services/vendorService";
 
 export async function search(req: Request, res: Response, next: NextFunction) {
   try {
@@ -44,7 +45,6 @@ export async function search(req: Request, res: Response, next: NextFunction) {
           lng: true,
           rating: true,
           ratingCount: true,
-          deliveryFeeKobo: true,
           estimatedMinutes: true,
           isOpen: true,
         },
@@ -79,7 +79,10 @@ export async function search(req: Request, res: Response, next: NextFunction) {
         : Promise.resolve([]),
     ]);
 
-    ok(res, { vendors, products });
+    const deliveryFeeKobo = await getStandardDeliveryFeeKobo();
+    const vendorsWithFee = vendors.map((v) => ({ ...v, deliveryFeeKobo }));
+
+    ok(res, { vendors: vendorsWithFee, products });
   } catch (err) {
     next(err);
   }

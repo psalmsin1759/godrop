@@ -12,6 +12,13 @@ async function getCoverageRadiusKm(): Promise<number> {
   return settings?.coverageRadiusKm ?? 15;
 }
 
+// Delivery fee is set platform-wide by admins (PlatformSettings.standardDeliveryFeeKobo),
+// not by individual vendors.
+export async function getStandardDeliveryFeeKobo(): Promise<number> {
+  const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
+  return settings?.standardDeliveryFeeKobo ?? 75000;
+}
+
 async function listByType(
   type: VendorType,
   opts: {
@@ -43,7 +50,8 @@ async function listByType(
     total = vendors.length;
   }
 
-  const data = vendors.map((v) => ({ ...v, isOpenNow: computeIsOpenNow(v) }));
+  const deliveryFeeKobo = await getStandardDeliveryFeeKobo();
+  const data = vendors.map((v) => ({ ...v, deliveryFeeKobo, isOpenNow: computeIsOpenNow(v) }));
 
   return { data, total, page, limit };
 }
@@ -76,7 +84,8 @@ export async function getVendorWithCategories(id: string) {
     },
   });
   if (!vendor) return vendor;
-  return { ...vendor, isOpenNow: computeIsOpenNow(vendor) };
+  const deliveryFeeKobo = await getStandardDeliveryFeeKobo();
+  return { ...vendor, deliveryFeeKobo, isOpenNow: computeIsOpenNow(vendor) };
 }
 
 export async function getMenuItems(vendorId: string, categoryId?: string) {
@@ -178,11 +187,8 @@ async function createVendorOrder(
   });
 
   const platformSettings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
-  const standardDeliveryFeeKobo = platformSettings?.standardDeliveryFeeKobo ?? 75000;
-  const serviceChargeKobo = platformSettings?.serviceChargeKobo ?? 25000;
-  // Use the vendor's custom delivery fee if set; otherwise fall back to platform standard
-  const deliveryFeeKobo = vendor.deliveryFeeKobo > 0 ? vendor.deliveryFeeKobo : standardDeliveryFeeKobo;
-  const serviceFeeKobo = serviceChargeKobo;
+  const deliveryFeeKobo = platformSettings?.standardDeliveryFeeKobo ?? 75000;
+  const serviceFeeKobo = platformSettings?.serviceChargeKobo ?? 25000;
   const totalKobo = subtotalKobo + deliveryFeeKobo + serviceFeeKobo;
 
   // Map payment method string to enum

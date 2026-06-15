@@ -165,7 +165,6 @@ model Vendor {
   cuisines         String[]
   rating           Float        @default(0)
   ratingCount      Int          @default(0)
-  deliveryFeeKobo  Int          @default(0)
   estimatedMinutes Int          @default(30)
   isOpen                 Boolean      @default(true)
   isActive               Boolean      @default(true)

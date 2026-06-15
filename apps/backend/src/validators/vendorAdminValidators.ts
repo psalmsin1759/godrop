@@ -55,7 +55,6 @@ export const updateVendorSettingsSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   phone: z.string().regex(/^\+234\d{10}$/).optional(),
   email: z.string().email().optional(),
-  deliveryFeeKobo: z.number().int().min(0).optional(),
   estimatedMinutes: z.number().int().min(1).max(300).optional(),
   isOpen: z.boolean().optional(),
   openingHours: z.record(z.any()).optional(),

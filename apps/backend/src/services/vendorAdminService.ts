@@ -8,6 +8,7 @@ import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApp
 import { notifyCustomerOrderUpdate, notifyOnlineRidersNewOrder } from "./fcmService";
 import { broadcastTracking, broadcastNewOrder } from "../index";
 import { uploadDocument, deleteImageByUrl } from "./cloudinaryService";
+import { getStandardDeliveryFeeKobo } from "./vendorService";
 
 const SALT_ROUNDS = 12;
 
@@ -447,7 +448,10 @@ export async function cancelOrder(orderId: string, vendorId: string, reason?: st
 // ─── Settings ─────────────────────────────────────────────────
 
 export async function getVendorSettings(vendorId: string) {
-  return prisma.vendor.findUniqueOrThrow({ where: { id: vendorId } });
+  const vendor = await prisma.vendor.findUniqueOrThrow({ where: { id: vendorId } });
+  // Delivery fee is platform-wide, set by system admins — shown here read-only.
+  const deliveryFeeKobo = await getStandardDeliveryFeeKobo();
+  return { ...vendor, deliveryFeeKobo };
 }
 
 export async function updateVendorSettings(
@@ -457,14 +461,15 @@ export async function updateVendorSettings(
     description?: string | null;
     phone?: string;
     email?: string;
-    deliveryFeeKobo?: number;
     estimatedMinutes?: number;
     isOpen?: boolean;
     openingHours?: object;
     cashOnDeliveryEnabled?: boolean;
   }
 ) {
-  return prisma.vendor.update({ where: { id: vendorId }, data });
+  const vendor = await prisma.vendor.update({ where: { id: vendorId }, data });
+  const deliveryFeeKobo = await getStandardDeliveryFeeKobo();
+  return { ...vendor, deliveryFeeKobo };
 }
 
 // ─── Team ─────────────────────────────────────────────────────

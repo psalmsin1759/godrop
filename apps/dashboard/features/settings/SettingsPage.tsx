@@ -820,7 +820,7 @@ function SystemPlatformSettings() {
               <input
                 type="number"
                 min={1}
-                max={500}
+                max={10000}
                 step={1}
                 value={coverageKm}
                 onChange={(e) => setCoverageKm(e.target.value)}

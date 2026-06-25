@@ -87,6 +87,9 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
     return r * 2 * atan2(sqrt(a), sqrt(1 - a));
   }
 
+  List<ParcelLocation> get _dropoffs =>
+      widget.routeData?.dropoffLocations ?? [_dropoff];
+
   Set<Marker> get _markers => {
         Marker(
           markerId: const MarkerId('pickup'),
@@ -94,37 +97,37 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
           icon:
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         ),
-        Marker(
-          markerId: const MarkerId('dropoff'),
-          position: LatLng(_dropoff.lat, _dropoff.lng),
-          icon:
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        ),
+        for (var i = 0; i < _dropoffs.length; i++)
+          Marker(
+            markerId: MarkerId('dropoff_$i'),
+            position: LatLng(_dropoffs[i].lat, _dropoffs[i].lng),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          ),
       };
 
   Set<Polyline> get _polylines => {
-        Polyline(
-          polylineId: const PolylineId('route'),
-          points: [
-            LatLng(_pickup.lat, _pickup.lng),
-            LatLng(_dropoff.lat, _dropoff.lng),
-          ],
-          color: GodropColors.blue,
-          width: 4,
-          patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-        ),
+        for (var i = 0; i < _dropoffs.length; i++)
+          Polyline(
+            polylineId: PolylineId('route_$i'),
+            points: [
+              LatLng(_pickup.lat, _pickup.lng),
+              LatLng(_dropoffs[i].lat, _dropoffs[i].lng),
+            ],
+            color: GodropColors.blue,
+            width: 3,
+            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+          ),
       };
 
   void _onMapCreated(GoogleMapController ctrl) {
-    final minLat = min(_pickup.lat, _dropoff.lat);
-    final maxLat = max(_pickup.lat, _dropoff.lat);
-    final minLng = min(_pickup.lng, _dropoff.lng);
-    final maxLng = max(_pickup.lng, _dropoff.lng);
+    final lats = [_pickup.lat, ..._dropoffs.map((d) => d.lat)];
+    final lngs = [_pickup.lng, ..._dropoffs.map((d) => d.lng)];
     ctrl.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
-          southwest: LatLng(minLat - 0.01, minLng - 0.01),
-          northeast: LatLng(maxLat + 0.01, maxLng + 0.01),
+          southwest: LatLng(lats.reduce(min) - 0.01, lngs.reduce(min) - 0.01),
+          northeast: LatLng(lats.reduce(max) + 0.01, lngs.reduce(max) + 0.01),
         ),
         80,
       ),
@@ -155,28 +158,42 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
     try {
       final service = ParcelService(DioClient.instance);
       final routeData = widget.routeData;
+      final items = routeData?.parcels ?? const <ParcelItem>[];
+      final parcels = items.isNotEmpty
+          ? items
+              .map((p) => ParcelItemBody(
+                    dropoff: LocationPoint(
+                      lat: p.dropoff.lat,
+                      lng: p.dropoff.lng,
+                      address: p.dropoff.name,
+                    ),
+                    recipientName: p.recipientName.isNotEmpty
+                        ? p.recipientName
+                        : 'Recipient',
+                    recipientPhone:
+                        p.recipientPhone.isNotEmpty ? p.recipientPhone : '+234',
+                    packageDescription:
+                        p.description?.isNotEmpty == true ? p.description : null,
+                    weightKg: p.weightKg,
+                  ))
+              .toList()
+          : [
+              ParcelItemBody(
+                dropoff: LocationPoint(
+                    lat: _dropoff.lat, lng: _dropoff.lng, address: _dropoff.name),
+                recipientName: 'Recipient',
+                recipientPhone: '+234',
+              ),
+            ];
       final response = await service.placeOrder(ParcelOrderBody(
         pickup: LocationPoint(
           lat: _pickup.lat,
           lng: _pickup.lng,
           address: _pickup.name,
         ),
-        dropoff: LocationPoint(
-          lat: _dropoff.lat,
-          lng: _dropoff.lng,
-          address: _dropoff.name,
-        ),
         vehicleTypeId: routeData?.vehicleTypeId,
-        packageDescription: routeData?.packageDescription.isNotEmpty == true
-            ? routeData!.packageDescription
-            : 'Parcel delivery',
         paymentMethod: 'card',
-        recipientName: routeData?.recipientName.isNotEmpty == true
-            ? routeData!.recipientName
-            : 'Recipient',
-        recipientPhone: routeData?.recipientPhone.isNotEmpty == true
-            ? routeData!.recipientPhone
-            : '+234',
+        parcels: parcels,
       ));
 
       if (!mounted) return;
@@ -743,7 +760,9 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
                 ),
               ),
               Text(
-                '${_pickup.name.split(',').first} → ${_dropoff.name.split(',').first} · ${_distanceKm.toStringAsFixed(1)} km',
+                _dropoffs.length > 1
+                    ? '${_pickup.name.split(',').first} → ${_dropoffs.length} drop-offs'
+                    : '${_pickup.name.split(',').first} → ${_dropoff.name.split(',').first} · ${_distanceKm.toStringAsFixed(1)} km',
                 style: const TextStyle(fontSize: 12, color: GodropColors.slate),
                 overflow: TextOverflow.ellipsis,
               ),

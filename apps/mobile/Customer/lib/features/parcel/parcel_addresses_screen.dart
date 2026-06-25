@@ -10,6 +10,7 @@ import '../../shared/bloc/saved_addresses_cubit.dart';
 import '../../shared/widgets/godrop_button.dart';
 import 'models/parcel_location.dart';
 import 'widgets/location_picker_sheet.dart';
+import 'widgets/parcel_details_sheet.dart';
 
 // Lagos fallback used only when location permission is denied or geocoding fails
 const _kFallback = ParcelLocation(
@@ -28,12 +29,12 @@ class ParcelAddressesScreen extends StatefulWidget {
 class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
   GoogleMapController? _mapCtrl;
   ParcelLocation _pickup = _kFallback;
-  ParcelLocation? _dropoff;
+  // Each parcel has its own drop-off + recipient + optional description/weight.
+  final List<ParcelItem> _parcels = [];
   bool _locating = true;
 
-  // Both pickup (resolved, not still loading) and drop-off must be set
-  // before the user can proceed to the next step.
-  bool get _canContinue => !_locating && _dropoff != null;
+  // Pickup resolved and at least one parcel added before continuing.
+  bool get _canContinue => !_locating && _parcels.isNotEmpty;
 
   @override
   void initState() {
@@ -90,45 +91,47 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
           infoWindow: InfoWindow(title: _pickup.name),
         ),
-        if (_dropoff != null)
+        for (var i = 0; i < _parcels.length; i++)
           Marker(
-            markerId: const MarkerId('dropoff'),
-            position: LatLng(_dropoff!.lat, _dropoff!.lng),
+            markerId: MarkerId('dropoff_$i'),
+            position: LatLng(_parcels[i].dropoff.lat, _parcels[i].dropoff.lng),
             icon: BitmapDescriptor.defaultMarkerWithHue(
                 BitmapDescriptor.hueAzure),
-            infoWindow: InfoWindow(title: _dropoff!.name),
+            infoWindow: InfoWindow(
+                title: 'Parcel ${i + 1}', snippet: _parcels[i].dropoff.name),
           ),
       };
 
   Set<Polyline> get _polylines {
-    if (_dropoff == null) return {};
+    if (_parcels.isEmpty) return {};
     return {
-      Polyline(
-        polylineId: const PolylineId('route'),
-        points: [
-          LatLng(_pickup.lat, _pickup.lng),
-          LatLng(_dropoff!.lat, _dropoff!.lng),
-        ],
-        color: GodropColors.blue,
-        width: 4,
-        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-      ),
+      for (var i = 0; i < _parcels.length; i++)
+        Polyline(
+          polylineId: PolylineId('route_$i'),
+          points: [
+            LatLng(_pickup.lat, _pickup.lng),
+            LatLng(_parcels[i].dropoff.lat, _parcels[i].dropoff.lng),
+          ],
+          color: GodropColors.blue,
+          width: 3,
+          patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+        ),
     };
   }
 
   void _updateCamera() {
     final ctrl = _mapCtrl;
     if (ctrl == null) return;
-    if (_dropoff != null) {
-      final minLat = min(_pickup.lat, _dropoff!.lat);
-      final maxLat = max(_pickup.lat, _dropoff!.lat);
-      final minLng = min(_pickup.lng, _dropoff!.lng);
-      final maxLng = max(_pickup.lng, _dropoff!.lng);
+    if (_parcels.isNotEmpty) {
+      final lats = [_pickup.lat, ..._parcels.map((p) => p.dropoff.lat)];
+      final lngs = [_pickup.lng, ..._parcels.map((p) => p.dropoff.lng)];
       ctrl.animateCamera(
         CameraUpdate.newLatLngBounds(
           LatLngBounds(
-            southwest: LatLng(minLat - 0.005, minLng - 0.005),
-            northeast: LatLng(maxLat + 0.005, maxLng + 0.005),
+            southwest:
+                LatLng(lats.reduce(min) - 0.005, lngs.reduce(min) - 0.005),
+            northeast:
+                LatLng(lats.reduce(max) + 0.005, lngs.reduce(max) + 0.005),
           ),
           100,
         ),
@@ -140,31 +143,78 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
     }
   }
 
-  Future<void> _openAddressPicker({
-    required bool isPickup,
-    required SavedAddressesState savedState,
-  }) async {
+  Future<void> _changePickup(SavedAddressesState savedState) async {
     final result = await showModalBottomSheet<ParcelLocation>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => LocationPickerSheet(
-        title: isPickup ? 'Change pickup' : 'Where to?',
-        showCurrentLocation: isPickup,
+        title: 'Change pickup',
+        showCurrentLocation: true,
         savedAddresses: savedState.addresses,
       ),
     );
     if (result != null && mounted) {
-      setState(() {
-        if (isPickup) {
-          _pickup = result;
-        } else {
-          _dropoff = result;
-        }
-      });
+      setState(() => _pickup = result);
       await Future.delayed(const Duration(milliseconds: 300));
       if (mounted) _updateCamera();
     }
+  }
+
+  /// Pick a drop-off location, then capture recipient + optional description /
+  /// weight for that parcel and add it to the list.
+  Future<void> _addParcel(
+    SavedAddressesState savedState, {
+    ParcelLocation? presetLocation,
+  }) async {
+    ParcelLocation? location = presetLocation;
+    if (location == null) {
+      location = await showModalBottomSheet<ParcelLocation>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => LocationPickerSheet(
+          title: 'Where to?',
+          savedAddresses: savedState.addresses,
+        ),
+      );
+    }
+    if (location == null || !mounted) return;
+
+    final item = await showModalBottomSheet<ParcelItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ParcelDetailsSheet(
+        dropoff: location!,
+        parcelIndex: _parcels.length + 1,
+      ),
+    );
+    if (item == null || !mounted) return;
+
+    setState(() => _parcels.add(item));
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (mounted) _updateCamera();
+  }
+
+  Future<void> _editParcel(int index) async {
+    final updated = await showModalBottomSheet<ParcelItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ParcelDetailsSheet(
+        dropoff: _parcels[index].dropoff,
+        parcelIndex: index + 1,
+        existing: _parcels[index],
+      ),
+    );
+    if (updated == null || !mounted) return;
+    setState(() => _parcels[index] = updated);
+  }
+
+  void _removeParcel(int index) {
+    setState(() => _parcels.removeAt(index));
+    _updateCamera();
   }
 
   Future<void> _useCurrentLocationForPickup() async {
@@ -175,94 +225,15 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
   Future<void> _onQuickAddress(
       SavedAddressesState savedState, String label) async {
     final saved = label == 'Home' ? savedState.home : savedState.work;
-
     if (saved != null) {
-      setState(() {
-        _dropoff =
-            ParcelLocation(lat: saved.lat, lng: saved.lng, name: saved.address);
-      });
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (mounted) _updateCamera();
+      await _addParcel(
+        savedState,
+        presetLocation:
+            ParcelLocation(lat: saved.lat, lng: saved.lng, name: saved.address),
+      );
       return;
     }
-
-    final result = await showModalBottomSheet<ParcelLocation>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => LocationPickerSheet(
-        title: 'Set your $label address',
-        savedAddresses: savedState.addresses,
-      ),
-    );
-    if (result == null || !mounted) return;
-
-    setState(() => _dropoff = result);
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) _updateCamera();
-
-    if (!mounted) return;
-    final shouldSave = await _confirmSaveAddress(label, result.name);
-    if (shouldSave == true && mounted) {
-      await context.read<SavedAddressesCubit>().saveAddress(
-            label: label,
-            address: result.name,
-            lat: result.lat,
-            lng: result.lng,
-          );
-    }
-  }
-
-  Future<bool?> _confirmSaveAddress(String label, String address) {
-    final gradient = label == 'Work'
-        ? GodropColors.orangeGradient
-        : GodropColors.blueGradient;
-    final icon = label == 'Work' ? Icons.work_rounded : Icons.home_rounded;
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration:
-                  BoxDecoration(gradient: gradient, shape: BoxShape.circle),
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text('Save as $label?',
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: GodropColors.ink)),
-            ),
-          ],
-        ),
-        content: Text(
-          'Save "$address" as your $label address for faster checkout next time.',
-          style: const TextStyle(
-              color: GodropColors.slate, fontSize: 14, height: 1.4),
-        ),
-        actionsAlignment: MainAxisAlignment.spaceBetween,
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Not now',
-                style: TextStyle(
-                    color: GodropColors.mute, fontWeight: FontWeight.w600)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Save',
-                style: TextStyle(
-                    color: GodropColors.blue, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
+    await _addParcel(savedState);
   }
 
   @override
@@ -345,9 +316,11 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
                                           size: 14),
                                     ),
                                     const SizedBox(width: 10),
-                                    const Text(
-                                      'Send a parcel',
-                                      style: TextStyle(
+                                    Text(
+                                      _parcels.length > 1
+                                          ? 'Send ${_parcels.length} parcels'
+                                          : 'Send a parcel',
+                                      style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                         color: GodropColors.ink,
@@ -367,6 +340,9 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
 
                 // ── Address panel ──
                 Container(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.56,
+                  ),
                   decoration: BoxDecoration(
                     color: GodropColors.card,
                     borderRadius:
@@ -396,7 +372,7 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
                           ),
                           const SizedBox(width: 8),
                           const Text(
-                            "Where's it going?",
+                            "Pickup & drop-offs",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -407,88 +383,103 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: GodropColors.background,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: GodropColors.border),
-                        ),
-                        child: Column(
-                          children: [
-                            _AddressTimelineRow(
-                              color: GodropColors.orange,
-                              icon: Icons.my_location_rounded,
-                              label: 'PICK UP',
-                              value: _locating
-                                  ? 'Getting your location...'
-                                  : _pickup.name,
-                              loading: _locating,
-                              onTap: _locating
-                                  ? null
-                                  : () => _openAddressPicker(
-                                      isPickup: true, savedState: savedState),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 17),
-                              child: Container(
-                                width: 2,
-                                height: 16,
-                                color: GodropColors.border,
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Pickup
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: GodropColors.background,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border:
+                                      Border.all(color: GodropColors.border),
+                                ),
+                                child: _AddressTimelineRow(
+                                  color: GodropColors.orange,
+                                  icon: Icons.my_location_rounded,
+                                  label: 'PICK UP',
+                                  value: _locating
+                                      ? 'Getting your location...'
+                                      : _pickup.name,
+                                  loading: _locating,
+                                  onTap: _locating
+                                      ? null
+                                      : () => _changePickup(savedState),
+                                ),
                               ),
-                            ),
-                            _AddressTimelineRow(
-                              color: GodropColors.blue,
-                              icon: Icons.flag_rounded,
-                              label: 'DROP OFF',
-                              value: _dropoff?.name ??
-                                  'Where are you sending this to?',
-                              placeholder: _dropoff == null,
-                              onTap: () => _openAddressPicker(
-                                  isPickup: false, savedState: savedState),
-                            ),
-                          ],
+                              const SizedBox(height: 12),
+                              // Parcels list
+                              ..._parcels.asMap().entries.map((e) {
+                                final i = e.key;
+                                final p = e.value;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: _ParcelRow(
+                                    index: i + 1,
+                                    parcel: p,
+                                    onEdit: () => _editParcel(i),
+                                    onRemove: () => _removeParcel(i),
+                                  ),
+                                );
+                              }),
+                              // Add drop-off
+                              _AddDropoffButton(
+                                isFirst: _parcels.isEmpty,
+                                onTap: _locating
+                                    ? null
+                                    : () => _addParcel(savedState),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  _QuickChip(
+                                    icon: Icons.my_location_rounded,
+                                    label: 'My location',
+                                    gradient: GodropColors.blueGradient,
+                                    onTap: _useCurrentLocationForPickup,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  _QuickChip(
+                                    icon: Icons.home_rounded,
+                                    label: 'Home',
+                                    saved: savedState.home != null,
+                                    gradient: GodropColors.blueGradient,
+                                    onTap: () =>
+                                        _onQuickAddress(savedState, 'Home'),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  _QuickChip(
+                                    icon: Icons.work_rounded,
+                                    label: 'Work',
+                                    saved: savedState.work != null,
+                                    gradient: GodropColors.orangeGradient,
+                                    onTap: () =>
+                                        _onQuickAddress(savedState, 'Work'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          _QuickChip(
-                            icon: Icons.my_location_rounded,
-                            label: 'My location',
-                            gradient: GodropColors.blueGradient,
-                            onTap: _useCurrentLocationForPickup,
-                          ),
-                          const SizedBox(width: 10),
-                          _QuickChip(
-                            icon: Icons.home_rounded,
-                            label: 'Home',
-                            saved: savedState.home != null,
-                            gradient: GodropColors.blueGradient,
-                            onTap: () => _onQuickAddress(savedState, 'Home'),
-                          ),
-                          const SizedBox(width: 10),
-                          _QuickChip(
-                            icon: Icons.work_rounded,
-                            label: 'Work',
-                            saved: savedState.work != null,
-                            gradient: GodropColors.orangeGradient,
-                            onTap: () => _onQuickAddress(savedState, 'Work'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
                       Opacity(
                         opacity: _canContinue ? 1.0 : 0.5,
                         child: GodropButton(
-                          label: 'Continue →',
+                          label: _parcels.length > 1
+                              ? 'Continue · ${_parcels.length} parcels →'
+                              : 'Continue →',
                           onTap: !_canContinue
                               ? null
                               : () => context.go(
                                     '/parcel/vehicle',
                                     extra: ParcelRouteData(
                                       pickup: _pickup,
-                                      dropoff: _dropoff!,
+                                      parcels: List.of(_parcels),
                                     ),
                                   ),
                         ),
@@ -506,6 +497,138 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
 }
 
 // ── Supporting widgets ────────────────────────────────────────────────────────
+
+class _ParcelRow extends StatelessWidget {
+  final int index;
+  final ParcelItem parcel;
+  final VoidCallback onEdit;
+  final VoidCallback onRemove;
+
+  const _ParcelRow({
+    required this.index,
+    required this.parcel,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final meta = <String>[
+      if (parcel.recipientName.isNotEmpty) parcel.recipientName,
+      if (parcel.weightKg != null) '${parcel.weightKg} kg',
+      if (parcel.description?.isNotEmpty == true) parcel.description!,
+    ].join(' · ');
+    return InkWell(
+      onTap: onEdit,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: GodropColors.background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: GodropColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE7EEFF),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '$index',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: GodropColors.blue,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    parcel.dropoff.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: GodropColors.ink,
+                    ),
+                  ),
+                  if (meta.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12, color: GodropColors.mute),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: onRemove,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.close_rounded,
+                  size: 18, color: GodropColors.mute),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddDropoffButton extends StatelessWidget {
+  final bool isFirst;
+  final VoidCallback? onTap;
+  const _AddDropoffButton({required this.isFirst, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        decoration: BoxDecoration(
+          color: GodropColors.blue.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: GodropColors.blue.withValues(alpha: 0.4),
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_location_alt_rounded,
+                size: 18, color: GodropColors.blue),
+            const SizedBox(width: 8),
+            Text(
+              isFirst ? 'Add a drop-off' : 'Add another drop-off',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: GodropColors.blue,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _AddressTimelineRow extends StatelessWidget {
   final Color color;

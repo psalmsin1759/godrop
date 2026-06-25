@@ -181,7 +181,37 @@ components:
           type: string
           enum: [PENDING, ACCEPTED, PREPARING, READY_FOR_PICKUP, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED, FAILED]
         totalKobo: { type: integer }
+        dropoffs:
+          type: array
+          description: "Parcels in this order (parcel orders only). A single-parcel order has one entry."
+          items: { $ref: "#/components/schemas/ParcelDropoff" }
         createdAt: { type: string, format: date-time }
+
+    ParcelDropoff:
+      type: object
+      description: "A single parcel within a (possibly multi-parcel) order."
+      properties:
+        id: { type: string }
+        sequence: { type: integer, description: "1-based order of stops" }
+        address: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        recipientName: { type: string }
+        recipientPhone: { type: string, example: "+2348012345678" }
+        packageDescription: { type: string, nullable: true }
+        weightKg: { type: number, nullable: true }
+        sizeCategory: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [PENDING, PICKED_UP, IN_TRANSIT, DELIVERED, FAILED, CANCELLED]
+        deliveryFeeKobo: { type: integer }
+        earningKobo: { type: integer, nullable: true, description: "Rider earning, set once delivered" }
+        distanceKm: { type: number, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        failureReason: { type: string, nullable: true }
+        confirmationCode:
+          type: string
+          description: "4-digit code the recipient gives the rider. Returned to the customer only; never exposed to riders."
 
     ParcelVehicleType:
       type: object
@@ -948,6 +978,11 @@ components:
         paymentMethod: { type: string, enum: [CARD, WALLET, CASH, WALLET_CARD] }
         recipientName: { type: string, nullable: true }
         recipientPhone: { type: string, nullable: true }
+        parcelCount: { type: integer, description: "Number of parcels/drop-offs in this order" }
+        dropoffs:
+          type: array
+          description: "Per-parcel drop-offs. Confirmation codes are NOT included in rider-facing payloads."
+          items: { $ref: "#/components/schemas/ParcelDropoff" }
         vendor:
           type: object
           nullable: true
@@ -2891,10 +2926,15 @@ paths:
           application/json:
             schema:
               type: object
-              required: [pickup, dropoff]
+              required: [pickup]
+              description: "Provide `dropoffs` (multi-parcel) or a single legacy `dropoff`."
               properties:
                 pickup: { $ref: "#/components/schemas/LocationInput" }
-                dropoff: { $ref: "#/components/schemas/LocationInput" }
+                dropoffs:
+                  type: array
+                  description: "One entry per parcel destination. Each parcel is priced pickup→dropoff."
+                  items: { $ref: "#/components/schemas/LocationInput" }
+                dropoff: { $ref: "#/components/schemas/LocationInput", description: "Legacy single drop-off" }
                 vehicleTypeId: { type: string, description: "ID of a ParcelVehicleType to price by" }
                 weightKg: { type: number }
                 sizeCategory: { type: string, enum: [small, medium, large, extra_large] }
@@ -2908,7 +2948,16 @@ paths:
                 properties:
                   success: { type: boolean }
                   priceBreakdown: { $ref: "#/components/schemas/PriceBreakdownParcel" }
-                  distanceKm: { type: number }
+                  parcels:
+                    type: array
+                    description: "Per-parcel price breakdown, in the same order as the request `dropoffs`."
+                    items:
+                      type: object
+                      properties:
+                        deliveryFeeKobo: { type: integer }
+                        distanceKm: { type: number }
+                        estimatedMinutes: { type: integer }
+                  distanceKm: { type: number, description: "Total distance across all legs" }
                   estimatedMinutes: { type: integer }
         "404":
           description: Vehicle type not found or inactive
@@ -2930,18 +2979,36 @@ paths:
           application/json:
             schema:
               type: object
-              required: [pickup, dropoff, packageDescription, paymentMethod, recipientName, recipientPhone]
+              required: [pickup, paymentMethod]
+              description: |
+                Provide a `parcels` array (one entry per drop-off) for single OR multiple parcels.
+                The legacy single-parcel fields (`dropoff`, `recipientName`, `recipientPhone`,
+                `packageDescription`) are still accepted and normalized to a 1-element `parcels` array.
               properties:
                 pickup: { $ref: "#/components/schemas/LocationInput" }
-                dropoff: { $ref: "#/components/schemas/LocationInput" }
                 vehicleTypeId: { type: string, description: "ID of a ParcelVehicleType" }
-                packageDescription: { type: string }
+                paymentMethod: { type: string, enum: [card, wallet, cash] }
+                scheduleAt: { type: string, format: date-time }
+                parcels:
+                  type: array
+                  minItems: 1
+                  description: "Each parcel has its own destination, recipient, and optional description/weight."
+                  items:
+                    type: object
+                    required: [dropoff, recipientName, recipientPhone]
+                    properties:
+                      dropoff: { $ref: "#/components/schemas/LocationInput" }
+                      recipientName: { type: string }
+                      recipientPhone: { type: string, example: "+2348012345678" }
+                      packageDescription: { type: string, description: "Optional" }
+                      weightKg: { type: number, description: "Optional weight in kg" }
+                      sizeCategory: { type: string, enum: [small, medium, large, extra_large] }
+                dropoff: { $ref: "#/components/schemas/LocationInput", description: "Legacy single drop-off" }
+                packageDescription: { type: string, description: "Legacy single parcel" }
                 weightKg: { type: number }
                 sizeCategory: { type: string, enum: [small, medium, large, extra_large] }
-                paymentMethod: { type: string, enum: [card, wallet, cash] }
-                recipientName: { type: string }
+                recipientName: { type: string, description: "Legacy single parcel" }
                 recipientPhone: { type: string, example: "+2348012345678" }
-                scheduleAt: { type: string, format: date-time }
       responses:
         "201":
           description: Parcel order created
@@ -6775,6 +6842,88 @@ paths:
                   data: { $ref: "#/components/schemas/RiderOrder" }
         "404":
           description: Order not found
+
+  /rider/orders/{id}/dropoffs/{dropoffId}/delivered:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Mark a single parcel as delivered
+      description: |
+        Delivers one parcel within a multi-drop-off order, validated against that parcel's own
+        4-digit confirmation code. Creates a per-parcel `RiderEarning`. When every parcel in the
+        order is resolved, the order is automatically closed (DELIVERED if any parcel was delivered).
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: dropoffId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmationCode]
+              properties:
+                confirmationCode: { type: string, minLength: 4, maxLength: 4, example: "4821" }
+                proofNote: { type: string, description: "Optional delivery note" }
+      responses:
+        "200":
+          description: Parcel delivered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/ParcelDropoff" }
+        "400":
+          description: Invalid confirmation code, or parcel not picked up / already completed
+        "404":
+          description: Order or parcel not found
+
+  /rider/orders/{id}/dropoffs/{dropoffId}/failed:
+    patch:
+      tags: [Rider App — Orders]
+      summary: Mark a single parcel as failed
+      description: |
+        Marks one parcel in a multi-drop-off order as undeliverable (no earning). When every parcel
+        in the order is resolved, the order is automatically closed.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: dropoffId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, example: "Recipient unreachable" }
+      responses:
+        "200":
+          description: Parcel marked as failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data: { $ref: "#/components/schemas/ParcelDropoff" }
+        "404":
+          description: Order or parcel not found
 
   /rider/orders/{id}/location:
     post:

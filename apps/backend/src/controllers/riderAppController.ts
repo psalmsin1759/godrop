@@ -423,6 +423,52 @@ export async function markFailed(req: Request, res: Response, next: NextFunction
   }
 }
 
+export async function markDropoffDelivered(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.body.confirmationCode) return fail(res, "Confirmation code is required", 400);
+    const dropoff = await riderOrderService.markDropoffDelivered(
+      req.rider!.id,
+      req.params.id,
+      req.params.dropoffId,
+      req.body.confirmationCode,
+      req.body.proofNote
+    );
+    return ok(res, { data: dropoff });
+  } catch (err: any) {
+    if (err.message === "Order not found" || err.message === "Parcel not found") {
+      return fail(res, err.message, 404);
+    }
+    if (
+      err.message?.includes("must be") ||
+      err.message?.includes("Invalid confirmation") ||
+      err.message?.includes("already been")
+    ) {
+      return fail(res, err.message, 400);
+    }
+    next(err);
+  }
+}
+
+export async function markDropoffFailed(req: Request, res: Response, next: NextFunction) {
+  try {
+    const dropoff = await riderOrderService.markDropoffFailed(
+      req.rider!.id,
+      req.params.id,
+      req.params.dropoffId,
+      req.body.reason
+    );
+    return ok(res, { data: dropoff });
+  } catch (err: any) {
+    if (err.message === "Order not found" || err.message === "Parcel not found") {
+      return fail(res, err.message, 404);
+    }
+    if (err.message?.includes("Cannot fail") || err.message?.includes("already been")) {
+      return fail(res, err.message, 400);
+    }
+    next(err);
+  }
+}
+
 export async function pushLocationUpdate(req: Request, res: Response, next: NextFunction) {
   try {
     await riderOrderService.pushLocationUpdate(req.rider!.id, req.params.id, req.body.lat, req.body.lng);

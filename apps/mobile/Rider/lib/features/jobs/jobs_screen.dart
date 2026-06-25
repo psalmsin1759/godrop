@@ -352,10 +352,32 @@ class _JobCard extends StatelessWidget {
                           color: GodropColors.ink,
                         ),
                       ),
-                      Text(
-                        order.trackingCode,
-                        style: const TextStyle(
-                            fontSize: 12, color: GodropColors.mute),
+                      Row(
+                        children: [
+                          Text(
+                            order.trackingCode,
+                            style: const TextStyle(
+                                fontSize: 12, color: GodropColors.mute),
+                          ),
+                          if (order.isMultiParcel) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: GodropColors.blue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${order.parcelCount} parcels',
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: GodropColors.blue),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -385,7 +407,11 @@ class _JobCard extends StatelessWidget {
                 order.pickupAddress),
             const SizedBox(height: 6),
             _locationRow(
-                Icons.location_on_rounded, GodropColors.error, order.dropoffAddress),
+                Icons.location_on_rounded,
+                GodropColors.error,
+                order.isMultiParcel
+                    ? '${order.parcelCount} drop-offs'
+                    : order.dropoffAddress),
             const SizedBox(height: 12),
             Row(
               children: [

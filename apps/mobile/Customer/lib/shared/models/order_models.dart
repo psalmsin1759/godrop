@@ -3,6 +3,48 @@ import 'common_models.dart';
 
 part 'order_models.g.dart';
 
+/// A single parcel within a (possibly multi-parcel) order, as returned by the
+/// API. Confirmation codes are included for the customer (to share with each
+/// recipient).
+@JsonSerializable()
+class ParcelDropoffModel {
+  final String id;
+  final int sequence;
+  final String address;
+  final double lat;
+  final double lng;
+  final String recipientName;
+  final String recipientPhone;
+  final String? packageDescription;
+  final double? weightKg;
+  final String status;
+  final String? confirmationCode;
+  final int deliveryFeeKobo;
+  final int? earningKobo;
+  final String? deliveredAt;
+
+  const ParcelDropoffModel({
+    required this.id,
+    required this.sequence,
+    required this.address,
+    required this.lat,
+    required this.lng,
+    required this.recipientName,
+    required this.recipientPhone,
+    this.packageDescription,
+    this.weightKg,
+    required this.status,
+    this.confirmationCode,
+    this.deliveryFeeKobo = 0,
+    this.earningKobo,
+    this.deliveredAt,
+  });
+
+  factory ParcelDropoffModel.fromJson(Map<String, dynamic> json) =>
+      _$ParcelDropoffModelFromJson(json);
+  Map<String, dynamic> toJson() => _$ParcelDropoffModelToJson(this);
+}
+
 @JsonSerializable()
 class Order {
   final String id;
@@ -16,6 +58,7 @@ class Order {
   final String? confirmationCode;
   final String? paymentMethod;
   final String? paymentStatus;
+  final List<ParcelDropoffModel>? dropoffs;
 
   const Order({
     required this.id,
@@ -29,7 +72,10 @@ class Order {
     this.confirmationCode,
     this.paymentMethod,
     this.paymentStatus,
+    this.dropoffs,
   });
+
+  bool get isMultiParcel => (dropoffs?.length ?? 0) > 1;
 
   factory Order.fromJson(Map<String, dynamic> json) =>
       _$OrderFromJson(json);
@@ -147,6 +193,9 @@ class TrackingResponse {
   final String status;
   final int? estimatedMinutes;
   final String? confirmationCode;
+  final double? pickupLat;
+  final double? pickupLng;
+  final List<ParcelDropoffModel>? dropoffs;
 
   const TrackingResponse({
     this.riderLat,
@@ -154,6 +203,9 @@ class TrackingResponse {
     required this.status,
     this.estimatedMinutes,
     this.confirmationCode,
+    this.pickupLat,
+    this.pickupLng,
+    this.dropoffs,
   });
 
   factory TrackingResponse.fromJson(Map<String, dynamic> json) =>

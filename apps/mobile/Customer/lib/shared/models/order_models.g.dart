@@ -6,6 +6,42 @@ part of 'order_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+ParcelDropoffModel _$ParcelDropoffModelFromJson(Map<String, dynamic> json) =>
+    ParcelDropoffModel(
+      id: json['id'] as String,
+      sequence: (json['sequence'] as num).toInt(),
+      address: json['address'] as String,
+      lat: (json['lat'] as num).toDouble(),
+      lng: (json['lng'] as num).toDouble(),
+      recipientName: json['recipientName'] as String,
+      recipientPhone: json['recipientPhone'] as String,
+      packageDescription: json['packageDescription'] as String?,
+      weightKg: (json['weightKg'] as num?)?.toDouble(),
+      status: json['status'] as String,
+      confirmationCode: json['confirmationCode'] as String?,
+      deliveryFeeKobo: (json['deliveryFeeKobo'] as num?)?.toInt() ?? 0,
+      earningKobo: (json['earningKobo'] as num?)?.toInt(),
+      deliveredAt: json['deliveredAt'] as String?,
+    );
+
+Map<String, dynamic> _$ParcelDropoffModelToJson(ParcelDropoffModel instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'sequence': instance.sequence,
+      'address': instance.address,
+      'lat': instance.lat,
+      'lng': instance.lng,
+      'recipientName': instance.recipientName,
+      'recipientPhone': instance.recipientPhone,
+      'packageDescription': instance.packageDescription,
+      'weightKg': instance.weightKg,
+      'status': instance.status,
+      'confirmationCode': instance.confirmationCode,
+      'deliveryFeeKobo': instance.deliveryFeeKobo,
+      'earningKobo': instance.earningKobo,
+      'deliveredAt': instance.deliveredAt,
+    };
+
 Order _$OrderFromJson(Map<String, dynamic> json) => Order(
       id: json['id'] as String,
       type: json['type'] as String,
@@ -18,6 +54,9 @@ Order _$OrderFromJson(Map<String, dynamic> json) => Order(
       confirmationCode: json['confirmationCode'] as String?,
       paymentMethod: json['paymentMethod'] as String?,
       paymentStatus: json['paymentStatus'] as String?,
+      dropoffs: (json['dropoffs'] as List<dynamic>?)
+          ?.map((e) => ParcelDropoffModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
@@ -32,6 +71,7 @@ Map<String, dynamic> _$OrderToJson(Order instance) => <String, dynamic>{
       'confirmationCode': instance.confirmationCode,
       'paymentMethod': instance.paymentMethod,
       'paymentStatus': instance.paymentStatus,
+      'dropoffs': instance.dropoffs,
     };
 
 OrderListResponse _$OrderListResponseFromJson(Map<String, dynamic> json) =>
@@ -142,6 +182,11 @@ TrackingResponse _$TrackingResponseFromJson(Map<String, dynamic> json) =>
       status: json['status'] as String,
       estimatedMinutes: (json['estimatedMinutes'] as num?)?.toInt(),
       confirmationCode: json['confirmationCode'] as String?,
+      pickupLat: (json['pickupLat'] as num?)?.toDouble(),
+      pickupLng: (json['pickupLng'] as num?)?.toDouble(),
+      dropoffs: (json['dropoffs'] as List<dynamic>?)
+          ?.map((e) => ParcelDropoffModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$TrackingResponseToJson(TrackingResponse instance) =>
@@ -151,4 +196,7 @@ Map<String, dynamic> _$TrackingResponseToJson(TrackingResponse instance) =>
       'status': instance.status,
       'estimatedMinutes': instance.estimatedMinutes,
       'confirmationCode': instance.confirmationCode,
+      'pickupLat': instance.pickupLat,
+      'pickupLng': instance.pickupLng,
+      'dropoffs': instance.dropoffs,
     };

@@ -18,6 +18,8 @@ class ParcelLoaded extends ParcelState {
   final bool quoteLoading;
   final int? estimatedMinutes;
   final String? quoteError;
+  // Per-parcel price breakdown, in the same order as the request dropoffs.
+  final List<ParcelLegQuote> parcelLegs;
 
   ParcelLoaded({
     required this.vehicleTypes,
@@ -26,6 +28,7 @@ class ParcelLoaded extends ParcelState {
     this.quoteLoading = false,
     this.estimatedMinutes,
     this.quoteError,
+    this.parcelLegs = const [],
   });
 
   ParcelVehicleType? get selectedType =>
@@ -38,6 +41,7 @@ class ParcelLoaded extends ParcelState {
     bool? quoteLoading,
     int? estimatedMinutes,
     String? quoteError,
+    List<ParcelLegQuote>? parcelLegs,
     bool clearQuote = false,
     bool clearQuoteError = false,
   }) {
@@ -48,6 +52,7 @@ class ParcelLoaded extends ParcelState {
       quoteLoading: quoteLoading ?? this.quoteLoading,
       estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       quoteError: clearQuoteError ? null : (quoteError ?? this.quoteError),
+      parcelLegs: clearQuote ? const [] : (parcelLegs ?? this.parcelLegs),
     );
   }
 }

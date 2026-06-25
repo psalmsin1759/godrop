@@ -372,18 +372,68 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
                   </div>
                 ))}
 
-                <div className="flex items-start gap-3">
-                  <div
-                    className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: '#FFE3E1' }}
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-[#FF3B30]" />
+                {/* For multi-parcel orders the per-parcel destinations are shown in the
+                    "Parcels" section below; only show a single dropoff line otherwise. */}
+                {!(order.dropoffs && order.dropoffs.length > 1) && (
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: '#FFE3E1' }}
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-[#FF3B30]" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Dropoff</p>
+                      <p className="text-xs font-medium text-[#0D1426] mt-0.5">{order.dropoffAddress || '—'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide">Dropoff</p>
-                    <p className="text-xs font-medium text-[#0D1426] mt-0.5">{order.dropoffAddress || '—'}</p>
-                  </div>
-                </div>
+                )}
+              </div>
+            </Section>
+          )}
+
+          {/* Parcels (multi-drop-off) */}
+          {order.dropoffs && order.dropoffs.length > 1 && (
+            <Section title={`Parcels (${order.dropoffs.length})`}>
+              <div className="space-y-3">
+                {order.dropoffs.map((p) => {
+                  const sc = STATUS_CONFIG[p.status as OrderStatus]
+                  return (
+                    <div
+                      key={p.id}
+                      className="rounded-lg border border-[#EDF0F6] p-3"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#E7EEFF] text-[10px] font-bold text-[#1E5FFF]">
+                            {p.sequence}
+                          </span>
+                          <span className="text-xs font-semibold text-[#0D1426]">{p.recipientName}</span>
+                        </div>
+                        {sc && (
+                          <span
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: sc.bg, color: sc.text }}
+                          >
+                            {sc.label}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-start gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-[#FF3B30] mt-0.5 shrink-0" />
+                        <p className="text-[11px] text-[#525A72]">{p.address}</p>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                        <InfoRow label="Phone" value={p.recipientPhone} />
+                        <InfoRow label="Fee" value={formatNaira(p.deliveryFeeKobo)} />
+                        {p.packageDescription && <InfoRow label="Description" value={p.packageDescription} />}
+                        {p.weightKg != null && <InfoRow label="Weight" value={`${p.weightKg} kg`} />}
+                        {p.earningKobo != null && <InfoRow label="Rider earned" value={formatNaira(p.earningKobo)} />}
+                        {p.failureReason && <InfoRow label="Failure" value={p.failureReason} />}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </Section>
           )}

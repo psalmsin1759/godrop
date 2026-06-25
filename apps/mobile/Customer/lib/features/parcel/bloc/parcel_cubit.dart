@@ -10,7 +10,10 @@ class ParcelCubit extends Cubit<ParcelState> {
 
   final _service = ParcelService(DioClient.instance);
 
-  Future<void> loadVehicleTypes({LocationPoint? pickup, LocationPoint? dropoff}) async {
+  Future<void> loadVehicleTypes({
+    LocationPoint? pickup,
+    List<LocationPoint>? dropoffs,
+  }) async {
     if (state is ParcelVehicleTypesLoading) return;
     emit(ParcelVehicleTypesLoading());
     try {
@@ -21,8 +24,8 @@ class ParcelCubit extends Cubit<ParcelState> {
       }
       final first = res.types.first;
       emit(ParcelLoaded(vehicleTypes: res.types, selectedTypeId: first.id));
-      if (pickup != null && dropoff != null) {
-        await selectVehicleType(typeId: first.id, pickup: pickup, dropoff: dropoff);
+      if (pickup != null && dropoffs != null && dropoffs.isNotEmpty) {
+        await selectVehicleType(typeId: first.id, pickup: pickup, dropoffs: dropoffs);
       }
     } on DioException catch (e) {
       emit(ParcelVehicleTypesError(_parseDioError(e)));
@@ -34,7 +37,7 @@ class ParcelCubit extends Cubit<ParcelState> {
   Future<void> selectVehicleType({
     required String typeId,
     required LocationPoint pickup,
-    required LocationPoint dropoff,
+    required List<LocationPoint> dropoffs,
   }) async {
     final current = state;
     if (current is! ParcelLoaded) return;
@@ -47,7 +50,7 @@ class ParcelCubit extends Cubit<ParcelState> {
     try {
       final res = await _service.getQuote(ParcelQuoteBody(
         pickup: pickup,
-        dropoff: dropoff,
+        dropoffs: dropoffs,
         vehicleTypeId: typeId,
       ));
       final loaded = state;
@@ -56,6 +59,7 @@ class ParcelCubit extends Cubit<ParcelState> {
           quoteLoading: false,
           quote: res.priceBreakdown,
           estimatedMinutes: res.estimatedMinutes,
+          parcelLegs: res.parcels,
         ));
       }
     } on DioException catch (e) {

@@ -40,6 +40,41 @@ export function parcelQuote(
   };
 }
 
+/**
+ * Quote for a multi-parcel order: each parcel is priced independently as
+ * pickup → its drop-off (base fee + per-km). The order total is the sum of all
+ * parcel delivery fees plus a single service fee. Reuses `parcelQuote` per leg.
+ */
+export function parcelQuoteMulti(
+  pickup: { lat: number; lng: number },
+  dropoffs: { lat: number; lng: number }[],
+  vehicleType?: { baseFeeKobo: number; perKmKobo: number }
+) {
+  const parcels = dropoffs.map((dropoff) => {
+    const q = parcelQuote(pickup, dropoff, vehicleType);
+    return {
+      deliveryFeeKobo: q.priceBreakdown.deliveryFeeKobo,
+      distanceKm: q.distanceKm,
+      estimatedMinutes: q.estimatedMinutes,
+    };
+  });
+
+  const deliveryFeeKobo = parcels.reduce((s, p) => s + p.deliveryFeeKobo, 0);
+  const serviceFeeKobo = SERVICE_FEE_KOBO;
+  // Stops are visited sequentially, so the order ETA is the sum of legs.
+  const estimatedMinutes = parcels.reduce((s, p) => s + p.estimatedMinutes, 0);
+
+  return {
+    parcels,
+    priceBreakdown: {
+      deliveryFeeKobo,
+      serviceFeeKobo,
+      totalKobo: deliveryFeeKobo + serviceFeeKobo,
+    },
+    estimatedMinutes,
+  };
+}
+
 export function truckQuote(
   apartmentType: { priceKobo: number },
   perKmKobo: number,

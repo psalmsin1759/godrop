@@ -36,6 +36,15 @@ export async function listAvailableOrders(opts: { page: number; limit: number; t
         recipientPhone: true,
         createdAt: true,
         vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
+        dropoffs: {
+          orderBy: { sequence: "asc" },
+          select: {
+            id: true, sequence: true, address: true, lat: true, lng: true,
+            recipientName: true, recipientPhone: true, packageDescription: true,
+            weightKg: true, status: true, deliveryFeeKobo: true, earningKobo: true,
+            deliveredAt: true,
+          },
+        },
       },
     }),
     prisma.order.count({ where }),
@@ -80,6 +89,15 @@ export async function listRiderOrders(
         recipientPhone: true,
         createdAt: true,
         vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
+        dropoffs: {
+          orderBy: { sequence: "asc" },
+          select: {
+            id: true, sequence: true, address: true, lat: true, lng: true,
+            recipientName: true, recipientPhone: true, packageDescription: true,
+            weightKg: true, status: true, deliveryFeeKobo: true, earningKobo: true,
+            deliveredAt: true,
+          },
+        },
       },
     }),
     prisma.order.count({ where }),
@@ -99,6 +117,15 @@ export async function getActiveOrder(riderId: string) {
       vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
       items: true,
       events: { orderBy: { createdAt: "asc" } },
+      dropoffs: {
+        orderBy: { sequence: "asc" },
+        select: {
+          id: true, sequence: true, address: true, lat: true, lng: true,
+          recipientName: true, recipientPhone: true, packageDescription: true,
+          weightKg: true, status: true, deliveryFeeKobo: true, earningKobo: true,
+          deliveredAt: true, failureReason: true,
+        },
+      },
     },
   });
 }
@@ -110,6 +137,15 @@ export async function getRiderOrderDetail(riderId: string, orderId: string) {
       vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
       items: true,
       events: { orderBy: { createdAt: "asc" } },
+      dropoffs: {
+        orderBy: { sequence: "asc" },
+        select: {
+          id: true, sequence: true, address: true, lat: true, lng: true,
+          recipientName: true, recipientPhone: true, packageDescription: true,
+          weightKg: true, status: true, deliveryFeeKobo: true, earningKobo: true,
+          deliveredAt: true, failureReason: true,
+        },
+      },
     },
   });
   if (!order) throw new Error("Order not found");
@@ -217,7 +253,11 @@ export async function markPickedUp(riderId: string, orderId: string) {
 
   const updated = await prisma.order.update({
     where: { id: orderId },
-    data: { status: "PICKED_UP" },
+    data: {
+      status: "PICKED_UP",
+      // Everything is collected at the single pickup — move all parcels along.
+      dropoffs: { updateMany: { where: { status: "PENDING" }, data: { status: "PICKED_UP" } } },
+    },
   });
 
   await prisma.orderEvent.create({
@@ -261,13 +301,189 @@ export async function markInTransit(riderId: string, orderId: string) {
   return updated;
 }
 
+async function getEarningRate(): Promise<number> {
+  const platform = await prisma.platformSettings.findUnique({ where: { id: "global" } });
+  return platform?.riderEarningRate ?? RIDER_EARNING_RATE;
+}
+
+/**
+ * After a parcel is resolved (delivered/failed), check whether every parcel in
+ * the order is now terminal. If so, close the order: DELIVERED when at least one
+ * parcel was delivered, otherwise FAILED. Notifies the customer + broadcasts.
+ */
+async function finalizeOrderIfComplete(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { dropoffs: true },
+  });
+  if (!order) return;
+  if (["DELIVERED", "FAILED", "CANCELLED"].includes(order.status)) return;
+
+  const terminal: OrderStatus[] = ["DELIVERED", "FAILED", "CANCELLED"];
+  const allResolved = order.dropoffs.every((d) => terminal.includes(d.status));
+  if (!allResolved) return;
+
+  const anyDelivered = order.dropoffs.some((d) => d.status === "DELIVERED");
+  const finalStatus: OrderStatus = anyDelivered ? "DELIVERED" : "FAILED";
+
+  await prisma.order.update({ where: { id: orderId }, data: { status: finalStatus } });
+  await prisma.orderEvent.create({
+    data: {
+      orderId,
+      status: finalStatus,
+      description:
+        finalStatus === "DELIVERED"
+          ? order.dropoffs.length > 1
+            ? "All parcels delivered"
+            : "Order delivered"
+          : "Order could not be delivered",
+    },
+  });
+
+  broadcastTracking(orderId, { type: "STATUS_UPDATE", status: finalStatus });
+  notifyCustomerOrderUpdate(
+    order.customerId, orderId, order.trackingCode,
+    finalStatus === "DELIVERED" ? "Order delivered" : "Delivery unsuccessful",
+    finalStatus === "DELIVERED"
+      ? `Your order #${order.trackingCode} has been fully delivered. Enjoy!`
+      : `We couldn't deliver your order #${order.trackingCode}.`,
+    finalStatus === "DELIVERED" ? "ORDER_DELIVERED" : "ORDER_FAILED"
+  ).catch(() => {});
+}
+
+/**
+ * Mark a single parcel within an order as delivered, validating that parcel's
+ * own confirmation code. Records a per-parcel rider earning and finalizes the
+ * order once every parcel is resolved.
+ */
+export async function markDropoffDelivered(
+  riderId: string,
+  orderId: string,
+  dropoffId: string,
+  confirmationCode: string,
+  proofNote?: string
+) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error("Order not found");
+  if (order.riderId !== riderId) throw new Error("Order not found");
+  if (!["PICKED_UP", "IN_TRANSIT"].includes(order.status)) {
+    throw new Error("Parcels must be picked up before they can be delivered");
+  }
+
+  const dropoff = await prisma.parcelDropoff.findUnique({ where: { id: dropoffId } });
+  if (!dropoff || dropoff.orderId !== orderId) throw new Error("Parcel not found");
+  if (["DELIVERED", "FAILED", "CANCELLED"].includes(dropoff.status)) {
+    throw new Error("This parcel has already been completed");
+  }
+  if (dropoff.confirmationCode !== confirmationCode) {
+    throw new Error("Invalid confirmation code. Ask the recipient for their 4-digit code.");
+  }
+
+  const rate = await getEarningRate();
+  const earningKobo = Math.floor(dropoff.deliveryFeeKobo * rate);
+
+  const updated = await prisma.parcelDropoff.update({
+    where: { id: dropoffId },
+    data: { status: "DELIVERED", deliveredAt: new Date(), earningKobo },
+  });
+
+  await prisma.orderEvent.create({
+    data: {
+      orderId,
+      status: "DELIVERED",
+      description: proofNote
+        ? `Parcel ${dropoff.sequence} delivered to ${dropoff.recipientName} — ${proofNote}`
+        : `Parcel ${dropoff.sequence} delivered to ${dropoff.recipientName}`,
+    },
+  });
+
+  await createRiderEarning(riderId, orderId, earningKobo, dropoffId);
+
+  broadcastTracking(orderId, {
+    type: "DROPOFF_UPDATE",
+    dropoffId,
+    sequence: dropoff.sequence,
+    status: "DELIVERED",
+  });
+  notifyCustomerOrderUpdate(
+    order.customerId, orderId, order.trackingCode,
+    "Parcel delivered",
+    `Parcel ${dropoff.sequence} to ${dropoff.recipientName} has been delivered.`,
+    "DROPOFF_DELIVERED"
+  ).catch(() => {});
+
+  await finalizeOrderIfComplete(orderId);
+  return updated;
+}
+
+/**
+ * Mark a single parcel as failed (no earning). Finalizes the order once every
+ * parcel is resolved.
+ */
+export async function markDropoffFailed(
+  riderId: string,
+  orderId: string,
+  dropoffId: string,
+  reason: string
+) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error("Order not found");
+  if (order.riderId !== riderId) throw new Error("Order not found");
+  if (!["PICKED_UP", "IN_TRANSIT", "ACCEPTED", "READY_FOR_PICKUP"].includes(order.status)) {
+    throw new Error("Cannot fail this parcel at this stage");
+  }
+
+  const dropoff = await prisma.parcelDropoff.findUnique({ where: { id: dropoffId } });
+  if (!dropoff || dropoff.orderId !== orderId) throw new Error("Parcel not found");
+  if (["DELIVERED", "FAILED", "CANCELLED"].includes(dropoff.status)) {
+    throw new Error("This parcel has already been completed");
+  }
+
+  const updated = await prisma.parcelDropoff.update({
+    where: { id: dropoffId },
+    data: { status: "FAILED", failureReason: reason },
+  });
+
+  await prisma.orderEvent.create({
+    data: {
+      orderId,
+      status: "FAILED",
+      description: `Parcel ${dropoff.sequence} to ${dropoff.recipientName} failed: ${reason}`,
+    },
+  });
+
+  broadcastTracking(orderId, {
+    type: "DROPOFF_UPDATE",
+    dropoffId,
+    sequence: dropoff.sequence,
+    status: "FAILED",
+  });
+  notifyCustomerOrderUpdate(
+    order.customerId, orderId, order.trackingCode,
+    "Parcel undeliverable",
+    `Parcel ${dropoff.sequence} to ${dropoff.recipientName} could not be delivered. Reason: ${reason}`,
+    "DROPOFF_FAILED"
+  ).catch(() => {});
+
+  await finalizeOrderIfComplete(orderId);
+  return updated;
+}
+
+/**
+ * Order-level "mark delivered" — retained for the legacy rider app. Delivers ALL
+ * remaining parcels in one shot using the order confirmation code (which mirrors
+ * the last parcel's code), recording a per-parcel earning for each.
+ */
 export async function markDelivered(
   riderId: string,
   orderId: string,
   confirmationCode: string,
   proofNote?: string
 ) {
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { dropoffs: true },
+  });
   if (!order) throw new Error("Order not found");
   if (order.riderId !== riderId) throw new Error("Order not found");
   if (!["PICKED_UP", "IN_TRANSIT"].includes(order.status)) {
@@ -277,11 +493,30 @@ export async function markDelivered(
     throw new Error("Invalid confirmation code. Ask the customer for their 4-digit code.");
   }
 
+  const rate = await getEarningRate();
+  const pending = order.dropoffs.filter(
+    (d) => !["DELIVERED", "FAILED", "CANCELLED"].includes(d.status)
+  );
+
+  if (pending.length === 0) {
+    // Non-parcel order (no dropoffs) — keep original single-earning behaviour.
+    const earningKobo = Math.floor(order.deliveryFeeKobo * rate);
+    await createRiderEarning(riderId, orderId, earningKobo);
+  } else {
+    for (const d of pending) {
+      const earningKobo = Math.floor(d.deliveryFeeKobo * rate);
+      await prisma.parcelDropoff.update({
+        where: { id: d.id },
+        data: { status: "DELIVERED", deliveredAt: new Date(), earningKobo },
+      });
+      await createRiderEarning(riderId, orderId, earningKobo, d.id);
+    }
+  }
+
   const updated = await prisma.order.update({
     where: { id: orderId },
     data: { status: "DELIVERED" },
   });
-
   await prisma.orderEvent.create({
     data: {
       orderId,
@@ -289,12 +524,6 @@ export async function markDelivered(
       description: proofNote ? `Delivered — ${proofNote}` : "Order delivered",
     },
   });
-
-  // Read the global earning rate from platform settings; fall back to env var
-  const platform = await prisma.platformSettings.findUnique({ where: { id: "global" } });
-  const rate = platform?.riderEarningRate ?? RIDER_EARNING_RATE;
-  const earningKobo = Math.floor(order.deliveryFeeKobo * rate);
-  await createRiderEarning(riderId, orderId, earningKobo);
 
   broadcastTracking(orderId, { type: "STATUS_UPDATE", status: "DELIVERED" });
   notifyCustomerOrderUpdate(
@@ -317,7 +546,16 @@ export async function markFailed(riderId: string, orderId: string, reason: strin
 
   const updated = await prisma.order.update({
     where: { id: orderId },
-    data: { status: "FAILED", cancellationReason: reason },
+    data: {
+      status: "FAILED",
+      cancellationReason: reason,
+      dropoffs: {
+        updateMany: {
+          where: { status: { notIn: ["DELIVERED", "FAILED", "CANCELLED"] } },
+          data: { status: "FAILED", failureReason: reason },
+        },
+      },
+    },
   });
 
   await prisma.orderEvent.create({

@@ -64,17 +64,14 @@ class ParcelPriceBreakdown {
 @JsonSerializable(includeIfNull: false)
 class ParcelQuoteBody {
   final LocationPoint pickup;
-  final LocationPoint dropoff;
+  // One entry per parcel destination. A single-parcel order has one entry.
+  final List<LocationPoint> dropoffs;
   final String? vehicleTypeId;
-  final double? weightKg;
-  final String? sizeCategory;
 
   const ParcelQuoteBody({
     required this.pickup,
-    required this.dropoff,
+    required this.dropoffs,
     this.vehicleTypeId,
-    this.weightKg,
-    this.sizeCategory,
   });
 
   factory ParcelQuoteBody.fromJson(Map<String, dynamic> json) =>
@@ -83,13 +80,33 @@ class ParcelQuoteBody {
 }
 
 @JsonSerializable()
+class ParcelLegQuote {
+  final int deliveryFeeKobo;
+  final double? distanceKm;
+  final int? estimatedMinutes;
+
+  const ParcelLegQuote({
+    required this.deliveryFeeKobo,
+    this.distanceKm,
+    this.estimatedMinutes,
+  });
+
+  factory ParcelLegQuote.fromJson(Map<String, dynamic> json) =>
+      _$ParcelLegQuoteFromJson(json);
+  Map<String, dynamic> toJson() => _$ParcelLegQuoteToJson(this);
+}
+
+@JsonSerializable()
 class ParcelQuoteResponse {
   final ParcelPriceBreakdown priceBreakdown;
   final int estimatedMinutes;
+  // Per-parcel breakdown, same order as the request dropoffs.
+  final List<ParcelLegQuote> parcels;
 
   const ParcelQuoteResponse({
     required this.priceBreakdown,
     required this.estimatedMinutes,
+    this.parcels = const [],
   });
 
   factory ParcelQuoteResponse.fromJson(Map<String, dynamic> json) =>
@@ -97,30 +114,45 @@ class ParcelQuoteResponse {
   Map<String, dynamic> toJson() => _$ParcelQuoteResponseToJson(this);
 }
 
+/// A single parcel within an order: its own destination, recipient and
+/// optional description / weight.
+@JsonSerializable(includeIfNull: false)
+class ParcelItemBody {
+  final LocationPoint dropoff;
+  final String recipientName;
+  final String recipientPhone;
+  final String? packageDescription;
+  final double? weightKg;
+  final String? sizeCategory;
+
+  const ParcelItemBody({
+    required this.dropoff,
+    required this.recipientName,
+    required this.recipientPhone,
+    this.packageDescription,
+    this.weightKg,
+    this.sizeCategory,
+  });
+
+  factory ParcelItemBody.fromJson(Map<String, dynamic> json) =>
+      _$ParcelItemBodyFromJson(json);
+  Map<String, dynamic> toJson() => _$ParcelItemBodyToJson(this);
+}
+
 @JsonSerializable(includeIfNull: false)
 class ParcelOrderBody {
   final LocationPoint pickup;
-  final LocationPoint dropoff;
   final String? vehicleTypeId;
-  final String packageDescription;
-  final double? weightKg;
-  final String? sizeCategory;
   final String paymentMethod;
-  final String recipientName;
-  final String recipientPhone;
   final String? scheduleAt;
+  final List<ParcelItemBody> parcels;
 
   const ParcelOrderBody({
     required this.pickup,
-    required this.dropoff,
     this.vehicleTypeId,
-    required this.packageDescription,
-    this.weightKg,
-    this.sizeCategory,
     required this.paymentMethod,
-    required this.recipientName,
-    required this.recipientPhone,
     this.scheduleAt,
+    required this.parcels,
   });
 
   factory ParcelOrderBody.fromJson(Map<String, dynamic> json) =>

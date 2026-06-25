@@ -627,12 +627,34 @@ export type OrderStatus =
   | 'PENDING' | 'ACCEPTED' | 'PREPARING' | 'READY_FOR_PICKUP'
   | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED' | 'FAILED'
 
+export interface ParcelDropoff {
+  id: string
+  sequence: number
+  address: string
+  lat: number
+  lng: number
+  recipientName: string
+  recipientPhone: string
+  packageDescription?: string | null
+  weightKg?: number | null
+  sizeCategory?: string | null
+  status: OrderStatus
+  deliveryFeeKobo: number
+  earningKobo?: number | null
+  distanceKm?: number | null
+  deliveredAt?: string | null
+  failureReason?: string | null
+  confirmationCode?: string
+  earning?: { amountKobo: number; status: string } | null
+}
+
 export interface Order {
   id: string
   trackingCode: string
   type: OrderType
   status: OrderStatus
   totalKobo: number
+  dropoffs?: ParcelDropoff[]
   createdAt: string
 }
 
@@ -696,6 +718,7 @@ export interface AdminOrder {
   sizeCategory?: 'small' | 'medium' | 'large' | 'extra_large' | null
   recipientName?: string | null
   recipientPhone?: string | null
+  dropoffs?: ParcelDropoff[] | null
   vehicleType?: { id: string; name: string; baseFeeKobo: number; perKmKobo: number } | null
   // financials
   subtotalKobo: number

@@ -228,6 +228,10 @@ class _RemoteOrdersList extends StatelessWidget {
 
   String _subtitleFor(Order order) {
     final type = order.type.toLowerCase();
+    if (type == 'parcel' && order.isMultiParcel) {
+      final pickup = order.pickupAddress?.split(',').first.trim();
+      return '${pickup ?? 'Pickup'} → ${order.dropoffs!.length} drop-offs';
+    }
     if (type == 'parcel' || type == 'truck') {
       final pickup = order.pickupAddress?.split(',').first.trim();
       final dropoff = order.dropoffAddress?.split(',').first.trim();
@@ -431,6 +435,7 @@ class _RemoteOrdersList extends StatelessWidget {
             amount: _fmtKobo(order.totalKobo),
             status: statusLabel,
             statusColor: statusColor,
+            badge: order.isMultiParcel ? '×${order.dropoffs!.length} parcels' : null,
             onTap: () => context.push('/orders/${order.id}'),
           ),
         );
@@ -481,6 +486,7 @@ class _OrderCard extends StatelessWidget {
   final String? actionLabel;
   final String? confirmationCode;
   final String? foodSummary;
+  final String? badge;
   final VoidCallback onTap;
 
   const _OrderCard(
@@ -496,6 +502,7 @@ class _OrderCard extends StatelessWidget {
       this.actionLabel,
       this.confirmationCode,
       this.foodSummary,
+      this.badge,
       required this.onTap});
 
   @override
@@ -532,6 +539,22 @@ class _OrderCard extends StatelessWidget {
                     Text(id,
                         style: const TextStyle(
                             fontSize: 12, color: GodropColors.mute)),
+                    if (badge != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE7EEFF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(badge!,
+                            style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: GodropColors.blue)),
+                      ),
+                    ],
                   ]),
                   Text(foodSummary ?? route,
                       style: const TextStyle(

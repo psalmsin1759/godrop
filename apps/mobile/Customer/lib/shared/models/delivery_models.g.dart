@@ -63,19 +63,31 @@ Map<String, dynamic> _$ParcelPriceBreakdownToJson(
 ParcelQuoteBody _$ParcelQuoteBodyFromJson(Map<String, dynamic> json) =>
     ParcelQuoteBody(
       pickup: LocationPoint.fromJson(json['pickup'] as Map<String, dynamic>),
-      dropoff: LocationPoint.fromJson(json['dropoff'] as Map<String, dynamic>),
+      dropoffs: (json['dropoffs'] as List<dynamic>)
+          .map((e) => LocationPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
       vehicleTypeId: json['vehicleTypeId'] as String?,
-      weightKg: (json['weightKg'] as num?)?.toDouble(),
-      sizeCategory: json['sizeCategory'] as String?,
     );
 
 Map<String, dynamic> _$ParcelQuoteBodyToJson(ParcelQuoteBody instance) =>
     <String, dynamic>{
       'pickup': instance.pickup,
-      'dropoff': instance.dropoff,
+      'dropoffs': instance.dropoffs,
       if (instance.vehicleTypeId case final value?) 'vehicleTypeId': value,
-      if (instance.weightKg case final value?) 'weightKg': value,
-      if (instance.sizeCategory case final value?) 'sizeCategory': value,
+    };
+
+ParcelLegQuote _$ParcelLegQuoteFromJson(Map<String, dynamic> json) =>
+    ParcelLegQuote(
+      deliveryFeeKobo: (json['deliveryFeeKobo'] as num).toInt(),
+      distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+      estimatedMinutes: (json['estimatedMinutes'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$ParcelLegQuoteToJson(ParcelLegQuote instance) =>
+    <String, dynamic>{
+      'deliveryFeeKobo': instance.deliveryFeeKobo,
+      'distanceKm': instance.distanceKm,
+      'estimatedMinutes': instance.estimatedMinutes,
     };
 
 ParcelQuoteResponse _$ParcelQuoteResponseFromJson(Map<String, dynamic> json) =>
@@ -83,6 +95,10 @@ ParcelQuoteResponse _$ParcelQuoteResponseFromJson(Map<String, dynamic> json) =>
       priceBreakdown: ParcelPriceBreakdown.fromJson(
           json['priceBreakdown'] as Map<String, dynamic>),
       estimatedMinutes: (json['estimatedMinutes'] as num).toInt(),
+      parcels: (json['parcels'] as List<dynamic>?)
+              ?.map((e) => ParcelLegQuote.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$ParcelQuoteResponseToJson(
@@ -90,34 +106,48 @@ Map<String, dynamic> _$ParcelQuoteResponseToJson(
     <String, dynamic>{
       'priceBreakdown': instance.priceBreakdown,
       'estimatedMinutes': instance.estimatedMinutes,
+      'parcels': instance.parcels,
+    };
+
+ParcelItemBody _$ParcelItemBodyFromJson(Map<String, dynamic> json) =>
+    ParcelItemBody(
+      dropoff: LocationPoint.fromJson(json['dropoff'] as Map<String, dynamic>),
+      recipientName: json['recipientName'] as String,
+      recipientPhone: json['recipientPhone'] as String,
+      packageDescription: json['packageDescription'] as String?,
+      weightKg: (json['weightKg'] as num?)?.toDouble(),
+      sizeCategory: json['sizeCategory'] as String?,
+    );
+
+Map<String, dynamic> _$ParcelItemBodyToJson(ParcelItemBody instance) =>
+    <String, dynamic>{
+      'dropoff': instance.dropoff,
+      'recipientName': instance.recipientName,
+      'recipientPhone': instance.recipientPhone,
+      if (instance.packageDescription case final value?)
+        'packageDescription': value,
+      if (instance.weightKg case final value?) 'weightKg': value,
+      if (instance.sizeCategory case final value?) 'sizeCategory': value,
     };
 
 ParcelOrderBody _$ParcelOrderBodyFromJson(Map<String, dynamic> json) =>
     ParcelOrderBody(
       pickup: LocationPoint.fromJson(json['pickup'] as Map<String, dynamic>),
-      dropoff: LocationPoint.fromJson(json['dropoff'] as Map<String, dynamic>),
       vehicleTypeId: json['vehicleTypeId'] as String?,
-      packageDescription: json['packageDescription'] as String,
-      weightKg: (json['weightKg'] as num?)?.toDouble(),
-      sizeCategory: json['sizeCategory'] as String?,
       paymentMethod: json['paymentMethod'] as String,
-      recipientName: json['recipientName'] as String,
-      recipientPhone: json['recipientPhone'] as String,
       scheduleAt: json['scheduleAt'] as String?,
+      parcels: (json['parcels'] as List<dynamic>)
+          .map((e) => ParcelItemBody.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$ParcelOrderBodyToJson(ParcelOrderBody instance) =>
     <String, dynamic>{
       'pickup': instance.pickup,
-      'dropoff': instance.dropoff,
       if (instance.vehicleTypeId case final value?) 'vehicleTypeId': value,
-      'packageDescription': instance.packageDescription,
-      if (instance.weightKg case final value?) 'weightKg': value,
-      if (instance.sizeCategory case final value?) 'sizeCategory': value,
       'paymentMethod': instance.paymentMethod,
-      'recipientName': instance.recipientName,
-      'recipientPhone': instance.recipientPhone,
       if (instance.scheduleAt case final value?) 'scheduleAt': value,
+      'parcels': instance.parcels,
     };
 
 ParcelOrderResponse _$ParcelOrderResponseFromJson(Map<String, dynamic> json) =>

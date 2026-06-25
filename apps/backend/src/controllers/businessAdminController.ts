@@ -92,10 +92,21 @@ export async function getRiderOrders(req: Request, res: Response, next: NextFunc
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await svc.getRiderOrders(req.admin!.businessId!, req.params.riderId, { page, limit });
-    const data = result.data.map((order: any) => ({
-      ...order,
-      earning: order.earning ? serializeMoney(order.earning, ["amount"]) : order.earning,
-    }));
+    const data = result.data.map((order: any) => {
+      const { earnings, ...rest } = order;
+      // Collapse per-parcel earnings into a single summary for this view.
+      const earning =
+        earnings && earnings.length > 0
+          ? serializeMoney(
+              {
+                amountKobo: earnings.reduce((s: number, e: any) => s + e.amountKobo, 0),
+                status: earnings.every((e: any) => e.status === "SETTLED") ? "SETTLED" : "PENDING",
+              },
+              ["amount"]
+            )
+          : null;
+      return { ...rest, earning };
+    });
     return ok(res, { data, meta: buildMeta(result.page, result.limit, result.total) });
   } catch (err: any) {
     if (err.message === "Rider not found in this business") return fail(res, err.message, 404);

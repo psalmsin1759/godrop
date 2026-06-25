@@ -144,6 +144,51 @@ class RiderOrderVendor {
   Map<String, dynamic> toJson() => _$RiderOrderVendorToJson(this);
 }
 
+/// A single parcel within a (possibly multi-parcel) order, as seen by the
+/// rider. The recipient's confirmation code is NOT included — the rider must
+/// ask the recipient for it.
+@JsonSerializable()
+class RiderParcelDropoff {
+  final String id;
+  final int sequence;
+  final String address;
+  final double lat;
+  final double lng;
+  final String recipientName;
+  final String recipientPhone;
+  final String? packageDescription;
+  final double? weightKg;
+  final String status;
+  final int deliveryFeeKobo;
+  final int? earningKobo;
+  final String? deliveredAt;
+  final String? failureReason;
+
+  const RiderParcelDropoff({
+    required this.id,
+    required this.sequence,
+    required this.address,
+    required this.lat,
+    required this.lng,
+    required this.recipientName,
+    required this.recipientPhone,
+    this.packageDescription,
+    this.weightKg,
+    required this.status,
+    this.deliveryFeeKobo = 0,
+    this.earningKobo,
+    this.deliveredAt,
+    this.failureReason,
+  });
+
+  bool get isResolved =>
+      status == 'DELIVERED' || status == 'FAILED' || status == 'CANCELLED';
+
+  factory RiderParcelDropoff.fromJson(Map<String, dynamic> json) =>
+      _$RiderParcelDropoffFromJson(json);
+  Map<String, dynamic> toJson() => _$RiderParcelDropoffToJson(this);
+}
+
 @JsonSerializable()
 class RiderOrder {
   final String id;
@@ -162,6 +207,7 @@ class RiderOrder {
   final String? recipientName;
   final String? recipientPhone;
   final RiderOrderVendor? vendor;
+  final List<RiderParcelDropoff>? dropoffs;
   final String createdAt;
 
   const RiderOrder({
@@ -181,8 +227,12 @@ class RiderOrder {
     this.recipientName,
     this.recipientPhone,
     this.vendor,
+    this.dropoffs,
     required this.createdAt,
   });
+
+  int get parcelCount => dropoffs?.length ?? 1;
+  bool get isMultiParcel => (dropoffs?.length ?? 0) > 1;
 
   factory RiderOrder.fromJson(Map<String, dynamic> json) =>
       _$RiderOrderFromJson(json);
@@ -249,6 +299,7 @@ class RiderOrderDetail extends RiderOrder {
     super.recipientName,
     super.recipientPhone,
     super.vendor,
+    super.dropoffs,
     required super.createdAt,
     required this.items,
     required this.events,

@@ -5,11 +5,33 @@ import { creditBusinessWalletForEarning } from "./businessAdminService";
 import * as paystackService from "./paystackService";
 import { nanoid } from "nanoid";
 
-export async function createRiderEarning(riderId: string, orderId: string, amountKobo: number) {
-  const earning = await prisma.riderEarning.upsert({
-    where: { orderId },
-    update: {},
-    create: { riderId, orderId, amountKobo, status: "PENDING" },
+export async function createRiderEarning(
+  riderId: string,
+  orderId: string,
+  amountKobo: number,
+  parcelDropoffId?: string
+) {
+  // Per-parcel earnings are keyed (and de-duplicated) by parcelDropoffId.
+  // Order-level earnings (food/grocery/truck/single-parcel legacy) are
+  // de-duplicated by checking for an existing earning that isn't tied to a
+  // specific parcel.
+  if (parcelDropoffId) {
+    const earning = await prisma.riderEarning.upsert({
+      where: { parcelDropoffId },
+      update: {},
+      create: { riderId, orderId, parcelDropoffId, amountKobo, status: "PENDING" },
+    });
+    creditBusinessWalletForEarning(riderId, amountKobo, orderId).catch(() => {});
+    return earning;
+  }
+
+  const existing = await prisma.riderEarning.findFirst({
+    where: { orderId, parcelDropoffId: null },
+  });
+  if (existing) return existing;
+
+  const earning = await prisma.riderEarning.create({
+    data: { riderId, orderId, amountKobo, status: "PENDING" },
   });
 
   creditBusinessWalletForEarning(riderId, amountKobo, orderId).catch(() => {});

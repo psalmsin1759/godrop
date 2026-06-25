@@ -250,6 +250,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final dropoffLat = (order['dropoffLat'] as num?)?.toDouble() ?? 6.4281;
     final dropoffLng = (order['dropoffLng'] as num?)?.toDouble() ?? 3.4219;
     final confirmationCode = order['confirmationCode'] as String?;
+    final dropoffs = (order['dropoffs'] as List? ?? [])
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
+    final isMultiParcel = dropoffs.length > 1;
     final trackingCode = order['trackingCode'] as String? ?? '';
     final totalKobo = (order['totalKobo'] as num?)?.toInt() ?? 0;
     final paymentMethod = order['paymentMethod'] as String? ?? '';
@@ -303,26 +307,59 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       BitmapDescriptor.hueOrange),
                   infoWindow: InfoWindow(title: pickupAddress.split(',').first),
                 ),
-                Marker(
-                  markerId: const MarkerId('dropoff'),
-                  position: LatLng(dropoffLat, dropoffLng),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueAzure),
-                  infoWindow:
-                      InfoWindow(title: dropoffAddress.split(',').first),
-                ),
+                if (isMultiParcel)
+                  for (var i = 0; i < dropoffs.length; i++)
+                    Marker(
+                      markerId: MarkerId('dropoff_$i'),
+                      position: LatLng(
+                        (dropoffs[i]['lat'] as num).toDouble(),
+                        (dropoffs[i]['lng'] as num).toDouble(),
+                      ),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueAzure),
+                      infoWindow: InfoWindow(
+                        title: 'Parcel ${dropoffs[i]['sequence']}',
+                        snippet:
+                            (dropoffs[i]['address'] as String? ?? '').split(',').first,
+                      ),
+                    )
+                else
+                  Marker(
+                    markerId: const MarkerId('dropoff'),
+                    position: LatLng(dropoffLat, dropoffLng),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueAzure),
+                    infoWindow:
+                        InfoWindow(title: dropoffAddress.split(',').first),
+                  ),
               },
               polylines: {
-                Polyline(
-                  polylineId: const PolylineId('route'),
-                  points: [
-                    LatLng(pickupLat, pickupLng),
-                    LatLng(dropoffLat, dropoffLng)
-                  ],
-                  color: GodropColors.blue,
-                  width: 4,
-                  patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-                ),
+                if (isMultiParcel)
+                  for (var i = 0; i < dropoffs.length; i++)
+                    Polyline(
+                      polylineId: PolylineId('route_$i'),
+                      points: [
+                        LatLng(pickupLat, pickupLng),
+                        LatLng(
+                          (dropoffs[i]['lat'] as num).toDouble(),
+                          (dropoffs[i]['lng'] as num).toDouble(),
+                        ),
+                      ],
+                      color: GodropColors.blue,
+                      width: 3,
+                      patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+                    )
+                else
+                  Polyline(
+                    polylineId: const PolylineId('route'),
+                    points: [
+                      LatLng(pickupLat, pickupLng),
+                      LatLng(dropoffLat, dropoffLng)
+                    ],
+                    color: GodropColors.blue,
+                    width: 4,
+                    patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+                  ),
               },
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
@@ -377,8 +414,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             const SizedBox(height: 14),
                           ],
 
-                          // Confirmation code
-                          if (confirmationCode != null &&
+                          // Confirmation code (single-parcel only; multi-parcel
+                          // codes are shown per parcel in the Parcels section)
+                          if (!isMultiParcel &&
+                              confirmationCode != null &&
                               confirmationCode.isNotEmpty) ...[
                             AnimatedEntrance(
                               delay: const Duration(milliseconds: 60),
@@ -408,12 +447,33 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                 _routeRow(
                                     Icons.location_on_rounded,
                                     GodropColors.error,
-                                    'Dropoff',
-                                    dropoffAddress),
+                                    isMultiParcel ? 'Drop-offs' : 'Dropoff',
+                                    isMultiParcel
+                                        ? '${dropoffs.length} destinations'
+                                        : dropoffAddress),
                               ],
                             ),
                           ),
                           const SizedBox(height: 14),
+
+                          // Parcels (multi-drop-off)
+                          if (isMultiParcel) ...[
+                            AnimatedEntrance(
+                              delay: const Duration(milliseconds: 140),
+                              child: _SectionCard(
+                                title: 'Parcels (${dropoffs.length})',
+                                icon: Icons.inventory_2_rounded,
+                                children: [
+                                  for (var i = 0; i < dropoffs.length; i++)
+                                    _ParcelDetailTile(
+                                      data: dropoffs[i],
+                                      isLast: i == dropoffs.length - 1,
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
 
                           // Order summary
                           AnimatedEntrance(
@@ -818,6 +878,156 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
     if (parts[0].isNotEmpty) return parts[0][0];
     return '?';
+  }
+}
+
+// ── Parcel detail tile ────────────────────────────────────────────────────────
+
+class _ParcelDetailTile extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final bool isLast;
+  const _ParcelDetailTile({required this.data, required this.isLast});
+
+  String _fmtKobo(int kobo) {
+    final n = (kobo / 100).toStringAsFixed(0);
+    return '₦${n.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',')}';
+  }
+
+  (String, Color) _statusDisplay(String status) {
+    switch (status.toUpperCase()) {
+      case 'DELIVERED':
+        return ('Delivered', GodropColors.success);
+      case 'FAILED':
+      case 'CANCELLED':
+        return ('Failed', GodropColors.error);
+      case 'IN_TRANSIT':
+        return ('In transit', GodropColors.blue);
+      case 'PICKED_UP':
+        return ('Picked up', GodropColors.blue);
+      default:
+        return ('Pending', GodropColors.slate);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sequence = data['sequence']?.toString() ?? '';
+    final address = data['address'] as String? ?? '';
+    final recipientName = data['recipientName'] as String? ?? '';
+    final recipientPhone = data['recipientPhone'] as String? ?? '';
+    final description = data['packageDescription'] as String?;
+    final weightKg = data['weightKg'];
+    final code = data['confirmationCode'] as String?;
+    final feeKobo = (data['deliveryFeeKobo'] as num?)?.toInt() ?? 0;
+    final (statusLabel, statusColor) =
+        _statusDisplay(data['status'] as String? ?? 'PENDING');
+
+    final meta = <String>[
+      if (weightKg != null) '$weightKg kg',
+      if (description != null && description.isNotEmpty) description,
+    ].join(' · ');
+
+    return Container(
+      margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: GodropColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: GodropColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE7EEFF),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(sequence,
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.blue)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(recipientName,
+                    style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.ink)),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(statusLabel,
+                    style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_rounded,
+                  size: 14, color: GodropColors.error),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(address,
+                    style: const TextStyle(
+                        fontSize: 12, color: GodropColors.slate)),
+              ),
+            ],
+          ),
+          if (recipientPhone.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(recipientPhone,
+                style: const TextStyle(fontSize: 12, color: GodropColors.mute)),
+          ],
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(meta,
+                style: const TextStyle(fontSize: 12, color: GodropColors.mute)),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (code != null && code.isNotEmpty)
+                Row(children: [
+                  const Icon(Icons.lock_rounded,
+                      size: 12, color: GodropColors.blue),
+                  const SizedBox(width: 4),
+                  Text('Code: $code',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: GodropColors.blue)),
+                ])
+              else
+                const SizedBox.shrink(),
+              Text(_fmtKobo(feeKobo),
+                  style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: GodropColors.ink)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

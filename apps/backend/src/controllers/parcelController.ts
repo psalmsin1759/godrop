@@ -95,7 +95,10 @@ export async function deleteVehicleType(req: Request, res: Response, next: NextF
 
 export async function getQuote(req: Request, res: Response, next: NextFunction) {
   try {
-    const { pickup, dropoff, vehicleTypeId } = req.body;
+    const { pickup, dropoff, dropoffs, vehicleTypeId } = req.body;
+    // Normalize legacy single `dropoff` into a `dropoffs` array.
+    const stops: { lat: number; lng: number; address: string }[] =
+      dropoffs && dropoffs.length > 0 ? dropoffs : [dropoff];
 
     let vehicleType: { baseFeeKobo: number; perKmKobo: number } | undefined;
     if (vehicleTypeId) {
@@ -107,8 +110,14 @@ export async function getQuote(req: Request, res: Response, next: NextFunction) 
       vehicleType = found;
     }
 
-    const result = pricingService.parcelQuote(pickup, dropoff, vehicleType);
-    ok(res, result);
+    const multi = pricingService.parcelQuoteMulti(pickup, stops, vehicleType);
+    ok(res, {
+      parcels: multi.parcels,
+      priceBreakdown: multi.priceBreakdown,
+      estimatedMinutes: multi.estimatedMinutes,
+      // Back-compat: total distance across all legs.
+      distanceKm: Math.round(multi.parcels.reduce((s, p) => s + p.distanceKm, 0) * 10) / 10,
+    });
   } catch (err) {
     next(err);
   }

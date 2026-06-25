@@ -99,6 +99,42 @@ Map<String, dynamic> _$RiderOrderVendorToJson(RiderOrderVendor instance) =>
       'lng': instance.lng,
     };
 
+RiderParcelDropoff _$RiderParcelDropoffFromJson(Map<String, dynamic> json) =>
+    RiderParcelDropoff(
+      id: json['id'] as String,
+      sequence: (json['sequence'] as num).toInt(),
+      address: json['address'] as String,
+      lat: (json['lat'] as num).toDouble(),
+      lng: (json['lng'] as num).toDouble(),
+      recipientName: json['recipientName'] as String,
+      recipientPhone: json['recipientPhone'] as String,
+      packageDescription: json['packageDescription'] as String?,
+      weightKg: (json['weightKg'] as num?)?.toDouble(),
+      status: json['status'] as String,
+      deliveryFeeKobo: (json['deliveryFeeKobo'] as num?)?.toInt() ?? 0,
+      earningKobo: (json['earningKobo'] as num?)?.toInt(),
+      deliveredAt: json['deliveredAt'] as String?,
+      failureReason: json['failureReason'] as String?,
+    );
+
+Map<String, dynamic> _$RiderParcelDropoffToJson(RiderParcelDropoff instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'sequence': instance.sequence,
+      'address': instance.address,
+      'lat': instance.lat,
+      'lng': instance.lng,
+      'recipientName': instance.recipientName,
+      'recipientPhone': instance.recipientPhone,
+      'packageDescription': instance.packageDescription,
+      'weightKg': instance.weightKg,
+      'status': instance.status,
+      'deliveryFeeKobo': instance.deliveryFeeKobo,
+      'earningKobo': instance.earningKobo,
+      'deliveredAt': instance.deliveredAt,
+      'failureReason': instance.failureReason,
+    };
+
 RiderOrder _$RiderOrderFromJson(Map<String, dynamic> json) => RiderOrder(
       id: json['id'] as String,
       trackingCode: json['trackingCode'] as String,
@@ -118,6 +154,9 @@ RiderOrder _$RiderOrderFromJson(Map<String, dynamic> json) => RiderOrder(
       vendor: json['vendor'] == null
           ? null
           : RiderOrderVendor.fromJson(json['vendor'] as Map<String, dynamic>),
+      dropoffs: (json['dropoffs'] as List<dynamic>?)
+          ?.map((e) => RiderParcelDropoff.fromJson(e as Map<String, dynamic>))
+          .toList(),
       createdAt: json['createdAt'] as String,
     );
 
@@ -139,6 +178,7 @@ Map<String, dynamic> _$RiderOrderToJson(RiderOrder instance) =>
       'recipientName': instance.recipientName,
       'recipientPhone': instance.recipientPhone,
       'vendor': instance.vendor,
+      'dropoffs': instance.dropoffs,
       'createdAt': instance.createdAt,
     };
 
@@ -194,6 +234,9 @@ RiderOrderDetail _$RiderOrderDetailFromJson(Map<String, dynamic> json) =>
       vendor: json['vendor'] == null
           ? null
           : RiderOrderVendor.fromJson(json['vendor'] as Map<String, dynamic>),
+      dropoffs: (json['dropoffs'] as List<dynamic>?)
+          ?.map((e) => RiderParcelDropoff.fromJson(e as Map<String, dynamic>))
+          .toList(),
       createdAt: json['createdAt'] as String,
       items: (json['items'] as List<dynamic>)
           .map((e) => RiderOrderItem.fromJson(e as Map<String, dynamic>))
@@ -221,6 +264,7 @@ Map<String, dynamic> _$RiderOrderDetailToJson(RiderOrderDetail instance) =>
       'recipientName': instance.recipientName,
       'recipientPhone': instance.recipientPhone,
       'vendor': instance.vendor,
+      'dropoffs': instance.dropoffs,
       'createdAt': instance.createdAt,
       'items': instance.items,
       'events': instance.events,

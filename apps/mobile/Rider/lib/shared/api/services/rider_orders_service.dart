@@ -53,6 +53,21 @@ abstract class RiderOrdersService {
     @Body() Map<String, dynamic> body,
   );
 
+  // Per-parcel delivery for multi-drop-off orders
+  @PATCH('/rider/orders/{id}/dropoffs/{dropoffId}/delivered')
+  Future<dynamic> markDropoffDelivered(
+    @Path('id') String id,
+    @Path('dropoffId') String dropoffId,
+    @Body() Map<String, dynamic> body,
+  );
+
+  @PATCH('/rider/orders/{id}/dropoffs/{dropoffId}/failed')
+  Future<dynamic> markDropoffFailed(
+    @Path('id') String id,
+    @Path('dropoffId') String dropoffId,
+    @Body() Map<String, dynamic> body,
+  );
+
   @POST('/rider/orders/{id}/location')
   Future<dynamic> pushLocation(
     @Path('id') String id,

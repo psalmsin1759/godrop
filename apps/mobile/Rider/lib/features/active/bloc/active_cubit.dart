@@ -89,6 +89,41 @@ class ActiveCubit extends Cubit<ActiveState> {
     }
   }
 
+  /// Deliver one parcel in a multi-drop-off order, using that recipient's code.
+  /// Reloads the order so the remaining stops update; the backend closes the
+  /// order automatically once every parcel is resolved.
+  Future<void> markDropoffDelivered(
+    String dropoffId, {
+    required String confirmationCode,
+    String? proofNote,
+  }) async {
+    final current = state;
+    if (current is! ActiveLoaded) return;
+    emit(ActiveActionLoading(current.order));
+    try {
+      await _ordersService.markDropoffDelivered(current.order.id, dropoffId, {
+        'confirmationCode': confirmationCode,
+        if (proofNote != null && proofNote.isNotEmpty) 'proofNote': proofNote,
+      });
+      await loadActiveOrder();
+    } on DioException catch (e) {
+      emit(ActiveLoaded(current.order, errorMessage: _parseError(e)));
+    }
+  }
+
+  Future<void> markDropoffFailed(String dropoffId, String reason) async {
+    final current = state;
+    if (current is! ActiveLoaded) return;
+    emit(ActiveActionLoading(current.order));
+    try {
+      await _ordersService
+          .markDropoffFailed(current.order.id, dropoffId, {'reason': reason});
+      await loadActiveOrder();
+    } on DioException catch (e) {
+      emit(ActiveLoaded(current.order, errorMessage: _parseError(e)));
+    }
+  }
+
   void _startLocationUpdates() {
     _locationTimer?.cancel();
     _locationTimer = Timer.periodic(

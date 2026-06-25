@@ -502,10 +502,11 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items   OrderItem[]
-  events  OrderEvent[]
-  review  Review?
-  earning RiderEarning?
+  items    OrderItem[]
+  events   OrderEvent[]
+  review   Review?
+  earnings RiderEarning[]
+  dropoffs ParcelDropoff[]
 
   @@index([customerId])
   @@index([vendorId])
@@ -571,6 +572,36 @@ model OrderEvent {
   status      OrderStatus
   description String?
   createdAt   DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+// A single parcel within a (possibly multi-parcel) order. Each drop-off has its
+// own destination, recipient, optional description/weight, confirmation code,
+// fee and — once delivered — earning. A single-parcel order has exactly one row.
+model ParcelDropoff {
+  id                 String      @id @default(cuid())
+  orderId            String
+  order              Order       @relation(fields: [orderId], references: [id])
+  sequence           Int         // 1-based order of stops
+  address            String
+  lat                Float
+  lng                Float
+  recipientName      String
+  recipientPhone     String
+  packageDescription String?
+  weightKg           Float?
+  sizeCategory       String?
+  status             OrderStatus @default(PENDING)
+  confirmationCode   String
+  deliveryFeeKobo    Int
+  earningKobo        Int?
+  distanceKm         Float?
+  failureReason      String?
+  deliveredAt        DateTime?
+  createdAt          DateTime    @default(now())
+
+  earning RiderEarning?
 
   @@index([orderId])
 }
@@ -708,17 +739,20 @@ model RiderNotification {
 }
 
 model RiderEarning {
-  id         String             @id @default(cuid())
-  riderId    String
-  rider      Rider              @relation(fields: [riderId], references: [id])
-  orderId    String             @unique
-  order      Order              @relation(fields: [orderId], references: [id])
-  amountKobo Int
-  status     RiderEarningStatus @default(PENDING)
-  settledAt  DateTime?
-  createdAt  DateTime           @default(now())
+  id              String             @id @default(cuid())
+  riderId         String
+  rider           Rider              @relation(fields: [riderId], references: [id])
+  orderId         String
+  order           Order              @relation(fields: [orderId], references: [id])
+  parcelDropoffId String?            @unique
+  parcelDropoff   ParcelDropoff?     @relation(fields: [parcelDropoffId], references: [id])
+  amountKobo      Int
+  status          RiderEarningStatus @default(PENDING)
+  settledAt       DateTime?
+  createdAt       DateTime           @default(now())
 
   @@index([riderId])
+  @@index([orderId])
 }
 
 enum RiderEarningStatus {

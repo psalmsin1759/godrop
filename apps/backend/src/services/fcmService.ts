@@ -259,6 +259,7 @@ export async function notifyOnlineRidersNewParcel(order: {
   pickupAddress: string;
   dropoffAddress: string;
   totalKobo: number;
+  parcelCount?: number;
 }): Promise<void> {
   const riders = await prisma.rider.findMany({
     where: { isAvailable: true, isActive: true },
@@ -269,14 +270,17 @@ export async function notifyOnlineRidersNewParcel(order: {
 
   const tokens = riders.flatMap((r) => r.pushTokens.map((t) => t.token));
   const amountNaira = (order.totalKobo / 100).toLocaleString("en-NG");
+  const count = order.parcelCount ?? 1;
+  const title = count > 1 ? `New Parcel Order · ${count} drop-offs` : "New Parcel Order";
+  const body =
+    count > 1
+      ? `${count} parcels from ${order.pickupAddress} • ₦${amountNaira}`
+      : `${order.pickupAddress} → ${order.dropoffAddress} • ₦${amountNaira}`;
 
   await Promise.all([
     sendToTokens(
       tokens,
-      {
-        title: "New Parcel Order",
-        body: `${order.pickupAddress} → ${order.dropoffAddress} • ₦${amountNaira}`,
-      },
+      { title, body },
       {
         type: "NEW_PARCEL_ORDER",
         orderId: order.id,
@@ -286,8 +290,8 @@ export async function notifyOnlineRidersNewParcel(order: {
     prisma.riderNotification.createMany({
       data: riders.map((r) => ({
         riderId: r.id,
-        title: "New Parcel Order",
-        body: `${order.pickupAddress} → ${order.dropoffAddress} • ₦${amountNaira}`,
+        title,
+        body,
         data: {
           type: "NEW_PARCEL_ORDER",
           orderId: order.id,

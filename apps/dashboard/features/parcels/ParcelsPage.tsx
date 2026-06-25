@@ -623,6 +623,12 @@ function OrdersTab() {
                             <span className="font-mono text-xs font-semibold text-[#1E5FFF]">
                               {order.trackingCode}
                             </span>
+                            {order.dropoffs && order.dropoffs.length > 1 && (
+                              <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-[#E7EEFF] text-[#1E5FFF]">
+                                <Package className="w-2.5 h-2.5" />
+                                ×{order.dropoffs.length}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <span

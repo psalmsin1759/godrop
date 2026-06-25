@@ -49,6 +49,7 @@ export async function listOrders(
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
+      include: { dropoffs: { orderBy: { sequence: "asc" } } },
     }),
     prisma.order.count({ where }),
   ]);
@@ -62,6 +63,7 @@ export async function getOrder(id: string, customerId: string) {
     include: {
       items: true,
       events: { orderBy: { createdAt: "asc" } },
+      dropoffs: { orderBy: { sequence: "asc" } },
       rider: {
         select: {
           id: true,
@@ -239,21 +241,48 @@ export async function reorder(orderId: string, customerId: string) {
   };
 }
 
+interface ParcelItemInput {
+  dropoff: { lat: number; lng: number; address: string };
+  recipientName: string;
+  recipientPhone: string;
+  packageDescription?: string;
+  weightKg?: number;
+  sizeCategory?: string;
+}
+
 export async function placeParcelOrder(
   customerId: string,
   data: {
     pickup: { lat: number; lng: number; address: string };
-    dropoff: { lat: number; lng: number; address: string };
     vehicleTypeId?: string;
-    packageDescription: string;
+    paymentMethod: string;
+    scheduleAt?: string;
+    // New multi-parcel shape:
+    parcels?: ParcelItemInput[];
+    // Legacy single-parcel shape:
+    dropoff?: { lat: number; lng: number; address: string };
+    packageDescription?: string;
     weightKg?: number;
     sizeCategory?: string;
-    paymentMethod: string;
-    recipientName: string;
-    recipientPhone: string;
-    scheduleAt?: string;
+    recipientName?: string;
+    recipientPhone?: string;
   }
 ) {
+  // Normalize the legacy single-parcel body into a 1-element `parcels` array.
+  const parcels: ParcelItemInput[] =
+    data.parcels && data.parcels.length > 0
+      ? data.parcels
+      : [
+          {
+            dropoff: data.dropoff!,
+            recipientName: data.recipientName!,
+            recipientPhone: data.recipientPhone!,
+            packageDescription: data.packageDescription,
+            weightKg: data.weightKg,
+            sizeCategory: data.sizeCategory,
+          },
+        ];
+
   let vehicleType: { id: string; baseFeeKobo: number; perKmKobo: number } | null = null;
   if (data.vehicleTypeId) {
     vehicleType = await prisma.parcelVehicleType.findFirst({
@@ -263,42 +292,66 @@ export async function placeParcelOrder(
     if (!vehicleType) throw new Error("Vehicle type not found or inactive");
   }
 
-  const { priceBreakdown, estimatedMinutes } = pricingService.parcelQuote(
+  const quote = pricingService.parcelQuoteMulti(
     data.pickup,
-    data.dropoff,
+    parcels.map((p) => p.dropoff),
     vehicleType ?? undefined
   );
+
   const trackingCode = generateTrackingCode();
-  const confirmationCode = generateConfirmationCode();
+  // Pre-generate a confirmation code per parcel. The order-level dropoff/recipient
+  // fields (and confirmationCode) mirror the LAST parcel as a summary so existing
+  // single-destination readers (tracking, dashboard, legacy rider app) keep working.
+  const parcelCodes = parcels.map(() => generateConfirmationCode());
+  const last = parcels[parcels.length - 1];
 
   const order = await prisma.order.create({
     data: {
       trackingCode,
-      confirmationCode,
+      confirmationCode: parcelCodes[parcelCodes.length - 1],
       customerId,
       type: OrderType.PARCEL,
       status: OrderStatus.PENDING,
       pickupAddress: data.pickup.address,
       pickupLat: data.pickup.lat,
       pickupLng: data.pickup.lng,
-      dropoffAddress: data.dropoff.address,
-      dropoffLat: data.dropoff.lat,
-      dropoffLng: data.dropoff.lng,
+      dropoffAddress: last.dropoff.address,
+      dropoffLat: last.dropoff.lat,
+      dropoffLng: last.dropoff.lng,
       parcelVehicleTypeId: vehicleType?.id,
-      packageDescription: data.packageDescription,
-      weightKg: data.weightKg,
-      sizeCategory: data.sizeCategory,
-      recipientName: data.recipientName,
-      recipientPhone: data.recipientPhone,
+      packageDescription: last.packageDescription,
+      weightKg: last.weightKg,
+      sizeCategory: last.sizeCategory,
+      recipientName: last.recipientName,
+      recipientPhone: last.recipientPhone,
       paymentMethod: data.paymentMethod.toUpperCase() as PaymentMethod,
-      deliveryFeeKobo: priceBreakdown.deliveryFeeKobo,
-      serviceFeeKobo: priceBreakdown.serviceFeeKobo,
-      totalKobo: priceBreakdown.totalKobo,
-      estimatedMinutes,
+      deliveryFeeKobo: quote.priceBreakdown.deliveryFeeKobo,
+      serviceFeeKobo: quote.priceBreakdown.serviceFeeKobo,
+      totalKobo: quote.priceBreakdown.totalKobo,
+      estimatedMinutes: quote.estimatedMinutes,
       scheduledAt: data.scheduleAt ? new Date(data.scheduleAt) : undefined,
       events: { create: { status: OrderStatus.PENDING, description: "Parcel order placed — awaiting payment" } },
+      dropoffs: {
+        create: parcels.map((p, i) => ({
+          sequence: i + 1,
+          address: p.dropoff.address,
+          lat: p.dropoff.lat,
+          lng: p.dropoff.lng,
+          recipientName: p.recipientName,
+          recipientPhone: p.recipientPhone,
+          packageDescription: p.packageDescription,
+          weightKg: p.weightKg,
+          sizeCategory: p.sizeCategory,
+          confirmationCode: parcelCodes[i],
+          deliveryFeeKobo: quote.parcels[i].deliveryFeeKobo,
+          distanceKm: quote.parcels[i].distanceKm,
+        })),
+      },
     },
-    include: { parcelVehicleType: { select: { id: true, name: true } } },
+    include: {
+      parcelVehicleType: { select: { id: true, name: true } },
+      dropoffs: { orderBy: { sequence: "asc" } },
+    },
   });
 
   // Not yet visible to riders or broadcast — that happens once payment is
@@ -324,7 +377,10 @@ export async function activateOrderAfterPayment(orderId: string): Promise<void> 
       status: OrderStatus.READY_FOR_PICKUP,
       events: { create: { status: OrderStatus.READY_FOR_PICKUP, description: "Payment confirmed — order ready for pickup" } },
     },
+    include: { dropoffs: { orderBy: { sequence: "asc" } } },
   });
+
+  const parcelCount = updated.dropoffs.length;
 
   // Notify all online riders via FCM + WebSocket (fire-and-forget)
   fcmService.notifyOnlineRidersNewParcel({
@@ -333,6 +389,7 @@ export async function activateOrderAfterPayment(orderId: string): Promise<void> 
     pickupAddress: updated.pickupAddress,
     dropoffAddress: updated.dropoffAddress,
     totalKobo: updated.totalKobo,
+    parcelCount,
   }).catch((err) => console.error("FCM notify failed:", err));
 
   // WebSocket payload must match the RiderOrder model on the mobile app
@@ -353,6 +410,20 @@ export async function activateOrderAfterPayment(orderId: string): Promise<void> 
     recipientName: updated.recipientName ?? null,
     recipientPhone: updated.recipientPhone ?? null,
     vendor: null,
+    parcelCount,
+    dropoffs: updated.dropoffs.map((d) => ({
+      id: d.id,
+      sequence: d.sequence,
+      address: d.address,
+      lat: d.lat,
+      lng: d.lng,
+      recipientName: d.recipientName,
+      recipientPhone: d.recipientPhone,
+      packageDescription: d.packageDescription,
+      weightKg: d.weightKg,
+      status: d.status,
+      deliveryFeeKobo: d.deliveryFeeKobo,
+    })),
     createdAt: updated.createdAt.toISOString(),
   });
 }
@@ -432,7 +503,7 @@ export async function listAllOrders(opts: {
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
-      include: { items: true },
+      include: { items: true, dropoffs: { orderBy: { sequence: "asc" } } },
     }),
     prisma.order.count({ where }),
   ]);
@@ -446,6 +517,7 @@ export async function getAnyOrder(id: string) {
     include: {
       items: true,
       events: { orderBy: { createdAt: "asc" } },
+      dropoffs: { orderBy: { sequence: "asc" }, include: { earning: { select: { amountKobo: true, status: true } } } },
       rider: { select: { id: true, firstName: true, lastName: true, phone: true, lat: true, lng: true } },
       customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
       vendor: { select: { id: true, name: true, type: true } },
@@ -467,6 +539,10 @@ export async function adminUpdateOrderStatus(
     throw new Error("Cannot update an order in a terminal state");
   }
 
+  // Cascade terminal states to this order's parcels so per-parcel views stay
+  // consistent with an admin override.
+  const cascade = terminal.includes(status);
+
   return prisma.order.update({
     where: { id: orderId },
     data: {
@@ -474,10 +550,14 @@ export async function adminUpdateOrderStatus(
       events: {
         create: { status, description: note ?? `Status updated to ${status} by admin` },
       },
+      ...(cascade
+        ? { dropoffs: { updateMany: { where: { status: { notIn: terminal } }, data: { status } } } }
+        : {}),
     },
     include: {
       items: true,
       events: { orderBy: { createdAt: "asc" } },
+      dropoffs: { orderBy: { sequence: "asc" } },
       rider: { select: { id: true, firstName: true, lastName: true, phone: true, lat: true, lng: true } },
       customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
       vendor: { select: { id: true, name: true, type: true } },
@@ -506,10 +586,17 @@ export async function adminCancelOrder(orderId: string, reason?: string) {
       events: {
         create: { status: OrderStatus.CANCELLED, description: reason ?? "Force-cancelled by admin" },
       },
+      dropoffs: {
+        updateMany: {
+          where: { status: { notIn: [OrderStatus.DELIVERED, OrderStatus.FAILED, OrderStatus.CANCELLED] } },
+          data: { status: OrderStatus.CANCELLED },
+        },
+      },
     },
     include: {
       items: true,
       events: { orderBy: { createdAt: "asc" } },
+      dropoffs: { orderBy: { sequence: "asc" } },
       rider: { select: { id: true, firstName: true, lastName: true, phone: true, lat: true, lng: true } },
       customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
       vendor: { select: { id: true, name: true, type: true } },
@@ -549,7 +636,7 @@ export async function adminCancelOrder(orderId: string, reason?: string) {
 export async function getTracking(orderId: string, customerId: string) {
   const order = await prisma.order.findFirst({
     where: { id: orderId, customerId },
-    include: { rider: true },
+    include: { rider: true, dropoffs: { orderBy: { sequence: "asc" } } },
   });
   if (!order) return null;
   return {
@@ -558,5 +645,22 @@ export async function getTracking(orderId: string, customerId: string) {
     confirmationCode: order.confirmationCode,
     riderLat: order.rider?.lat ?? null,
     riderLng: order.rider?.lng ?? null,
+    pickupLat: order.pickupLat,
+    pickupLng: order.pickupLng,
+    dropoffs: order.dropoffs.map((d) => ({
+      id: d.id,
+      sequence: d.sequence,
+      address: d.address,
+      lat: d.lat,
+      lng: d.lng,
+      recipientName: d.recipientName,
+      recipientPhone: d.recipientPhone,
+      packageDescription: d.packageDescription,
+      weightKg: d.weightKg,
+      status: d.status,
+      confirmationCode: d.confirmationCode,
+      deliveryFeeKobo: d.deliveryFeeKobo,
+      deliveredAt: d.deliveredAt,
+    })),
   };
 }

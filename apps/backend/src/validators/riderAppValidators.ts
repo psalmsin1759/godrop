@@ -110,6 +110,15 @@ export const markFailedSchema = z.object({
   reason: z.string().min(1),
 });
 
+export const markDropoffDeliveredSchema = z.object({
+  confirmationCode: z.string().length(4),
+  proofNote: z.string().optional(),
+});
+
+export const markDropoffFailedSchema = z.object({
+  reason: z.string().min(1),
+});
+
 export const locationUpdateSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),

@@ -230,11 +230,15 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                           ),
                           const SizedBox(height: 20),
                           _addressBlock(
-                            label: 'Dropoff',
-                            address: order.dropoffAddress,
-                            subtext: order.recipientName != null
-                                ? '${order.recipientName} · ${order.recipientPhone ?? ''}'
-                                : null,
+                            label: order.isMultiParcel ? 'Drop-offs' : 'Dropoff',
+                            address: order.isMultiParcel
+                                ? '${order.parcelCount} destinations'
+                                : order.dropoffAddress,
+                            subtext: order.isMultiParcel
+                                ? null
+                                : (order.recipientName != null
+                                    ? '${order.recipientName} · ${order.recipientPhone ?? ''}'
+                                    : null),
                           ),
                         ],
                       ),
@@ -245,6 +249,64 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ),
           ),
           const SizedBox(height: 12),
+
+          // Parcels card (multi-drop-off) — each parcel's recipient + earning
+          if (order.isMultiParcel && order.dropoffs != null)
+            _card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _cardTitle('Parcels (${order.parcelCount})'),
+                  const SizedBox(height: 12),
+                  ...order.dropoffs!.map((p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 22,
+                              height: 22,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: GodropColors.blue.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text('${p.sequence}',
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: GodropColors.blue)),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(p.recipientName,
+                                      style: const TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: GodropColors.ink)),
+                                  Text(p.address,
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          color: GodropColors.slate)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(_fmt(p.deliveryFeeKobo),
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: GodropColors.orange)),
+                          ],
+                        ),
+                      )),
+                ],
+              ),
+            ),
+          if (order.isMultiParcel) const SizedBox(height: 12),
 
           // Items card
           if (order.items.isNotEmpty)

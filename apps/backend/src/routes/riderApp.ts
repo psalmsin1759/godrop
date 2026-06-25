@@ -20,6 +20,8 @@ import {
   rejectOrderSchema,
   markDeliveredSchema,
   markFailedSchema,
+  markDropoffDeliveredSchema,
+  markDropoffFailedSchema,
   locationUpdateSchema,
   withdrawalSchema,
   resolveAccountSchema,
@@ -82,6 +84,9 @@ router.patch("/orders/:id/picked-up", ctrl.markPickedUp);
 router.patch("/orders/:id/in-transit", ctrl.markInTransit);
 router.patch("/orders/:id/delivered", validate(markDeliveredSchema), ctrl.markDelivered);
 router.patch("/orders/:id/failed", validate(markFailedSchema), ctrl.markFailed);
+// Per-parcel delivery for multi-drop-off orders
+router.patch("/orders/:id/dropoffs/:dropoffId/delivered", validate(markDropoffDeliveredSchema), ctrl.markDropoffDelivered);
+router.patch("/orders/:id/dropoffs/:dropoffId/failed", validate(markDropoffFailedSchema), ctrl.markDropoffFailed);
 router.post("/orders/:id/location", validate(locationUpdateSchema), ctrl.pushLocationUpdate);
 
 // Earnings

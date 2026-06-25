@@ -207,6 +207,12 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
 
   Widget _buildActive(
       BuildContext ctx, RiderOrderDetail order, bool loading) {
+    final multi = order.isMultiParcel;
+    // Once the parcels are collected, multi-parcel orders switch to a per-stop
+    // checklist instead of a single recipient + deliver button.
+    final showChecklist =
+        multi && (order.status == 'PICKED_UP' || order.status == 'IN_TRANSIT');
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -228,22 +234,31 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
           delay: const Duration(milliseconds: 125),
           child: _mapButton(ctx),
         ),
-        const SizedBox(height: 12),
-        AnimatedEntrance(
-          delay: const Duration(milliseconds: 150),
-          child: _recipientCard(order),
-        ),
-        const SizedBox(height: 12),
-        AnimatedEntrance(
-          delay: const Duration(milliseconds: 200),
-          child: _actionCard(ctx, order, loading),
-        ),
-        const SizedBox(height: 20),
-        AnimatedEntrance(
-          delay: const Duration(milliseconds: 250),
-          child: _failedButton(ctx, order, loading),
-        ),
-        const SizedBox(height: 16),
+        if (showChecklist) ...[
+          const SizedBox(height: 12),
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 150),
+            child: _parcelsChecklist(ctx, order, loading),
+          ),
+          const SizedBox(height: 16),
+        ] else ...[
+          const SizedBox(height: 12),
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 150),
+            child: _recipientCard(order),
+          ),
+          const SizedBox(height: 12),
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 200),
+            child: _actionCard(ctx, order, loading),
+          ),
+          const SizedBox(height: 20),
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 250),
+            child: _failedButton(ctx, order, loading),
+          ),
+          const SizedBox(height: 16),
+        ],
       ],
     );
   }
@@ -378,10 +393,181 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
           _routeRow(
             icon: Icons.location_on_rounded,
             color: GodropColors.error,
-            label: 'Dropoff',
-            address: order.dropoffAddress,
+            label: order.isMultiParcel ? 'Drop-offs' : 'Dropoff',
+            address: order.isMultiParcel
+                ? '${order.parcelCount} destinations'
+                : order.dropoffAddress,
             sub: null,
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _parcelsChecklist(
+      BuildContext ctx, RiderOrderDetail order, bool loading) {
+    final dropoffs = order.dropoffs ?? const [];
+    final delivered = dropoffs.where((d) => d.status == 'DELIVERED').length;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: GodropColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GodropColors.border),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Parcels to deliver',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: GodropColors.ink)),
+              ),
+              Text('$delivered/${dropoffs.length} done',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: GodropColors.slate)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (var i = 0; i < dropoffs.length; i++) ...[
+            _parcelStopTile(ctx, dropoffs[i], loading),
+            if (i != dropoffs.length - 1) const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _parcelStopTile(
+      BuildContext ctx, RiderParcelDropoff p, bool loading) {
+    final resolved = p.isResolved;
+    final delivered = p.status == 'DELIVERED';
+    final accent = delivered
+        ? GodropColors.success
+        : p.status == 'FAILED'
+            ? GodropColors.error
+            : GodropColors.blue;
+    final meta = <String>[
+      if (p.weightKg != null) '${p.weightKg} kg',
+      if (p.packageDescription?.isNotEmpty == true) p.packageDescription!,
+    ].join(' · ');
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: GodropColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: resolved ? accent.withValues(alpha: 0.4) : GodropColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: resolved
+                    ? Icon(
+                        delivered ? Icons.check_rounded : Icons.close_rounded,
+                        size: 15,
+                        color: accent)
+                    : Text('${p.sequence}',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: accent)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(p.recipientName,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.ink)),
+              ),
+              Text(_fmt(p.earningKobo ?? p.deliveryFeeKobo),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: GodropColors.orange)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_rounded,
+                  size: 14, color: GodropColors.error),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(p.address,
+                    style: const TextStyle(
+                        fontSize: 12, color: GodropColors.slate)),
+              ),
+              if (p.recipientPhone.isNotEmpty)
+                GestureDetector(
+                  onTap: () => _callCustomer(p.recipientPhone),
+                  child: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(Icons.phone_rounded,
+                        size: 18, color: GodropColors.success),
+                  ),
+                ),
+            ],
+          ),
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(meta,
+                style:
+                    const TextStyle(fontSize: 12, color: GodropColors.mute)),
+          ],
+          if (p.status == 'FAILED' && p.failureReason != null) ...[
+            const SizedBox(height: 4),
+            Text('Failed: ${p.failureReason}',
+                style: const TextStyle(
+                    fontSize: 12, color: GodropColors.error)),
+          ],
+          if (!resolved) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: GodropButton(
+                    label: 'Deliver',
+                    gradientColors: const [
+                      GodropColors.success,
+                      Color(0xFF16A34A)
+                    ],
+                    onTap: loading
+                        ? null
+                        : () => _showDropoffDeliveredDialog(ctx, p),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                GodropOutlineButton(
+                  label: 'Failed',
+                  color: GodropColors.error,
+                  onTap: loading
+                      ? null
+                      : () => _showDropoffFailedDialog(ctx, p),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -718,6 +904,158 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
                 if (controller.text.trim().isEmpty) return;
                 Navigator.pop(bctx);
                 ctx.read<ActiveCubit>().markFailed(controller.text);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDropoffDeliveredDialog(BuildContext ctx, RiderParcelDropoff p) {
+    final codeController = TextEditingController();
+    final noteController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: GodropColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(bctx).viewInsets.bottom + 24),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Deliver to ${p.recipientName}',
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: GodropColors.ink)),
+              const SizedBox(height: 4),
+              Text(
+                'Ask ${p.recipientName} for their 4-digit confirmation code.',
+                style: const TextStyle(color: GodropColors.slate, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: codeController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 10,
+                  color: GodropColors.ink,
+                ),
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '••••',
+                  hintStyle: const TextStyle(
+                      letterSpacing: 10, fontSize: 28, color: GodropColors.border),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: GodropColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: GodropColors.blue, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                validator: (v) {
+                  if (v == null || v.length != 4) return 'Enter the 4-digit code';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: noteController,
+                decoration: InputDecoration(
+                  hintText: 'Delivery note (optional)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: GodropColors.border),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 20),
+              GodropButton(
+                label: 'Confirm Delivered',
+                gradientColors: const [GodropColors.success, Color(0xFF16A34A)],
+                onTap: () {
+                  if (!formKey.currentState!.validate()) return;
+                  Navigator.pop(bctx);
+                  ctx.read<ActiveCubit>().markDropoffDelivered(
+                        p.id,
+                        confirmationCode: codeController.text,
+                        proofNote: noteController.text.isNotEmpty
+                            ? noteController.text
+                            : null,
+                      );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDropoffFailedDialog(BuildContext ctx, RiderParcelDropoff p) {
+    final controller = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: GodropColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(bctx).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Parcel ${p.sequence} undeliverable',
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: GodropColors.ink)),
+            const SizedBox(height: 8),
+            Text('Why couldn\'t you deliver to ${p.recipientName}?',
+                style: const TextStyle(color: GodropColors.slate, fontSize: 14)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: 'e.g. Recipient unreachable after 3 attempts',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: GodropColors.border),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 20),
+            GodropButton(
+              label: 'Submit Report',
+              gradientColors: const [GodropColors.error, GodropColors.error],
+              onTap: () {
+                if (controller.text.trim().isEmpty) return;
+                Navigator.pop(bctx);
+                ctx.read<ActiveCubit>().markDropoffFailed(p.id, controller.text);
               },
             ),
           ],

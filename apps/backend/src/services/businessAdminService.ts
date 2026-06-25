@@ -247,7 +247,7 @@ export async function getRiderOrders(businessId: string, riderId: string, opts: 
         pickupAddress: true, dropoffAddress: true,
         deliveryFeeKobo: true, totalKobo: true, paymentMethod: true,
         createdAt: true,
-        earning: { select: { amountKobo: true, status: true } },
+        earnings: { select: { amountKobo: true, status: true } },
       },
     }),
     prisma.order.count({ where: { riderId } }),

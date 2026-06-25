@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import '../../app/theme.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
@@ -45,33 +44,25 @@ class ParcelVehicleScreen extends StatefulWidget {
 }
 
 class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
-  final _recipientNameCtrl = TextEditingController();
-  final _recipientPhoneCtrl = TextEditingController();
-  final _descriptionCtrl = TextEditingController();
-  PhoneNumber _phoneNumber = PhoneNumber(isoCode: 'NG');
-  bool _phoneValid = false;
-
   ParcelLocation get _pickup =>
       widget.routeData?.pickup ??
       const ParcelLocation(lat: 6.4524, lng: 3.4754, name: 'Lekki Phase 1');
 
-  ParcelLocation get _dropoff =>
-      widget.routeData?.dropoff ??
-      const ParcelLocation(lat: 6.4281, lng: 3.4219, name: 'Victoria Island');
+  List<ParcelItem> get _parcels =>
+      widget.routeData?.parcels ??
+      const [
+        ParcelItem(
+            dropoff:
+                ParcelLocation(lat: 6.4281, lng: 3.4219, name: 'Victoria Island'))
+      ];
 
-  double get _distanceKm {
-    const r = 6371.0;
-    final dLat = (_dropoff.lat - _pickup.lat) * pi / 180;
-    final dLng = (_dropoff.lng - _pickup.lng) * pi / 180;
-    final sinDLat = sin(dLat / 2);
-    final sinDLng = sin(dLng / 2);
-    final a = sinDLat * sinDLat +
-        cos(_pickup.lat * pi / 180) *
-            cos(_dropoff.lat * pi / 180) *
-            sinDLng *
-            sinDLng;
-    return r * 2 * atan2(sqrt(a), sqrt(1 - a));
-  }
+  List<LocationPoint> get _dropoffPoints => _parcels
+      .map((p) => LocationPoint(
+          lat: p.dropoff.lat, lng: p.dropoff.lng, address: p.dropoff.name))
+      .toList();
+
+  LocationPoint get _pickupPoint =>
+      LocationPoint(lat: _pickup.lat, lng: _pickup.lng, address: _pickup.name);
 
   Set<Marker> get _markers => {
         Marker(
@@ -80,37 +71,37 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
           icon:
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         ),
-        Marker(
-          markerId: const MarkerId('dropoff'),
-          position: LatLng(_dropoff.lat, _dropoff.lng),
-          icon:
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        ),
+        for (var i = 0; i < _parcels.length; i++)
+          Marker(
+            markerId: MarkerId('dropoff_$i'),
+            position: LatLng(_parcels[i].dropoff.lat, _parcels[i].dropoff.lng),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          ),
       };
 
   Set<Polyline> get _polylines => {
-        Polyline(
-          polylineId: const PolylineId('route'),
-          points: [
-            LatLng(_pickup.lat, _pickup.lng),
-            LatLng(_dropoff.lat, _dropoff.lng),
-          ],
-          color: GodropColors.blue,
-          width: 4,
-          patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-        ),
+        for (var i = 0; i < _parcels.length; i++)
+          Polyline(
+            polylineId: PolylineId('route_$i'),
+            points: [
+              LatLng(_pickup.lat, _pickup.lng),
+              LatLng(_parcels[i].dropoff.lat, _parcels[i].dropoff.lng),
+            ],
+            color: GodropColors.blue,
+            width: 3,
+            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+          ),
       };
 
   void _onMapCreated(GoogleMapController ctrl) {
-    final minLat = min(_pickup.lat, _dropoff.lat);
-    final maxLat = max(_pickup.lat, _dropoff.lat);
-    final minLng = min(_pickup.lng, _dropoff.lng);
-    final maxLng = max(_pickup.lng, _dropoff.lng);
+    final lats = [_pickup.lat, ..._parcels.map((p) => p.dropoff.lat)];
+    final lngs = [_pickup.lng, ..._parcels.map((p) => p.dropoff.lng)];
     ctrl.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
-          southwest: LatLng(minLat - 0.005, minLng - 0.005),
-          northeast: LatLng(maxLat + 0.005, maxLng + 0.005),
+          southwest: LatLng(lats.reduce(min) - 0.005, lngs.reduce(min) - 0.005),
+          northeast: LatLng(lats.reduce(max) + 0.005, lngs.reduce(max) + 0.005),
         ),
         48,
       ),
@@ -119,44 +110,18 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
 
   void _proceed(ParcelLoaded parcelState) {
     final selected = parcelState.selectedType;
-    final fullPhone = _phoneNumber.phoneNumber;
     context.go(
       '/parcel/finding',
       extra: ParcelRouteData(
         pickup: _pickup,
-        dropoff: _dropoff,
+        parcels: _parcels,
         vehicleTypeId: selected?.id ?? '',
         vehicleLabel: selected?.name ?? '',
         quotedTotalKobo: parcelState.quote?.totalKobo,
         estimatedMinutes: parcelState.estimatedMinutes,
         paymentMethod: 'card',
-        recipientName: _recipientNameCtrl.text.trim(),
-        recipientPhone: fullPhone?.trim() ?? '',
-        packageDescription: _descriptionCtrl.text.trim().isEmpty
-            ? 'Parcel delivery'
-            : _descriptionCtrl.text.trim(),
       ),
     );
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red.shade700,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _recipientNameCtrl.dispose();
-    _recipientPhoneCtrl.dispose();
-    _descriptionCtrl.dispose();
-    super.dispose();
   }
 
   @override
@@ -166,27 +131,19 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
 
     return BlocProvider(
       create: (_) => ParcelCubit()
-        ..loadVehicleTypes(
-          pickup: LocationPoint(
-              lat: _pickup.lat, lng: _pickup.lng, address: _pickup.name),
-          dropoff: LocationPoint(
-              lat: _dropoff.lat, lng: _dropoff.lng, address: _dropoff.name),
-        ),
+        ..loadVehicleTypes(pickup: _pickupPoint, dropoffs: _dropoffPoints),
       child: Scaffold(
         backgroundColor: GodropColors.white,
         body: Column(
           children: [
             // ── Map ──
             SizedBox(
-              height: 260,
+              height: 240,
               child: Stack(
                 children: [
                   GoogleMap(
                     initialCameraPosition: CameraPosition(
-                      target: LatLng(
-                        (_pickup.lat + _dropoff.lat) / 2,
-                        (_pickup.lng + _dropoff.lng) / 2,
-                      ),
+                      target: LatLng(_pickup.lat, _pickup.lng),
                       zoom: 12,
                     ),
                     onMapCreated: _onMapCreated,
@@ -236,57 +193,18 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                                 gradient: GodropColors.orangeGradient,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.location_on_rounded,
+                              child: const Icon(Icons.inventory_2_rounded,
                                   color: Colors.white, size: 12),
                             ),
                             const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                '${_pickup.name.split(',').first} → ${_dropoff.name.split(',').first}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: GodropColors.ink,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 12,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: GodropColors.blueGradient,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: GodropColors.blue.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.straighten_rounded,
-                                color: Colors.white, size: 14),
-                            const SizedBox(width: 6),
                             Text(
-                              '${_distanceKm.toStringAsFixed(1)} km',
+                              _parcels.length > 1
+                                  ? '${_parcels.length} parcels · ${_parcels.length} drop-offs'
+                                  : 'Single parcel',
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
+                                color: GodropColors.ink,
                               ),
                             ),
                           ],
@@ -328,14 +246,8 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                               label: 'Retry',
                               onTap: () =>
                                   ctx.read<ParcelCubit>().loadVehicleTypes(
-                                        pickup: LocationPoint(
-                                            lat: _pickup.lat,
-                                            lng: _pickup.lng,
-                                            address: _pickup.name),
-                                        dropoff: LocationPoint(
-                                            lat: _dropoff.lat,
-                                            lng: _dropoff.lng,
-                                            address: _dropoff.name),
+                                        pickup: _pickupPoint,
+                                        dropoffs: _dropoffPoints,
                                       ),
                             ),
                           ],
@@ -346,14 +258,9 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                   if (state is ParcelLoaded) {
                     return _VehicleContent(
                       state: state,
-                      pickup: _pickup,
-                      dropoff: _dropoff,
-                      recipientNameCtrl: _recipientNameCtrl,
-                      recipientPhoneCtrl: _recipientPhoneCtrl,
-                      descriptionCtrl: _descriptionCtrl,
-                      phoneNumber: _phoneNumber,
-                      onPhoneChanged: (n) => _phoneNumber = n,
-                      onPhoneValidated: (v) => _phoneValid = v,
+                      pickup: _pickupPoint,
+                      dropoffs: _dropoffPoints,
+                      parcels: _parcels,
                       bottomPad: bottomPad,
                       onProceed: _proceed,
                     );
@@ -373,27 +280,17 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
 
 class _VehicleContent extends StatelessWidget {
   final ParcelLoaded state;
-  final ParcelLocation pickup;
-  final ParcelLocation dropoff;
-  final TextEditingController recipientNameCtrl;
-  final TextEditingController recipientPhoneCtrl;
-  final TextEditingController descriptionCtrl;
-  final PhoneNumber phoneNumber;
-  final ValueChanged<PhoneNumber> onPhoneChanged;
-  final ValueChanged<bool> onPhoneValidated;
+  final LocationPoint pickup;
+  final List<LocationPoint> dropoffs;
+  final List<ParcelItem> parcels;
   final double bottomPad;
   final void Function(ParcelLoaded) onProceed;
 
   const _VehicleContent({
     required this.state,
     required this.pickup,
-    required this.dropoff,
-    required this.recipientNameCtrl,
-    required this.recipientPhoneCtrl,
-    required this.descriptionCtrl,
-    required this.phoneNumber,
-    required this.onPhoneChanged,
-    required this.onPhoneValidated,
+    required this.dropoffs,
+    required this.parcels,
     required this.bottomPad,
     required this.onProceed,
   });
@@ -410,10 +307,8 @@ class _VehicleContent extends StatelessWidget {
     if (state.selectedTypeId == type.id && state.quote != null) return;
     context.read<ParcelCubit>().selectVehicleType(
           typeId: type.id,
-          pickup: LocationPoint(
-              lat: pickup.lat, lng: pickup.lng, address: pickup.name),
-          dropoff: LocationPoint(
-              lat: dropoff.lat, lng: dropoff.lng, address: dropoff.name),
+          pickup: pickup,
+          dropoffs: dropoffs,
         );
   }
 
@@ -429,6 +324,28 @@ class _VehicleContent extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  GodropSectionHeader(
+                      title: parcels.length > 1
+                          ? 'Your ${parcels.length} parcels'
+                          : 'Your parcel'),
+                  const SizedBox(height: 12),
+                  ...parcels.asMap().entries.map((e) {
+                    final i = e.key;
+                    final p = e.value;
+                    final legFee = i < state.parcelLegs.length
+                        ? state.parcelLegs[i].deliveryFeeKobo
+                        : null;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _ParcelSummaryCard(
+                        index: i + 1,
+                        parcel: p,
+                        feeKobo: legFee,
+                        showIndex: parcels.length > 1,
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 16),
                   const GodropSectionHeader(title: 'Choose a vehicle'),
                   const SizedBox(height: 12),
                   if (state.vehicleTypes.isEmpty)
@@ -456,59 +373,6 @@ class _VehicleContent extends StatelessWidget {
                     const SizedBox(height: 4),
                     _QuoteError(message: state.quoteError!),
                   ],
-                  const SizedBox(height: 16),
-                  const GodropSectionHeader(title: 'Recipient details'),
-                  const SizedBox(height: 12),
-                  _InputField(
-                    controller: recipientNameCtrl,
-                    hint: "Recipient's full name",
-                    icon: Icons.person_outline_rounded,
-                  ),
-                  const SizedBox(height: 10),
-                  // Phone input with Nigerian flag and validation
-                  Container(
-                    decoration: BoxDecoration(
-                      color: GodropColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: GodropColors.border),
-                      boxShadow: GodropColors.softShadow,
-                    ),
-                    child: InternationalPhoneNumberInput(
-                      onInputChanged: onPhoneChanged,
-                      onInputValidated: onPhoneValidated,
-                      selectorConfig: SelectorConfig(
-                        selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
-                        setSelectorButtonAsPrefixIcon: true,
-                        leadingPadding: 12,
-                        showFlags: true,
-                      ),
-                      ignoreBlank: false,
-                      autoValidateMode: AutovalidateMode.disabled,
-                      selectorTextStyle: const TextStyle(
-                        color: GodropColors.ink,
-                        fontSize: 14,
-                      ),
-                      initialValue: phoneNumber,
-                      textFieldController: recipientPhoneCtrl,
-                      formatInput: false,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          signed: true, decimal: true),
-                      inputDecoration: const InputDecoration(
-                        hintText: 'Phone number',
-                        hintStyle:
-                            TextStyle(color: GodropColors.mute, fontSize: 14),
-                        border: InputBorder.none,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _InputField(
-                    controller: descriptionCtrl,
-                    hint: 'What are you sending? (optional)',
-                    icon: Icons.inventory_2_outlined,
-                  ),
                   const SizedBox(height: 8),
                 ],
               ),
@@ -534,6 +398,104 @@ class _VehicleContent extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Parcel summary card ───────────────────────────────────────────────────────
+
+class _ParcelSummaryCard extends StatelessWidget {
+  final int index;
+  final ParcelItem parcel;
+  final int? feeKobo;
+  final bool showIndex;
+
+  const _ParcelSummaryCard({
+    required this.index,
+    required this.parcel,
+    required this.feeKobo,
+    required this.showIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final meta = <String>[
+      if (parcel.recipientName.isNotEmpty) parcel.recipientName,
+      if (parcel.weightKg != null) '${parcel.weightKg} kg',
+      if (parcel.description?.isNotEmpty == true) parcel.description!,
+    ].join(' · ');
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: GodropColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GodropColors.border),
+      ),
+      child: Row(
+        children: [
+          if (showIndex) ...[
+            Container(
+              width: 26,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE7EEFF),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '$index',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: GodropColors.blue,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+          ] else
+            const Padding(
+              padding: EdgeInsets.only(right: 10),
+              child: Icon(Icons.flag_rounded,
+                  size: 18, color: GodropColors.blue),
+            ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  parcel.dropoff.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: GodropColors.ink,
+                  ),
+                ),
+                if (meta.isNotEmpty)
+                  Text(
+                    meta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 11.5, color: GodropColors.mute),
+                  ),
+              ],
+            ),
+          ),
+          if (feeKobo != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              _formatKobo(feeKobo!),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: GodropColors.orange,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -705,8 +667,7 @@ class _QuoteError extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded,
-              size: 16, color: Colors.red.shade600),
+          Icon(Icons.error_outline_rounded, size: 16, color: Colors.red.shade600),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -715,54 +676,6 @@ class _QuoteError extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _InputField extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final IconData icon;
-  final TextInputType keyboard;
-
-  const _InputField({
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    this.keyboard = TextInputType.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: GodropColors.softShadow,
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboard,
-        style: const TextStyle(fontSize: 14, color: GodropColors.ink),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: GodropColors.mute, fontSize: 14),
-          prefixIcon: Icon(icon, size: 18, color: GodropColors.slate),
-          filled: true,
-          fillColor: GodropColors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: GodropColors.border)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: GodropColors.border)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  const BorderSide(color: GodropColors.blue, width: 1.5)),
-        ),
       ),
     );
   }

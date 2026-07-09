@@ -1,4 +1,4 @@
-import { User, Admin, Vendor, Rider } from "@prisma/client";
+import { User, Admin, Vendor, Rider, Investor } from "@prisma/client";
 
 declare global {
   namespace Express {
@@ -6,6 +6,7 @@ declare global {
       user?: User;
       admin?: Admin & { vendor: Vendor | null };
       rider?: Rider;
+      investor?: Investor;
     }
   }
 }

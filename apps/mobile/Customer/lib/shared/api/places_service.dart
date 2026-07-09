@@ -15,7 +15,7 @@ class PlacesPrediction {
 }
 
 class PlacesService {
-  static const _key = 'AIzaSyDQrymY31J4gl5ws6SStg42Vpk_AfWFt_U';
+  static const _key = 'AIzaSyCuBGisU9FxldjZj_UkvvfJXb_FssX10tw';
   static const _base = 'https://places.googleapis.com/v1';
 
   static Future<List<PlacesPrediction>> autocomplete(String input) async {

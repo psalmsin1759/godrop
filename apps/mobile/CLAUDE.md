@@ -1,12 +1,14 @@
 # CLAUDE.md — Godrop Mobile App (Flutter)
 
 ## What this app is
-Two Flutter apps sharing a codebase — a **customer app** and a **rider app** — both targeting Nigerian users.
+Four Flutter apps, each its own project directory — all targeting Nigerian users:
 
-- **Customer app** (`lib/main_customer.dart`): Place food, grocery, retail, and parcel delivery orders; book trucks; track orders live.
-- **Rider app** (`lib/main_rider.dart`): Accept delivery jobs, update job status, share live location.
+- **Customer app** (`Customer/`): Place food, grocery, retail, and parcel delivery orders; book trucks; track orders live.
+- **Rider app** (`Rider/`): Accept delivery jobs, update job status, share live location.
+- **Vendor app** (`Vendor/`): Vendor admins manage orders, menu/catalog, wallet payouts, team, and store settings. See `Vendor/CLAUDE.md` for its role model and money conventions.
+- **Investor app** (`Investor/`): GoDrop Invest — fund rider vehicles (Keke, shuttles, ride cars, bikes), earn monthly payouts, manage Main/Payout/Flow Safe wallets. See `Investor/CLAUDE.md` for its auth and money conventions.
 
-Both apps share models, API services, widgets, and utilities under `lib/shared/`.
+Each app has its own CLAUDE.md — read it before working in that app. They share the same theme (`lib/app/theme.dart` in each) and structural conventions below.
 
 ## Tech stack
 - **Framework**: Flutter (latest stable) + Dart

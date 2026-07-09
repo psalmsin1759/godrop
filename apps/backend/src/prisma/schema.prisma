@@ -959,3 +959,276 @@ enum BusinessWalletTxType {
   RIDER_EARNING
   WITHDRAWAL
 }
+
+// ─── Invest (GoDrop Invest app) ───────────────────────────────
+
+model Investor {
+  id                 String                @id @default(cuid())
+  firstName          String
+  lastName           String
+  username           String?               @unique
+  email              String                @unique
+  phone              String                @unique
+  passwordHash       String
+  avatarUrl          String?
+  dateOfBirth        DateTime?
+  address            String?
+  referralCode       String?               @unique
+  isPhoneVerified    Boolean               @default(false)
+  isEmailVerified    Boolean               @default(false)
+  bvnStatus          InvestorKycStepStatus @default(NOT_STARTED)
+  idStatus           InvestorKycStepStatus @default(NOT_STARTED)
+  addressProofStatus InvestorKycStepStatus @default(NOT_STARTED)
+  status             UserStatus            @default(ACTIVE)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  wallet        InvestorWallet?
+  settings      InvestorSettings?
+  refreshTokens InvestorRefreshToken[]
+  transactions  InvestorTransaction[]
+  investments   Investment[]
+  vaults        FlowSafeVault[]
+  bankAccounts  InvestorBankAccount[]
+  notifications InvestorNotification[]
+}
+
+enum InvestorKycStepStatus {
+  NOT_STARTED
+  IN_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+model InvestorRefreshToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  investorId String
+  investor   Investor @relation(fields: [investorId], references: [id])
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([investorId])
+}
+
+model InvestorSettings {
+  id                String   @id @default(cuid())
+  investorId        String   @unique
+  investor          Investor @relation(fields: [investorId], references: [id])
+  biometricLogin    Boolean  @default(false)
+  twoFactorAuth     Boolean  @default(false)
+  payoutAlerts      Boolean  @default(true)
+  investmentUpdates Boolean  @default(true)
+  promotions        Boolean  @default(false)
+  emailStatements   Boolean  @default(true)
+  currency          String   @default("NGN")
+  language          String   @default("English")
+  appLockTimeoutMin Int      @default(1)
+  updatedAt         DateTime @updatedAt
+}
+
+model InvestorWallet {
+  id                String   @id @default(cuid())
+  investorId        String   @unique
+  investor          Investor @relation(fields: [investorId], references: [id])
+  mainBalanceKobo   Int      @default(0)
+  payoutBalanceKobo Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model InvestorTransaction {
+  id          String             @id @default(cuid())
+  investorId  String
+  investor    Investor           @relation(fields: [investorId], references: [id])
+  type        InvestorTxType
+  wallet      InvestorWalletKind @default(MAIN)
+  amountKobo  Int
+  reference   String?            @unique
+  description String?
+  status      InvestorTxStatus   @default(COMPLETED)
+  createdAt   DateTime           @default(now())
+
+  @@index([investorId])
+}
+
+enum InvestorTxType {
+  TOPUP
+  WITHDRAWAL
+  INVESTMENT
+  PAYOUT
+  SAFE_LOCK
+  SAFE_UNLOCK
+  SAFE_INTEREST
+  REFERRAL_BONUS
+}
+
+enum InvestorWalletKind {
+  MAIN
+  PAYOUT
+  SAFE
+}
+
+enum InvestorTxStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model InvestmentAsset {
+  id                String                  @id @default(cuid())
+  name              String
+  shortCode         String
+  vehicleClass      InvestmentVehicleClass
+  description       String?
+  location          String?
+  imageUrl          String?
+  unitPriceKobo     Int
+  minInvestKobo     Int
+  projectedRoiBps   Int
+  tenureMonths      Int
+  monthlyPayoutKobo Int
+  targetKobo        Int
+  raisedKobo        Int                     @default(0)
+  slotsTotal        Int
+  slotsLeft         Int
+  investorCount     Int                     @default(0)
+  isHot             Boolean                 @default(false)
+  status            InvestmentAssetStatus   @default(OPEN)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  investments Investment[]
+}
+
+enum InvestmentVehicleClass {
+  KEKE
+  SHUTTLE
+  RIDE_CAR
+  BIKE
+}
+
+enum InvestmentAssetStatus {
+  OPEN
+  FUNDED
+  CLOSED
+}
+
+model InvestmentPlan {
+  id             String   @id @default(cuid())
+  name           String
+  tenureMonths   Int
+  monthlyRateBps Int
+  minAmountKobo  Int
+  note           String?
+  isPopular      Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  investments Investment[]
+}
+
+model Investment {
+  id                String             @id @default(cuid())
+  reference         String             @unique
+  investorId        String
+  investor          Investor           @relation(fields: [investorId], references: [id])
+  assetId           String
+  asset             InvestmentAsset    @relation(fields: [assetId], references: [id])
+  planId            String
+  plan              InvestmentPlan     @relation(fields: [planId], references: [id])
+  amountKobo        Int
+  monthlyPayoutKobo Int
+  status            InvestmentStatus   @default(PENDING_PAYMENT)
+  startedAt         DateTime?
+  maturesAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  payouts InvestmentPayout[]
+
+  @@index([investorId])
+  @@index([assetId])
+}
+
+enum InvestmentStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  MATURED
+  CANCELLED
+}
+
+model InvestmentPayout {
+  id           String                 @id @default(cuid())
+  investmentId String
+  investment   Investment             @relation(fields: [investmentId], references: [id])
+  sequence     Int
+  dueDate      DateTime
+  amountKobo   Int
+  status       InvestmentPayoutStatus @default(SCHEDULED)
+  paidAt       DateTime?
+
+  @@unique([investmentId, sequence])
+  @@index([investmentId])
+}
+
+enum InvestmentPayoutStatus {
+  SCHEDULED
+  PAID
+}
+
+model FlowSafeVault {
+  id                 String             @id @default(cuid())
+  investorId         String
+  investor           Investor           @relation(fields: [investorId], references: [id])
+  name               String
+  kind               FlowSafeVaultKind
+  principalKobo      Int
+  interestRateBps    Int
+  interestEarnedKobo Int                @default(0)
+  lockDays           Int?
+  unlocksAt          DateTime?
+  status             FlowSafeVaultStatus @default(ACTIVE)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([investorId])
+}
+
+enum FlowSafeVaultKind {
+  FLEXIBLE
+  LOCKED
+}
+
+enum FlowSafeVaultStatus {
+  ACTIVE
+  CLOSED
+}
+
+model InvestorBankAccount {
+  id            String   @id @default(cuid())
+  investorId    String
+  investor      Investor @relation(fields: [investorId], references: [id])
+  bankName      String
+  bankCode      String
+  accountNumber String
+  accountName   String
+  isPrimary     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([investorId])
+}
+
+model InvestorNotification {
+  id         String   @id @default(cuid())
+  investorId String
+  investor   Investor @relation(fields: [investorId], references: [id])
+  title      String
+  body       String
+  category   String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([investorId])
+}

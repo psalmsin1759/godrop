@@ -10,6 +10,7 @@ info:
     - **Vendor Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
     - **System Admin API** — Email + password → JWT. Same header. Token payload contains `type: "admin"`.
     - **Business Admin API** — Email + password → same `POST /admin/login` endpoint. Token payload contains `type: "admin"` and `adminType: "BUSINESS"`. Roles: `OWNER` (full control) and `ADMIN` (read + assign).
+    - **Investor API (GoDrop Invest)** — Register with email + phone + password, verify phone via OTP, sign in with email/phone + password → JWT (access + refresh). Token payload: `{ investorId, type: "investor" }`.
 
     **Currency:** All monetary amounts are in **Kobo** (₦ × 100). Never Naira floats.
     **Phone:** E.164 format, e.g. `+2348012345678`.
@@ -1266,6 +1267,225 @@ components:
         businessId: { type: string }
         isActive: { type: boolean }
         createdAt: { type: string, format: date-time }
+
+    # ─ Investor (GoDrop Invest) ───────────────────────────────
+    Investor:
+      type: object
+      properties:
+        id: { type: string }
+        firstName: { type: string, example: "Amara" }
+        lastName: { type: string, example: "Nwosu" }
+        username: { type: string, nullable: true, example: "@amara_nwosu" }
+        email: { type: string, format: email }
+        phone: { type: string, example: "+2348035527710" }
+        avatarUrl: { type: string, nullable: true }
+        dateOfBirth: { type: string, format: date-time, nullable: true }
+        address: { type: string, nullable: true, example: "12B Admiralty Way, Lekki, Lagos" }
+        referralCode: { type: string, nullable: true }
+        isPhoneVerified: { type: boolean }
+        isEmailVerified: { type: boolean }
+        kyc: { $ref: "#/components/schemas/InvestorKyc" }
+        createdAt: { type: string, format: date-time }
+
+    InvestorKyc:
+      type: object
+      properties:
+        tier: { type: integer, example: 2, description: "0 unverified · 1 basic · 2 advanced (BVN) · 3 full (ID + address)" }
+        tierName: { type: string, example: "Tier 2 · Advanced" }
+        investmentLimitKobo: { type: integer, example: 1000000000 }
+        progressPct: { type: integer, example: 70 }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              key: { type: string, example: "bvn" }
+              label: { type: string, example: "BVN verification" }
+              status:
+                type: string
+                enum: [NOT_STARTED, IN_REVIEW, VERIFIED, REJECTED]
+
+    InvestorWallets:
+      type: object
+      description: All three investor balances, in Kobo.
+      properties:
+        mainBalanceKobo: { type: integer, example: 21350000 }
+        payoutBalanceKobo: { type: integer, example: 4890000 }
+        safeBalanceKobo: { type: integer, example: 18000000, description: "Sum of active Flow Safe vaults (principal + interest)" }
+
+    InvestorTransaction:
+      type: object
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [TOPUP, WITHDRAWAL, INVESTMENT, PAYOUT, SAFE_LOCK, SAFE_UNLOCK, SAFE_INTEREST, REFERRAL_BONUS]
+        wallet:
+          type: string
+          enum: [MAIN, PAYOUT, SAFE]
+        amountKobo: { type: integer, example: 1350000 }
+        reference: { type: string, nullable: true, example: "GD-INV-8842013A" }
+        description: { type: string, nullable: true, example: "Monthly payout · Keke NAPEP" }
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, FAILED]
+        createdAt: { type: string, format: date-time }
+
+    InvestmentAsset:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: "Keke NAPEP" }
+        shortCode: { type: string, example: "KEKE · CLASS A" }
+        vehicleClass:
+          type: string
+          enum: [KEKE, SHUTTLE, RIDE_CAR, BIKE]
+        description: { type: string, nullable: true }
+        location: { type: string, nullable: true, example: "Lagos" }
+        imageUrl: { type: string, nullable: true }
+        unitPriceKobo: { type: integer, example: 85000000 }
+        minInvestKobo: { type: integer, example: 5000000 }
+        projectedRoiBps: { type: integer, example: 3200, description: "Projected total ROI in basis points (3200 = 32%)" }
+        tenureMonths: { type: integer, example: 12 }
+        monthlyPayoutKobo: { type: integer, example: 7240000, description: "Payout per full unit per month" }
+        targetKobo: { type: integer, example: 85000000 }
+        raisedKobo: { type: integer, example: 62900000 }
+        fundedPct: { type: integer, example: 74 }
+        slotsTotal: { type: integer, example: 20 }
+        slotsLeft: { type: integer, example: 6 }
+        investorCount: { type: integer, example: 41 }
+        isHot: { type: boolean, description: "Filling fast badge" }
+        status:
+          type: string
+          enum: [OPEN, FUNDED, CLOSED]
+
+    InvestmentPlan:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: "Rider" }
+        tenureMonths: { type: integer, example: 12 }
+        monthlyRateBps: { type: integer, example: 540, description: "Monthly payout rate in basis points (540 = 5.4%/mo)" }
+        minAmountKobo: { type: integer, example: 25000000 }
+        note: { type: string, nullable: true, example: "Most popular · best balance" }
+        isPopular: { type: boolean }
+        sortOrder: { type: integer }
+        active: { type: boolean }
+
+    InvestmentPayout:
+      type: object
+      properties:
+        sequence: { type: integer, example: 3 }
+        dueDate: { type: string, format: date-time }
+        amountKobo: { type: integer, example: 1350000 }
+        status:
+          type: string
+          enum: [SCHEDULED, PAID]
+        paidAt: { type: string, format: date-time, nullable: true }
+
+    Investment:
+      type: object
+      properties:
+        id: { type: string }
+        reference: { type: string, example: "GD-INV-8842013A" }
+        status:
+          type: string
+          enum: [PENDING_PAYMENT, ACTIVE, MATURED, CANCELLED]
+        amountKobo: { type: integer, example: 25000000 }
+        monthlyPayoutKobo: { type: integer, example: 1350000 }
+        startedAt: { type: string, format: date-time, nullable: true }
+        maturesAt: { type: string, format: date-time, nullable: true }
+        monthsPaid: { type: integer, example: 2 }
+        totalMonths: { type: integer, example: 12 }
+        earnedKobo: { type: integer, example: 2700000 }
+        projectedKobo: { type: integer, example: 16200000 }
+        nextPayout:
+          type: object
+          nullable: true
+          properties:
+            dueDate: { type: string, format: date-time }
+            amountKobo: { type: integer }
+        asset: { $ref: "#/components/schemas/InvestmentAsset" }
+        plan: { $ref: "#/components/schemas/InvestmentPlan" }
+        payouts:
+          type: array
+          items: { $ref: "#/components/schemas/InvestmentPayout" }
+
+    InvestorPortfolio:
+      type: object
+      properties:
+        portfolioValueKobo: { type: integer, example: 79240000, description: "Active capital + all-time earnings" }
+        investedKobo: { type: integer, example: 75000000 }
+        earnedKobo: { type: integer, example: 4240000 }
+        thisMonthKobo: { type: integer, example: 3870000 }
+        activeCount: { type: integer, example: 3 }
+        maturedCount: { type: integer, example: 1 }
+        nextPayout:
+          type: object
+          nullable: true
+          properties:
+            dueDate: { type: string, format: date-time }
+            amountKobo: { type: integer }
+            assetName: { type: string, example: "Dispatch Bike" }
+
+    FlowSafeVault:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: "90-day builder" }
+        kind:
+          type: string
+          enum: [FLEXIBLE, LOCKED]
+        principalKobo: { type: integer, example: 10000000 }
+        interestRateBps: { type: integer, example: 1400, description: "Annual interest in basis points (1400 = 14% p.a.)" }
+        interestEarnedKobo: { type: integer, example: 144000 }
+        lockDays: { type: integer, nullable: true, example: 90 }
+        unlocksAt: { type: string, format: date-time, nullable: true }
+        status:
+          type: string
+          enum: [ACTIVE, CLOSED]
+        progressPct: { type: integer, example: 62, description: "Lock progress; 100 for flexible vaults" }
+        createdAt: { type: string, format: date-time }
+
+    InvestorBankAccount:
+      type: object
+      properties:
+        id: { type: string }
+        bankName: { type: string, example: "GTBank" }
+        bankCode: { type: string, example: "058" }
+        accountNumber: { type: string, example: "0123454290" }
+        accountName: { type: string, example: "Amara Nwosu" }
+        isPrimary: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    InvestorSettings:
+      type: object
+      properties:
+        biometricLogin: { type: boolean }
+        twoFactorAuth: { type: boolean }
+        payoutAlerts: { type: boolean }
+        investmentUpdates: { type: boolean }
+        promotions: { type: boolean }
+        emailStatements: { type: boolean }
+        currency: { type: string, example: "NGN" }
+        language: { type: string, example: "English" }
+        appLockTimeoutMin: { type: integer, example: 1 }
+
+    InvestorNotification:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string, example: "Payout received 🎉" }
+        body: { type: string, example: "₦13,500 from your Keke NAPEP is in your wallet." }
+        category: { type: string, nullable: true, example: "INVESTMENT" }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    InvestorFaq:
+      type: object
+      properties:
+        question: { type: string, example: "How are monthly payouts calculated?" }
+        answer: { type: string }
 
 # ─── Paths ────────────────────────────────────────────────────
 paths:
@@ -8650,6 +8870,1006 @@ paths:
         "404":
           description: Admin not found in this business
 
+  # ══════════════════════════════════════════════════════════════
+  # INVESTOR (GoDrop Invest)
+  # ══════════════════════════════════════════════════════════════
+
+  /investor/auth/register:
+    post:
+      tags: [Investor — Auth]
+      summary: Create an investor account
+      description: Registers a new investor and sends a phone OTP. Verify via `POST /investor/auth/otp/verify` to receive tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, email, phone, password]
+              properties:
+                firstName: { type: string, example: "Amara" }
+                lastName: { type: string, example: "Nwosu" }
+                email: { type: string, format: email }
+                phone: { type: string, example: "+2348035527710" }
+                password: { type: string, minLength: 8 }
+      responses:
+        "201":
+          description: Account created, OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  investor: { $ref: "#/components/schemas/Investor" }
+                  message: { type: string }
+        "409":
+          description: Email or phone already registered
+
+  /investor/auth/otp/request:
+    post:
+      tags: [Investor — Auth]
+      summary: Request a phone OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone: { type: string, example: "+2348035527710" }
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  expiresIn: { type: integer, example: 300 }
+
+  /investor/auth/otp/verify:
+    post:
+      tags: [Investor — Auth]
+      summary: Verify phone OTP and receive tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, code]
+              properties:
+                phone: { type: string, example: "+2348035527710" }
+                code: { type: string, example: "529641" }
+      responses:
+        "200":
+          description: Phone verified, tokens issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+                  investor: { $ref: "#/components/schemas/Investor" }
+        "401":
+          description: Invalid or expired OTP
+        "404":
+          description: No investor account for this phone
+
+  /investor/auth/login:
+    post:
+      tags: [Investor — Auth]
+      summary: Sign in with email/phone and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password]
+              properties:
+                identifier: { type: string, description: "Email or E.164 phone", example: "amara.nwosu@ymail.com" }
+                password: { type: string }
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+                  investor: { $ref: "#/components/schemas/Investor" }
+        "401":
+          description: Invalid credentials
+
+  /investor/auth/refresh:
+    post:
+      tags: [Investor — Auth]
+      summary: Rotate refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+        "401":
+          description: Invalid or expired refresh token
+
+  /investor/auth/logout:
+    post:
+      tags: [Investor — Auth]
+      summary: Revoke a refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: Logged out
+
+  /investor/home:
+    get:
+      tags: [Investor — Home]
+      summary: Home screen aggregate
+      description: Everything the Invest home screen needs in one call — profile, portfolio summary, wallet balances, asset classes, featured assets, and recent activity.
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Home payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  investor: { $ref: "#/components/schemas/Investor" }
+                  portfolio: { $ref: "#/components/schemas/InvestorPortfolio" }
+                  wallets: { $ref: "#/components/schemas/InvestorWallets" }
+                  assetClasses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        vehicleClass: { type: string, enum: [KEKE, SHUTTLE, RIDE_CAR, BIKE] }
+                        label: { type: string, example: "Keke" }
+                        count: { type: integer, example: 12 }
+                  assets:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestmentAsset" }
+                  recentActivity:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestorTransaction" }
+                  unreadNotifications: { type: integer, example: 2 }
+
+  /investor/assets:
+    get:
+      tags: [Investor — Assets]
+      summary: List investable assets
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: class
+          schema:
+            type: string
+            enum: [KEKE, SHUTTLE, RIDE_CAR, BIKE]
+          description: Filter by vehicle class
+      responses:
+        "200":
+          description: Assets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestmentAsset" }
+
+  /investor/assets/{id}:
+    get:
+      tags: [Investor — Assets]
+      summary: Asset detail
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Asset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestmentAsset" }
+        "404":
+          description: Asset not found
+
+  /investor/plans:
+    get:
+      tags: [Investor — Assets]
+      summary: List investment plans
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Plans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestmentPlan" }
+
+  /investor/investments/preview:
+    post:
+      tags: [Investor — Investments]
+      summary: Preview an investment
+      description: Validates amount against plan/asset minimums and remaining funding room; returns projected monthly payout and total return.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId, planId, amountKobo]
+              properties:
+                assetId: { type: string }
+                planId: { type: string }
+                amountKobo: { type: integer, example: 25000000 }
+      responses:
+        "200":
+          description: Projection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      asset: { $ref: "#/components/schemas/InvestmentAsset" }
+                      plan: { $ref: "#/components/schemas/InvestmentPlan" }
+                      amountKobo: { type: integer }
+                      minKobo: { type: integer }
+                      remainingKobo: { type: integer }
+                      monthlyPayoutKobo: { type: integer, example: 1350000 }
+                      totalReturnKobo: { type: integer, example: 41200000 }
+                      tenureMonths: { type: integer }
+                      maturesAt: { type: string, format: date-time }
+                      firstPayoutAt: { type: string, format: date-time }
+        "400":
+          description: Amount outside allowed range
+        "404":
+          description: Asset or plan not found
+
+  /investor/investments:
+    post:
+      tags: [Investor — Investments]
+      summary: Create an investment
+      description: |
+        `paymentMethod: WALLET` debits the main wallet and activates the investment immediately (payout schedule generated).
+        `CARD` / `TRANSFER` / `USSD` return a Paystack `authorizationUrl` — complete checkout, then call `POST /investor/investments/verify`.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetId, planId, amountKobo, paymentMethod]
+              properties:
+                assetId: { type: string }
+                planId: { type: string }
+                amountKobo: { type: integer, example: 25000000 }
+                paymentMethod:
+                  type: string
+                  enum: [WALLET, CARD, TRANSFER, USSD]
+      responses:
+        "201":
+          description: Investment created (active if paid from wallet)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  paymentRequired: { type: boolean }
+                  investment: { $ref: "#/components/schemas/Investment" }
+                  reference: { type: string, description: "Present when paymentRequired" }
+                  authorizationUrl: { type: string, description: "Paystack checkout URL when paymentRequired" }
+        "402":
+          description: Insufficient wallet balance
+        "404":
+          description: Asset or plan not found
+    get:
+      tags: [Investor — Investments]
+      summary: List my investments (portfolio)
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ACTIVE, MATURED, CANCELLED]
+      responses:
+        "200":
+          description: Portfolio summary + holdings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  portfolio: { $ref: "#/components/schemas/InvestorPortfolio" }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Investment" }
+
+  /investor/investments/verify:
+    post:
+      tags: [Investor — Investments]
+      summary: Verify a Paystack investment payment
+      description: Confirms the Paystack charge and activates the investment (idempotent).
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference]
+              properties:
+                reference: { type: string, example: "GD-INV-8842013A" }
+      responses:
+        "200":
+          description: Investment activated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Investment" }
+        "402":
+          description: Payment not confirmed yet
+        "404":
+          description: Reference not found
+
+  /investor/investments/{id}:
+    get:
+      tags: [Investor — Investments]
+      summary: Investment detail with payout schedule
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Investment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Investment" }
+        "404":
+          description: Investment not found
+
+  /investor/wallet:
+    get:
+      tags: [Investor — Wallet]
+      summary: Wallet balances
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Balances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorWallets" }
+
+  /investor/wallet/fund:
+    post:
+      tags: [Investor — Wallet]
+      summary: Start a wallet top-up
+      description: Initializes a Paystack transaction. Complete checkout, then call `POST /investor/wallet/fund/verify`.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountKobo]
+              properties:
+                amountKobo: { type: integer, minimum: 10000, example: 5000000 }
+                method:
+                  type: string
+                  enum: [CARD, TRANSFER, USSD]
+                  default: CARD
+      responses:
+        "200":
+          description: Paystack checkout initialized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  reference: { type: string, example: "GD-TOP-x8f2kd91ab" }
+                  authorizationUrl: { type: string }
+
+  /investor/wallet/fund/verify:
+    post:
+      tags: [Investor — Wallet]
+      summary: Verify a top-up and credit the wallet
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference]
+              properties:
+                reference: { type: string }
+      responses:
+        "200":
+          description: Wallet credited (idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorTransaction" }
+                  wallets: { $ref: "#/components/schemas/InvestorWallets" }
+        "402":
+          description: Payment not confirmed yet
+        "404":
+          description: Reference not found
+
+  /investor/wallet/withdraw:
+    post:
+      tags: [Investor — Wallet]
+      summary: Withdraw to a saved bank account
+      description: Flat ₦50 (5000 Kobo) fee is deducted from the transfer amount. Balance is refunded if the bank transfer fails.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountKobo, bankAccountId]
+              properties:
+                amountKobo: { type: integer, minimum: 10000, example: 10000000 }
+                wallet:
+                  type: string
+                  enum: [MAIN, PAYOUT]
+                  default: MAIN
+                bankAccountId: { type: string }
+      responses:
+        "200":
+          description: Withdrawal initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorTransaction" }
+                  wallets: { $ref: "#/components/schemas/InvestorWallets" }
+        "402":
+          description: Insufficient balance
+        "404":
+          description: Bank account not found
+
+  /investor/wallet/transactions:
+    get:
+      tags: [Investor — Wallet]
+      summary: Transaction history
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [TOPUP, WITHDRAWAL, INVESTMENT, PAYOUT, SAFE_LOCK, SAFE_UNLOCK, SAFE_INTEREST, REFERRAL_BONUS]
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestorTransaction" }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /investor/safe:
+    get:
+      tags: [Investor — Flow Safe]
+      summary: Flow Safe summary and vaults
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Safe summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      totalKobo: { type: integer, example: 18000000 }
+                      interestThisQuarterKobo: { type: integer, example: 432000 }
+                      vaults:
+                        type: array
+                        items: { $ref: "#/components/schemas/FlowSafeVault" }
+
+  /investor/safe/vaults:
+    post:
+      tags: [Investor — Flow Safe]
+      summary: Lock money into a new vault
+      description: Debits the main wallet. Omit `lockDays` (or send 0) for a flexible vault at 10% p.a.; locked vaults earn 12–16% p.a. by duration.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, amountKobo]
+              properties:
+                name: { type: string, example: "90-day builder" }
+                amountKobo: { type: integer, minimum: 100000, example: 10000000 }
+                lockDays: { type: integer, minimum: 0, maximum: 365, example: 90 }
+      responses:
+        "201":
+          description: Vault created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/FlowSafeVault" }
+        "402":
+          description: Insufficient wallet balance
+
+  /investor/safe/vaults/{id}/withdraw:
+    post:
+      tags: [Investor — Flow Safe]
+      summary: Withdraw from a vault to the main wallet
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amountKobo]
+              properties:
+                amountKobo: { type: integer, example: 5000000 }
+      responses:
+        "200":
+          description: Withdrawn; vault closes automatically when emptied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  wallets: { $ref: "#/components/schemas/InvestorWallets" }
+        "402":
+          description: Amount exceeds vault balance
+        "403":
+          description: Vault is locked until its unlock date
+        "404":
+          description: Vault not found
+
+  /investor/me:
+    get:
+      tags: [Investor — Profile]
+      summary: My profile
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Investor" }
+    patch:
+      tags: [Investor — Profile]
+      summary: Update profile details
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                username: { type: string, example: "@amara_nwosu" }
+                avatarUrl: { type: string }
+                dateOfBirth: { type: string, format: date }
+                address: { type: string }
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/Investor" }
+        "409":
+          description: Username already taken
+
+  /investor/banks:
+    get:
+      tags: [Investor — Profile]
+      summary: List Nigerian banks (Paystack)
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Banks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  banks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string, example: "Guaranty Trust Bank" }
+                        code: { type: string, example: "058" }
+                        slug: { type: string }
+
+  /investor/bank-accounts:
+    get:
+      tags: [Investor — Profile]
+      summary: List saved withdrawal bank accounts
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Bank accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestorBankAccount" }
+    post:
+      tags: [Investor — Profile]
+      summary: Add a bank account
+      description: The account name is resolved via Paystack. The first account added becomes primary.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bankCode, bankName, accountNumber]
+              properties:
+                bankCode: { type: string, example: "058" }
+                bankName: { type: string, example: "GTBank" }
+                accountNumber: { type: string, example: "0123454290" }
+      responses:
+        "201":
+          description: Bank account saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorBankAccount" }
+
+  /investor/bank-accounts/{id}/primary:
+    patch:
+      tags: [Investor — Profile]
+      summary: Make a bank account primary
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Primary bank updated
+        "404":
+          description: Bank account not found
+
+  /investor/bank-accounts/{id}:
+    delete:
+      tags: [Investor — Profile]
+      summary: Remove a bank account
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Bank account removed
+        "404":
+          description: Bank account not found
+
+  /investor/kyc:
+    get:
+      tags: [Investor — KYC]
+      summary: KYC status
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: KYC summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorKyc" }
+
+  /investor/kyc/bvn:
+    post:
+      tags: [Investor — KYC]
+      summary: Submit BVN for verification
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bvn]
+              properties:
+                bvn: { type: string, example: "22345678901" }
+      responses:
+        "200":
+          description: BVN submitted (status becomes IN_REVIEW)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorKyc" }
+
+  /investor/kyc/id:
+    post:
+      tags: [Investor — KYC]
+      summary: Upload a government ID
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [document]
+              properties:
+                document:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Document received (status becomes IN_REVIEW)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorKyc" }
+
+  /investor/kyc/address:
+    post:
+      tags: [Investor — KYC]
+      summary: Upload proof of address
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [document]
+              properties:
+                document:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Document received (status becomes IN_REVIEW)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorKyc" }
+
+  /investor/settings:
+    get:
+      tags: [Investor — Settings]
+      summary: App settings
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorSettings" }
+    patch:
+      tags: [Investor — Settings]
+      summary: Update settings
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/InvestorSettings" }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: "#/components/schemas/InvestorSettings" }
+
+  /investor/notifications:
+    get:
+      tags: [Investor — Notifications]
+      summary: Notification inbox
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestorNotification" }
+                  unread: { type: integer, example: 2 }
+                  meta: { $ref: "#/components/schemas/Pagination" }
+
+  /investor/notifications/read-all:
+    patch:
+      tags: [Investor — Notifications]
+      summary: Mark all notifications read
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: All marked read
+
+  /investor/notifications/{id}/read:
+    patch:
+      tags: [Investor — Notifications]
+      summary: Mark one notification read
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Marked read
+
+  /investor/support/faqs:
+    get:
+      tags: [Investor — Support]
+      summary: Frequently asked questions
+      security: [{ BearerAuth: [] }]
+      responses:
+        "200":
+          description: FAQs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/InvestorFaq" }
+
 # ─── WebSocket ────────────────────────────────────────────────
 # Connect to: ws://host/ws/orders/:orderId/tracking
 # The server broadcasts JSON payloads whenever the rider's location changes.
@@ -8765,3 +9985,26 @@ tags:
     description: "Business wallet — current balance and transaction history. All rider earnings aggregate here automatically. Both OWNER and ADMIN roles can view."
   - name: Business Admin — Team
     description: "Team member management within a business. View: all roles. Create/update: OWNER only. Cannot modify the OWNER account via this endpoint."
+  # Investor (GoDrop Invest)
+  - name: Investor — Auth
+    description: "GoDrop Invest investor accounts. Register (email + phone + password) → phone OTP verify → JWT access + refresh pair. Token payload: `{ investorId, type: \"investor\" }`."
+  - name: Investor — Home
+    description: Single aggregate endpoint powering the Invest home screen — portfolio, wallets, asset classes, featured assets, recent activity.
+  - name: Investor — Assets
+    description: Investable vehicle assets (Keke, shuttle, ride car, dispatch bike) and investment plans (Starter / Rider / Fleet).
+  - name: Investor — Investments
+    description: "Invest flow: preview → create (wallet debit or Paystack checkout) → verify. Active investments generate a monthly payout schedule; capital returns at maturity."
+  - name: Investor — Wallet
+    description: "Main and Payout wallets. All amounts in Kobo. Top-up via Paystack, withdrawal to saved bank accounts (₦50 flat fee)."
+  - name: Investor — Flow Safe
+    description: "Interest-bearing savings vaults. Flexible vaults (10% p.a.) withdraw anytime; locked vaults earn 12–16% p.a. by duration."
+  - name: Investor — Profile
+    description: Profile details, Nigerian bank list, and saved withdrawal bank accounts.
+  - name: Investor — KYC
+    description: "Tiered verification: email/phone → BVN (Tier 2) → government ID + proof of address (Tier 3, ₦50M limit)."
+  - name: Investor — Settings
+    description: Security, notification, and preference toggles.
+  - name: Investor — Notifications
+    description: Investor notification inbox.
+  - name: Investor — Support
+    description: FAQs and support contacts.

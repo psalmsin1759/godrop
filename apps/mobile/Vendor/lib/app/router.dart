@@ -1,0 +1,197 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../features/splash/splash_screen.dart';
+import '../features/auth/login_screen.dart';
+import '../features/auth/forgot_password_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
+import '../features/dashboard/dashboard_screen.dart';
+import '../features/orders/orders_screen.dart';
+import '../features/orders/order_detail_screen.dart';
+import '../features/catalog/catalog_screen.dart';
+import '../features/catalog/product_form_screen.dart';
+import '../features/catalog/category_form_screen.dart';
+import '../features/wallet/wallet_screen.dart';
+import '../features/wallet/bank_account_screen.dart';
+import '../features/team/team_screen.dart';
+import '../features/settings/store_settings_screen.dart';
+import '../features/settings/opening_hours_screen.dart';
+import '../features/profile/profile_screen.dart';
+import '../features/profile/edit_profile_screen.dart';
+import '../features/profile/change_password_screen.dart';
+import '../features/profile/notifications_screen.dart';
+import '../features/profile/audit_logs_screen.dart';
+import '../shared/models/catalog_models.dart';
+import '../shared/widgets/main_shell.dart';
+
+// ── Transition helpers ────────────────────────────────────────────────────────
+
+/// Slide from right — used for forward navigation flows.
+CustomTransitionPage<void> _slide(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 320),
+    reverseTransitionDuration: const Duration(milliseconds: 280),
+    transitionsBuilder: (_, animation, __, child) {
+      final curved =
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1.0, 0),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      );
+    },
+  );
+}
+
+/// Fade + slight slide up — used for confirmation / modal-style screens.
+CustomTransitionPage<void> _fadeUp(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 340),
+    reverseTransitionDuration: const Duration(milliseconds: 260),
+    transitionsBuilder: (_, animation, __, child) {
+      final curved =
+          CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.06),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// Fade only — used for same-level transitions (auth flow, splash).
+CustomTransitionPage<void> _fade(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 280),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    transitionsBuilder: (_, animation, __, child) =>
+        FadeTransition(opacity: animation, child: child),
+  );
+}
+
+// ── Router ────────────────────────────────────────────────────────────────────
+
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+final GoRouter appRouter = GoRouter(
+  navigatorKey: rootNavigatorKey,
+  initialLocation: '/splash',
+  routes: [
+    GoRoute(
+      path: '/splash',
+      pageBuilder: (_, state) => _fade(state, const SplashScreen()),
+    ),
+    GoRoute(
+      path: '/auth/login',
+      pageBuilder: (_, state) => _fade(state, const LoginScreen()),
+    ),
+    GoRoute(
+      path: '/auth/forgot-password',
+      pageBuilder: (_, state) => _slide(state, const ForgotPasswordScreen()),
+    ),
+    GoRoute(
+      path: '/auth/onboard',
+      pageBuilder: (_, state) =>
+          _fadeUp(state, const VendorOnboardingScreen()),
+    ),
+    GoRoute(
+      path: '/orders/:id',
+      pageBuilder: (_, state) => _fadeUp(
+        state,
+        OrderDetailScreen(orderId: state.pathParameters['id']!),
+      ),
+    ),
+    GoRoute(
+      path: '/catalog/product/new',
+      pageBuilder: (_, state) => _fadeUp(state, const ProductFormScreen()),
+    ),
+    GoRoute(
+      path: '/catalog/product/:id',
+      pageBuilder: (_, state) => _slide(
+        state,
+        ProductFormScreen(product: state.extra as Product?),
+      ),
+    ),
+    GoRoute(
+      path: '/catalog/category/new',
+      pageBuilder: (_, state) => _fadeUp(state, const CategoryFormScreen()),
+    ),
+    GoRoute(
+      path: '/catalog/category/:id',
+      pageBuilder: (_, state) => _slide(
+        state,
+        CategoryFormScreen(category: state.extra as ProductCategory?),
+      ),
+    ),
+    GoRoute(
+      path: '/wallet/bank-account',
+      pageBuilder: (_, state) => _slide(state, const BankAccountScreen()),
+    ),
+    GoRoute(
+      path: '/team',
+      pageBuilder: (_, state) => _slide(state, const TeamScreen()),
+    ),
+    GoRoute(
+      path: '/settings/store',
+      pageBuilder: (_, state) => _slide(state, const StoreSettingsScreen()),
+    ),
+    GoRoute(
+      path: '/settings/hours',
+      pageBuilder: (_, state) => _slide(
+        state,
+        OpeningHoursScreen(
+            initialHours: state.extra as Map<String, dynamic>?),
+      ),
+    ),
+    GoRoute(
+      path: '/notifications',
+      pageBuilder: (_, state) => _slide(state, const NotificationsScreen()),
+    ),
+    GoRoute(
+      path: '/audit-logs',
+      pageBuilder: (_, state) => _slide(state, const AuditLogsScreen()),
+    ),
+    GoRoute(
+      path: '/profile/edit',
+      pageBuilder: (_, state) => _slide(state, const EditProfileScreen()),
+    ),
+    GoRoute(
+      path: '/profile/change-password',
+      pageBuilder: (_, state) => _slide(state, const ChangePasswordScreen()),
+    ),
+    StatefulShellRoute.indexedStack(
+      builder: (_, __, shell) => MainShell(shell: shell),
+      branches: [
+        StatefulShellBranch(routes: [
+          GoRoute(path: '/dashboard', builder: (_, __) => const DashboardScreen()),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(path: '/catalog', builder: (_, __) => const CatalogScreen()),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(path: '/more', builder: (_, __) => const ProfileScreen()),
+        ]),
+      ],
+    ),
+  ],
+);

@@ -164,7 +164,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   onWithdraw: () => _openWithdrawSheet(ctx, loaded),
                 ),
                 const SizedBox(height: 16),
-                _BankAccountCard(account: loaded.bankAccount),
+                _BankAccountCard(account: loaded.bankAccount, isOwner: isOwner),
                 const SizedBox(height: 24),
                 const GodropSectionHeader(title: 'Transactions'),
                 const SizedBox(height: 12),
@@ -271,12 +271,15 @@ class _BalanceCard extends StatelessWidget {
 
 class _BankAccountCard extends StatelessWidget {
   final BankAccount? account;
-  const _BankAccountCard({required this.account});
+  final bool isOwner;
+  const _BankAccountCard({required this.account, required this.isOwner});
 
   @override
   Widget build(BuildContext context) {
+    // Managers can see the payout account; only the owner can change it
+    // (enforced server-side too).
     return GestureDetector(
-      onTap: () => context.push('/wallet/bank-account'),
+      onTap: isOwner ? () => context.push('/wallet/bank-account') : null,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -322,8 +325,9 @@ class _BankAccountCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: GodropColors.mute),
+            if (isOwner)
+              const Icon(Icons.chevron_right_rounded,
+                  color: GodropColors.mute),
           ],
         ),
       ),

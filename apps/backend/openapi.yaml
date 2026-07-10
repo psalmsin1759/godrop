@@ -4895,7 +4895,7 @@ paths:
   /vendor-admin/wallet:
     get:
       tags: [Vendor Admin — Wallet]
-      summary: Get vendor wallet balance
+      summary: Get vendor wallet balance (MANAGER+)
       security: [{ BearerAuth: [] }]
       responses:
         "200":
@@ -4911,7 +4911,7 @@ paths:
   /vendor-admin/wallet/transactions:
     get:
       tags: [Vendor Admin — Wallet]
-      summary: List wallet transactions (paginated)
+      summary: List wallet transactions (paginated, MANAGER+)
       security: [{ BearerAuth: [] }]
       parameters:
         - { in: query, name: page, schema: { type: integer, default: 1 } }
@@ -4923,7 +4923,7 @@ paths:
   /vendor-admin/wallet/banks:
     get:
       tags: [Vendor Admin — Wallet]
-      summary: List Nigerian banks (from Paystack)
+      summary: List Nigerian banks (from Paystack, MANAGER+)
       description: Returns a list of supported Nigerian banks with their codes for account setup.
       security: [{ BearerAuth: [] }]
       responses:
@@ -4947,7 +4947,7 @@ paths:
   /vendor-admin/wallet/resolve-account:
     post:
       tags: [Vendor Admin — Wallet]
-      summary: Resolve / verify a bank account number
+      summary: Resolve / verify a bank account number (MANAGER+)
       description: Calls Paystack to verify an account number and return the registered account name.
       security: [{ BearerAuth: [] }]
       requestBody:
@@ -4977,7 +4977,7 @@ paths:
   /vendor-admin/wallet/bank-account:
     get:
       tags: [Vendor Admin — Wallet]
-      summary: Get saved bank account for withdrawals
+      summary: Get saved bank account for withdrawals (MANAGER+)
       security: [{ BearerAuth: [] }]
       responses:
         "200":
@@ -5676,7 +5676,7 @@ paths:
   /admin/vendors/{id}/wallet:
     get:
       tags: [System Admin — Vendors]
-      summary: Get vendor wallet balance (ADMIN+)
+      summary: Get vendor wallet balance (MANAGER+) (ADMIN+)
       security: [{ BearerAuth: [] }]
       parameters:
         - in: path
@@ -6758,7 +6758,7 @@ paths:
   /rider/wallet/banks:
     get:
       tags: [Rider App — Profile]
-      summary: List Nigerian banks (from Paystack)
+      summary: List Nigerian banks (from Paystack, MANAGER+)
       description: Returns a list of supported Nigerian banks with their codes for bank account setup.
       security: [{ BearerAuth: [] }]
       responses:
@@ -6782,7 +6782,7 @@ paths:
   /rider/wallet/resolve-account:
     post:
       tags: [Rider App — Profile]
-      summary: Resolve / verify a bank account number
+      summary: Resolve / verify a bank account number (MANAGER+)
       description: Calls Paystack to verify an account number and return the registered account name.
       security: [{ BearerAuth: [] }]
       requestBody:

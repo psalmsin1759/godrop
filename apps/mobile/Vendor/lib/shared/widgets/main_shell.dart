@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../features/profile/bloc/session_cubit.dart';
+
+// Branch index of the wallet tab in the router's StatefulShellRoute.
+const _kWalletBranch = 3;
 
 class MainShell extends StatelessWidget {
   final StatefulNavigationShell shell;
@@ -8,13 +13,21 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // STAFF don't get the wallet tab; watch so the bar updates when the
+    // profile (and with it the role) finishes loading.
+    final showWallet = context.watch<SessionCubit>().isManagerOrAbove;
+    final branches = [
+      for (var i = 0; i < _kNavItems.length; i++)
+        if (showWallet || i != _kWalletBranch) i,
+    ];
     return Scaffold(
       backgroundColor: GodropColors.background,
       body: shell,
       bottomNavigationBar: _GodropBottomNav(
-        currentIndex: shell.currentIndex,
-        onTap: (i) =>
-            shell.goBranch(i, initialLocation: i == shell.currentIndex),
+        branches: branches,
+        currentIndex: branches.indexOf(shell.currentIndex),
+        onTap: (i) => shell.goBranch(branches[i],
+            initialLocation: branches[i] == shell.currentIndex),
       ),
     );
   }
@@ -39,9 +52,13 @@ const _kNavItems = [
 ];
 
 class _GodropBottomNav extends StatelessWidget {
+  final List<int> branches;
   final int currentIndex;
   final ValueChanged<int> onTap;
-  const _GodropBottomNav({required this.currentIndex, required this.onTap});
+  const _GodropBottomNav(
+      {required this.branches,
+      required this.currentIndex,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +80,9 @@ class _GodropBottomNav extends StatelessWidget {
           ],
         ),
         child: Row(
-          children: List.generate(_kNavItems.length, (i) {
+          children: List.generate(branches.length, (i) {
             return _NavItem(
-              data: _kNavItems[i],
+              data: _kNavItems[branches[i]],
               selected: currentIndex == i,
               onTap: () => onTap(i),
             );

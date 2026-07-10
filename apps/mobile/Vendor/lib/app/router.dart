@@ -22,7 +22,17 @@ import '../features/profile/change_password_screen.dart';
 import '../features/profile/notifications_screen.dart';
 import '../features/profile/audit_logs_screen.dart';
 import '../shared/models/catalog_models.dart';
+import '../shared/services/user_prefs.dart';
 import '../shared/widgets/main_shell.dart';
+
+/// Route guard for MANAGER+ screens. Uses the locally cached role so it
+/// works before the profile refresh completes; the API enforces the same
+/// rules server-side.
+String? _managerOnly(BuildContext context, GoRouterState state) =>
+    UserPrefs.adminRole == 'STAFF' ? '/dashboard' : null;
+
+String? _ownerOnly(BuildContext context, GoRouterState state) =>
+    UserPrefs.adminRole == 'OWNER' ? null : '/dashboard';
 
 // ── Transition helpers ────────────────────────────────────────────────────────
 
@@ -139,18 +149,22 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/wallet/bank-account',
+      redirect: _ownerOnly,
       pageBuilder: (_, state) => _slide(state, const BankAccountScreen()),
     ),
     GoRoute(
       path: '/team',
+      redirect: _managerOnly,
       pageBuilder: (_, state) => _slide(state, const TeamScreen()),
     ),
     GoRoute(
       path: '/settings/store',
+      redirect: _managerOnly,
       pageBuilder: (_, state) => _slide(state, const StoreSettingsScreen()),
     ),
     GoRoute(
       path: '/settings/hours',
+      redirect: _managerOnly,
       pageBuilder: (_, state) => _slide(
         state,
         OpeningHoursScreen(
@@ -163,6 +177,7 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/audit-logs',
+      redirect: _managerOnly,
       pageBuilder: (_, state) => _slide(state, const AuditLogsScreen()),
     ),
     GoRoute(
@@ -186,7 +201,11 @@ final GoRouter appRouter = GoRouter(
           GoRoute(path: '/catalog', builder: (_, __) => const CatalogScreen()),
         ]),
         StatefulShellBranch(routes: [
-          GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
+          GoRoute(
+            path: '/wallet',
+            redirect: _managerOnly,
+            builder: (_, __) => const WalletScreen(),
+          ),
         ]),
         StatefulShellBranch(routes: [
           GoRoute(path: '/more', builder: (_, __) => const ProfileScreen()),

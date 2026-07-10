@@ -7,6 +7,7 @@ import '../../shared/utils/currency.dart';
 import '../../shared/utils/dates.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/status_chip.dart';
+import '../profile/bloc/session_cubit.dart';
 import 'bloc/orders_cubit.dart';
 import 'bloc/orders_state.dart';
 
@@ -19,6 +20,14 @@ const _kFilters = <(String?, String)>[
   ('IN_TRANSIT', 'In transit'),
   ('DELIVERED', 'Delivered'),
   ('CANCELLED', 'Cancelled'),
+];
+
+/// STAFF only work the live queue — no order history.
+const _kStaffFilters = <(String?, String)>[
+  ('PENDING', 'Pending'),
+  ('ACCEPTED', 'Accepted'),
+  ('PREPARING', 'Preparing'),
+  ('READY_FOR_PICKUP', 'Ready'),
 ];
 
 class OrdersScreen extends StatefulWidget {
@@ -35,7 +44,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
   void initState() {
     super.initState();
     final cubit = context.read<OrdersCubit>();
-    if (cubit.state is OrdersInitial) cubit.load();
+    final staff = !context.read<SessionCubit>().isManagerOrAbove;
+    if (cubit.state is OrdersInitial) {
+      // STAFF land on the live queue instead of the full history.
+      cubit.load(status: staff ? 'PENDING' : null);
+    }
     _scrollCtrl.addListener(() {
       if (_scrollCtrl.position.pixels >
           _scrollCtrl.position.maxScrollExtent - 300) {
@@ -66,13 +79,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
             child: BlocBuilder<OrdersCubit, OrdersState>(
               builder: (ctx, state) {
                 final selected = ctx.read<OrdersCubit>().statusFilter;
+                final filters = ctx.watch<SessionCubit>().isManagerOrAbove
+                    ? _kFilters
+                    : _kStaffFilters;
                 return ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: _kFilters.length,
+                  itemCount: filters.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (_, i) {
-                    final (value, label) = _kFilters[i];
+                    final (value, label) = filters[i];
                     final isSelected = value == selected;
                     return GestureDetector(
                       onTap: () => ctx.read<OrdersCubit>().load(status: value),

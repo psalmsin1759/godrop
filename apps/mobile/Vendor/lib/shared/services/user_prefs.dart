@@ -28,6 +28,16 @@ class UserPrefs {
   static String get adminRole => _prefs.getString('admin_role') ?? 'STAFF';
   static String get vendorName => _prefs.getString('vendor_name') ?? '';
 
+  static String? get fcmToken => _prefs.getString('fcm_token');
+
+  static Future<void> saveFcmToken(String token) async {
+    await _prefs.setString('fcm_token', token);
+  }
+
+  static Future<void> clearFcmToken() async {
+    await _prefs.remove('fcm_token');
+  }
+
   static Future<void> clear() async {
     await _prefs.clear();
   }

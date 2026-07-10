@@ -95,3 +95,23 @@ export const updateVendorAdminSettingsSchema = z.object({
   emailNotifications: z.boolean().optional(),
   orderAlerts: z.boolean().optional(),
 });
+
+export const pushTokenSchema = z.object({
+  token: z.string().min(1),
+  platform: z.enum(["android", "ios"]),
+});
+
+export const removePushTokenSchema = z.object({
+  token: z.string().min(1),
+});
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+
+export const exportAuditLogsSchema = z
+  .object({
+    startDate: isoDate,
+    endDate: isoDate,
+  })
+  .refine((v) => v.startDate <= v.endDate, {
+    message: "startDate must be on or before endDate",
+  });

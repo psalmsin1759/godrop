@@ -1,16 +1,38 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../auth/bloc/auth_cubit.dart' show parseDioError;
 import 'orders_state.dart';
 
 class OrdersCubit extends Cubit<OrdersState> {
-  OrdersCubit() : super(OrdersInitial());
+  OrdersCubit() : super(OrdersInitial()) {
+    _listenFcm();
+  }
 
   final _service = OrdersService(DioClient.instance);
   String? _statusFilter;
+  StreamSubscription? _fcmSub;
 
   String? get statusFilter => _statusFilter;
+
+  void _listenFcm() {
+    _fcmSub ??= FirebaseMessaging.onMessage.listen((message) {
+      final type = message.data['type'] as String? ?? 'unknown';
+      debugPrint('[FCM/Vendor] Foreground message | type=$type');
+      // Only refresh a list that's already loaded — before login (or before the
+      // vendor opens the orders tab) there's nothing to reload.
+      if (type == 'NEW_ORDER' && state is OrdersLoaded) refresh();
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _fcmSub?.cancel();
+    return super.close();
+  }
 
   Future<void> load({String? status, bool silent = false}) async {
     _statusFilter = status;

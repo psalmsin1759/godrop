@@ -12,11 +12,19 @@ function getMailtrapUrl(): string {
   return "https://send.api.mailtrap.io/api/send";
 }
 
+export interface EmailAttachment {
+  filename: string;
+  /** Base64-encoded file content */
+  content: string;
+  type: string;
+}
+
 export interface EmailOptions {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  attachments?: EmailAttachment[];
 }
 
 export async function sendEmail(opts: EmailOptions): Promise<void> {
@@ -35,6 +43,16 @@ export async function sendEmail(opts: EmailOptions): Promise<void> {
         subject: opts.subject,
         html: opts.html,
         ...(opts.text ? { text: opts.text } : {}),
+        ...(opts.attachments?.length
+          ? {
+              attachments: opts.attachments.map((a) => ({
+                filename: a.filename,
+                content: a.content,
+                type: a.type,
+                disposition: "attachment",
+              })),
+            }
+          : {}),
       },
       {
         headers: {
@@ -847,5 +865,39 @@ export function truckOrderConfirmationEmail(opts: {
     subject: `Truck booking received — #${opts.trackingCode}`,
     html,
     text: `Hi ${opts.firstName}, we've received your truck booking #${opts.trackingCode}.\n\nMoving from: ${opts.pickupAddress}\nMoving to: ${opts.dropoffAddress}\nScheduled for: ${scheduledLabel}\nEstimated total: ${fmt(opts.totalKobo)}\n\nA Godrop customer representative will reach out to you shortly to confirm the details of your move.`,
+  };
+}
+
+export function vendorAuditLogExportEmail(opts: {
+  firstName: string;
+  email: string;
+  vendorName: string;
+  rangeLabel: string;
+  entryCount: number;
+  pdfBase64: string;
+  filename: string;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader("Your activity log export") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        The activity log you requested for <strong>${opts.vendorName}</strong> is attached as a PDF.
+      </p>
+      ${infoTable([
+        ["Period", opts.rangeLabel],
+        ["Entries", String(opts.entryCount)],
+      ])}
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: `Activity log — ${opts.vendorName} (${opts.rangeLabel})`,
+    html,
+    text: `Hi ${opts.firstName}, the ${opts.vendorName} activity log for ${opts.rangeLabel} (${opts.entryCount} entries) is attached as a PDF.`,
+    attachments: [
+      { filename: opts.filename, content: opts.pdfBase64, type: "application/pdf" },
+    ],
   };
 }

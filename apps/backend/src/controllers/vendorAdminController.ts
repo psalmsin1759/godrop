@@ -4,6 +4,7 @@ import * as svc from "../services/vendorAdminService";
 import * as systemSvc from "../services/systemAdminService";
 import { uploadBuffer } from "../services/cloudinaryService";
 import * as notifSvc from "../services/notificationService";
+import { emailVendorAuditLogPdf } from "../services/auditLogExportService";
 import { paginate, buildMeta } from "../utils/pagination";
 
 export async function getProfile(req: Request, res: Response, next: NextFunction) {
@@ -380,12 +381,54 @@ export async function markAllNotificationsRead(req: Request, res: Response, next
   }
 }
 
+// ─── Push tokens ──────────────────────────────────────────────
+
+export async function registerPushToken(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { token, platform } = req.body;
+    await notifSvc.registerAdminPushToken(req.admin!.id, token, platform);
+    return ok(res, { message: "Push token registered" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function removePushToken(req: Request, res: Response, next: NextFunction) {
+  try {
+    await notifSvc.removeAdminPushToken(req.admin!.id, req.body.token);
+    return ok(res, { message: "Push token removed" });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function uploadCatalogImage(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.file) return fail(res, "No file uploaded", 400);
     const url = await uploadBuffer(req.file.buffer, "godrop/catalog");
     return ok(res, { data: { url } });
   } catch (err) {
+    next(err);
+  }
+}
+
+export async function exportAuditLogs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { startDate, endDate } = req.body;
+    const result = await emailVendorAuditLogPdf({
+      vendorId: req.admin!.vendorId!,
+      adminId: req.admin!.id,
+      startDate,
+      endDate,
+    });
+    return ok(res, {
+      message: `Activity log PDF sent to ${result.email}`,
+      data: { email: result.email, entryCount: result.entryCount },
+    });
+  } catch (err: any) {
+    if (err.message === "No activity found") {
+      return fail(res, "No activity found between those dates.", 404);
+    }
     next(err);
   }
 }

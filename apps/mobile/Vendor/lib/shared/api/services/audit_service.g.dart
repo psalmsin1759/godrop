@@ -18,36 +18,26 @@ class _AuditService implements AuditService {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<AuditLogListResponse> list({
-    String? action,
-    String? entity,
-    int page = 1,
-    int limit = 15,
-  }) async {
+  Future<MessageResponse> export(ExportAuditLogsBody body) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'action': action,
-      r'entity': entity,
-      r'page': page,
-      r'limit': limit,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
+    final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<AuditLogListResponse>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
+    final _options = _setStreamType<MessageResponse>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/vendor-admin/audit-logs',
+            '/vendor-admin/audit-logs/export',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late AuditLogListResponse _value;
+    late MessageResponse _value;
     try {
-      _value = AuditLogListResponse.fromJson(_result.data!);
+      _value = MessageResponse.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

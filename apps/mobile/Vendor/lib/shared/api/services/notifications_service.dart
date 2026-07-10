@@ -10,6 +10,12 @@ abstract class NotificationsService {
   factory NotificationsService(Dio dio, {String? baseUrl}) =
       _NotificationsService;
 
+  @POST('/vendor-admin/me/push-token')
+  Future<MessageResponse> registerPushToken(@Body() PushTokenBody body);
+
+  @DELETE('/vendor-admin/me/push-token')
+  Future<MessageResponse> removePushToken(@Body() RemovePushTokenBody body);
+
   @GET('/vendor-admin/notifications')
   Future<NotificationListResponse> list({
     @Query('unreadOnly') bool unreadOnly = false,

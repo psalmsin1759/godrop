@@ -312,6 +312,7 @@ model Admin {
 
   auditLogs     AuditLog[]
   notifications AdminNotification[]
+  pushTokens    AdminPushToken[]
 
   @@index([vendorId])
   @@index([businessId])
@@ -832,6 +833,18 @@ model PushToken {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, token])
+}
+
+model AdminPushToken {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id])
+  token     String
+  platform  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([adminId, token])
 }
 
 model AdminNotification {

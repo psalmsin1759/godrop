@@ -70,3 +70,26 @@ class UnreadCountResponse {
       _$UnreadCountResponseFromJson(json);
   Map<String, dynamic> toJson() => _$UnreadCountResponseToJson(this);
 }
+
+@JsonSerializable()
+class PushTokenBody {
+  final String token;
+  final String platform;
+
+  const PushTokenBody({required this.token, required this.platform});
+
+  factory PushTokenBody.fromJson(Map<String, dynamic> json) =>
+      _$PushTokenBodyFromJson(json);
+  Map<String, dynamic> toJson() => _$PushTokenBodyToJson(this);
+}
+
+@JsonSerializable()
+class RemovePushTokenBody {
+  final String token;
+
+  const RemovePushTokenBody({required this.token});
+
+  factory RemovePushTokenBody.fromJson(Map<String, dynamic> json) =>
+      _$RemovePushTokenBodyFromJson(json);
+  Map<String, dynamic> toJson() => _$RemovePushTokenBodyToJson(this);
+}

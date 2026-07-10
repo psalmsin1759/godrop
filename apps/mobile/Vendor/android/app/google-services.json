@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "2691529395",
+    "project_id": "naijagodrop",
+    "storage_bucket": "naijagodrop.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:2691529395:android:ec1ff8ad2a5428548e0ec6",
+        "android_client_info": {
+          "package_name": "com.qnetix.naijagodrop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:2691529395:android:aa320883f467d3058e0ec6",
+        "android_client_info": {
+          "package_name": "com.qnetix.naijagodroprider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:2691529395:android:7b3e825e1fc230748e0ec6",
+        "android_client_info": {
+          "package_name": "com.qnetix.naijagodropvendor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

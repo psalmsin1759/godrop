@@ -138,6 +138,24 @@ export async function sendToCustomerTokens(
   return { successCount, failureCount };
 }
 
+// ─── Vendor-admin token dispatch ───────────────────────────────
+
+export async function sendToVendorAdminTokens(
+  tokens: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  if (tokens.length === 0) return { successCount: 0, failureCount: 0 };
+
+  const { successCount, failureCount, staleTokens } = await dispatch(tokens, notification, data);
+
+  if (staleTokens.length > 0) {
+    await prisma.adminPushToken.deleteMany({ where: { token: { in: staleTokens } } });
+  }
+
+  return { successCount, failureCount };
+}
+
 // ─── Admin helpers ─────────────────────────────────────────────
 
 export async function sendToCustomers(
@@ -334,6 +352,45 @@ export async function notifyOnlineRidersNewOrder(order: {
     sendToTokens(tokens, { title, body }, data),
     prisma.riderNotification.createMany({
       data: riders.map((r) => ({ riderId: r.id, title, body, data })),
+    }),
+  ]);
+}
+
+/**
+ * Notifies every active admin of a vendor that a new order just came in —
+ * push to their registered devices plus an AdminNotification record so the
+ * in-app inbox shows it too.
+ */
+export async function notifyVendorAdminsNewOrder(order: {
+  id: string;
+  vendorId: string;
+  trackingCode: string;
+  type: string;
+  totalKobo: number;
+  itemCount: number;
+}): Promise<void> {
+  const admins = await prisma.admin.findMany({
+    where: { vendorId: order.vendorId, type: "VENDOR", isActive: true },
+    select: { id: true, pushTokens: { select: { token: true } } },
+  });
+
+  if (admins.length === 0) return;
+
+  const amountNaira = (order.totalKobo / 100).toLocaleString("en-NG");
+  const typeLabel = order.type.charAt(0) + order.type.slice(1).toLowerCase();
+  const title = `New ${typeLabel} Order`;
+  const body = `${order.itemCount} ${order.itemCount === 1 ? "item" : "items"} • ₦${amountNaira} • #${order.trackingCode}`;
+  const data = { type: "NEW_ORDER", orderId: order.id, trackingCode: order.trackingCode };
+
+  console.log("[PUSH] Vendor new order | order=%s | vendor=%s | admins=%d",
+    order.trackingCode, order.vendorId, admins.length);
+
+  const tokens = admins.flatMap((a) => a.pushTokens.map((t) => t.token));
+
+  await Promise.all([
+    sendToVendorAdminTokens(tokens, { title, body }, data),
+    prisma.adminNotification.createMany({
+      data: admins.map((a) => ({ adminId: a.id, type: "NEW_ORDER", title, body, data })),
     }),
   ]);
 }

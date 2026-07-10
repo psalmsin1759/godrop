@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../../shared/models/admin_models.dart';
+import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/token_storage.dart';
 import '../../../shared/services/user_prefs.dart';
 import 'auth_state.dart';
@@ -29,6 +30,7 @@ class AuthCubit extends Cubit<AuthState> {
         vendorName: res.admin.vendor?.name ?? '',
       );
       emit(AuthAuthenticated(res.admin));
+      PushNotificationService.init();
     } on DioException catch (e) {
       emit(AuthError(parseDioError(e)));
     } catch (_) {
@@ -62,6 +64,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
+    await PushNotificationService.removeToken();
     await TokenStorage.clear();
     await UserPrefs.clear();
     emit(AuthLoggedOut());

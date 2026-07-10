@@ -79,3 +79,15 @@ export async function markAllNotificationsRead(adminId: string) {
     data: { isRead: true },
   });
 }
+
+export async function registerAdminPushToken(adminId: string, token: string, platform: string) {
+  await prisma.adminPushToken.upsert({
+    where: { adminId_token: { adminId, token } },
+    update: { platform },
+    create: { adminId, token, platform },
+  });
+}
+
+export async function removeAdminPushToken(adminId: string, token: string) {
+  await prisma.adminPushToken.deleteMany({ where: { adminId, token } });
+}

@@ -38,6 +38,36 @@ class _CatalogScreenState extends State<CatalogScreen>
     super.dispose();
   }
 
+  void _onAddPressed() {
+    if (_tabs.index == 1) {
+      context.push('/catalog/category/new');
+      return;
+    }
+    // Products need a category — steer the vendor there before the form.
+    final catState = context.read<CategoriesCubit>().state;
+    if (catState is CategoriesLoaded && catState.categories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text(
+            'Add a category first — every product belongs to one.'),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Add category',
+          onPressed: () {
+            _tabs.animateTo(1);
+            context.push('/catalog/category/new');
+          },
+        ),
+      ));
+      return;
+    }
+    context.push('/catalog/product/new');
+  }
+
+  void _showProductsInCategory(ProductCategory category) {
+    context.read<ProductsCubit>().load(categoryId: category.id);
+    _tabs.animateTo(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,12 +92,14 @@ class _CatalogScreenState extends State<CatalogScreen>
         foregroundColor: GodropColors.white,
         icon: const Icon(Icons.add_rounded),
         label: Text(_tabs.index == 0 ? 'Product' : 'Category'),
-        onPressed: () => context.push(
-            _tabs.index == 0 ? '/catalog/product/new' : '/catalog/category/new'),
+        onPressed: _onAddPressed,
       ),
       body: TabBarView(
         controller: _tabs,
-        children: const [_ProductsTab(), _CategoriesTab()],
+        children: [
+          const _ProductsTab(),
+          _CategoriesTab(onViewProducts: _showProductsInCategory),
+        ],
       ),
     );
   }
@@ -119,26 +151,32 @@ class _ProductsTabState extends State<_ProductsTab>
               final cats = catState is CategoriesLoaded
                   ? catState.categories
                   : <ProductCategory>[];
-              final selected = ctx.read<ProductsCubit>().categoryFilter;
-              return ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _FilterChip(
-                    label: 'All',
-                    selected: selected == null,
-                    onTap: () => ctx.read<ProductsCubit>().load(),
-                  ),
-                  for (final c in cats) ...[
-                    const SizedBox(width: 8),
-                    _FilterChip(
-                      label: c.name,
-                      selected: selected == c.id,
-                      onTap: () =>
-                          ctx.read<ProductsCubit>().load(categoryId: c.id),
-                    ),
-                  ],
-                ],
+              // Also rebuild on product loads so the selected chip follows
+              // the active filter (it can change from the Categories tab too).
+              return BlocBuilder<ProductsCubit, ProductsState>(
+                builder: (ctx, _) {
+                  final selected = ctx.read<ProductsCubit>().categoryFilter;
+                  return ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        selected: selected == null,
+                        onTap: () => ctx.read<ProductsCubit>().load(),
+                      ),
+                      for (final c in cats) ...[
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: c.name,
+                          selected: selected == c.id,
+                          onTap: () =>
+                              ctx.read<ProductsCubit>().load(categoryId: c.id),
+                        ),
+                      ],
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -161,6 +199,16 @@ class _ProductsTabState extends State<_ProductsTab>
               }
               final loaded = state as ProductsLoaded;
               if (loaded.products.isEmpty) {
+                if (loaded.categoryFilter != null) {
+                  return EmptyState(
+                    icon: Icons.restaurant_menu_rounded,
+                    title: 'No products in this category',
+                    subtitle:
+                        'Add one, or pick another category above.',
+                    actionLabel: 'Show all products',
+                    onAction: () => ctx.read<ProductsCubit>().load(),
+                  );
+                }
                 return const EmptyState(
                   icon: Icons.restaurant_menu_rounded,
                   title: 'No products yet',
@@ -242,29 +290,33 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final off = !product.isAvailable;
     return GestureDetector(
       onTap: () =>
           context.push('/catalog/product/${product.id}', extra: product),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: GodropColors.card,
+          color: off ? GodropColors.divider : GodropColors.card,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: GodropColors.softShadow,
+          boxShadow: off ? null : GodropColors.softShadow,
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: product.imageUrl != null
-                  ? Image.network(
-                      product.imageUrl!,
-                      width: 56,
-                      height: 56,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const _ImageFallback(),
-                    )
-                  : const _ImageFallback(),
+            Opacity(
+              opacity: off ? 0.5 : 1,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: product.imageUrl != null
+                    ? Image.network(
+                        product.imageUrl!,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const _ImageFallback(),
+                      )
+                    : const _ImageFallback(),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -274,22 +326,24 @@ class _ProductCard extends StatelessWidget {
                   Text(product.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: GodropColors.ink)),
+                          color: off ? GodropColors.mute : GodropColors.ink)),
                   const SizedBox(height: 2),
                   Text(
-                    product.category?.name ?? '',
+                    off ? 'Unavailable' : product.category?.name ?? '',
                     style: const TextStyle(
                         fontSize: 12, color: GodropColors.mute),
                   ),
                   const SizedBox(height: 2),
                   Text(formatKobo(product.priceKobo),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: GodropColors.orange)),
+                          color: off
+                              ? GodropColors.mute
+                              : GodropColors.orange)),
                 ],
               ),
             ),
@@ -331,7 +385,8 @@ class _ImageFallback extends StatelessWidget {
 // ── Categories tab ───────────────────────────────────────────────────────────
 
 class _CategoriesTab extends StatelessWidget {
-  const _CategoriesTab();
+  final ValueChanged<ProductCategory> onViewProducts;
+  const _CategoriesTab({required this.onViewProducts});
 
   @override
   Widget build(BuildContext context) {
@@ -364,7 +419,8 @@ class _CategoriesTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
             itemCount: categories.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (_, i) => _CategoryCard(category: categories[i]),
+            itemBuilder: (_, i) => _CategoryCard(
+                category: categories[i], onViewProducts: onViewProducts),
           ),
         );
       },
@@ -374,19 +430,22 @@ class _CategoriesTab extends StatelessWidget {
 
 class _CategoryCard extends StatelessWidget {
   final ProductCategory category;
-  const _CategoryCard({required this.category});
+  final ValueChanged<ProductCategory> onViewProducts;
+  const _CategoryCard(
+      {required this.category, required this.onViewProducts});
 
   @override
   Widget build(BuildContext context) {
+    final off = !category.isActive;
     return GestureDetector(
       onTap: () => context.push('/catalog/category/${category.id}',
           extra: category),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: GodropColors.card,
+          color: off ? GodropColors.divider : GodropColors.card,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: GodropColors.softShadow,
+          boxShadow: off ? null : GodropColors.softShadow,
         ),
         child: Row(
           children: [
@@ -395,15 +454,32 @@ class _CategoryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(category.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: GodropColors.ink)),
+                          color: off ? GodropColors.mute : GodropColors.ink)),
                   const SizedBox(height: 2),
-                  Text(
-                    '${category.productCount} product${category.productCount == 1 ? '' : 's'}',
-                    style: const TextStyle(
-                        fontSize: 12, color: GodropColors.mute),
+                  GestureDetector(
+                    onTap: () => onViewProducts(category),
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${category.productCount} product${category.productCount == 1 ? '' : 's'}${off ? ' • Hidden' : ''}',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: off
+                                  ? GodropColors.mute
+                                  : GodropColors.blue),
+                        ),
+                        Icon(Icons.chevron_right_rounded,
+                            size: 16,
+                            color:
+                                off ? GodropColors.mute : GodropColors.blue),
+                      ],
+                    ),
                   ),
                 ],
               ),

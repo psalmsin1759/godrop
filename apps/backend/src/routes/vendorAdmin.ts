@@ -19,6 +19,9 @@ import {
   graphQuerySchema,
   updateVendorAdminProfileSchema,
   updateVendorAdminSettingsSchema,
+  pushTokenSchema,
+  removePushTokenSchema,
+  exportAuditLogsSchema,
 } from "../validators/vendorAdminValidators";
 import * as ctrl from "../controllers/vendorAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
@@ -196,8 +199,16 @@ router.get(
   validate(auditLogQuerySchema, "query"),
   ctrl.listVendorAuditLogs
 );
+router.post(
+  "/audit-logs/export",
+  requireVendorRole("MANAGER"),
+  validate(exportAuditLogsSchema),
+  ctrl.exportAuditLogs
+);
 
 // ─── Notifications ────────────────────────────────────────────
+router.post("/me/push-token", validate(pushTokenSchema), ctrl.registerPushToken);
+router.delete("/me/push-token", validate(removePushTokenSchema), ctrl.removePushToken);
 router.get("/notifications", ctrl.listNotifications);
 router.get("/notifications/unread-count", ctrl.getNotificationsUnreadCount);
 router.patch("/notifications/read-all", ctrl.markAllNotificationsRead);

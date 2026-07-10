@@ -4240,6 +4240,92 @@ paths:
                   success: { type: boolean }
                   data: { $ref: "#/components/schemas/VendorAdminSettings" }
 
+  /vendor-admin/me/push-token:
+    post:
+      tags: [Vendor Admin — Auth]
+      summary: Register FCM push token (all roles)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string }
+                platform: { type: string, enum: [android, ios] }
+      responses:
+        "200":
+          description: Token registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+    delete:
+      tags: [Vendor Admin — Auth]
+      summary: Remove FCM push token (on logout)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200":
+          description: Token removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+
+  /vendor-admin/audit-logs/export:
+    post:
+      tags: [Vendor Admin — Auth]
+      summary: Email a PDF export of the activity log (MANAGER+)
+      description: >
+        Builds a PDF of the vendor's audit log between two Lagos-local dates
+        (inclusive) and emails it to the requesting admin. Returns 404 when
+        the range contains no activity.
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [startDate, endDate]
+              properties:
+                startDate: { type: string, format: date, example: "2026-07-01" }
+                endDate: { type: string, format: date, example: "2026-07-10" }
+      responses:
+        "200":
+          description: PDF generated and emailed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      email: { type: string }
+                      entryCount: { type: integer }
+        "404":
+          description: No activity in the requested range
+
   # ─ Categories (MANAGER+) ──────────────────────────────────────
   /vendor-admin/categories:
     get:

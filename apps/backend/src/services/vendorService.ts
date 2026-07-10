@@ -5,6 +5,7 @@ import { paginate } from "../utils/pagination";
 import { generateTrackingCode } from "../utils/generateTrackingCode";
 import { generateConfirmationCode } from "../utils/generateConfirmationCode";
 import { sendEmail, vendorNewOrderEmail } from "./emailService";
+import { notifyVendorAdminsNewOrder } from "./fcmService";
 import { computeIsOpenNow } from "../utils/vendorHours";
 
 async function getCoverageRadiusKm(): Promise<number> {
@@ -241,6 +242,15 @@ async function createVendorOrder(
     deliveryAddress,
     items: orderItemsData,
   }).catch((err) => console.error("[email] vendorNewOrder notify failed:", err));
+
+  notifyVendorAdminsNewOrder({
+    id: order.id,
+    vendorId,
+    trackingCode: order.trackingCode,
+    type,
+    totalKobo: order.totalKobo,
+    itemCount: orderItemsData.reduce((sum, i) => sum + i.quantity, 0),
+  }).catch((err) => console.error("[FCM] vendorNewOrder notify failed:", err));
 
   return order;
 }

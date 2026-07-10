@@ -69,3 +69,26 @@ Map<String, dynamic> _$UnreadCountResponseToJson(
     <String, dynamic>{
       'data': instance.data,
     };
+
+PushTokenBody _$PushTokenBodyFromJson(Map<String, dynamic> json) =>
+    PushTokenBody(
+      token: json['token'] as String,
+      platform: json['platform'] as String,
+    );
+
+Map<String, dynamic> _$PushTokenBodyToJson(PushTokenBody instance) =>
+    <String, dynamic>{
+      'token': instance.token,
+      'platform': instance.platform,
+    };
+
+RemovePushTokenBody _$RemovePushTokenBodyFromJson(Map<String, dynamic> json) =>
+    RemovePushTokenBody(
+      token: json['token'] as String,
+    );
+
+Map<String, dynamic> _$RemovePushTokenBodyToJson(
+        RemovePushTokenBody instance) =>
+    <String, dynamic>{
+      'token': instance.token,
+    };

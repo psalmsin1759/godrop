@@ -7,3 +7,6 @@ build
 .env.local
 *.log
 backup.sql
+
+# AI-agent instruction files — not part of shippable product content
+CLAUDE.md

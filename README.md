@@ -5,14 +5,14 @@
 Godrop connects customers, vendors, independent delivery riders, internal operations staff, and — through a dedicated product line, **GoDrop Invest** — retail investors who fund the vehicles riders operate. The goal is nationwide coverage across Nigeria; the platform launches first in Lagos to prove the model, then expands to Abuja, Port Harcourt, Ibadan, and Kano.
 
 Services offered:
-- 🍔 Food delivery
-- 🛒 Grocery delivery
-- 🧴 Retail & pharmacy product delivery
-- 📦 Parcel delivery (multi-dropoff courier)
-- 🚚 Truck booking for relocation
-- 💰 GoDrop Invest — fractional investment in rider vehicles (Keke tricycles, city shuttles, ride-hail cars, dispatch bikes)
+- Food delivery
+- Grocery delivery
+- Retail & pharmacy product delivery
+- Parcel delivery (multi-dropoff courier)
+- Truck booking for relocation
+- GoDrop Invest — fractional investment in rider vehicles (Keke tricycles, city shuttles, ride-hail cars, dispatch bikes)
 
-📄 Full **[Product Requirements Document](./Godrop-PRD.pdf)** and **[Software Technical Documentation](./Godrop-Technical-Documentation.pdf)** are included in this repo — read those first for the complete picture of scope, business rules, architecture, and data model. This README is the practical, get-things-running companion to those two documents.
+Full **[Product Requirements Document](./Godrop-PRD.pdf)** and **[Software Technical Documentation](./Godrop-Technical-Documentation.pdf)** are included in this repo — read those first for the complete picture of scope, business rules, architecture, and data model. This README is the practical, get-things-running companion to those two documents.
 
 ---
 
@@ -32,7 +32,6 @@ Services offered:
 - [API contract](#api-contract)
 - [Core conventions](#core-conventions)
 - [Order lifecycle](#order-lifecycle)
-- [Per-app documentation](#per-app-documentation)
 - [Nigerian market considerations](#nigerian-market-considerations)
 - [Security notes](#security-notes)
 
@@ -51,13 +50,12 @@ godrop/
 │       ├── Rider/           # Flutter — rider-facing app
 │       ├── Vendor/          # Flutter — vendor admin app
 │       └── Investor/        # Flutter — GoDrop Invest app
-├── CLAUDE.md                # Repo-wide AI-agent instructions (each app also has its own)
 ├── Godrop-PRD.pdf
 ├── Godrop-Technical-Documentation.pdf
 └── README.md                # you are here
 ```
 
-> **Note on tooling:** `CLAUDE.md` describes a Turborepo + pnpm-workspaces setup (`packages/shared-types`, root `turbo.json`/`pnpm-workspace.yaml`). As of this writing those root config files and the `packages/` directory are **not present** in the repo — each app under `apps/` currently has its own independent `package.json` and is run standalone (see [Getting started](#getting-started) below). Treat the monorepo-orchestration description in `CLAUDE.md` as the target state, not the current one, until those files are added.
+> **Note on tooling:** the project is intended to run as a Turborepo + pnpm-workspaces monorepo (with a shared `packages/shared-types` package, root `turbo.json`/`pnpm-workspace.yaml`). As of this writing those root config files and the `packages/` directory are **not present** in the repo — each app under `apps/` currently has its own independent `package.json` and is run standalone (see [Getting started](#getting-started) below). Treat the monorepo-orchestration setup as the target state, not the current one, until those files are added.
 
 ---
 
@@ -184,7 +182,7 @@ NEXTAUTH_URL=http://localhost:3001
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 ```
 
-> ⚠️ **See [Security notes](#security-notes) below** — the checked-in `apps/backend/.env.example` currently contains what appear to be live-looking secrets (a real database connection string, Paystack/Termii/Cloudinary keys, JWT secrets), not placeholders. Treat this as **committed secrets requiring rotation**, and never copy those actual values into new documents or share this file outside the team.
+> **See [Security notes](#security-notes) below** — the checked-in `apps/backend/.env.example` currently contains what appear to be live-looking secrets (a real database connection string, Paystack/Termii/Cloudinary keys, JWT secrets), not placeholders. Treat this as **committed secrets requiring rotation**, and never copy those actual values into new documents or share this file outside the team.
 
 ---
 
@@ -229,19 +227,6 @@ CANCELLED   CANCELLED              CANCELLED / FAILED
 ```
 
 Vendors drive PENDING→READY_FOR_PICKUP; riders drive READY_FOR_PICKUP→DELIVERED (with per-dropoff granularity on multi-drop parcel orders). Cancelling/rejecting an already-paid order auto-refunds the customer's wallet.
-
-## Per-app documentation
-
-Every app has its own `CLAUDE.md` with detailed conventions — read it before working in that app:
-
-- [`apps/backend/CLAUDE.md`](./apps/backend/CLAUDE.md)
-- [`apps/dashboard/CLAUDE.md`](./apps/dashboard/CLAUDE.md)
-- [`apps/landing/CLAUDE.md`](./apps/landing/CLAUDE.md)
-- [`apps/mobile/CLAUDE.md`](./apps/mobile/CLAUDE.md) (shared mobile conventions)
-- [`apps/mobile/Customer/CLAUDE.md`](./apps/mobile/Customer/CLAUDE.md)
-- [`apps/mobile/Rider/CLAUDE.md`](./apps/mobile/Rider/CLAUDE.md)
-- [`apps/mobile/Vendor/CLAUDE.md`](./apps/mobile/Vendor/CLAUDE.md)
-- [`apps/mobile/Investor/CLAUDE.md`](./apps/mobile/Investor/CLAUDE.md)
 
 ## Nigerian market considerations
 

@@ -6,6 +6,7 @@ import '../../shared/models/order_models.dart';
 import '../../shared/utils/currency.dart';
 import '../../shared/utils/dates.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../profile/bloc/session_cubit.dart';
 import 'bloc/orders_cubit.dart';
@@ -128,7 +129,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
             child: BlocBuilder<OrdersCubit, OrdersState>(
               builder: (ctx, state) {
                 if (state is OrdersLoading || state is OrdersInitial) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const ListSkeleton(
+                      padding: EdgeInsets.fromLTRB(20, 8, 20, 120));
                 }
                 if (state is OrdersError) {
                   return EmptyState(

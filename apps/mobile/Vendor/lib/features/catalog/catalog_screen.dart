@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../shared/models/catalog_models.dart';
 import '../../shared/utils/currency.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/skeleton.dart';
 import 'bloc/categories_cubit.dart';
 import 'bloc/categories_state.dart';
 import 'bloc/products_cubit.dart';
@@ -186,7 +187,8 @@ class _ProductsTabState extends State<_ProductsTab>
           child: BlocBuilder<ProductsCubit, ProductsState>(
             builder: (ctx, state) {
               if (state is ProductsLoading || state is ProductsInitial) {
-                return const Center(child: CircularProgressIndicator());
+                return const ListSkeleton(
+                    padding: EdgeInsets.fromLTRB(20, 8, 20, 120));
               }
               if (state is ProductsError) {
                 return EmptyState(
@@ -393,7 +395,7 @@ class _CategoriesTab extends StatelessWidget {
     return BlocBuilder<CategoriesCubit, CategoriesState>(
       builder: (ctx, state) {
         if (state is CategoriesLoading || state is CategoriesInitial) {
-          return const Center(child: CircularProgressIndicator());
+          return const ListSkeleton();
         }
         if (state is CategoriesError) {
           return EmptyState(

@@ -9,6 +9,7 @@ import '../../shared/utils/dates.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/section_header.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../profile/bloc/session_cubit.dart';
 import 'bloc/wallet_cubit.dart';
 import 'bloc/wallet_state.dart';
@@ -141,7 +142,7 @@ class _WalletScreenState extends State<WalletScreen> {
       body: BlocBuilder<WalletCubit, WalletState>(
         builder: (ctx, state) {
           if (state is WalletLoading || state is WalletInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const WalletSkeleton();
           }
           if (state is WalletError) {
             return EmptyState(

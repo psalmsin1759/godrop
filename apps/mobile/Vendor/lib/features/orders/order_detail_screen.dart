@@ -7,6 +7,7 @@ import '../../shared/utils/dates.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/section_header.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../profile/bloc/session_cubit.dart';
 import 'bloc/order_detail_cubit.dart';
@@ -110,7 +111,7 @@ class _OrderDetailView extends StatelessWidget {
       body: BlocBuilder<OrderDetailCubit, OrderDetailState>(
         builder: (ctx, state) {
           if (state is OrderDetailLoading || state is OrderDetailInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const DetailSkeleton();
           }
           if (state is OrderDetailError) {
             return EmptyState(

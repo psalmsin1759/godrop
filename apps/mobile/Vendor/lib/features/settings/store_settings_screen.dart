@@ -10,6 +10,7 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/godrop_field.dart';
 import '../../shared/widgets/section_header.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../profile/bloc/session_cubit.dart';
 import 'bloc/store_settings_cubit.dart';
 import 'bloc/store_settings_state.dart';
@@ -112,7 +113,7 @@ class _StoreSettingsViewState extends State<_StoreSettingsView> {
         builder: (ctx, state) {
           if (state is StoreSettingsLoading ||
               state is StoreSettingsInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const DetailSkeleton();
           }
           if (state is StoreSettingsError) {
             return EmptyState(

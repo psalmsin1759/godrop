@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../shared/models/notification_models.dart';
 import '../../shared/utils/dates.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/skeleton.dart';
 import 'bloc/notifications_cubit.dart';
 import 'bloc/notifications_state.dart';
 
@@ -52,7 +53,7 @@ class _NotificationsView extends StatelessWidget {
         builder: (ctx, state) {
           if (state is NotificationsLoading ||
               state is NotificationsInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const ListSkeleton();
           }
           if (state is NotificationsError) {
             return EmptyState(

@@ -10,6 +10,7 @@ import '../../shared/utils/dates.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/section_header.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../../shared/widgets/status_chip.dart';
 import '../profile/bloc/session_cubit.dart';
 import 'bloc/dashboard_cubit.dart';
@@ -41,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: BlocBuilder<DashboardCubit, DashboardState>(
           builder: (ctx, state) {
             if (state is DashboardLoading || state is DashboardInitial) {
-              return const Center(child: CircularProgressIndicator());
+              return const DashboardSkeleton();
             }
             if (state is DashboardError) {
               return EmptyState(

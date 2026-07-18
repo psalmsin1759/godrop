@@ -5,6 +5,7 @@ import '../../shared/models/team_models.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/godrop_field.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../profile/bloc/session_cubit.dart';
 import 'bloc/team_cubit.dart';
 import 'bloc/team_state.dart';
@@ -229,7 +230,7 @@ class _TeamView extends StatelessWidget {
       body: BlocBuilder<TeamCubit, TeamState>(
         builder: (ctx, state) {
           if (state is TeamLoading || state is TeamInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const ListSkeleton();
           }
           if (state is TeamError) {
             return EmptyState(

@@ -1625,6 +1625,43 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/ApiError" }
 
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with a password
+      description: >
+        Authenticates a user who has a password set (see `/auth/reset-password`), matching
+        `identifier` against either the account's email or phone. Phone-only users who
+        registered via OTP and never set a password should use `/auth/otp/request` +
+        `/auth/otp/verify` instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password]
+              properties:
+                identifier: { type: string, description: "Email or phone", example: "+2348012345678" }
+                password: { type: string }
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accessToken: { type: string }
+                  refreshToken: { type: string }
+                  isNewUser: { type: boolean, example: false }
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+
   /auth/register:
     post:
       tags: [Auth]

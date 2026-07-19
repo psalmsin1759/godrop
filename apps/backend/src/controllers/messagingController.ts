@@ -4,11 +4,13 @@ import { sendEmail, adminBroadcastEmail } from "../services/emailService";
 import { getTermiiSenderIds, requestTermiiSenderId } from "../services/sms";
 import { ok, fail } from "../utils/response";
 
-function smtpError(err: any): string | null {
-  if (err?.responseCode || err?.code === "EAUTH" || err?.code === "ECONNREFUSED" || err?.code === "ETIMEDOUT") {
-    return err.message ?? "SMTP connection failed";
-  }
-  return null;
+function emailError(err: any): string | null {
+  if (!err?.isAxiosError) return null;
+  const status = err.response?.status;
+  const detail = err.response?.data?.errors?.join(", ") ?? err.response?.data?.message ?? err.message;
+  if (status === 401) return `Mailtrap rejected the request (401 Unauthorized) — check MAILTRAP_API_KEY: ${detail}`;
+  if (status) return `Mailtrap responded ${status}: ${detail}`;
+  return `Could not reach Mailtrap: ${detail}`;
 }
 
 export async function sendEmailSingle(req: Request, res: Response, next: NextFunction) {
@@ -17,7 +19,7 @@ export async function sendEmailSingle(req: Request, res: Response, next: NextFun
     await sendEmail(adminBroadcastEmail({ to, subject, bodyHtml: html, bodyText: text }));
     ok(res, { message: `Email sent to ${to}` });
   } catch (err: any) {
-    const msg = smtpError(err);
+    const msg = emailError(err);
     if (msg) return fail(res, `Email delivery failed: ${msg}`, 502);
     next(err);
   }
@@ -36,7 +38,7 @@ export async function sendEmailBatch(req: Request, res: Response, next: NextFunc
 
     if (sent === 0 && failed > 0) {
       const firstErr = (results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason;
-      const msg = smtpError(firstErr) ?? "All recipients failed";
+      const msg = emailError(firstErr) ?? "All recipients failed";
       return fail(res, `Email delivery failed: ${msg}`, 502);
     }
 
@@ -70,7 +72,7 @@ export async function sendEmailAllCustomers(req: Request, res: Response, next: N
 
     if (sent === 0 && failed > 0) {
       const firstErr = (results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason;
-      const msg = smtpError(firstErr) ?? "All recipients failed";
+      const msg = emailError(firstErr) ?? "All recipients failed";
       return fail(res, `Email delivery failed: ${msg}`, 502);
     }
 
@@ -104,7 +106,7 @@ export async function sendEmailAllVendors(req: Request, res: Response, next: Nex
 
     if (sent === 0 && failed > 0) {
       const firstErr = (results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason;
-      const msg = smtpError(firstErr) ?? "All recipients failed";
+      const msg = emailError(firstErr) ?? "All recipients failed";
       return fail(res, `Email delivery failed: ${msg}`, 502);
     }
 
@@ -138,7 +140,7 @@ export async function sendEmailAllRiders(req: Request, res: Response, next: Next
 
     if (sent === 0 && failed > 0) {
       const firstErr = (results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason;
-      const msg = smtpError(firstErr) ?? "All recipients failed";
+      const msg = emailError(firstErr) ?? "All recipients failed";
       return fail(res, `Email delivery failed: ${msg}`, 502);
     }
 

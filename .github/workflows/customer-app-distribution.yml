@@ -1,0 +1,73 @@
+name: Customer App — Firebase App Distribution
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "apps/mobile/Customer/**"
+
+concurrency:
+  group: customer-app-distribution-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/mobile/Customer
+
+jobs:
+  build-and-distribute:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode release keystore
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > godrop-customer-release.jks
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Write key.properties
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=../../godrop-customer-release.jks
+          EOF
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          groups: ${{ secrets.FIREBASE_TESTER_GROUP }}
+          file: apps/mobile/Customer/build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: ${{ github.event.head_commit.message }}
+
+      - name: Clean up signing material
+        if: always()
+        run: |
+          rm -f godrop-customer-release.jks
+          rm -f android/key.properties

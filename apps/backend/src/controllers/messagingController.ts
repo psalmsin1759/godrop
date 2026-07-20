@@ -5,12 +5,11 @@ import { getTermiiSenderIds, requestTermiiSenderId } from "../services/sms";
 import { ok, fail } from "../utils/response";
 
 function emailError(err: any): string | null {
-  if (!err?.isAxiosError) return null;
-  const status = err.response?.status;
-  const detail = err.response?.data?.errors?.join(", ") ?? err.response?.data?.message ?? err.message;
-  if (status === 401) return `Mailtrap rejected the request (401 Unauthorized) — check MAILTRAP_API_KEY: ${detail}`;
-  if (status) return `Mailtrap responded ${status}: ${detail}`;
-  return `Could not reach Mailtrap: ${detail}`;
+  if (!err?.code || !String(err.command ?? "").length) return null;
+  if (err.responseCode === 535 || /auth/i.test(err.message ?? ""))
+    return `Mailtrap rejected the SMTP credentials — check MAILTRAP_USER/MAILTRAP_PASS: ${err.message}`;
+  if (err.responseCode) return `Mailtrap SMTP responded ${err.responseCode}: ${err.message}`;
+  return `Could not reach Mailtrap SMTP: ${err.message}`;
 }
 
 export async function sendEmailSingle(req: Request, res: Response, next: NextFunction) {

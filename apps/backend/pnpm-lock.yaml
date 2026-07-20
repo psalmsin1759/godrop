@@ -56,6 +56,9 @@ importers:
       nanoid:
         specifier: ^3.3.7
         version: 3.3.11
+      nodemailer:
+        specifier: ^6.10.1
+        version: 6.10.1
       pdfkit:
         specifier: ^0.19.1
         version: 0.19.1
@@ -93,6 +96,9 @@ importers:
       '@types/multer':
         specifier: ^1.4.11
         version: 1.4.13
+      '@types/nodemailer':
+        specifier: ^6.4.24
+        version: 6.4.24
       '@types/pdfkit':
         specifier: ^0.17.6
         version: 0.17.6
@@ -497,6 +503,9 @@ packages:
 
   '@types/node@25.6.0':
     resolution: {integrity: sha512-+qIYRKdNYJwY3vRCZMdJbPLJAtGjQBudzZzdzwQYkEPQd+PJGixUL5QfvCLDaULoLv+RhT3LDkwEfKaAkgSmNQ==}
+
+  '@types/nodemailer@6.4.24':
+    resolution: {integrity: sha512-Ww4u0rT9wQNXh4JiQaIwx3QWdcOFXzOjQA2zc+jtFYNmQiT4mIUqcDin51bDFdkzKubFnQCZNK7FIHlPKQ/q9w==}
 
   '@types/pdfkit@0.17.6':
     resolution: {integrity: sha512-tIwzxk2uWKp0Cq9JIluQXJid77lYhF52EsIOwhsMF4iWLA6YneoBR1xVKYYdAysHuepUB0OX4tdwMiUDdGKmig==}
@@ -1244,6 +1253,10 @@ packages:
   node-forge@1.4.0:
     resolution: {integrity: sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==}
     engines: {node: '>= 6.13.0'}
+
+  nodemailer@6.10.1:
+    resolution: {integrity: sha512-Z+iLaBGVaSjbIzQ4pX6XV41HrooLsQ10ZWPUehGmuantvzWoDVBnmsdUcOIDM1t+yPor5pDhVlDESgOMEGxhHA==}
+    engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
@@ -2029,6 +2042,10 @@ snapshots:
   '@types/node@25.6.0':
     dependencies:
       undici-types: 7.19.2
+
+  '@types/nodemailer@6.4.24':
+    dependencies:
+      '@types/node': 25.6.0
 
   '@types/pdfkit@0.17.6':
     dependencies:
@@ -2932,6 +2949,8 @@ snapshots:
       formdata-polyfill: 4.0.10
 
   node-forge@1.4.0: {}
+
+  nodemailer@6.10.1: {}
 
   normalize-path@3.0.0: {}
 

@@ -1,27 +1,15 @@
-import nodemailer, { Transporter } from "nodemailer";
+import axios from "axios";
 
-// ─── Mailtrap SMTP send ───────────────────────────────────────
+// ─── Mailtrap HTTP send ───────────────────────────────────────
 
-let transporter: Transporter | null = null;
-
-function getTransporter(): Transporter {
-  if (transporter) return transporter;
-
-  const host = process.env.MAILTRAP_HOST ?? "sandbox.smtp.mailtrap.io";
-  const port = Number(process.env.MAILTRAP_PORT ?? 587);
-  const user = process.env.MAILTRAP_USER;
-  const pass = process.env.MAILTRAP_PASS;
-  if (!user || !pass) throw new Error("MAILTRAP_USER and MAILTRAP_PASS are required");
-
-  transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    requireTLS: port !== 465,
-    auth: { user, pass },
-  });
-
-  return transporter;
+function getMailtrapUrl(): string {
+  const isSandbox = (process.env.MAILTRAP_USE_SANDBOX ?? "false").trim().toLowerCase() === "true";
+  if (isSandbox) {
+    const inboxId = process.env.MAILTRAP_INBOX_ID;
+    if (!inboxId) throw new Error("MAILTRAP_INBOX_ID is required when MAILTRAP_USE_SANDBOX=true");
+    return `https://sandbox.api.mailtrap.io/api/send/${inboxId}`;
+  }
+  return "https://send.api.mailtrap.io/api/send";
 }
 
 export interface EmailAttachment {
@@ -40,30 +28,43 @@ export interface EmailOptions {
 }
 
 export async function sendEmail(opts: EmailOptions): Promise<void> {
+  const token = process.env.MAILTRAP_API_KEY;
+  if (!token) throw new Error("MAILTRAP_API_KEY is not set");
+
   const fromName = process.env.EMAIL_FROM_NAME ?? "Godrop";
   const fromEmail = process.env.EMAIL_FROM_ADDRESS ?? "noreply@godrop.ng";
 
   try {
-    await getTransporter().sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to: opts.to,
-      subject: opts.subject,
-      html: opts.html,
-      ...(opts.text ? { text: opts.text } : {}),
-      ...(opts.attachments?.length
-        ? {
-            attachments: opts.attachments.map((a) => ({
-              filename: a.filename,
-              content: a.content,
-              encoding: "base64",
-              contentType: a.type,
-            })),
-          }
-        : {}),
-    });
+    await axios.post(
+      getMailtrapUrl(),
+      {
+        from: { name: fromName, email: fromEmail },
+        to: [{ email: opts.to }],
+        subject: opts.subject,
+        html: opts.html,
+        ...(opts.text ? { text: opts.text } : {}),
+        ...(opts.attachments?.length
+          ? {
+              attachments: opts.attachments.map((a) => ({
+                filename: a.filename,
+                content: a.content,
+                type: a.type,
+                disposition: "attachment",
+              })),
+            }
+          : {}),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     console.log(`[email] Sent → ${opts.to} | ${opts.subject}`);
   } catch (err: any) {
-    console.error("[email] Send failed:", err?.message ?? err);
+    const detail = err?.response?.data ?? err?.message;
+    console.error("[email] Send failed:", detail);
     throw err;
   }
 }

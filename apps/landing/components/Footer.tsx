@@ -98,6 +98,9 @@ export default function Footer() {
           <p className="mono-label text-white/40">
             © {new Date().getFullYear()} Godrop Technologies Ltd
           </p>
+          <p className="mono-label text-white/40">
+            NaijaGodrop is a product of HarryDynasty
+          </p>
           <p className="mono-label text-white/40">Nigeria</p>
         </div>
       </div>

@@ -10,19 +10,19 @@ export interface TermiiSenderId {
 
 // Termii Messaging API — https://developer.termii.com/messaging-api
 export class TermiiSmsProvider implements SmsProvider {
+  // Uses the Number API (https://developer.termii.com/number-api), which sends from
+  // Termii's auto-generated numbers instead of a registered sender ID, so it works
+  // without a sender ID approval.
   async sendSms(to: string, message: string): Promise<void> {
     const apiKey = process.env.TERMII_API_KEY;
     if (!apiKey) throw new Error("TERMII_API_KEY is not set");
 
     const baseUrl = process.env.TERMII_BASE_URL ?? "https://v3.api.termii.com";
-//termii provider rrss
+
     try {
-      await axios.post(`${baseUrl}/api/sms/send`, {
+      await axios.post(`${baseUrl}/api/sms/number/send`, {
         to: to.replace(/^\+/, ""),
-        from: process.env.TERMII_SENDER_ID || "Godrop",
         sms: message,
-        type: "plain",
-        channel: "dnd",
         api_key: apiKey,
       });
       console.log(`[sms:termii] Sent → ${to}`);

@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
-import { AdminRole, AdminType, VendorType, OrderStatus, PaymentStatus } from "@prisma/client";
+import { AdminRole, AdminType, Prisma, VendorStatus, VendorType, OrderStatus, PaymentStatus } from "@prisma/client";
 import * as walletService from "./walletService";
 import { paginate } from "../utils/pagination";
 import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApplicationEmail } from "./emailService";
@@ -545,6 +545,38 @@ export async function removeTeamMember(memberId: string, vendorId: string, reque
   if (!member) throw new Error("Team member not found");
   if (member.role === AdminRole.OWNER) throw new Error("Cannot remove the owner");
   await prisma.admin.update({ where: { id: memberId }, data: { isActive: false } });
+}
+
+export async function deactivateOwnAccount(adminId: string, vendorId: string, role: AdminRole) {
+  const randomPassword = await bcrypt.hash(nanoid(32), SALT_ROUNDS);
+  const ops: Prisma.PrismaPromise<unknown>[] = [
+    prisma.admin.update({
+      where: { id: adminId },
+      data: {
+        isActive: false,
+        email: `deleted_${adminId}@deleted.godrop.ng`,
+        firstName: "Deleted",
+        lastName: "Member",
+        password: randomPassword,
+        settings: Prisma.JsonNull,
+        receiveVendorEmails: false,
+        receiveRiderEmails: false,
+      },
+    }),
+  ];
+  if (role === AdminRole.OWNER) {
+    ops.push(
+      prisma.vendor.update({
+        where: { id: vendorId },
+        data: { status: VendorStatus.SUSPENDED, isActive: false },
+      }),
+      prisma.admin.updateMany({
+        where: { vendorId, id: { not: adminId } },
+        data: { isActive: false },
+      })
+    );
+  }
+  await prisma.$transaction(ops);
 }
 
 export async function changePassword(adminId: string, currentPassword: string, newPassword: string) {

@@ -16,6 +16,15 @@ export async function getProfile(req: Request, res: Response, next: NextFunction
   }
 }
 
+export async function deleteAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    await svc.deactivateOwnAccount(req.admin!.id, req.admin!.vendorId!, req.admin!.role);
+    return ok(res, { message: "Account deleted" });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function changePassword(req: Request, res: Response, next: NextFunction) {
   try {
     await svc.changePassword(req.admin!.id, req.body.currentPassword, req.body.newPassword);

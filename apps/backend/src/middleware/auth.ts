@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { UserStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { fail } from "../utils/response";
 
@@ -16,7 +17,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
-    if (!user) return fail(res, "Unauthorized", 401);
+    if (!user || user.status !== UserStatus.ACTIVE) return fail(res, "Unauthorized", 401);
     req.user = user;
     next();
   } catch {

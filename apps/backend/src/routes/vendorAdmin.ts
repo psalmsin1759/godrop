@@ -34,6 +34,7 @@ router.use(requireVendorAuth);
 
 // Profile
 router.get("/me", ctrl.getProfile);
+router.delete("/me", ctrl.deleteAccount);
 router.post(
   "/me/change-password",
   validate(changePasswordSchema),

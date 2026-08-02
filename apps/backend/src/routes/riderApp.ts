@@ -54,6 +54,7 @@ router.use(requireRiderAuth);
 
 // Profile
 router.get("/me", ctrl.getMe);
+router.delete("/me", ctrl.deleteAccount);
 router.patch("/me", validate(updateRiderProfileSchema), ctrl.updateMe);
 router.patch("/me/avatar", validate(updateAvatarSchema), ctrl.updateAvatar);
 router.post(

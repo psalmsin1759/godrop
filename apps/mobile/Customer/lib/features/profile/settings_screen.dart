@@ -35,7 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete account?', style: TextStyle(fontWeight: FontWeight.w700, color: GodropColors.ink)),
-        content: const Text('This will permanently deactivate your account. This action cannot be undone.', style: TextStyle(color: GodropColors.slate)),
+        content: const Text('This will permanently delete your account and personal data. This action cannot be undone.', style: TextStyle(color: GodropColors.slate)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),

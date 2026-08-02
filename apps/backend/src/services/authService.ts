@@ -127,7 +127,24 @@ export async function changePassword(userId: string, currentPassword: string, ne
 
 export async function deactivateAccount(userId: string): Promise<void> {
   await prisma.$transaction([
-    prisma.user.update({ where: { id: userId }, data: { status: UserStatus.DEACTIVATED } }),
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        status: UserStatus.DEACTIVATED,
+        phone: `deleted_${userId}`,
+        email: null,
+        firstName: null,
+        lastName: null,
+        avatarUrl: null,
+        passwordHash: null,
+        passwordResetToken: null,
+        referralCode: null,
+      },
+    }),
     prisma.refreshToken.deleteMany({ where: { userId } }),
+    prisma.savedAddress.deleteMany({ where: { userId } }),
+    prisma.savedCard.deleteMany({ where: { userId } }),
+    prisma.favorite.deleteMany({ where: { userId } }),
+    prisma.pushToken.deleteMany({ where: { userId } }),
   ]);
 }

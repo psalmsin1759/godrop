@@ -150,6 +150,15 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function deleteAccount(req: Request, res: Response, next: NextFunction) {
+  try {
+    await riderAuthService.deactivateAccount(req.rider!.id);
+    return ok(res, { message: "Account deleted" });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateMe(req: Request, res: Response, next: NextFunction) {
   try {
     const rider = await riderAppService.updateRiderProfile(req.rider!.id, req.body);

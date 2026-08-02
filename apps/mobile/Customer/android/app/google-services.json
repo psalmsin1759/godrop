@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "2691529395",
-    "project_id": "naijagodrop",
-    "storage_bucket": "naijagodrop.firebasestorage.app"
+    "project_number": "639712829781",
+    "project_id": "godrop-34d3f",
+    "storage_bucket": "godrop-34d3f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:2691529395:android:ec1ff8ad2a5428548e0ec6",
+        "mobilesdk_app_id": "1:639712829781:android:8fe262266fa445a08a4fdc",
         "android_client_info": {
-          "package_name": "com.qnetix.naijagodrop"
+          "package_name": "com.qnetix.godrop"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
+          "current_key": "AIzaSyAmmF561nW_WrTp_s7_hlAzfPiHXNzqvGM"
         }
       ],
       "services": {

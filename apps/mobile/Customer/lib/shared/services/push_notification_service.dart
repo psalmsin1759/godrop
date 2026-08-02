@@ -124,8 +124,12 @@ class PushNotificationService {
       sound: true,
     );
 
-    final token = await _messaging.getToken();
-    if (token != null) await _registerIfChanged(token);
+    try {
+      final token = await _messaging.getToken();
+      if (token != null) await _registerIfChanged(token);
+    } catch (e) {
+      debugPrint('[PUSH/Customer] getToken failed: $e');
+    }
 
     _messaging.onTokenRefresh.listen(_registerIfChanged);
   }

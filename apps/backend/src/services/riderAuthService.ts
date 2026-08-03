@@ -1,7 +1,10 @@
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { Prisma, Rider } from "@prisma/client";
+import { sendEmail, riderPasswordResetEmail } from "./emailService";
 
 const ACCESS_TTL = "1y"; // TODO: restore to "15m" before production
 const REFRESH_TTL_DAYS = 30;
@@ -81,4 +84,59 @@ export async function deactivateAccount(riderId: string): Promise<void> {
     prisma.riderRefreshToken.deleteMany({ where: { riderId } }),
     prisma.riderPushToken.deleteMany({ where: { riderId } }),
   ]);
+}
+
+export async function loginWithPassword(identifier: string, password: string): Promise<Rider | null> {
+  const rider = await prisma.rider.findFirst({
+    where: {
+      OR: [{ email: identifier }, { phone: identifier }],
+      isActive: true,
+    },
+  });
+  if (!rider || !rider.passwordHash) return null;
+  const valid = await bcrypt.compare(password, rider.passwordHash);
+  return valid ? rider : null;
+}
+
+export async function setInitialPassword(riderId: string, password: string): Promise<Rider | null> {
+  const rider = await prisma.rider.findUnique({ where: { id: riderId } });
+  if (!rider || !rider.isActive || rider.passwordHash) return null;
+  const passwordHash = await bcrypt.hash(password, 12);
+  return prisma.rider.update({ where: { id: riderId }, data: { passwordHash } });
+}
+
+export async function sendPasswordReset(email: string): Promise<void> {
+  const rider = await prisma.rider.findUnique({ where: { email } });
+  if (!rider) throw new Error("EMAIL_NOT_FOUND");
+
+  const rawToken = nanoid(64);
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+  const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  await prisma.rider.update({
+    where: { id: rider.id },
+    data: { passwordResetToken: hashedToken, passwordResetExpiry: expiry },
+  });
+
+  const resetUrl = `${process.env.APP_DOMAIN ?? "https://naijagodrop.com"}/riders/reset-password?token=${rawToken}`;
+  try {
+    await sendEmail(
+      riderPasswordResetEmail({ firstName: rider.firstName, email, resetLink: resetUrl })
+    );
+  } catch (err) {
+    throw new Error("EMAIL_SEND_FAILED");
+  }
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const rider = await prisma.rider.findFirst({
+    where: { passwordResetToken: hashedToken, passwordResetExpiry: { gt: new Date() } },
+  });
+  if (!rider) return false;
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.rider.update({
+    where: { id: rider.id },
+    data: { passwordHash, passwordResetToken: null, passwordResetExpiry: null },
+  });
+  return true;
 }

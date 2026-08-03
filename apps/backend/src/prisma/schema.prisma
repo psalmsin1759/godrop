@@ -615,6 +615,9 @@ model Rider {
   lastName     String
   phone        String         @unique
   email        String?        @unique
+  passwordHash        String?
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
   avatarUrl    String?
   dateOfBirth  DateTime?
   gender       String?

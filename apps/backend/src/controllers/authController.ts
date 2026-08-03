@@ -123,6 +123,9 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
     if (err.message === "EMAIL_NOT_FOUND") {
       return fail(res, "No Godrop account was found with that email address", 404);
     }
+    if (err.message === "EMAIL_SEND_FAILED") {
+      return fail(res, "We couldn't send the reset email right now. Please try again shortly.", 502);
+    }
     next(err);
   }
 }

@@ -8,6 +8,10 @@ import {
   riderVerifyOtpSchema,
   riderRefreshTokenSchema,
   riderLogoutSchema,
+  riderPasswordLoginSchema,
+  riderForgotPasswordSchema,
+  riderResetPasswordSchema,
+  riderSetPasswordSchema,
   updateRiderProfileSchema,
   updateBankAccountSchema,
   updateAvatarSchema,
@@ -48,6 +52,10 @@ router.post("/auth/request-otp", validate(riderRequestOtpSchema), ctrl.requestOt
 router.post("/auth/verify-otp", validate(riderVerifyOtpSchema), ctrl.verifyOtp);
 router.post("/auth/refresh", validate(riderRefreshTokenSchema), ctrl.refreshToken);
 router.post("/auth/logout", validate(riderLogoutSchema), ctrl.logout);
+router.post("/auth/login", validate(riderPasswordLoginSchema), ctrl.passwordLogin);
+router.post("/auth/set-password", validate(riderSetPasswordSchema), ctrl.setPassword);
+router.post("/auth/forgot-password", validate(riderForgotPasswordSchema), ctrl.forgotPassword);
+router.post("/auth/reset-password", validate(riderResetPasswordSchema), ctrl.resetPassword);
 
 // ─── Authenticated ─────────────────────────────────────────────
 router.use(requireRiderAuth);

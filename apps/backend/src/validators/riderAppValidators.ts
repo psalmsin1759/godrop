@@ -26,6 +26,25 @@ export const riderLogoutSchema = z.object({
   refreshToken: z.string().min(1),
 });
 
+export const riderPasswordLoginSchema = z.object({
+  identifier: z.string().min(1),
+  password: z.string().min(1),
+});
+
+export const riderForgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const riderResetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6),
+});
+
+export const riderSetPasswordSchema = z.object({
+  riderId: z.string().min(1),
+  password: z.string().min(6),
+});
+
 export const updateRiderProfileSchema = z.object({
   firstName: z.string().min(1).max(50).optional(),
   lastName: z.string().min(1).max(50).optional(),

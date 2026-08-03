@@ -11,7 +11,10 @@ export async function requestOtp(req: Request, res: Response, next: NextFunction
     const { phone } = req.body;
     const result = await otpService.sendOtp(phone);
     ok(res, { message: "OTP sent", expiresIn: result.expiresIn });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message === "SMS_SEND_FAILED") {
+      return fail(res, "We couldn't send the verification code right now. Please try again shortly.", 502);
+    }
     next(err);
   }
 }

@@ -29,6 +29,9 @@ export async function register(req: Request, res: Response, next: NextFunction) 
   } catch (err: any) {
     if (err.message === "EMAIL_TAKEN") return fail(res, "An account with this email already exists", 409);
     if (err.message === "PHONE_TAKEN") return fail(res, "An account with this phone already exists", 409);
+    if (err.message === "SMS_SEND_FAILED") {
+      return fail(res, "We couldn't send the verification code right now. Please try again shortly.", 502);
+    }
     next(err);
   }
 }
@@ -37,7 +40,10 @@ export async function requestOtp(req: Request, res: Response, next: NextFunction
   try {
     const { expiresIn } = await otpService.sendOtp(req.body.phone);
     ok(res, { message: "OTP sent", expiresIn });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message === "SMS_SEND_FAILED") {
+      return fail(res, "We couldn't send the verification code right now. Please try again shortly.", 502);
+    }
     next(err);
   }
 }

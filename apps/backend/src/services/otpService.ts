@@ -17,7 +17,11 @@ export async function sendOtp(phone: string): Promise<{ expiresIn: number }> {
   // Log after DB write so the code is guaranteed to be stored
   console.log(`[OTP] ${phone} → ${code} (expires ${expiresAt.toISOString()})`);
 
-  //await sendSms(phone, `Your Godrop verification code is ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`);
+  try {
+    await sendSms(phone, `Your Godrop verification code is ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`);
+  } catch (err) {
+    throw new Error("SMS_SEND_FAILED");
+  }
 
   return { expiresIn: OTP_EXPIRY_MINUTES * 60 };
 }

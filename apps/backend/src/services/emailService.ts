@@ -773,6 +773,40 @@ export function riderOnboardConfirmationEmail(opts: {
   };
 }
 
+export function riderPasswordResetEmail(opts: {
+  firstName: string;
+  email: string;
+  resetLink: string;
+}): EmailOptions {
+  const html = emailLayout(
+    cardHeader("Reset Your Rider Password", "#f97316") +
+    cardBody(`
+      <p style="margin:0 0 16px;font-size:15px;color:#374151;">Hi <strong>${opts.firstName}</strong>,</p>
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+        We received a request to reset the password for your Godrop Rider account
+        (<strong>${opts.email}</strong>). Click the button below to choose a new password.
+      </p>
+      ${ctaButton("Reset My Password", opts.resetLink, "#f97316")}
+      <div style="margin-top:28px;padding:16px 20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Or copy this link</p>
+        <p style="margin:0;font-size:12px;color:#374151;word-break:break-all;font-family:monospace;">${opts.resetLink}</p>
+      </div>
+      ${alertBox("This link expires in <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email — your password will not change.", "#92400e", "#fffbeb")}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        For security, this link can only be used once. Need help? Contact
+        <a href="mailto:support@godrop.ng" style="color:#1E5FFF;text-decoration:none;">support@godrop.ng</a>.
+      </p>
+    `)
+  );
+
+  return {
+    to: opts.email,
+    subject: "Reset your Godrop Rider password",
+    html,
+    text: `Hi ${opts.firstName},\n\nWe received a request to reset your Godrop Rider account password.\n\nReset link (expires in 1 hour):\n${opts.resetLink}\n\nIf you did not request this, you can safely ignore this email — your password will not change.\n\nGodrop Support: support@godrop.ng`,
+  };
+}
+
 export function customerOrderCancelledEmail(opts: {
   firstName: string;
   email: string;

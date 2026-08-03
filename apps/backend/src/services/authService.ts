@@ -96,9 +96,13 @@ export async function sendPasswordReset(email: string): Promise<void> {
   });
 
   const resetUrl = `${process.env.APP_DOMAIN ?? "https://naijagodrop.com"}/reset-password?token=${rawToken}`;
-  await sendEmail(
-    customerPasswordResetEmail({ firstName: user.firstName ?? "there", email, resetLink: resetUrl })
-  );
+  try {
+    await sendEmail(
+      customerPasswordResetEmail({ firstName: user.firstName ?? "there", email, resetLink: resetUrl })
+    );
+  } catch (err) {
+    throw new Error("EMAIL_SEND_FAILED");
+  }
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<boolean> {

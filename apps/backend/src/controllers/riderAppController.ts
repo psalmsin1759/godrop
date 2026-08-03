@@ -97,6 +97,9 @@ export async function requestOtp(req: Request, res: Response, next: NextFunction
     const rider = await prisma.rider.findUnique({ where: { phone } });
     if (!rider) return fail(res, "No rider account found for this phone number", 404);
     if (!rider.isActive) return fail(res, "Account is inactive. Contact support.", 403);
+    if (rider.passwordHash) {
+      return fail(res, "This account is already activated. Please log in with your phone or email and password.", 400);
+    }
     const result = await otpService.sendOtp(phone);
     return ok(res, { message: "OTP sent", expiresIn: result.expiresIn });
   } catch (err) {
@@ -114,8 +117,63 @@ export async function verifyOtp(req: Request, res: Response, next: NextFunction)
     if (!rider) return fail(res, "Rider not found", 404);
     if (!rider.isActive) return fail(res, "Account is inactive. Contact support.", 403);
 
+    if (!rider.passwordHash) {
+      return ok(res, { requiresPasswordSetup: true, riderId: rider.id });
+    }
+
     const tokens = await riderAuthService.issueTokens(rider);
     return ok(res, { ...tokens, rider });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function passwordLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { identifier, password } = req.body;
+    const rider = await riderAuthService.loginWithPassword(identifier, password);
+    if (!rider) return fail(res, "Invalid credentials", 401);
+    const tokens = await riderAuthService.issueTokens(rider);
+    return ok(res, { ...tokens, rider });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function setPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { riderId, password } = req.body;
+    const rider = await riderAuthService.setInitialPassword(riderId, password);
+    if (!rider) return fail(res, "Unable to set password for this account", 400);
+    const tokens = await riderAuthService.issueTokens(rider);
+    return ok(res, { ...tokens, rider });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email } = req.body;
+    await riderAuthService.sendPasswordReset(email);
+    ok(res, { message: "A password reset link has been sent to your email address." });
+  } catch (err: any) {
+    if (err.message === "EMAIL_NOT_FOUND") {
+      return fail(res, "No Godrop Rider account was found with that email address", 404);
+    }
+    if (err.message === "EMAIL_SEND_FAILED") {
+      return fail(res, "We couldn't send the reset email right now. Please try again shortly.", 502);
+    }
+    next(err);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { token, password } = req.body;
+    const success = await riderAuthService.resetPassword(token, password);
+    if (!success) return fail(res, "Invalid or expired reset token", 400);
+    ok(res, { message: "Password reset successful" });
   } catch (err) {
     next(err);
   }

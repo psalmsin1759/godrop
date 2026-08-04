@@ -34,7 +34,7 @@ router.use(requireVendorAuth);
 
 // Profile
 router.get("/me", ctrl.getProfile);
-router.delete("/me", ctrl.deleteAccount);
+router.delete("/me", requireVendorRole("OWNER"), ctrl.deleteAccount);
 router.post(
   "/me/change-password",
   validate(changePasswordSchema),
@@ -159,6 +159,7 @@ router.get(
   validate(graphQuerySchema, "query"),
   analyticsCtrl.vendorGraphData
 );
+router.get("/analytics/lifetime", requireVendorRole("MANAGER"), analyticsCtrl.vendorLifetimeStats);
 
 // Settings (view: MANAGER+, update: OWNER)
 router.get("/settings", requireVendorRole("MANAGER"), ctrl.getSettings);

@@ -4,7 +4,7 @@ import { AdminRole } from "@prisma/client";
 export const graphQuerySchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "from must be YYYY-MM-DD").optional(),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "to must be YYYY-MM-DD").optional(),
-  granularity: z.enum(["day", "week", "month"]).optional().default("day"),
+  granularity: z.enum(["day", "week", "month", "year"]).optional().default("day"),
 });
 
 export const createCategorySchema = z.object({

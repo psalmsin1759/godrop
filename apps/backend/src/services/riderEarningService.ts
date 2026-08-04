@@ -55,14 +55,38 @@ export async function listEarnings(riderId: string, page: number, limit: number)
             type: true,
             pickupAddress: true,
             dropoffAddress: true,
+            deliveryFeeKobo: true,
             createdAt: true,
           },
         },
+        // Per-stop fee for parcel orders overrides the order-level fee, since
+        // a multi-stop order's total delivery fee is split across its stops.
+        parcelDropoff: { select: { deliveryFeeKobo: true } },
       },
     }),
     prisma.riderEarning.count({ where: { riderId } }),
   ]);
-  return { data, total, page, limit };
+
+  // The rider's cut (amountKobo) was fixed at whatever the platform's
+  // riderEarningRate was when this earning was created, so deriving the
+  // platform's cut from the stored fee/amount is accurate per-delivery even
+  // if the global rate (set via the admin dashboard) has since changed.
+  const shaped = data.map(({ order, parcelDropoff, ...earning }) => {
+    const deliveryFeeKobo = parcelDropoff?.deliveryFeeKobo ?? order.deliveryFeeKobo;
+    const platformCutKobo = Math.max(0, deliveryFeeKobo - earning.amountKobo);
+    const riderSharePercent =
+      deliveryFeeKobo > 0 ? Math.round((earning.amountKobo / deliveryFeeKobo) * 100) : null;
+    const { deliveryFeeKobo: _orderFeeKobo, ...orderRest } = order;
+    return {
+      ...earning,
+      order: orderRest,
+      deliveryFeeKobo,
+      platformCutKobo,
+      riderSharePercent,
+    };
+  });
+
+  return { data: shaped, total, page, limit };
 }
 
 // Withdrawals that have removed (or will remove) money from the rider's balance

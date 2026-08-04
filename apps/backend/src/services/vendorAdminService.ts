@@ -303,13 +303,15 @@ export async function listVendorOrders(
       take: limit,
       include: {
         items: true,
-        customer: { select: { firstName: true, lastName: true, phone: true } },
+        customer: { select: { firstName: true, lastName: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
     prisma.order.count({ where }),
   ]);
-  return { data, total, page, limit };
+  // Vendors must never see the customer's phone number — only riders do.
+  const sanitized = data.map(({ recipientPhone: _recipientPhone, ...order }) => order);
+  return { data: sanitized, total, page, limit };
 }
 
 export async function getVendorOrder(orderId: string, vendorId: string) {
@@ -317,12 +319,14 @@ export async function getVendorOrder(orderId: string, vendorId: string) {
     where: { id: orderId, vendorId },
     include: {
       items: { include: { product: true } },
-      customer: { select: { firstName: true, lastName: true, phone: true } },
+      customer: { select: { firstName: true, lastName: true } },
       events: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!order) throw new Error("Order not found");
-  return order;
+  // Vendors must never see the customer's phone number — only riders do.
+  const { recipientPhone: _recipientPhone, ...sanitized } = order;
+  return sanitized;
 }
 
 const VENDOR_STATUS_NOTIFICATIONS: Partial<Record<OrderStatus, { title: string; body: (trackingCode: string) => string; type: string }>> = {

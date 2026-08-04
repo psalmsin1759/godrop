@@ -23,6 +23,15 @@ export async function vendorAnalytics(req: Request, res: Response, next: NextFun
   }
 }
 
+export async function vendorLifetimeStats(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await svc.getVendorLifetimeStats(req.admin!.vendorId!);
+    return ok(res, { data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function systemAnalytics(req: Request, res: Response, next: NextFunction) {
   try {
     const { from, to } = parseDateRange(req);

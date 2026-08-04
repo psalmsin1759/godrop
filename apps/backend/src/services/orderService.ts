@@ -23,6 +23,14 @@ const ACTIVE_STATUSES: OrderStatus[] = [
   OrderStatus.IN_TRANSIT,
 ];
 
+// Delivered + cancelled + failed orders, combined into a single paginated
+// "history" bucket so clients don't have to merge two separate queries.
+const HISTORY_STATUSES: OrderStatus[] = [
+  OrderStatus.DELIVERED,
+  OrderStatus.CANCELLED,
+  OrderStatus.FAILED,
+];
+
 function normalizeStatus(raw: string): OrderStatus {
   const upper = raw.toUpperCase() as OrderStatus;
   return STATUS_ALIASES[upper] ?? upper;
@@ -35,8 +43,11 @@ export async function listOrders(
   const { page, limit, skip } = paginate(opts.page, opts.limit);
   const where: any = { customerId };
   if (opts.status) {
-    if (opts.status.toUpperCase() === "ACTIVE") {
+    const upperStatus = opts.status.toUpperCase();
+    if (upperStatus === "ACTIVE") {
       where.status = { in: ACTIVE_STATUSES };
+    } else if (upperStatus === "HISTORY") {
+      where.status = { in: HISTORY_STATUSES };
     } else {
       where.status = normalizeStatus(opts.status);
     }

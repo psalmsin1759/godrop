@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { Prisma, OrderStatus } from '@prisma/client';
 
-export type Granularity = 'day' | 'week' | 'month';
+export type Granularity = 'day' | 'week' | 'month' | 'year';
 
 interface DateRange {
   from: Date;
@@ -77,6 +77,26 @@ export async function getVendorAnalytics(vendorId: string, { from, to }: DateRan
       revenueKobo: Number(r.revenue_kobo),
     })),
   };
+}
+
+// All-time totals, unbounded by any date range — used for the "lifetime
+// revenue" figure shown alongside the (always date-bounded) analytics above.
+export async function getVendorLifetimeStats(vendorId: string) {
+  const where: Prisma.OrderWhereInput = { vendorId };
+
+  const [statusGroups, revenueResult] = await Promise.all([
+    prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
+    prisma.order.aggregate({
+      where: { ...where, paymentStatus: 'PAID' },
+      _sum: { subtotalKobo: true },
+    }),
+  ]);
+
+  const totalOrders = statusGroups.reduce((s, g) => s + g._count._all, 0);
+  const completedOrders = statusGroups.find(g => g.status === OrderStatus.DELIVERED)?._count._all ?? 0;
+  const totalRevenueKobo = revenueResult._sum.subtotalKobo ?? 0;
+
+  return { totalOrders, completedOrders, totalRevenueKobo };
 }
 
 export async function getSystemAnalytics({ from, to }: DateRange) {

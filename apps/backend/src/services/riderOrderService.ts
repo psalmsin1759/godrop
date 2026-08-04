@@ -1,9 +1,10 @@
 import { prisma } from "../lib/prisma";
-import { Order, OrderStatus, OrderType } from "@prisma/client";
+import { Order, OrderStatus, OrderType, PaymentStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { broadcastTracking } from "../index";
 import { createRiderEarning } from "./riderEarningService";
 import { sendToCustomerTokens, notifyCustomerOrderUpdate } from "./fcmService";
+import * as walletService from "./walletService";
 
 const RIDER_EARNING_RATE = parseFloat(process.env.RIDER_EARNING_RATE || "0.8");
 
@@ -569,11 +570,17 @@ export async function markFailed(riderId: string, orderId: string, reason: strin
     throw new Error("Cannot mark this order as failed");
   }
 
+  // The rider has already accepted (and possibly picked up) this order, so
+  // abandoning it now must refund the customer in full — same rule as a
+  // customer/vendor cancellation, just reachable at a later order stage.
+  const isRefundable = order.paymentStatus === PaymentStatus.PAID;
+
   const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: "FAILED",
       cancellationReason: reason,
+      ...(isRefundable ? { paymentStatus: PaymentStatus.REFUNDED } : {}),
       dropoffs: {
         updateMany: {
           where: { status: { notIn: ["DELIVERED", "FAILED", "CANCELLED"] } },
@@ -583,6 +590,15 @@ export async function markFailed(riderId: string, orderId: string, reason: strin
     },
   });
 
+  if (isRefundable) {
+    await walletService.credit(
+      order.customerId,
+      order.totalKobo,
+      `Refund for undelivered order #${order.trackingCode}`,
+      `REFUND-${order.id}`
+    );
+  }
+
   await prisma.orderEvent.create({
     data: { orderId, status: "FAILED", description: `Delivery failed: ${reason}` },
   });
@@ -591,7 +607,9 @@ export async function markFailed(riderId: string, orderId: string, reason: strin
   notifyCustomerOrderUpdate(
     order.customerId, orderId, order.trackingCode,
     "Delivery unsuccessful",
-    `We couldn't deliver your order #${order.trackingCode}. Reason: ${reason}`,
+    isRefundable
+      ? `We couldn't deliver your order #${order.trackingCode}. Reason: ${reason}. The full amount has been refunded to your wallet.`
+      : `We couldn't deliver your order #${order.trackingCode}. Reason: ${reason}.`,
     "ORDER_FAILED"
   ).catch(() => {});
 

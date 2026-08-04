@@ -106,8 +106,30 @@ export async function listRiderOrders(
   return { data, total, page: opts.page, limit: opts.limit };
 }
 
+// recipientName/recipientPhone are only ever set at order-creation time for
+// parcel orders; food/grocery/retail/pharmacy orders leave them null. Fall
+// back to the ordering customer's own name/phone so riders always have a way
+// to reach whoever they're delivering to.
+function withRecipientFallback<
+  T extends {
+    recipientName: string | null;
+    recipientPhone: string | null;
+    customer?: { firstName: string | null; lastName: string | null; phone: string } | null;
+  }
+>(order: T): T {
+  const fallbackName = [order.customer?.firstName, order.customer?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return {
+    ...order,
+    recipientName: order.recipientName || (fallbackName ? fallbackName : null),
+    recipientPhone: order.recipientPhone || order.customer?.phone || null,
+  };
+}
+
 export async function getActiveOrder(riderId: string) {
-  return prisma.order.findFirst({
+  const order = await prisma.order.findFirst({
     where: {
       riderId,
       status: { in: ["ACCEPTED", "READY_FOR_PICKUP", "PICKED_UP", "IN_TRANSIT"] },
@@ -115,6 +137,7 @@ export async function getActiveOrder(riderId: string) {
     },
     include: {
       vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
+      customer: { select: { firstName: true, lastName: true, phone: true } },
       items: true,
       events: { orderBy: { createdAt: "asc" } },
       dropoffs: {
@@ -128,6 +151,7 @@ export async function getActiveOrder(riderId: string) {
       },
     },
   });
+  return order ? withRecipientFallback(order) : order;
 }
 
 export async function getRiderOrderDetail(riderId: string, orderId: string) {
@@ -135,6 +159,7 @@ export async function getRiderOrderDetail(riderId: string, orderId: string) {
     where: { id: orderId },
     include: {
       vendor: { select: { id: true, name: true, logoUrl: true, address: true, lat: true, lng: true } },
+      customer: { select: { firstName: true, lastName: true, phone: true } },
       items: true,
       events: { orderBy: { createdAt: "asc" } },
       dropoffs: {
@@ -154,7 +179,7 @@ export async function getRiderOrderDetail(riderId: string, orderId: string) {
   const isAssignedToRider = order.riderId === riderId;
   const isAvailableToView = order.riderId === null && order.status === "READY_FOR_PICKUP";
   if (!isAssignedToRider && !isAvailableToView) throw new Error("Order no longer available");
-  return order;
+  return withRecipientFallback(order);
 }
 
 export async function acceptOrder(riderId: string, orderId: string) {

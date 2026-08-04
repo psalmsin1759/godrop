@@ -556,7 +556,10 @@ export async function listEarnings(req: Request, res: Response, next: NextFuncti
     const q = req.query as any;
     const { page, limit } = paginate(q.page, q.limit);
     const result = await riderEarningService.listEarnings(req.rider!.id, page, limit);
-    return ok(res, { data: serializeMoneyList(result.data, ["amount"]), meta: buildMeta(result.page, result.limit, result.total) });
+    return ok(res, {
+      data: serializeMoneyList(result.data, ["amount", "deliveryFee", "platformCut"]),
+      meta: buildMeta(result.page, result.limit, result.total),
+    });
   } catch (err) {
     next(err);
   }

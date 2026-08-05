@@ -498,6 +498,13 @@ model Order {
   discountKobo    Int @default(0)
   totalKobo       Int
 
+  // Coupon applied at checkout, if any. deliveryFeeKobo above always stays
+  // at the original, undiscounted value (riders are paid from it) — the
+  // reduction lives only in discountKobo, which is subtracted when computing
+  // totalKobo.
+  promotionId String?
+  promotion   Promotion? @relation(fields: [promotionId], references: [id])
+
   scheduledAt      DateTime?
   estimatedMinutes Int?
 
@@ -521,6 +528,7 @@ model Order {
   @@index([riderId])
   @@index([status])
   @@index([apartmentTypeId])
+  @@index([promotionId])
 }
 
 enum OrderType {
@@ -874,27 +882,36 @@ model AdminNotification {
 
 // ─── Promotions ───────────────────────────────────────────────
 
+// Coupon codes. Currently scoped to discounting the DELIVERY FEE only — see
+// orderService.ts/vendorService.ts checkout functions for how the discount
+// is applied (Order.discountKobo), which is deliberately kept separate from
+// Order.deliveryFeeKobo / ParcelDropoff.deliveryFeeKobo so rider earnings
+// (computed from those fee fields) are never reduced by a coupon.
 model Promotion {
   id           String   @id @default(cuid())
   code         String   @unique
   description  String
   type         String   // percent | fixed
-  value        Int
-  maxDiscount  Int?
-  minOrderKobo Int?
-  orderTypes   String[]
+  value        Int      // percent: 0-100, fixed: Kobo
+  maxDiscount  Int?     // Kobo cap for percent-type coupons
+  minOrderKobo Int?     // minimum subtotal required to redeem
+  orderTypes   String[] // OrderType values this coupon applies to; empty = all
   usageLimit   Int?
   usageCount   Int      @default(0)
   validFrom    DateTime
   validUntil   DateTime
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
+
+  orders Order[]
 }
 
 model Banner {
   id        String   @id @default(cuid())
-  imageUrl  String
-  title     String?
+  imageUrl  String?
+  badge     String?  // small pill label, e.g. "LIMITED · ENDS SOON"
+  title     String?  // headline, e.g. "FREE delivery on parcels under 5kg"
+  ctaLabel  String?  // e.g. "Use code GODROP5"
   linkType  String?
   linkValue String?
   isActive  Boolean  @default(true)

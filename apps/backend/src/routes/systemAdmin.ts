@@ -30,6 +30,8 @@ import * as businessCtrl from "../controllers/businessAdminController";
 import * as fcmCtrl from "../controllers/fcmController";
 import * as messagingCtrl from "../controllers/messagingController";
 import * as heroCtrl from "../controllers/heroController";
+import * as bannerCtrl from "../controllers/bannerController";
+import * as promotionsCtrl from "../controllers/promotionsController";
 import { upload, documentUpload } from "../middleware/upload";
 import {
   sendEmailSingleSchema,
@@ -301,5 +303,20 @@ router.get("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.getHero);
 router.patch("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.updateHero);
 router.post("/heroes/:id/image", requireSystemRole("ADMIN"), upload.single("image"), heroCtrl.uploadHeroImage);
 router.delete("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.deleteHero);
+
+// ─── Banners (ADMIN+) ─────────────────────────────────────────
+router.get("/banners", requireSystemRole("ADMIN"), bannerCtrl.listBanners);
+router.post("/banners", requireSystemRole("ADMIN"), bannerCtrl.createBanner);
+router.get("/banners/:id", requireSystemRole("ADMIN"), bannerCtrl.getBanner);
+router.patch("/banners/:id", requireSystemRole("ADMIN"), bannerCtrl.updateBanner);
+router.post("/banners/:id/image", requireSystemRole("ADMIN"), upload.single("image"), bannerCtrl.uploadBannerImage);
+router.delete("/banners/:id", requireSystemRole("ADMIN"), bannerCtrl.deleteBanner);
+
+// ─── Promotions / Coupons (ADMIN+) ─────────────────────────────
+router.get("/promotions", requireSystemRole("ADMIN"), promotionsCtrl.listPromotions);
+router.post("/promotions", requireSystemRole("ADMIN"), promotionsCtrl.createPromotion);
+router.get("/promotions/:id", requireSystemRole("ADMIN"), promotionsCtrl.getPromotion);
+router.patch("/promotions/:id", requireSystemRole("ADMIN"), promotionsCtrl.updatePromotion);
+router.delete("/promotions/:id", requireSystemRole("ADMIN"), promotionsCtrl.deletePromotion);
 
 export default router;

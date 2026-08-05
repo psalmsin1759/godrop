@@ -6,6 +6,7 @@ import { ok, created, fail } from "../utils/response";
 import { Prisma } from "@prisma/client";
 import { uploadBuffer } from "../services/cloudinaryService";
 import { sendEmail, truckOrderConfirmationEmail } from "../services/emailService";
+import { InvalidCouponError } from "../services/promotionService";
 
 // ─── Apartment Types (public) ─────────────────────────────────
 
@@ -159,7 +160,7 @@ export async function getQuote(req: Request, res: Response, next: NextFunction) 
 
 export async function bookTruck(req: Request, res: Response, next: NextFunction) {
   try {
-    const { apartmentTypeId, truckTypeId, numLoaders = 0, pickup, dropoff, stops, scheduledAt, paymentMethod, notes } = req.body;
+    const { apartmentTypeId, truckTypeId, numLoaders = 0, pickup, dropoff, stops, scheduledAt, paymentMethod, notes, couponCode } = req.body;
 
     const [apartmentType, truckType, config] = await Promise.all([
       prisma.apartmentType.findUnique({ where: { id: apartmentTypeId } }),
@@ -191,6 +192,7 @@ export async function bookTruck(req: Request, res: Response, next: NextFunction)
       notes,
       priceBreakdown,
       estimatedMinutes,
+      couponCode,
     });
 
     if (req.user!.email && req.user!.firstName) {
@@ -204,13 +206,14 @@ export async function bookTruck(req: Request, res: Response, next: NextFunction)
           pickupAddress: pickup.address,
           dropoffAddress: dropoff.address,
           scheduledAt: scheduledAt ?? null,
-          totalKobo: priceBreakdown.totalKobo,
+          totalKobo: order.totalKobo,
         })
       ).catch((err) => console.error("[email] truck order confirmation failed:", err));
     }
 
     created(res, { order });
-  } catch (err) {
+  } catch (err: any) {
+    if (err instanceof InvalidCouponError) return fail(res, err.message, 422);
     next(err);
   }
 }

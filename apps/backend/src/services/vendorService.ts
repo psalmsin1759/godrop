@@ -7,6 +7,7 @@ import { generateConfirmationCode } from "../utils/generateConfirmationCode";
 import { sendEmail, vendorNewOrderEmail } from "./emailService";
 import { notifyVendorAdminsNewOrder } from "./fcmService";
 import { computeIsOpenNow } from "../utils/vendorHours";
+import * as promotionService from "./promotionService";
 
 async function getCoverageRadiusKm(): Promise<number> {
   const settings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
@@ -152,13 +153,14 @@ interface FoodOrderInput {
   items: Array<{ productId: string; quantity: number }>;
   deliveryAddress: string;
   paymentMethod: string;
+  couponCode?: string;
 }
 
 async function createVendorOrder(
   input: FoodOrderInput,
   type: OrderType
 ) {
-  const { userId, vendorId, items, deliveryAddress, paymentMethod } = input;
+  const { userId, vendorId, items, deliveryAddress, paymentMethod, couponCode } = input;
 
   // Fetch the vendor to use as pickup address
   const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
@@ -190,7 +192,24 @@ async function createVendorOrder(
   const platformSettings = await prisma.platformSettings.findUnique({ where: { id: "global" } });
   const deliveryFeeKobo = platformSettings?.standardDeliveryFeeKobo ?? 75000;
   const serviceFeeKobo = platformSettings?.serviceChargeKobo ?? 25000;
-  const totalKobo = subtotalKobo + deliveryFeeKobo + serviceFeeKobo;
+
+  // Coupon discounts the delivery fee only — deliveryFeeKobo above stays at
+  // its original value (riders are paid from it); the reduction is applied
+  // only when computing totalKobo below.
+  let discountKobo = 0;
+  let promotionId: string | undefined;
+  if (couponCode) {
+    const promo = await promotionService.applyPromoCode({
+      code: couponCode,
+      orderType: type,
+      deliveryFeeKobo,
+      orderValueKobo: subtotalKobo,
+    });
+    discountKobo = promo.discountKobo;
+    promotionId = promo.promotionId;
+  }
+
+  const totalKobo = subtotalKobo + deliveryFeeKobo + serviceFeeKobo - discountKobo;
 
   // Map payment method string to enum
   const pmLower = paymentMethod.toLowerCase();
@@ -217,6 +236,8 @@ async function createVendorOrder(
       subtotalKobo,
       deliveryFeeKobo,
       serviceFeeKobo,
+      discountKobo,
+      promotionId,
       totalKobo,
       items: {
         create: orderItemsData,
@@ -226,10 +247,17 @@ async function createVendorOrder(
       id: true,
       status: true,
       totalKobo: true,
+      discountKobo: true,
       trackingCode: true,
       confirmationCode: true,
     },
   });
+
+  if (promotionId) {
+    promotionService.incrementPromotionUsage(promotionId).catch((err) =>
+      console.error("[promotion] usage increment failed:", err)
+    );
+  }
 
   notifyVendorOwnerNewOrder({
     vendorId,

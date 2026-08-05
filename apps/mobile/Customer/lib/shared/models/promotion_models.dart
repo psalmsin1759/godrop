@@ -6,12 +6,14 @@ part 'promotion_models.g.dart';
 class PromoApplyBody {
   final String code;
   final String orderType;
-  final int amountKobo;
+  final int deliveryFeeKobo;
+  final int orderValueKobo;
 
   const PromoApplyBody({
     required this.code,
     required this.orderType,
-    required this.amountKobo,
+    required this.deliveryFeeKobo,
+    this.orderValueKobo = 0,
   });
 
   factory PromoApplyBody.fromJson(Map<String, dynamic> json) =>
@@ -39,15 +41,21 @@ class PromoApplyResponse {
 @JsonSerializable(includeIfNull: false)
 class Banner {
   final String id;
-  final String imageUrl;
-  final String title;
-  final String? link;
+  final String? imageUrl;
+  final String? badge;
+  final String? title;
+  final String? ctaLabel;
+  final String? linkType;
+  final String? linkValue;
 
   const Banner({
     required this.id,
-    required this.imageUrl,
-    required this.title,
-    this.link,
+    this.imageUrl,
+    this.badge,
+    this.title,
+    this.ctaLabel,
+    this.linkType,
+    this.linkValue,
   });
 
   factory Banner.fromJson(Map<String, dynamic> json) =>

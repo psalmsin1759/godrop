@@ -10,14 +10,16 @@ PromoApplyBody _$PromoApplyBodyFromJson(Map<String, dynamic> json) =>
     PromoApplyBody(
       code: json['code'] as String,
       orderType: json['orderType'] as String,
-      amountKobo: (json['amountKobo'] as num).toInt(),
+      deliveryFeeKobo: (json['deliveryFeeKobo'] as num).toInt(),
+      orderValueKobo: (json['orderValueKobo'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$PromoApplyBodyToJson(PromoApplyBody instance) =>
     <String, dynamic>{
       'code': instance.code,
       'orderType': instance.orderType,
-      'amountKobo': instance.amountKobo,
+      'deliveryFeeKobo': instance.deliveryFeeKobo,
+      'orderValueKobo': instance.orderValueKobo,
     };
 
 PromoApplyResponse _$PromoApplyResponseFromJson(Map<String, dynamic> json) =>
@@ -36,16 +38,22 @@ Map<String, dynamic> _$PromoApplyResponseToJson(PromoApplyResponse instance) =>
 
 Banner _$BannerFromJson(Map<String, dynamic> json) => Banner(
       id: json['id'] as String,
-      imageUrl: json['imageUrl'] as String,
-      title: json['title'] as String,
-      link: json['link'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      badge: json['badge'] as String?,
+      title: json['title'] as String?,
+      ctaLabel: json['ctaLabel'] as String?,
+      linkType: json['linkType'] as String?,
+      linkValue: json['linkValue'] as String?,
     );
 
 Map<String, dynamic> _$BannerToJson(Banner instance) => <String, dynamic>{
       'id': instance.id,
-      'imageUrl': instance.imageUrl,
-      'title': instance.title,
-      if (instance.link case final value?) 'link': value,
+      if (instance.imageUrl case final value?) 'imageUrl': value,
+      if (instance.badge case final value?) 'badge': value,
+      if (instance.title case final value?) 'title': value,
+      if (instance.ctaLabel case final value?) 'ctaLabel': value,
+      if (instance.linkType case final value?) 'linkType': value,
+      if (instance.linkValue case final value?) 'linkValue': value,
     };
 
 BannersResponse _$BannersResponseFromJson(Map<String, dynamic> json) =>

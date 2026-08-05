@@ -12,6 +12,8 @@ import '../food/bloc/cart_state.dart';
 import '../food/models/restaurant_data.dart';
 import '../../shared/bloc/delivery_address_cubit.dart';
 import '../../shared/api/places_service.dart';
+import '../../shared/api/api.dart';
+import '../../shared/models/promotion_models.dart' as promo;
 
 String _homeOrderLabel(String orderType) {
   switch (orderType) {
@@ -72,10 +74,30 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isGridView = true;
+  promo.Banner? _banner;
+
   @override
   void initState() {
     super.initState();
     context.read<RemoteOrdersCubit>().load();
+    _loadBanner();
+  }
+
+  Future<void> _loadBanner() async {
+    try {
+      final res = await PromotionsService(DioClient.instance).getBanners();
+      if (!mounted) return;
+      final candidates = res.banners.where((b) {
+        return (b.imageUrl ?? '').isNotEmpty ||
+            (b.badge ?? '').isNotEmpty ||
+            (b.title ?? '').isNotEmpty ||
+            (b.ctaLabel ?? '').isNotEmpty;
+      });
+      if (candidates.isNotEmpty) setState(() => _banner = candidates.first);
+    } catch (_) {
+      // Banner section simply stays hidden on failure.
+    }
   }
 
   static const _categories = [
@@ -133,7 +155,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _HomeHeader()),
+          SliverToBoxAdapter(
+            child: _HomeHeader(
+              isGridView: _isGridView,
+              onToggleLayout: () => setState(() => _isGridView = !_isGridView),
+            ),
+          ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             sliver: SliverToBoxAdapter(
@@ -142,131 +169,56 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const SizedBox(height: 12),
                   const _SectionHeader(title: 'What do you need?'),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.95,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SizeTransition(
+                        sizeFactor: animation,
+                        child: child,
+                      ),
                     ),
-                    itemCount: _categories.length,
-                    itemBuilder: (_, i) => AnimatedEntrance(
-                      delay: Duration(milliseconds: 80 + i * 55),
-                      child: _CategoryCard(cat: _categories[i]),
-                    ),
+                    child: _isGridView
+                        ? GridView.builder(
+                            key: const ValueKey('grid'),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.95,
+                            ),
+                            itemCount: _categories.length,
+                            itemBuilder: (_, i) => AnimatedEntrance(
+                              delay: Duration(milliseconds: 80 + i * 55),
+                              child: _CategoryCard(cat: _categories[i]),
+                            ),
+                          )
+                        : ListView.separated(
+                            key: const ValueKey('list'),
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _categories.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (_, i) => AnimatedEntrance(
+                              delay: Duration(milliseconds: 80 + i * 55),
+                              child: _CategoryCard(
+                                  cat: _categories[i], isGrid: false),
+                            ),
+                          ),
                   ),
-                  const SizedBox(height: 20),
-                  AnimatedEntrance(
-                    delay: const Duration(milliseconds: 440),
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: GodropColors.orangeGradient,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: GodropColors.orange.withValues(alpha: 0.32),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            top: -30,
-                            right: -20,
-                            child: Container(
-                              width: 130,
-                              height: 130,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.10),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: -40,
-                            right: 50,
-                            child: Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.22),
-                                            borderRadius:
-                                                BorderRadius.circular(20)),
-                                        child: const Text('LIMITED · ENDS SOON',
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                letterSpacing: 0.8)),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      const Text(
-                                          'FREE delivery on\nparcels under 5kg',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 17,
-                                              fontWeight: FontWeight.w800,
-                                              height: 1.25,
-                                              letterSpacing: -0.3)),
-                                      const SizedBox(height: 10),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(20)),
-                                        child: const Text('Use code GODROP5',
-                                            style: TextStyle(
-                                                color: GodropColors.orange,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w800)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(18),
-                                  decoration: BoxDecoration(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.18),
-                                      borderRadius: BorderRadius.circular(18)),
-                                  child: const Icon(Icons.inventory_2_rounded,
-                                      color: Colors.white, size: 44),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                  if (_banner != null) ...[
+                    const SizedBox(height: 20),
+                    AnimatedEntrance(
+                      delay: const Duration(milliseconds: 440),
+                      child: _PromoBannerCard(banner: _banner!),
                     ),
-                  ), // AnimatedEntrance closes
+                  ],
                   BlocBuilder<RemoteOrdersCubit, RemoteOrdersState>(
                     builder: (context, remoteState) {
                       final apiOrders = remoteState is RemoteOrdersLoaded
@@ -360,6 +312,10 @@ class _HomeScreenState extends State<HomeScreen> {
 // ── Header ────────────────────────────────────────────────────────────────────
 
 class _HomeHeader extends StatefulWidget {
+  final bool isGridView;
+  final VoidCallback onToggleLayout;
+  const _HomeHeader({required this.isGridView, required this.onToggleLayout});
+
   @override
   State<_HomeHeader> createState() => _HomeHeaderState();
 }
@@ -651,7 +607,7 @@ class _HomeHeaderState extends State<_HomeHeader> {
                         ),
                         const SizedBox(width: 10),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: widget.onToggleLayout,
                           child: Container(
                             width: 50,
                             height: 50,
@@ -667,8 +623,23 @@ class _HomeHeaderState extends State<_HomeHeader> {
                                 ),
                               ],
                             ),
-                            child: const Icon(Icons.tune_rounded,
-                                color: Colors.white, size: 20),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 250),
+                              transitionBuilder: (child, animation) =>
+                                  RotationTransition(
+                                turns: animation,
+                                child: FadeTransition(
+                                    opacity: animation, child: child),
+                              ),
+                              child: Icon(
+                                widget.isGridView
+                                    ? Icons.view_list_rounded
+                                    : Icons.grid_view_rounded,
+                                key: ValueKey(widget.isGridView),
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -1129,6 +1100,140 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+// ── Promo banner ───────────────────────────────────────────────────────────────
+
+class _PromoBannerCard extends StatelessWidget {
+  final promo.Banner banner;
+  const _PromoBannerCard({required this.banner});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = (banner.imageUrl ?? '').isNotEmpty;
+    final badge = banner.badge ?? '';
+    final title = banner.title ?? '';
+    final cta = banner.ctaLabel ?? '';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: hasImage ? null : GodropColors.orangeGradient,
+        color: hasImage ? GodropColors.orange : null,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: GodropColors.orange.withValues(alpha: 0.32),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          if (hasImage)
+            Positioned.fill(
+              child: Image.network(
+                banner.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const DecoratedBox(decoration: BoxDecoration(gradient: GodropColors.orangeGradient)),
+              ),
+            ),
+          if (hasImage)
+            Positioned.fill(
+              child: Container(color: Colors.black.withValues(alpha: 0.28)),
+            ),
+          if (!hasImage) ...[
+            Positioned(
+              top: -30,
+              right: -20,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.10),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -40,
+              right: 50,
+              child: Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
+              ),
+            ),
+          ],
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (badge.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(20)),
+                          child: Text(badge,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8)),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                      if (title.isNotEmpty) ...[
+                        Text(title,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                height: 1.25,
+                                letterSpacing: -0.3)),
+                        const SizedBox(height: 10),
+                      ],
+                      if (cta.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                              color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                          child: Text(cta,
+                              style: const TextStyle(
+                                  color: GodropColors.orange,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800)),
+                        ),
+                    ],
+                  ),
+                ),
+                if (!hasImage)
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(18)),
+                    child: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 44),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Category card ─────────────────────────────────────────────────────────────
 
 class _Category {
@@ -1151,7 +1256,8 @@ class _Category {
 
 class _CategoryCard extends StatefulWidget {
   final _Category cat;
-  const _CategoryCard({required this.cat});
+  final bool isGrid;
+  const _CategoryCard({required this.cat, this.isGrid = true});
 
   @override
   State<_CategoryCard> createState() => _CategoryCardState();
@@ -1193,77 +1299,122 @@ class _CategoryCardState extends State<_CategoryCard>
             boxShadow: GodropColors.softShadow,
           ),
           padding: const EdgeInsets.all(12),
-          child: Stack(
+          child: widget.isGrid ? _gridContent(accent) : _listContent(accent),
+        ),
+      ), // ScaleTransition
+    );
+  }
+
+  Widget _tag(_Category cat) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+          color: cat.tagColor,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: (cat.tagColor ?? GodropColors.blue).withValues(alpha: 0.35),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ]),
+      child: Text(cat.tag!,
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3)),
+    );
+  }
+
+  Widget _iconBadge(Color accent) {
+    final cat = widget.cat;
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            accent.withValues(alpha: 0.18),
+            accent.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: Icon(cat.icon, color: accent, size: 22),
+    );
+  }
+
+  Widget _gridContent(Color accent) {
+    final cat = widget.cat;
+    return Stack(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _iconBadge(accent),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(cat.label,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.ink,
+                        fontSize: 13,
+                        letterSpacing: -0.2)),
+                const SizedBox(height: 1),
+                Text(cat.sub,
+                    style: const TextStyle(
+                        fontSize: 10, color: GodropColors.mute),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ],
+        ),
+        if (cat.tag != null) Positioned(top: 0, right: 0, child: _tag(cat)),
+      ],
+    );
+  }
+
+  Widget _listContent(Color accent) {
+    final cat = widget.cat;
+    return Row(
+      children: [
+        _iconBadge(accent),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Row(
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          accent.withValues(alpha: 0.18),
-                          accent.withValues(alpha: 0.08),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: Icon(cat.icon, color: accent, size: 22),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(cat.label,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: GodropColors.ink,
-                              fontSize: 13,
-                              letterSpacing: -0.2)),
-                      const SizedBox(height: 1),
-                      Text(cat.sub,
-                          style: const TextStyle(
-                              fontSize: 10, color: GodropColors.mute),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
+                  Text(cat.label,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: GodropColors.ink,
+                          fontSize: 14,
+                          letterSpacing: -0.2)),
+                  if (cat.tag != null) ...[
+                    const SizedBox(width: 8),
+                    _tag(cat),
+                  ],
                 ],
               ),
-              if (cat.tag != null)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                        color: cat.tagColor,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (cat.tagColor ?? GodropColors.blue)
-                                .withValues(alpha: 0.35),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]),
-                    child: Text(cat.tag!,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.3)),
-                  ),
-                ),
+              const SizedBox(height: 2),
+              Text(cat.sub,
+                  style: const TextStyle(fontSize: 12, color: GodropColors.mute),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
             ],
           ),
         ),
-      ), // ScaleTransition
+        const Icon(Icons.chevron_right_rounded,
+            color: GodropColors.mute, size: 20),
+      ],
     );
   }
 }

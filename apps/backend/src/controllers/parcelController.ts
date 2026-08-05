@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import * as pricingService from "../services/pricingService";
 import * as orderService from "../services/orderService";
+import { InvalidCouponError } from "../services/promotionService";
 import { ok, created, fail } from "../utils/response";
 import { uploadBuffer } from "../services/cloudinaryService";
 
@@ -133,6 +134,7 @@ export async function placeOrder(req: Request, res: Response, next: NextFunction
     if (err.message === "Vehicle type not found or inactive") {
       return fail(res, err.message, 404);
     }
+    if (err instanceof InvalidCouponError) return fail(res, err.message, 422);
     next(err);
   }
 }

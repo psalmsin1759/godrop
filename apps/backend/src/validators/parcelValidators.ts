@@ -77,6 +77,7 @@ export const placeParcelOrderSchema = z
     sizeCategory: sizeCategory.optional(),
     recipientName: z.string().min(1).optional(),
     recipientPhone: phone.optional(),
+    couponCode: z.string().min(1).optional(),
   })
   .refine(
     (d) =>

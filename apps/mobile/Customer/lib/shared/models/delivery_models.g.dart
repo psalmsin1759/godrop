@@ -139,6 +139,7 @@ ParcelOrderBody _$ParcelOrderBodyFromJson(Map<String, dynamic> json) =>
       parcels: (json['parcels'] as List<dynamic>)
           .map((e) => ParcelItemBody.fromJson(e as Map<String, dynamic>))
           .toList(),
+      couponCode: json['couponCode'] as String?,
     );
 
 Map<String, dynamic> _$ParcelOrderBodyToJson(ParcelOrderBody instance) =>
@@ -148,6 +149,7 @@ Map<String, dynamic> _$ParcelOrderBodyToJson(ParcelOrderBody instance) =>
       'paymentMethod': instance.paymentMethod,
       if (instance.scheduleAt case final value?) 'scheduleAt': value,
       'parcels': instance.parcels,
+      if (instance.couponCode case final value?) 'couponCode': value,
     };
 
 ParcelOrderResponse _$ParcelOrderResponseFromJson(Map<String, dynamic> json) =>
@@ -302,6 +304,7 @@ TruckOrderBody _$TruckOrderBodyFromJson(Map<String, dynamic> json) =>
       scheduledAt: json['scheduledAt'] as String?,
       paymentMethod: json['paymentMethod'] as String,
       notes: json['notes'] as String?,
+      couponCode: json['couponCode'] as String?,
     );
 
 Map<String, dynamic> _$TruckOrderBodyToJson(TruckOrderBody instance) =>
@@ -315,6 +318,7 @@ Map<String, dynamic> _$TruckOrderBodyToJson(TruckOrderBody instance) =>
       if (instance.scheduledAt case final value?) 'scheduledAt': value,
       'paymentMethod': instance.paymentMethod,
       if (instance.notes case final value?) 'notes': value,
+      if (instance.couponCode case final value?) 'couponCode': value,
     };
 
 TruckOrderResponse _$TruckOrderResponseFromJson(Map<String, dynamic> json) =>

@@ -492,13 +492,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   label: 'Saved cards',
                                   onTap: () => context.push('/cards'),
                                 ),
-                                const Divider(height: 1, indent: 60),
-                                _PTile(
-                                  icon: Icons.settings_outlined,
-                                  iconColor: GodropColors.slate,
-                                  label: 'Settings',
-                                  onTap: () => context.push('/settings'),
-                                ),
                               ]),
                             ],
                           ),

@@ -1,9 +1,12 @@
 import Magnetic from "@/components/ui/Magnetic";
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from "@/lib/links";
 
 function Badge({ kind }: { kind: "apple" | "android" }) {
   return (
     <a
-      href="#download"
+      href={kind === "apple" ? APP_STORE_URL : GOOGLE_PLAY_URL}
+      target="_blank"
+      rel="noopener noreferrer"
       className="inline-flex h-[54px] items-center gap-3 rounded-full border border-white/25 bg-black px-6 text-white transition-colors duration-200 hover:border-white/60 hover:bg-[#161616]"
     >
       {kind === "apple" ? (

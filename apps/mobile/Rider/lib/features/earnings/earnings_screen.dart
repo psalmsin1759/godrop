@@ -28,16 +28,24 @@ class EarningsScreen extends StatefulWidget {
 }
 
 class _EarningsScreenState extends State<EarningsScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   @override
   bool get wantKeepAlive => true;
 
   bool _hideBalance = false;
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     context.read<EarningsCubit>().load();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,23 +81,116 @@ class _EarningsScreenState extends State<EarningsScreen>
           final submitting = state is WithdrawalSubmitting;
           final errorMessage = state is EarningsError ? state.message : null;
 
-          return RefreshIndicator(
-            onRefresh: () => ctx.read<EarningsCubit>().load(),
-            color: GodropColors.blue,
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: _buildHeader(ctx, loaded, loading, submitting),
+          return Column(
+            children: [
+              _buildHeader(ctx, loaded, loading, submitting),
+              _buildTabBar(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildBreakdownTab(ctx, loaded, loading, errorMessage),
+                    _buildWithdrawalsTab(ctx, loaded, loading, errorMessage),
+                  ],
                 ),
-                SliverToBoxAdapter(
-                  child: loaded == null
-                      ? (loading ? _bodyShimmer() : _error(ctx, errorMessage ?? 'Something went wrong'))
-                      : _buildBody(ctx, loaded),
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: GodropColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: GodropColors.border),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          gradient: GodropColors.blueGradient,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        labelColor: GodropColors.white,
+        unselectedLabelColor: GodropColors.slate,
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        tabs: const [
+          Tab(text: 'Earnings breakdown'),
+          Tab(text: 'Withdrawal history'),
+        ],
+      ),
+    );
+  }
+
+  Widget _refreshableTab(BuildContext ctx, Widget child) {
+    return RefreshIndicator(
+      onRefresh: () => ctx.read<EarningsCubit>().load(),
+      color: GodropColors.blue,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        children: [child],
+      ),
+    );
+  }
+
+  Widget _buildBreakdownTab(BuildContext ctx, EarningsLoaded? loaded,
+      bool loading, String? errorMessage) {
+    if (loaded == null) {
+      return _refreshableTab(
+          ctx,
+          loading
+              ? _bodyShimmer()
+              : _error(ctx, errorMessage ?? 'Something went wrong'));
+    }
+    return _refreshableTab(
+      ctx,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AnimatedEntrance(child: _statsRow(loaded.summary)),
+          const SizedBox(height: 20),
+          if (loaded.earnings.isEmpty)
+            const _EmptyEarnings()
+          else
+            ...loaded.earnings.asMap().entries.map((e) => AnimatedEntrance(
+                  delay: Duration(milliseconds: e.key * 30),
+                  child: _EarningCard(earning: e.value),
+                )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWithdrawalsTab(BuildContext ctx, EarningsLoaded? loaded,
+      bool loading, String? errorMessage) {
+    if (loaded == null) {
+      return _refreshableTab(
+          ctx,
+          loading
+              ? _bodyShimmer()
+              : _error(ctx, errorMessage ?? 'Something went wrong'));
+    }
+    return _refreshableTab(
+      ctx,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: loaded.withdrawals.isEmpty
+            ? const [_EmptyWithdrawals()]
+            : loaded.withdrawals
+                .asMap()
+                .entries
+                .map((e) => AnimatedEntrance(
+                      delay: Duration(milliseconds: e.key * 40),
+                      child: _WithdrawalCard(w: e.value),
+                    ))
+                .toList(),
       ),
     );
   }
@@ -284,46 +385,6 @@ class _EarningsScreenState extends State<EarningsScreen>
     );
   }
 
-  Widget _buildBody(BuildContext ctx, EarningsLoaded state) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 22, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AnimatedEntrance(
-            delay: const Duration(milliseconds: 60),
-            child: _statsRow(state.summary),
-          ),
-          const SizedBox(height: 20),
-          if (state.withdrawals.isNotEmpty) ...[
-            AnimatedEntrance(
-              delay: const Duration(milliseconds: 100),
-              child: _section('Withdrawal History'),
-            ),
-            const SizedBox(height: 10),
-            ...state.withdrawals.asMap().entries.map((e) => AnimatedEntrance(
-                  delay: Duration(milliseconds: 120 + e.key * 40),
-                  child: _WithdrawalCard(w: e.value),
-                )),
-            const SizedBox(height: 20),
-          ],
-          AnimatedEntrance(
-            delay: const Duration(milliseconds: 140),
-            child: _section('Earnings Breakdown'),
-          ),
-          const SizedBox(height: 10),
-          if (state.earnings.isEmpty)
-            const _EmptyEarnings()
-          else
-            ...state.earnings.asMap().entries.map((e) => AnimatedEntrance(
-                  delay: Duration(milliseconds: 160 + e.key * 30),
-                  child: _EarningCard(earning: e.value),
-                )),
-        ],
-      ),
-    );
-  }
-
   Widget _statsRow(RiderEarningsSummary s) {
     return Row(
       children: [
@@ -360,15 +421,6 @@ class _EarningsScreenState extends State<EarningsScreen>
       ),
     );
   }
-
-  Widget _section(String title) => Text(
-        title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: GodropColors.ink,
-        ),
-      );
 
   void _onWithdrawTap(BuildContext ctx, double max) {
     final profileState = ctx.read<ProfileCubit>().state;
@@ -592,6 +644,45 @@ class _EmptyEarnings extends StatelessWidget {
   }
 }
 
+class _EmptyWithdrawals extends StatelessWidget {
+  const _EmptyWithdrawals();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 44),
+      decoration: BoxDecoration(
+        color: GodropColors.card,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+                color: GodropColors.blue.withValues(alpha: 0.08),
+                shape: BoxShape.circle),
+            child: const Icon(Icons.north_rounded,
+                color: GodropColors.blue, size: 28),
+          ),
+          const SizedBox(height: 14),
+          const Text('No withdrawals yet',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: GodropColors.ink)),
+          const SizedBox(height: 4),
+          const Text('Your withdrawal requests will appear here',
+              style: TextStyle(fontSize: 12, color: GodropColors.mute)),
+        ],
+      ),
+    );
+  }
+}
+
 class _WithdrawalCard extends StatelessWidget {
   final RiderWithdrawal w;
   const _WithdrawalCard({required this.w});
@@ -667,6 +758,11 @@ class _EarningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deliveryFee = earning.deliveryFee;
+    final platformCut = earning.platformCut;
+    final riderShare = earning.riderSharePercent;
+    final hasBreakdown = deliveryFee != null && deliveryFee > 0;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -676,60 +772,115 @@ class _EarningCard extends StatelessWidget {
         border: Border.all(color: GodropColors.border),
         boxShadow: GodropColors.softShadow,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: GodropColors.orange.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.local_shipping_rounded,
-                color: GodropColors.orange, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  earning.order?.trackingCode ?? 'Delivery',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: GodropColors.ink),
-                ),
-                if (earning.order != null)
-                  Text(
-                    earning.order!.dropoffAddress,
-                    style: const TextStyle(
-                        fontSize: 12, color: GodropColors.mute),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Text(
-                formatNaira(earning.amount, decimals: 0),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: GodropColors.orange,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: GodropColors.orange.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.local_shipping_rounded,
+                    color: GodropColors.orange, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      earning.order?.trackingCode ?? 'Delivery',
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: GodropColors.ink),
+                    ),
+                    if (earning.order != null)
+                      Text(
+                        earning.order!.dropoffAddress,
+                        style: const TextStyle(
+                            fontSize: 12, color: GodropColors.mute),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
-              Text(
-                earning.status,
-                style: const TextStyle(fontSize: 11, color: GodropColors.mute),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    formatNaira(earning.amount, decimals: 0),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: GodropColors.orange,
+                    ),
+                  ),
+                  Text(
+                    earning.status,
+                    style:
+                        const TextStyle(fontSize: 11, color: GodropColors.mute),
+                  ),
+                ],
               ),
             ],
           ),
+          if (hasBreakdown) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: GodropColors.border),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _breakdownStat(
+                    'Delivery fee',
+                    formatNaira(deliveryFee, decimals: 0),
+                  ),
+                ),
+                Expanded(
+                  child: _breakdownStat(
+                    'Godrop${riderShare != null ? ' (${100 - riderShare}%)' : ''}',
+                    formatNaira(platformCut ?? 0, decimals: 0),
+                  ),
+                ),
+                Expanded(
+                  child: _breakdownStat(
+                    'Your wallet${riderShare != null ? ' ($riderShare%)' : ''}',
+                    formatNaira(earning.amount, decimals: 0),
+                    highlight: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _breakdownStat(String label, String value, {bool highlight = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10, color: GodropColors.mute),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: highlight ? GodropColors.success : GodropColors.ink,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -14,10 +14,24 @@ class AllActiveOrdersScreen extends StatefulWidget {
 }
 
 class _AllActiveOrdersScreenState extends State<AllActiveOrdersScreen> {
+  final _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     context.read<RemoteOrdersCubit>().load();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >
+          _scrollController.position.maxScrollExtent - 300) {
+        context.read<RemoteOrdersCubit>().loadMoreActive();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -34,7 +48,8 @@ class _AllActiveOrdersScreenState extends State<AllActiveOrdersScreen> {
           if (state is RemoteOrdersLoading) {
             return const Center(child: CircularProgressIndicator(color: GodropColors.blue, strokeWidth: 2.5));
           }
-          final orders = state is RemoteOrdersLoaded ? state.active : <Order>[];
+          final orders = state is RemoteOrdersLoaded ? state.active.items : <Order>[];
+          final loadingMore = state is RemoteOrdersLoaded ? state.active.loadingMore : false;
           if (orders.isEmpty) {
             return const Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -49,10 +64,26 @@ class _AllActiveOrdersScreenState extends State<AllActiveOrdersScreen> {
             onRefresh: () => ctx.read<RemoteOrdersCubit>().load(),
             color: GodropColors.blue,
             child: ListView.separated(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: orders.length,
+              itemCount: orders.length + (loadingMore ? 1 : 0),
               separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (_, i) => _ActiveOrderCard(order: orders[i]),
+              itemBuilder: (_, i) {
+                if (i >= orders.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: GodropColors.blue),
+                      ),
+                    ),
+                  );
+                }
+                return _ActiveOrderCard(order: orders[i]);
+              },
             ),
           );
         },
@@ -119,7 +150,11 @@ class _ActiveOrderCard extends StatelessWidget {
             Row(children: [
               Text(_fmtKobo(order.totalKobo), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: GodropColors.ink)),
               const SizedBox(width: 8),
-              if (order.confirmationCode != null && order.confirmationCode!.isNotEmpty) ...[
+              if (order.isMultiParcel) ...[
+                const Text('·', style: TextStyle(color: GodropColors.mute)),
+                const SizedBox(width: 8),
+                const Text('Tap for delivery codes', style: TextStyle(fontSize: 12, color: GodropColors.orange, fontWeight: FontWeight.w600)),
+              ] else if (order.confirmationCode != null && order.confirmationCode!.isNotEmpty) ...[
                 const Text('·', style: TextStyle(color: GodropColors.mute)),
                 const SizedBox(width: 8),
                 Text('Code: ${order.confirmationCode}', style: const TextStyle(fontSize: 12, color: GodropColors.orange, fontWeight: FontWeight.w600)),

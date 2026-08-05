@@ -11,6 +11,9 @@ class DashboardLoaded extends DashboardState {
   /// Null for STAFF accounts (analytics is MANAGER+ on the API).
   final VendorAnalytics? analytics;
   final GraphData? graph;
+  final LifetimeStats? lifetime;
+  final String graphGranularity;
+  final bool graphLoading;
   final List<VendorOrder> pendingOrders;
   final int pendingTotal;
   final int unreadNotifications;
@@ -19,15 +22,27 @@ class DashboardLoaded extends DashboardState {
   DashboardLoaded({
     this.analytics,
     this.graph,
+    this.lifetime,
+    this.graphGranularity = 'day',
+    this.graphLoading = false,
     required this.pendingOrders,
     required this.pendingTotal,
     required this.unreadNotifications,
     required this.storeOpen,
   });
 
-  DashboardLoaded copyWith({bool? storeOpen}) => DashboardLoaded(
+  DashboardLoaded copyWith({
+    bool? storeOpen,
+    GraphData? graph,
+    String? graphGranularity,
+    bool? graphLoading,
+  }) =>
+      DashboardLoaded(
         analytics: analytics,
-        graph: graph,
+        graph: graph ?? this.graph,
+        lifetime: lifetime,
+        graphGranularity: graphGranularity ?? this.graphGranularity,
+        graphLoading: graphLoading ?? this.graphLoading,
         pendingOrders: pendingOrders,
         pendingTotal: pendingTotal,
         unreadNotifications: unreadNotifications,

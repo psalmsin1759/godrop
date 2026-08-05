@@ -292,6 +292,9 @@ Map<String, dynamic> _$EarningOrderToJson(EarningOrder instance) =>
 RiderEarning _$RiderEarningFromJson(Map<String, dynamic> json) => RiderEarning(
       id: json['id'] as String,
       amount: (json['amount'] as num).toDouble(),
+      deliveryFee: (json['deliveryFee'] as num?)?.toDouble(),
+      platformCut: (json['platformCut'] as num?)?.toDouble(),
+      riderSharePercent: (json['riderSharePercent'] as num?)?.toInt(),
       status: json['status'] as String,
       settledAt: json['settledAt'] as String?,
       createdAt: json['createdAt'] as String,
@@ -304,6 +307,9 @@ Map<String, dynamic> _$RiderEarningToJson(RiderEarning instance) =>
     <String, dynamic>{
       'id': instance.id,
       'amount': instance.amount,
+      'deliveryFee': instance.deliveryFee,
+      'platformCut': instance.platformCut,
+      'riderSharePercent': instance.riderSharePercent,
       'status': instance.status,
       'settledAt': instance.settledAt,
       'createdAt': instance.createdAt,

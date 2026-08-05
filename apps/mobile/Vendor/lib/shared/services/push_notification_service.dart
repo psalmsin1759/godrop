@@ -119,7 +119,13 @@ class PushNotificationService {
       sound: true,
     );
 
-    final token = await _messaging.getToken();
+    String? token;
+    try {
+      token = await _messaging.getToken();
+    } catch (e) {
+      // iOS Simulators never receive an APNS token; fail soft.
+      debugPrint('[PUSH/Vendor] getToken failed: $e');
+    }
     if (token != null) await _registerIfChanged(token);
 
     _messaging.onTokenRefresh.listen(_registerIfChanged);

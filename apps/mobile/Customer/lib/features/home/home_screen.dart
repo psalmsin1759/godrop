@@ -270,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   BlocBuilder<RemoteOrdersCubit, RemoteOrdersState>(
                     builder: (context, remoteState) {
                       final apiOrders = remoteState is RemoteOrdersLoaded
-                          ? remoteState.active
+                          ? remoteState.active.items
                           : <dynamic>[];
                       if (apiOrders.isEmpty) return const SizedBox.shrink();
                       return Column(
@@ -339,6 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 totalKobo: totalKobo,
                                 dropoffAddress: dropoff,
                                 confirmationCode: confirmationCode,
+                                isMultiParcel: order.isMultiParcel,
                               ),
                             );
                           }),
@@ -1277,6 +1278,7 @@ class _RemoteOrderCard extends StatelessWidget {
   final int totalKobo;
   final String dropoffAddress;
   final String? confirmationCode;
+  final bool isMultiParcel;
   const _RemoteOrderCard({
     required this.id,
     required this.trackingCode,
@@ -1285,6 +1287,7 @@ class _RemoteOrderCard extends StatelessWidget {
     required this.totalKobo,
     required this.dropoffAddress,
     this.confirmationCode,
+    this.isMultiParcel = false,
   });
 
   String _fmtKobo(int kobo) {
@@ -1381,7 +1384,14 @@ class _RemoteOrderCard extends StatelessWidget {
                           fontSize: 12, color: GodropColors.mute),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
-                if (confirmationCode != null &&
+                if (isMultiParcel) ...[
+                  const SizedBox(height: 2),
+                  const Text('Tap for delivery codes',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: GodropColors.orange,
+                          fontWeight: FontWeight.w600)),
+                ] else if (confirmationCode != null &&
                     confirmationCode!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text('Code: $confirmationCode',

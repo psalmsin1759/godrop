@@ -2,16 +2,16 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'order_models.g.dart';
 
+// The vendor must never see a customer's phone number (rider-only); this
+// model intentionally has no phone field even if the backend response does.
 @JsonSerializable()
 class OrderCustomer {
   final String firstName;
   final String lastName;
-  final String? phone;
 
   const OrderCustomer({
     required this.firstName,
     required this.lastName,
-    this.phone,
   });
 
   String get fullName => '$firstName $lastName';
@@ -87,7 +87,6 @@ class VendorOrder {
   final String? notes;
   final String? cancellationReason;
   final String? recipientName;
-  final String? recipientPhone;
   final String createdAt;
   @JsonKey(defaultValue: [])
   final List<OrderItem> items;
@@ -112,7 +111,6 @@ class VendorOrder {
     this.notes,
     this.cancellationReason,
     this.recipientName,
-    this.recipientPhone,
     required this.createdAt,
     required this.items,
     this.customer,

@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -64,17 +65,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 16),
                   AnimatedEntrance(child: _StoreToggleCard(loaded: loaded)),
                   const SizedBox(height: 16),
+                  if (loaded.lifetime != null) ...[
+                    AnimatedEntrance(
+                      delay: const Duration(milliseconds: 40),
+                      child: _LifetimeRevenueCard(lifetime: loaded.lifetime!),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   if (loaded.analytics != null) ...[
                     AnimatedEntrance(
                       delay: const Duration(milliseconds: 60),
                       child: _StatsGrid(summary: loaded.analytics!.summary),
                     ),
                     const SizedBox(height: 20),
-                    if (loaded.graph != null &&
-                        loaded.graph!.points.isNotEmpty) ...[
+                    if (loaded.graph != null) ...[
                       AnimatedEntrance(
                         delay: const Duration(milliseconds: 120),
-                        child: _RevenueChartCard(points: loaded.graph!.points),
+                        child: _RevenueChartCard(
+                          graph: loaded.graph!,
+                          loading: loaded.graphLoading,
+                          onGranularityChanged: (g) => ctx
+                              .read<DashboardCubit>()
+                              .setGraphGranularity(g),
+                        ),
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -394,18 +407,148 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// Lightweight revenue bar chart — avoids a chart dependency for one view.
-class _RevenueChartCard extends StatelessWidget {
-  final List<RevenuePoint> points;
-  const _RevenueChartCard({required this.points});
+class _LifetimeRevenueCard extends StatelessWidget {
+  final LifetimeStats lifetime;
+  const _LifetimeRevenueCard({required this.lifetime});
 
   @override
   Widget build(BuildContext context) {
-    final shown = points.length > 14
-        ? points.sublist(points.length - 14)
-        : points;
-    final maxRevenue = shown.fold<int>(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: GodropColors.blueGradient,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.savings_rounded,
+                color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Lifetime revenue',
+                    style: TextStyle(fontSize: 12, color: Colors.white70)),
+                Text(
+                  formatKobo(lifetime.totalRevenueKobo, decimals: 0),
+                  style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: -0.4),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('${lifetime.totalOrders}',
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white)),
+              const Text('orders all-time',
+                  style: TextStyle(fontSize: 11, color: Colors.white70)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GranularitySelector extends StatelessWidget {
+  final String current;
+  final ValueChanged<String> onChanged;
+  const _GranularitySelector({required this.current, required this.onChanged});
+
+  static const _options = [
+    ('day', 'Day'),
+    ('week', 'Week'),
+    ('month', 'Month'),
+    ('year', 'Year'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: GodropColors.background,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: _options.map((o) {
+          final selected = o.$1 == current;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(o.$1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                decoration: BoxDecoration(
+                  color: selected ? GodropColors.card : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: selected ? GodropColors.softShadow : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  o.$2,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? GodropColors.ink : GodropColors.mute,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _RevenueChartCard extends StatelessWidget {
+  final GraphData graph;
+  final bool loading;
+  final ValueChanged<String> onGranularityChanged;
+  const _RevenueChartCard({
+    required this.graph,
+    required this.loading,
+    required this.onGranularityChanged,
+  });
+
+  static String _shortDate(String iso, String granularity) {
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return iso;
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    if (granularity == 'year') return '${dt.year}';
+    if (granularity == 'month') return months[dt.month - 1];
+    return '${dt.day} ${months[dt.month - 1]}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final points = graph.points;
+    final maxRevenue = points.fold<int>(
         0, (m, p) => p.revenueKobo > m ? p.revenueKobo : m);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -416,65 +559,119 @@ class _RevenueChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Revenue trend',
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: GodropColors.ink)),
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Revenue trend',
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: GodropColors.ink)),
+              ),
+              if (loading)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: GodropColors.blue),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _GranularitySelector(
+              current: graph.granularity, onChanged: onGranularityChanged),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 120,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: shown.map((p) {
-                final frac = maxRevenue == 0
-                    ? 0.0
-                    : p.revenueKobo / maxRevenue;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Tooltip(
-                      message:
-                          '${p.date}\n${formatKobo(p.revenueKobo)} · ${p.orders} orders',
-                      child: Container(
-                        height: 8 + 104 * frac,
-                        decoration: BoxDecoration(
-                          gradient: frac > 0 ? GodropColors.blueGradient : null,
-                          color: frac > 0 ? null : GodropColors.divider,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+          if (points.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: Text('No revenue in this period',
+                    style: TextStyle(fontSize: 13, color: GodropColors.mute)),
+              ),
+            )
+          else
+            SizedBox(
+              height: 160,
+              child: BarChart(
+                BarChartData(
+                  maxY: maxRevenue == 0 ? 1 : maxRevenue * 1.2,
+                  alignment: BarChartAlignment.spaceAround,
+                  gridData: const FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 24,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.toInt();
+                          if (i < 0 || i >= points.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final step =
+                              (points.length / 5).ceil().clamp(1, points.length);
+                          if (i % step != 0 && i != points.length - 1) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              _shortDate(points[i].date, graph.granularity),
+                              style: const TextStyle(
+                                  fontSize: 10, color: GodropColors.mute),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                );
-              }).toList(),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => GodropColors.ink,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final p = points[group.x.toInt()];
+                        return BarTooltipItem(
+                          '${_shortDate(p.date, graph.granularity)}\n${formatKobo(p.revenueKobo)} · ${p.orders} orders',
+                          const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
+                        );
+                      },
+                    ),
+                  ),
+                  barGroups: [
+                    for (var i = 0; i < points.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: points[i].revenueKobo.toDouble(),
+                            gradient: points[i].revenueKobo > 0
+                                ? GodropColors.blueGradient
+                                : null,
+                            color: points[i].revenueKobo > 0
+                                ? null
+                                : GodropColors.divider,
+                            width: points.length > 20 ? 6 : 14,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(_shortDate(shown.first.date),
-                  style: const TextStyle(
-                      fontSize: 11, color: GodropColors.mute)),
-              Text(_shortDate(shown.last.date),
-                  style: const TextStyle(
-                      fontSize: 11, color: GodropColors.mute)),
-            ],
-          ),
         ],
       ),
     );
-  }
-
-  String _shortDate(String iso) {
-    final dt = DateTime.tryParse(iso);
-    if (dt == null) return iso;
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${dt.day} ${months[dt.month - 1]}';
   }
 }
 

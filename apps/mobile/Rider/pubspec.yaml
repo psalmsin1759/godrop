@@ -56,6 +56,7 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/images/launchicon.png"
   min_sdk_android: 21
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true

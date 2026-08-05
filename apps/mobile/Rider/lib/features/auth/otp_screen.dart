@@ -69,6 +69,8 @@ class _OtpScreenState extends State<OtpScreen> {
       listener: (ctx, state) {
         if (state is AuthAuthenticated) {
           ctx.go('/jobs');
+        } else if (state is AuthPasswordSetupRequired) {
+          ctx.go('/auth/create-password', extra: state.riderId);
         } else if (state is AuthError) {
           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
             content: Text(state.message),

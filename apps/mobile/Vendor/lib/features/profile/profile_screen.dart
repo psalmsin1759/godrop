@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -151,10 +152,54 @@ class ProfileScreen extends StatelessWidget {
                 }
               },
             ),
+            if (session.isOwner)
+              _MenuItem(
+                icon: Icons.delete_forever_rounded,
+                label: 'Delete account',
+                destructive: true,
+                onTap: () => _confirmDeleteAccount(context),
+              ),
           ]),
         ],
       ),
     );
+  }
+
+  void _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete account?'),
+        content: const Text(
+            'This will permanently close your store, remove all staff access, and delete your account. This action cannot be undone.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dCtx, false),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx, true),
+            child: const Text('Delete',
+                style: TextStyle(color: GodropColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await context.read<SessionCubit>().deleteAccount();
+      if (!context.mounted) return;
+      context.read<SessionCubit>().clear();
+      await context.read<AuthCubit>().logout();
+      if (context.mounted) context.go('/auth/login');
+    } on DioException catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(parseDioError(e)),
+            backgroundColor: Colors.red.shade700),
+      );
+    }
   }
 
   String _roleLabel(String role) => switch (role) {

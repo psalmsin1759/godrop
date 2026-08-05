@@ -199,17 +199,11 @@ class _SummaryCard extends StatelessWidget {
           Text(formatDateTime(order.createdAt),
               style: const TextStyle(fontSize: 12, color: GodropColors.mute)),
           const Divider(height: 24),
-          if (order.customer != null) ...[
+          if (order.customer != null)
             _InfoRow(
                 icon: Icons.person_outline_rounded,
                 label: 'Customer',
                 value: order.customer!.fullName),
-            if (order.customer!.phone != null)
-              _InfoRow(
-                  icon: Icons.phone_outlined,
-                  label: 'Phone',
-                  value: order.customer!.phone!),
-          ],
           _InfoRow(
               icon: Icons.payments_outlined,
               label: 'Payment',
@@ -420,8 +414,7 @@ class _DeliveryCard extends StatelessWidget {
             _InfoRow(
                 icon: Icons.person_pin_circle_outlined,
                 label: 'Recipient',
-                value:
-                    '${order.recipientName}${order.recipientPhone != null ? ' · ${order.recipientPhone}' : ''}'),
+                value: order.recipientName!),
         ],
       ),
     );

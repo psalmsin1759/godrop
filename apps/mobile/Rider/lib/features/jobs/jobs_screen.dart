@@ -28,6 +28,7 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
   bool get wantKeepAlive => true;
 
   late final AppLifecycleListener _lifecycleListener;
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -41,11 +42,18 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
     _lifecycleListener = AppLifecycleListener(
       onResume: () => context.read<JobsCubit>().loadJobs(),
     );
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >
+          _scrollController.position.maxScrollExtent - 300) {
+        context.read<JobsCubit>().loadMorePending();
+      }
+    });
   }
 
   @override
   void dispose() {
     _lifecycleListener.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -128,6 +136,7 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
       onRefresh: () => ctx.read<JobsCubit>().loadJobs(),
       color: GodropColors.blue,
       child: ListView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: [
           if (state.assigned.isNotEmpty) ...[
@@ -142,6 +151,18 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
             _sectionLabel('New Orders', GodropColors.blue),
             const SizedBox(height: 10),
             ...state.pending.map((o) => _JobCard(order: o, isAssigned: false)),
+            if (state.loadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: GodropColors.blue),
+                  ),
+                ),
+              ),
           ],
         ],
       ),

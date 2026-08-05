@@ -338,6 +338,9 @@ class EarningOrder {
 class RiderEarning {
   final String id;
   final double amount;
+  final double? deliveryFee;
+  final double? platformCut;
+  final int? riderSharePercent;
   final String status;
   final String? settledAt;
   final String createdAt;
@@ -346,6 +349,9 @@ class RiderEarning {
   const RiderEarning({
     required this.id,
     required this.amount,
+    this.deliveryFee,
+    this.platformCut,
+    this.riderSharePercent,
     required this.status,
     this.settledAt,
     required this.createdAt,

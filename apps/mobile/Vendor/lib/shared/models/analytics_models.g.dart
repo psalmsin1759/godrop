@@ -121,3 +121,29 @@ Map<String, dynamic> _$GraphDataResponseToJson(GraphDataResponse instance) =>
     <String, dynamic>{
       'data': instance.data,
     };
+
+LifetimeStats _$LifetimeStatsFromJson(Map<String, dynamic> json) =>
+    LifetimeStats(
+      totalOrders: (json['totalOrders'] as num?)?.toInt() ?? 0,
+      completedOrders: (json['completedOrders'] as num?)?.toInt() ?? 0,
+      totalRevenueKobo: (json['totalRevenueKobo'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$LifetimeStatsToJson(LifetimeStats instance) =>
+    <String, dynamic>{
+      'totalOrders': instance.totalOrders,
+      'completedOrders': instance.completedOrders,
+      'totalRevenueKobo': instance.totalRevenueKobo,
+    };
+
+LifetimeStatsResponse _$LifetimeStatsResponseFromJson(
+        Map<String, dynamic> json) =>
+    LifetimeStatsResponse(
+      data: LifetimeStats.fromJson(json['data'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$LifetimeStatsResponseToJson(
+        LifetimeStatsResponse instance) =>
+    <String, dynamic>{
+      'data': instance.data,
+    };

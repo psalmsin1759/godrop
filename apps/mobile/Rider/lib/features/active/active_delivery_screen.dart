@@ -518,6 +518,14 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
                     style: const TextStyle(
                         fontSize: 12, color: GodropColors.slate)),
               ),
+              GestureDetector(
+                onTap: () => ctx.push('/active/map', extra: p.id),
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 8),
+                  child: Icon(Icons.map_rounded,
+                      size: 18, color: GodropColors.blue),
+                ),
+              ),
               if (p.recipientPhone.isNotEmpty)
                 GestureDetector(
                   onTap: () => _callCustomer(p.recipientPhone),
@@ -558,12 +566,14 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
                   ),
                 ),
                 const SizedBox(width: 10),
-                GodropOutlineButton(
-                  label: 'Failed',
-                  color: GodropColors.error,
-                  onTap: loading
-                      ? null
-                      : () => _showDropoffFailedDialog(ctx, p),
+                Expanded(
+                  child: GodropOutlineButton(
+                    label: 'Failed',
+                    color: GodropColors.error,
+                    onTap: loading
+                        ? null
+                        : () => _showDropoffFailedDialog(ctx, p),
+                  ),
                 ),
               ],
             ),

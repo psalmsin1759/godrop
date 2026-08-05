@@ -135,3 +135,34 @@ class GraphDataResponse {
       _$GraphDataResponseFromJson(json);
   Map<String, dynamic> toJson() => _$GraphDataResponseToJson(this);
 }
+
+@JsonSerializable()
+class LifetimeStats {
+  @JsonKey(defaultValue: 0)
+  final int totalOrders;
+  @JsonKey(defaultValue: 0)
+  final int completedOrders;
+  @JsonKey(defaultValue: 0)
+  final int totalRevenueKobo;
+
+  const LifetimeStats({
+    required this.totalOrders,
+    required this.completedOrders,
+    required this.totalRevenueKobo,
+  });
+
+  factory LifetimeStats.fromJson(Map<String, dynamic> json) =>
+      _$LifetimeStatsFromJson(json);
+  Map<String, dynamic> toJson() => _$LifetimeStatsToJson(this);
+}
+
+@JsonSerializable()
+class LifetimeStatsResponse {
+  final LifetimeStats data;
+
+  const LifetimeStatsResponse({required this.data});
+
+  factory LifetimeStatsResponse.fromJson(Map<String, dynamic> json) =>
+      _$LifetimeStatsResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$LifetimeStatsResponseToJson(this);
+}

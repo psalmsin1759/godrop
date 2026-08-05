@@ -18,4 +18,13 @@ abstract class RiderAuthService {
 
   @POST('/rider/auth/logout')
   Future<dynamic> logout(@Body() Map<String, dynamic> body);
+
+  @POST('/rider/auth/login')
+  Future<dynamic> passwordLogin(@Body() Map<String, dynamic> body);
+
+  @POST('/rider/auth/set-password')
+  Future<dynamic> setPassword(@Body() Map<String, dynamic> body);
+
+  @POST('/rider/auth/forgot-password')
+  Future<dynamic> forgotPassword(@Body() Map<String, dynamic> body);
 }

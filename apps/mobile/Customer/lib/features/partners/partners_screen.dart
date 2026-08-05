@@ -52,9 +52,11 @@ class _PartnersScreenState extends State<PartnersScreen> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) return;
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.medium),
       );
-      final address = await PlacesService.reverseGeocode(pos.latitude, pos.longitude);
+      final address =
+          await PlacesService.reverseGeocode(pos.latitude, pos.longitude);
       if (mounted && address != null) {
         context.read<DeliveryAddressCubit>().setAddress(address);
       }
@@ -108,349 +110,365 @@ class _PartnersScreenState extends State<PartnersScreen> {
 
           return Scaffold(
             backgroundColor: GodropColors.background,
-            body: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Container(
-                    color: GodropColors.white,
-                    padding: EdgeInsets.fromLTRB(
-                        16, MediaQuery.of(context).padding.top + 12, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => context.go('/home'),
-                              child: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                    color: GodropColors.background,
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: const Icon(Icons.chevron_left_rounded,
-                                    size: 22),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: _showDeliverySheet,
-                                behavior: HitTestBehavior.opaque,
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Delivering to',
-                                        style: TextStyle(
-                                            fontSize: 11,
-                                            color: GodropColors.mute)),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.location_on_rounded,
-                                            size: 13, color: color),
-                                        const SizedBox(width: 3),
-                                        Flexible(
-                                          child: Text(
-                                            addressDisplay,
-                                            style: const TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                                color: GodropColors.ink),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const Icon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            size: 16,
-                                            color: GodropColors.ink),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                color: GodropColors.ink,
-                                height: 1.2),
+            body: RefreshIndicator(
+              color: color,
+              onRefresh: () => _cubit.load(
+                search: _searchQuery.isEmpty ? null : _searchQuery,
+              ),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Container(
+                      color: GodropColors.white,
+                      padding: EdgeInsets.fromLTRB(
+                          16, MediaQuery.of(context).padding.top + 12, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              TextSpan(text: _type.listTitle),
-                              TextSpan(
-                                  text: _type.listTitleAccent,
-                                  style: TextStyle(color: color)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                              color: GodropColors.background,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: GodropColors.border)),
-                          child: TextField(
-                            controller: _searchCtrl,
-                            onChanged: _onSearchChanged,
-                            style: const TextStyle(
-                                fontSize: 14, color: GodropColors.ink),
-                            decoration: InputDecoration(
-                              hintText: _type.searchHint,
-                              hintStyle: const TextStyle(
-                                  color: GodropColors.mute, fontSize: 14),
-                              prefixIcon: const Icon(Icons.search_rounded,
-                                  color: GodropColors.mute, size: 20),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.close_rounded,
-                                          size: 18, color: GodropColors.mute),
-                                      onPressed: () {
-                                        _searchCtrl.clear();
-                                        _onSearchChanged('');
-                                      },
-                                    )
-                                  : null,
-                              border: InputBorder.none,
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 13),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            _FilterPill(
-                              label: 'All',
-                              selected: !_showFavoritesOnly,
-                              color: color,
-                              onTap: () =>
-                                  setState(() => _showFavoritesOnly = false),
-                            ),
-                            const SizedBox(width: 10),
-                            _FilterPill(
-                              label: 'Favorites',
-                              icon: Icons.favorite_rounded,
-                              selected: _showFavoritesOnly,
-                              color: color,
-                              onTap: () =>
-                                  setState(() => _showFavoritesOnly = true),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.all(16),
-                  sliver: BlocBuilder<FavoritesCubit, FavoritesState>(
-                    builder: (context, favState) {
-                      return BlocBuilder<PartnersCubit, PartnersState>(
-                    builder: (context, state) {
-                      // ── Feature 2: Shimmer loading ─────────────────────────
-                      if (state.status == PartnersStatus.loading &&
-                          state.items.isEmpty) {
-                        return SliverToBoxAdapter(
-                          child: Shimmer.fromColors(
-                            baseColor: const Color(0xFFE0E0E0),
-                            highlightColor: const Color(0xFFF5F5F5),
-                            child: Column(
-                              children: List.generate(
-                                5,
-                                (i) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 14),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(16)),
-                                    child: Column(
-                                      children: [
-                                        // Banner placeholder (152px)
-                                        ClipRRect(
-                                          borderRadius:
-                                              const BorderRadius.vertical(
-                                                  top: Radius.circular(16)),
-                                          child: Container(
-                                            height: 152,
-                                            width: double.infinity,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Container(
-                                                  height: 14,
-                                                  width: 160,
-                                                  color: Colors.white),
-                                              const SizedBox(height: 6),
-                                              Container(
-                                                  height: 10,
-                                                  width: 100,
-                                                  color: Colors.white),
-                                              const SizedBox(height: 6),
-                                              Container(
-                                                  height: 10,
-                                                  width: 80,
-                                                  color: Colors.white),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                              GestureDetector(
+                                onTap: () => context.go('/home'),
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                      color: GodropColors.background,
+                                      borderRadius: BorderRadius.circular(10)),
+                                  child: const Icon(Icons.chevron_left_rounded,
+                                      size: 22),
                                 ),
                               ),
-                            ),
-                          ),
-                        );
-                      }
-
-                      if (state.status == PartnersStatus.failure &&
-                          state.items.isEmpty) {
-                        return SliverToBoxAdapter(
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 60),
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  const Icon(Icons.wifi_off_rounded,
-                                      size: 40, color: GodropColors.mute),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    state.error?.contains(
-                                                'SocketException') ==
-                                            true
-                                        ? 'No internet connection'
-                                        : 'Something went wrong',
-                                    style: const TextStyle(
-                                        fontSize: 15,
-                                        color: GodropColors.slate),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextButton(
-                                    onPressed: () => _cubit.load(),
-                                    child: const Text('Retry',
-                                        style: TextStyle(
-                                            color: GodropColors.blue,
-                                            fontWeight: FontWeight.w600)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }
-
-                      final results = _showFavoritesOnly
-                          ? state.items
-                              .where((p) => favState.vendorIds.contains(p.id))
-                              .toList()
-                          : state.items;
-
-                      return SliverToBoxAdapter(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  _searchQuery.isNotEmpty
-                                      ? '${results.length} result${results.length == 1 ? '' : 's'}'
-                                      : 'Featured near you',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: GodropColors.ink),
-                                ),
-                                if (state.status == PartnersStatus.loading)
-                                  const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(
-                                        color: GodropColors.blue,
-                                        strokeWidth: 1.5),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            // ── Feature 2: Empty state ──────────────────────
-                            if (results.isEmpty &&
-                                state.status == PartnersStatus.success)
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 60),
-                                child: Center(
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _showDeliverySheet,
+                                  behavior: HitTestBehavior.opaque,
                                   child: Column(
-                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        _showFavoritesOnly
-                                            ? Icons.favorite_border_rounded
-                                            : (_type == PartnerType.restaurant
-                                                ? Icons.no_food_rounded
-                                                : Icons.storefront_rounded),
-                                        size: 48,
-                                        color: GodropColors.mute,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        _showFavoritesOnly
-                                            ? 'No favorites yet — tap the heart icon on any ${_type.label.toLowerCase()} to save it here.'
-                                            : _type.emptyText,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                            fontSize: 15,
-                                            color: GodropColors.mute),
+                                      const Text('Delivering to',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: GodropColors.mute)),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.location_on_rounded,
+                                              size: 13, color: color),
+                                          const SizedBox(width: 3),
+                                          Flexible(
+                                            child: Text(
+                                              addressDisplay,
+                                              style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: GodropColors.ink),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              size: 16,
+                                              color: GodropColors.ink),
+                                        ],
                                       ),
                                     ],
                                   ),
                                 ),
-                              )
-                            else
-                              ...results.map((p) {
-                                final item = p.copyWith(
-                                    isFavorite:
-                                        favState.vendorIds.contains(p.id));
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 14),
-                                  child: _PartnerCard(
-                                    partner: item,
-                                    onTap: () => context.go(
-                                      '/partner/menu',
-                                      extra: {
-                                        'partner': item,
-                                        'deliveryAddress': deliveryAddress,
-                                      },
-                                    ),
-                                    onFavoriteToggle: () => context
-                                        .read<FavoritesCubit>()
-                                        .toggle(p.id),
-                                  ),
-                                );
-                              }),
-                          ],
-                        ),
-                      );
-                    },
-                      );
-                    },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w700,
+                                  color: GodropColors.ink,
+                                  height: 1.2),
+                              children: [
+                                TextSpan(text: _type.listTitle),
+                                TextSpan(
+                                    text: _type.listTitleAccent,
+                                    style: TextStyle(color: color)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                                color: GodropColors.background,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: GodropColors.border)),
+                            child: TextField(
+                              controller: _searchCtrl,
+                              onChanged: _onSearchChanged,
+                              style: const TextStyle(
+                                  fontSize: 14, color: GodropColors.ink),
+                              decoration: InputDecoration(
+                                hintText: _type.searchHint,
+                                hintStyle: const TextStyle(
+                                    color: GodropColors.mute, fontSize: 14),
+                                prefixIcon: const Icon(Icons.search_rounded,
+                                    color: GodropColors.mute, size: 20),
+                                suffixIcon: _searchQuery.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.close_rounded,
+                                            size: 18, color: GodropColors.mute),
+                                        onPressed: () {
+                                          _searchCtrl.clear();
+                                          _onSearchChanged('');
+                                        },
+                                      )
+                                    : null,
+                                border: InputBorder.none,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 13),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              _FilterPill(
+                                label: 'All',
+                                selected: !_showFavoritesOnly,
+                                color: color,
+                                onTap: () =>
+                                    setState(() => _showFavoritesOnly = false),
+                              ),
+                              const SizedBox(width: 10),
+                              _FilterPill(
+                                label: 'Favorites',
+                                icon: Icons.favorite_rounded,
+                                selected: _showFavoritesOnly,
+                                color: color,
+                                onTap: () =>
+                                    setState(() => _showFavoritesOnly = true),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: BlocBuilder<FavoritesCubit, FavoritesState>(
+                      builder: (context, favState) {
+                        return BlocBuilder<PartnersCubit, PartnersState>(
+                          builder: (context, state) {
+                            // ── Feature 2: Shimmer loading ─────────────────────────
+                            if (state.status == PartnersStatus.loading &&
+                                state.items.isEmpty) {
+                              return SliverToBoxAdapter(
+                                child: Shimmer.fromColors(
+                                  baseColor: const Color(0xFFE0E0E0),
+                                  highlightColor: const Color(0xFFF5F5F5),
+                                  child: Column(
+                                    children: List.generate(
+                                      5,
+                                      (i) => Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 14),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(16)),
+                                          child: Column(
+                                            children: [
+                                              // Banner placeholder (152px)
+                                              ClipRRect(
+                                                borderRadius: const BorderRadius
+                                                    .vertical(
+                                                    top: Radius.circular(16)),
+                                                child: Container(
+                                                  height: 152,
+                                                  width: double.infinity,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(12),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Container(
+                                                        height: 14,
+                                                        width: 160,
+                                                        color: Colors.white),
+                                                    const SizedBox(height: 6),
+                                                    Container(
+                                                        height: 10,
+                                                        width: 100,
+                                                        color: Colors.white),
+                                                    const SizedBox(height: 6),
+                                                    Container(
+                                                        height: 10,
+                                                        width: 80,
+                                                        color: Colors.white),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (state.status == PartnersStatus.failure &&
+                                state.items.isEmpty) {
+                              return SliverToBoxAdapter(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 60),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        const Icon(Icons.wifi_off_rounded,
+                                            size: 40, color: GodropColors.mute),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          state.error?.contains(
+                                                      'SocketException') ==
+                                                  true
+                                              ? 'No internet connection'
+                                              : 'Something went wrong',
+                                          style: const TextStyle(
+                                              fontSize: 15,
+                                              color: GodropColors.slate),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        TextButton(
+                                          onPressed: () => _cubit.load(),
+                                          child: const Text('Retry',
+                                              style: TextStyle(
+                                                  color: GodropColors.blue,
+                                                  fontWeight: FontWeight.w600)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final results = _showFavoritesOnly
+                                ? state.items
+                                    .where((p) =>
+                                        favState.vendorIds.contains(p.id))
+                                    .toList()
+                                : state.items;
+
+                            return SliverToBoxAdapter(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _searchQuery.isNotEmpty
+                                            ? '${results.length} result${results.length == 1 ? '' : 's'}'
+                                            : 'Featured near you',
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: GodropColors.ink),
+                                      ),
+                                      if (state.status ==
+                                          PartnersStatus.loading)
+                                        const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                              color: GodropColors.blue,
+                                              strokeWidth: 1.5),
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // ── Feature 2: Empty state ──────────────────────
+                                  if (results.isEmpty &&
+                                      state.status == PartnersStatus.success)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 60),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              _showFavoritesOnly
+                                                  ? Icons
+                                                      .favorite_border_rounded
+                                                  : (_type ==
+                                                          PartnerType.restaurant
+                                                      ? Icons.no_food_rounded
+                                                      : Icons
+                                                          .storefront_rounded),
+                                              size: 48,
+                                              color: GodropColors.mute,
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              _showFavoritesOnly
+                                                  ? 'No favorites yet — tap the heart icon on any ${_type.label.toLowerCase()} to save it here.'
+                                                  : _type.emptyText,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                  fontSize: 15,
+                                                  color: GodropColors.mute),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    ...results.map((p) {
+                                      final item = p.copyWith(
+                                          isFavorite: favState.vendorIds
+                                              .contains(p.id));
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 14),
+                                        child: _PartnerCard(
+                                          partner: item,
+                                          onTap: () => context.go(
+                                            '/partner/menu',
+                                            extra: {
+                                              'partner': item,
+                                              'deliveryAddress':
+                                                  deliveryAddress,
+                                            },
+                                          ),
+                                          onFavoriteToggle: () => context
+                                              .read<FavoritesCubit>()
+                                              .toggle(p.id),
+                                        ),
+                                      );
+                                    }),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -483,18 +501,20 @@ class _FilterPill extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.10) : GodropColors.background,
+          color: selected
+              ? color.withValues(alpha: 0.10)
+              : GodropColors.background,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? color.withValues(alpha: 0.3) : GodropColors.border,
+            color:
+                selected ? color.withValues(alpha: 0.3) : GodropColors.border,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon,
-                  size: 14, color: selected ? color : GodropColors.mute),
+              Icon(icon, size: 14, color: selected ? color : GodropColors.mute),
               const SizedBox(width: 6),
             ],
             Text(
@@ -582,8 +602,8 @@ class _PartnerCard extends StatelessWidget {
                 if (!partner.isOpenNow)
                   Positioned.fill(
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(18)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(18)),
                       child: Container(
                         color: Colors.black.withValues(alpha: 0.45),
                         alignment: Alignment.center,

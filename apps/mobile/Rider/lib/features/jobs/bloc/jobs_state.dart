@@ -18,11 +18,31 @@ class JobsLoading extends JobsState {
 class JobsLoaded extends JobsState {
   final List<RiderOrder> pending;
   final List<RiderOrder> assigned;
+  final bool hasMore;
+  final bool loadingMore;
 
-  const JobsLoaded({required this.pending, required this.assigned});
+  const JobsLoaded({
+    required this.pending,
+    required this.assigned,
+    this.hasMore = false,
+    this.loadingMore = false,
+  });
+
+  JobsLoaded copyWith({
+    List<RiderOrder>? pending,
+    List<RiderOrder>? assigned,
+    bool? hasMore,
+    bool? loadingMore,
+  }) =>
+      JobsLoaded(
+        pending: pending ?? this.pending,
+        assigned: assigned ?? this.assigned,
+        hasMore: hasMore ?? this.hasMore,
+        loadingMore: loadingMore ?? this.loadingMore,
+      );
 
   @override
-  List<Object?> get props => [pending, assigned];
+  List<Object?> get props => [pending, assigned, hasMore, loadingMore];
 }
 
 class JobsError extends JobsState {

@@ -4,9 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../app/theme.dart';
+import '../../shared/api/api.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
 import '../../shared/widgets/godrop_button.dart';
+import '../../shared/widgets/payment_method_selector.dart';
 import '../../shared/widgets/section_header.dart';
 import 'bloc/parcel_cubit.dart';
 import 'bloc/parcel_state.dart';
@@ -44,6 +46,23 @@ class ParcelVehicleScreen extends StatefulWidget {
 }
 
 class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
+  // 'card' | 'wallet' | 'wallet_card'
+  String _paymentMethod = 'card';
+  double _walletBalance = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final balance = await WalletService(DioClient.instance).getBalance();
+      if (mounted) setState(() => _walletBalance = balance.balance);
+    } catch (_) {}
+  }
+
   ParcelLocation get _pickup =>
       widget.routeData?.pickup ??
       const ParcelLocation(lat: 6.4524, lng: 3.4754, name: 'Lekki Phase 1');
@@ -110,6 +129,14 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
 
   void _proceed(ParcelLoaded parcelState) {
     final selected = parcelState.selectedType;
+    final total = parcelState.quote?.totalKobo ?? 0;
+    final walletBalanceKobo = (_walletBalance * 100).round();
+    if (_paymentMethod == 'wallet' && walletBalanceKobo < total) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Insufficient wallet balance for this option.')),
+      );
+      return;
+    }
     context.go(
       '/parcel/finding',
       extra: ParcelRouteData(
@@ -119,7 +146,7 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
         vehicleLabel: selected?.name ?? '',
         quotedTotalKobo: parcelState.quote?.totalKobo,
         estimatedMinutes: parcelState.estimatedMinutes,
-        paymentMethod: 'card',
+        paymentMethod: _paymentMethod,
       ),
     );
   }
@@ -263,6 +290,10 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                       parcels: _parcels,
                       bottomPad: bottomPad,
                       onProceed: _proceed,
+                      paymentMethod: _paymentMethod,
+                      walletBalance: _walletBalance,
+                      onPaymentMethodChanged: (m) =>
+                          setState(() => _paymentMethod = m),
                     );
                   }
                   return const SizedBox.shrink();
@@ -285,6 +316,9 @@ class _VehicleContent extends StatelessWidget {
   final List<ParcelItem> parcels;
   final double bottomPad;
   final void Function(ParcelLoaded) onProceed;
+  final String paymentMethod;
+  final double walletBalance;
+  final ValueChanged<String> onPaymentMethodChanged;
 
   const _VehicleContent({
     required this.state,
@@ -293,13 +327,37 @@ class _VehicleContent extends StatelessWidget {
     required this.parcels,
     required this.bottomPad,
     required this.onProceed,
+    required this.paymentMethod,
+    required this.walletBalance,
+    required this.onPaymentMethodChanged,
   });
+
+  bool get _walletInsufficient {
+    final quote = state.quote;
+    if (quote == null || paymentMethod != 'wallet') return false;
+    return (walletBalance * 100).round() < quote.totalKobo;
+  }
 
   String _buttonLabel() {
     if (state.quoteLoading) return 'Getting price...';
     final selected = state.selectedType;
     final quote = state.quote;
     if (selected == null || quote == null) return 'Select a vehicle';
+    if (_walletInsufficient) return 'Insufficient wallet balance';
+    if (paymentMethod == 'wallet') {
+      return 'Book ${selected.name} · Pay from wallet';
+    }
+    if (paymentMethod == 'wallet_card') {
+      final split = PaymentSplit.compute(
+        method: paymentMethod,
+        totalKobo: quote.totalKobo,
+        walletBalanceNaira: walletBalance,
+      );
+      if (split.cardCoversKobo > 0) {
+        return 'Book ${selected.name} · Pay ${_formatKobo(split.cardCoversKobo)} via card';
+      }
+      return 'Book ${selected.name} · Pay from wallet';
+    }
     return 'Book ${selected.name} · ${_formatKobo(quote.totalKobo)}';
   }
 
@@ -373,6 +431,17 @@ class _VehicleContent extends StatelessWidget {
                     const SizedBox(height: 4),
                     _QuoteError(message: state.quoteError!),
                   ],
+                  if (state.selectedType != null && state.quote != null) ...[
+                    const SizedBox(height: 16),
+                    const GodropSectionHeader(title: 'Payment method'),
+                    const SizedBox(height: 12),
+                    PaymentMethodSelector(
+                      selected: paymentMethod,
+                      onChanged: onPaymentMethodChanged,
+                      totalKobo: state.quote!.totalKobo,
+                      walletBalance: walletBalance,
+                    ),
+                  ],
                   const SizedBox(height: 8),
                 ],
               ),
@@ -393,7 +462,7 @@ class _VehicleContent extends StatelessWidget {
           ),
           child: GodropButton(
             label: _buttonLabel(),
-            onTap: () => onProceed(state),
+            onTap: _walletInsufficient ? null : () => onProceed(state),
             color: GodropColors.orange,
           ),
         ),

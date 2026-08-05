@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/splash/splash_screen.dart';
+import '../shared/services/token_storage.dart';
+import '../features/profile/bloc/session_cubit.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -99,11 +101,22 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: '/splash',
+  initialLocation: '/',
+  redirect: (context, state) async {
+    if (state.matchedLocation != '/') return null;
+    final hasToken = await TokenStorage.hasToken();
+    if (!context.mounted) return null;
+    if (hasToken) {
+      context.read<SessionCubit>().load();
+      return '/dashboard';
+    }
+    return '/auth/login';
+  },
   routes: [
     GoRoute(
-      path: '/splash',
-      pageBuilder: (_, state) => _fade(state, const SplashScreen()),
+      path: '/',
+      pageBuilder: (_, state) =>
+          _fade(state, const ColoredBox(color: Color(0xFF1A3CCC))),
     ),
     GoRoute(
       path: '/auth/login',

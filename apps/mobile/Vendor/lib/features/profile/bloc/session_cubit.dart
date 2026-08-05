@@ -18,6 +18,8 @@ class SessionCubit extends Cubit<VendorAdmin?> {
 
   void set(VendorAdmin admin) => emit(admin);
 
+  Future<void> deleteAccount() => _profileService.deleteAccount();
+
   Future<void> load() async {
     try {
       final res = await _profileService.getProfile();

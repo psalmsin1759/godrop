@@ -185,6 +185,7 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
                 recipientPhone: '+234',
               ),
             ];
+      final paymentMethod = routeData?.paymentMethod ?? 'card';
       final response = await service.placeOrder(ParcelOrderBody(
         pickup: LocationPoint(
           lat: _pickup.lat,
@@ -192,7 +193,7 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
           address: _pickup.name,
         ),
         vehicleTypeId: routeData?.vehicleTypeId,
-        paymentMethod: 'card',
+        paymentMethod: paymentMethod,
         parcels: parcels,
       ));
 
@@ -209,7 +210,7 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
 
       _orderId = orderId;
 
-      await _handleCardPayment(orderId);
+      await _initializePayment(orderId, paymentMethod);
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -225,15 +226,16 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
     }
   }
 
-  /// Initializes a Paystack payment for the just-created order. If a hosted
-  /// checkout URL comes back, shows it in a WebView and only proceeds to
-  /// rider search once the payment is verified as successful. If no URL is
-  /// returned, the order was already paid (e.g. a saved card was charged
-  /// automatically) and we can proceed straight away.
-  Future<void> _handleCardPayment(String orderId) async {
+  /// Initializes payment for the just-created order using the chosen method
+  /// (card, wallet, or wallet + card). If a hosted Paystack checkout URL
+  /// comes back, shows it in a WebView and only proceeds to rider search
+  /// once the payment is verified as successful. If no URL is returned, the
+  /// order was already paid (e.g. fully from wallet) and we can proceed
+  /// straight away.
+  Future<void> _initializePayment(String orderId, String method) async {
     try {
       final payRes = await PaymentService(DioClient.instance).initPayment(
-        PaymentInitBody(orderId: orderId, method: 'card'),
+        PaymentInitBody(orderId: orderId, method: method),
       );
 
       if (!mounted) return;

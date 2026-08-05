@@ -12,6 +12,9 @@ abstract class ProfileService {
   @GET('/vendor-admin/me')
   Future<VendorAdminResponse> getProfile();
 
+  @DELETE('/vendor-admin/me')
+  Future<MessageResponse> deleteAccount();
+
   @PATCH('/vendor-admin/me/profile')
   Future<VendorAdminResponse> updateProfile(@Body() UpdateProfileBody body);
 

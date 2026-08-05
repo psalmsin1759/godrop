@@ -10,14 +10,12 @@ OrderCustomer _$OrderCustomerFromJson(Map<String, dynamic> json) =>
     OrderCustomer(
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
-      phone: json['phone'] as String?,
     );
 
 Map<String, dynamic> _$OrderCustomerToJson(OrderCustomer instance) =>
     <String, dynamic>{
       'firstName': instance.firstName,
       'lastName': instance.lastName,
-      'phone': instance.phone,
     };
 
 OrderItem _$OrderItemFromJson(Map<String, dynamic> json) => OrderItem(
@@ -72,7 +70,6 @@ VendorOrder _$VendorOrderFromJson(Map<String, dynamic> json) => VendorOrder(
       notes: json['notes'] as String?,
       cancellationReason: json['cancellationReason'] as String?,
       recipientName: json['recipientName'] as String?,
-      recipientPhone: json['recipientPhone'] as String?,
       createdAt: json['createdAt'] as String,
       items: (json['items'] as List<dynamic>?)
               ?.map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
@@ -105,7 +102,6 @@ Map<String, dynamic> _$VendorOrderToJson(VendorOrder instance) =>
       'notes': instance.notes,
       'cancellationReason': instance.cancellationReason,
       'recipientName': instance.recipientName,
-      'recipientPhone': instance.recipientPhone,
       'createdAt': instance.createdAt,
       'items': instance.items,
       'customer': instance.customer,

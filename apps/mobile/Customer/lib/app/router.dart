@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/splash/splash_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/auth/phone_screen.dart';
 import '../features/auth/otp_screen.dart';
@@ -39,6 +38,7 @@ import '../features/profile/notifications_screen.dart';
 import '../features/webview/webview_screen.dart';
 import '../features/profile/saved_cards_screen.dart';
 import '../shared/widgets/main_shell.dart';
+import '../shared/services/user_prefs.dart';
 
 // ── Transition helpers ────────────────────────────────────────────────────────
 
@@ -106,11 +106,16 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: '/home',
+  initialLocation: '/',
+  redirect: (context, state) {
+    if (state.matchedLocation != '/') return null;
+    return UserPrefs.isOnboarded ? '/home' : '/onboarding';
+  },
   routes: [
     GoRoute(
-      path: '/splash',
-      pageBuilder: (_, state) => _fade(state, const SplashScreen()),
+      path: '/',
+      pageBuilder: (_, state) =>
+          _fade(state, const ColoredBox(color: Color(0xFF1A3CCC))),
     ),
     GoRoute(
       path: '/onboarding',

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../features/splash/splash_screen.dart';
+import '../shared/services/token_storage.dart';
+import '../shared/services/rider_prefs.dart';
 import '../features/auth/phone_screen.dart';
 import '../features/auth/otp_screen.dart';
+import '../features/auth/login_screen.dart';
+import '../features/auth/forgot_password_screen.dart';
+import '../features/auth/create_password_screen.dart';
 import '../features/jobs/jobs_screen.dart';
 import '../features/jobs/job_detail_screen.dart';
 import '../features/active/active_delivery_screen.dart';
@@ -15,14 +19,37 @@ import '../features/notifications/notifications_screen.dart';
 import '../shared/widgets/rider_shell.dart';
 
 final router = GoRouter(
-  initialLocation: '/splash',
+  initialLocation: '/',
+  redirect: (context, state) async {
+    if (state.matchedLocation != '/') return null;
+    final hasTokens = await TokenStorage.hasTokens();
+    if (hasTokens && RiderPrefs.isOnboarded) return '/jobs';
+    return '/auth/login';
+  },
   routes: [
     GoRoute(
-      path: '/splash',
-      pageBuilder: (ctx, state) => _fade(state, const SplashScreen()),
+      path: '/',
+      pageBuilder: (ctx, state) =>
+          _fade(state, const ColoredBox(color: Color(0xFF1A3CCC))),
     ),
 
     // Auth flow
+    GoRoute(
+      path: '/auth/login',
+      pageBuilder: (ctx, state) => _slide(state, const LoginScreen()),
+    ),
+    GoRoute(
+      path: '/auth/forgot-password',
+      pageBuilder: (ctx, state) =>
+          _slide(state, const ForgotPasswordScreen()),
+    ),
+    GoRoute(
+      path: '/auth/create-password',
+      pageBuilder: (ctx, state) {
+        final riderId = state.extra as String? ?? '';
+        return _slide(state, CreatePasswordScreen(riderId: riderId));
+      },
+    ),
     GoRoute(
       path: '/auth/phone',
       pageBuilder: (ctx, state) => _slide(state, const PhoneScreen()),
@@ -65,8 +92,10 @@ final router = GoRouter(
               routes: [
                 GoRoute(
                   path: 'map',
-                  pageBuilder: (ctx, state) =>
-                      _slide(state, const ActiveMapScreen()),
+                  pageBuilder: (ctx, state) => _slide(
+                      state,
+                      ActiveMapScreen(
+                          focusDropoffId: state.extra as String?)),
                 ),
               ],
             ),

@@ -10,6 +10,9 @@ abstract class RiderProfileService {
   @GET('/rider/me')
   Future<dynamic> getProfile();
 
+  @DELETE('/rider/me')
+  Future<dynamic> deleteAccount();
+
   @PATCH('/rider/me')
   Future<dynamic> updateProfile(@Body() Map<String, dynamic> body);
 

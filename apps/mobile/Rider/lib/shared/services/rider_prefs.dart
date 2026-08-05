@@ -43,4 +43,11 @@ class RiderPrefs {
     await _prefs.remove('rider_avatar');
     await _prefs.remove('rider_fcm_token');
   }
+
+  // ── App update prompt ────────────────────────────────────────────────────────
+  static String get dismissedUpdateVersion =>
+      _prefs.getString('dismissed_update_version') ?? '';
+
+  static Future<void> saveDismissedUpdateVersion(String version) =>
+      _prefs.setString('dismissed_update_version', version);
 }

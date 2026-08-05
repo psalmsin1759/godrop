@@ -576,36 +576,49 @@ class _OrderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Text(type,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: GodropColors.ink,
-                            fontSize: 14)),
+                    Flexible(
+                      child: Text(type,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: GodropColors.ink,
+                              fontSize: 14)),
+                    ),
                     const SizedBox(width: 6),
-                    Text(id,
-                        style: const TextStyle(
-                            fontSize: 12, color: GodropColors.mute)),
+                    Flexible(
+                      child: Text(id,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 12, color: GodropColors.mute)),
+                    ),
                     if (badge != null) ...[
                       const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE7EEFF),
-                          borderRadius: BorderRadius.circular(6),
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE7EEFF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(badge!,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: GodropColors.blue)),
                         ),
-                        child: Text(badge!,
-                            style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: GodropColors.blue)),
                       ),
                     ],
                   ]),
                   Text(foodSummary ?? route,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 12, color: GodropColors.slate)),
                   Text(date,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                           fontSize: 11, color: GodropColors.mute)),
                   if (confirmationCode != null) ...[
@@ -614,11 +627,14 @@ class _OrderCard extends StatelessWidget {
                       const Icon(Icons.lock_rounded,
                           size: 11, color: GodropColors.blue),
                       const SizedBox(width: 3),
-                      Text('Code: $confirmationCode',
-                          style: const TextStyle(
-                              fontSize: 11,
-                              color: GodropColors.blue,
-                              fontWeight: FontWeight.w700)),
+                      Flexible(
+                        child: Text('Code: $confirmationCode',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: GodropColors.blue,
+                                fontWeight: FontWeight.w700)),
+                      ),
                     ]),
                   ],
                 ],

@@ -33,7 +33,6 @@ import '../features/orders/order_detail_screen.dart';
 import '../features/orders/delivered_rate_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/profile/wallet_screen.dart';
-import '../features/profile/settings_screen.dart';
 import '../features/profile/notifications_screen.dart';
 import '../features/webview/webview_screen.dart';
 import '../features/profile/saved_cards_screen.dart';
@@ -292,10 +291,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/notifications',
       pageBuilder: (_, state) => _slide(state, const NotificationsScreen()),
-    ),
-    GoRoute(
-      path: '/settings',
-      pageBuilder: (_, state) => _slide(state, const SettingsScreen()),
     ),
     GoRoute(
       path: '/webview',

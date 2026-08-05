@@ -54,6 +54,7 @@ class ParcelRouteData {
   final int? quotedTotalKobo;
   final int? estimatedMinutes;
   final String paymentMethod;
+  final String? couponCode;
 
   const ParcelRouteData({
     required this.pickup,
@@ -63,6 +64,7 @@ class ParcelRouteData {
     this.quotedTotalKobo,
     this.estimatedMinutes,
     this.paymentMethod = 'card',
+    this.couponCode,
   });
 
   bool get isMultiParcel => parcels.length > 1;
@@ -91,6 +93,7 @@ class ParcelRouteData {
     int? quotedTotalKobo,
     int? estimatedMinutes,
     String? paymentMethod,
+    String? couponCode,
   }) =>
       ParcelRouteData(
         pickup: pickup ?? this.pickup,
@@ -100,6 +103,7 @@ class ParcelRouteData {
         quotedTotalKobo: quotedTotalKobo ?? this.quotedTotalKobo,
         estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
         paymentMethod: paymentMethod ?? this.paymentMethod,
+        couponCode: couponCode ?? this.couponCode,
       );
 }
 

@@ -55,6 +55,7 @@ export const bookTruckSchema = z.object({
   scheduledAt: z.string().datetime().optional(),
   paymentMethod: z.enum(["card", "wallet", "cash"]),
   notes: z.string().optional(),
+  couponCode: z.string().min(1).optional(),
 });
 
 // ─── Truck Type (vehicle — legacy) ────────────────────────────

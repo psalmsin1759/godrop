@@ -184,18 +184,20 @@ class CheckoutItem {
   Map<String, dynamic> toJson() => _$CheckoutItemToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(includeIfNull: false)
 class FoodCheckoutRequest {
   final String vendorId;
   final List<CheckoutItem> items;
   final String deliveryAddress;
   final String paymentMethod;
+  final String? couponCode;
 
   const FoodCheckoutRequest({
     required this.vendorId,
     required this.items,
     required this.deliveryAddress,
     required this.paymentMethod,
+    this.couponCode,
   });
 
   factory FoodCheckoutRequest.fromJson(Map<String, dynamic> json) =>
@@ -208,12 +210,14 @@ class PlacedOrder {
   final String id;
   final String status;
   final int totalKobo;
+  final int discountKobo;
   final String? confirmationCode;
 
   const PlacedOrder({
     required this.id,
     required this.status,
     required this.totalKobo,
+    this.discountKobo = 0,
     this.confirmationCode,
   });
 

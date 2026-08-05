@@ -11,6 +11,7 @@ import '../../shared/models/delivery_models.dart';
 import '../../shared/models/order_models.dart';
 import '../../shared/models/wallet_models.dart';
 import '../../shared/widgets/animated_entrance.dart';
+import '../../shared/widgets/coupon_input.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/payment_method_selector.dart';
 import '../orders/bloc/order_cubit.dart';
@@ -32,8 +33,21 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
   // 'card' | 'wallet' | 'wallet_card'
   String _paymentMethod = 'card';
   double _walletBalance = 0;
+  AppliedCoupon? _coupon;
 
   TruckBookingData get b => widget.booking;
+
+  int get _deliveryFeeKobo {
+    final bd = b.priceBreakdown;
+    if (bd == null) return 0;
+    return (bd.kmCostKobo ?? 0) + (bd.loadersCostKobo ?? 0);
+  }
+
+  int get _discountedTotal {
+    final bd = b.priceBreakdown;
+    if (bd == null) return 0;
+    return bd.totalKobo - (_coupon?.discountKobo ?? 0);
+  }
 
   @override
   void initState() {
@@ -51,7 +65,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
   bool get _walletInsufficient {
     final bd = b.priceBreakdown;
     if (bd == null || _paymentMethod != 'wallet') return false;
-    return (_walletBalance * 100).round() < bd.totalKobo;
+    return (_walletBalance * 100).round() < _discountedTotal;
   }
 
   String _fmt(int kobo) {
@@ -96,6 +110,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
             lat: b.dropoff.lat, lng: b.dropoff.lng, address: b.dropoff.name),
         scheduledAt: scheduledAt,
         paymentMethod: _paymentMethod,
+        couponCode: _coupon?.code,
       ));
 
       if (!mounted) return;
@@ -277,7 +292,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
     final split = bd != null
         ? PaymentSplit.compute(
             method: _paymentMethod,
-            totalKobo: bd.totalKobo,
+            totalKobo: _discountedTotal,
             walletBalanceNaira: _walletBalance,
           )
         : null;
@@ -517,6 +532,11 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                                       '${b.loaderCount} loader${b.loaderCount != 1 ? 's' : ''}',
                                   value: _fmt(bd.loadersCostKobo!),
                                 ),
+                              if (_coupon != null)
+                                _PriceRow(
+                                  label: 'Coupon (${_coupon!.code})',
+                                  value: '-${_fmt(_coupon!.discountKobo)}',
+                                ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 8),
                                 child: Divider(
@@ -524,7 +544,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                               ),
                               _PriceRow(
                                 label: 'Total',
-                                value: _fmt(bd.totalKobo),
+                                value: _fmt(_discountedTotal),
                                 isTotal: true,
                               ),
                             ]
@@ -555,6 +575,27 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
 
                   const SizedBox(height: 16),
 
+                  // ── Coupon code ──
+                  if (bd != null)
+                    AnimatedEntrance(
+                      delay: const Duration(milliseconds: 90),
+                      child: _SectionCard(
+                        title: 'Coupon Code',
+                        icon: Icons.local_offer_rounded,
+                        children: [
+                          CouponInputCard(
+                            orderType: 'TRUCK',
+                            deliveryFeeKobo: _deliveryFeeKobo,
+                            orderValueKobo: bd.totalKobo,
+                            applied: _coupon,
+                            onChanged: (c) => setState(() => _coupon = c),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+
                   // ── Payment method ──
                   AnimatedEntrance(
                     delay: const Duration(milliseconds: 120),
@@ -566,7 +607,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                           PaymentMethodSelector(
                             selected: _paymentMethod,
                             onChanged: (m) => setState(() => _paymentMethod = m),
-                            totalKobo: bd.totalKobo,
+                            totalKobo: _discountedTotal,
                             walletBalance: _walletBalance,
                           )
                         else
@@ -650,7 +691,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                                 ? '${_fmt(split.cardCoversKobo)} via card'
                                 : _paymentMethod == 'wallet'
                                     ? 'From wallet'
-                                    : _fmt(bd.totalKobo),
+                                    : _fmt(_discountedTotal),
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w700,

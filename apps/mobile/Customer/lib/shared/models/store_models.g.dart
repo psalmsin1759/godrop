@@ -210,6 +210,7 @@ StoreCheckoutRequest _$StoreCheckoutRequestFromJson(
           .toList(),
       deliveryAddress: json['deliveryAddress'] as String,
       paymentMethod: json['paymentMethod'] as String,
+      couponCode: json['couponCode'] as String?,
     );
 
 Map<String, dynamic> _$StoreCheckoutRequestToJson(
@@ -219,6 +220,7 @@ Map<String, dynamic> _$StoreCheckoutRequestToJson(
       'items': instance.items,
       'deliveryAddress': instance.deliveryAddress,
       'paymentMethod': instance.paymentMethod,
+      if (instance.couponCode case final value?) 'couponCode': value,
     };
 
 StorePlacedOrder _$StorePlacedOrderFromJson(Map<String, dynamic> json) =>
@@ -226,6 +228,7 @@ StorePlacedOrder _$StorePlacedOrderFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       status: json['status'] as String,
       totalKobo: (json['totalKobo'] as num).toInt(),
+      discountKobo: (json['discountKobo'] as num?)?.toInt() ?? 0,
       confirmationCode: json['confirmationCode'] as String?,
     );
 
@@ -234,6 +237,7 @@ Map<String, dynamic> _$StorePlacedOrderToJson(StorePlacedOrder instance) =>
       'id': instance.id,
       'status': instance.status,
       'totalKobo': instance.totalKobo,
+      'discountKobo': instance.discountKobo,
       'confirmationCode': instance.confirmationCode,
     };
 

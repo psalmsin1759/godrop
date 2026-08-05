@@ -6,6 +6,7 @@ import { paginate } from "../utils/pagination";
 import * as pricingService from "./pricingService";
 import * as fcmService from "./fcmService";
 import * as walletService from "./walletService";
+import * as promotionService from "./promotionService";
 import { sendEmail, customerOrderCancelledEmail } from "./emailService";
 import { broadcastNewOrder } from "../index";
 
@@ -277,6 +278,7 @@ export async function placeParcelOrder(
     sizeCategory?: string;
     recipientName?: string;
     recipientPhone?: string;
+    couponCode?: string;
   }
 ) {
   // Normalize the legacy single-parcel body into a 1-element `parcels` array.
@@ -309,6 +311,22 @@ export async function placeParcelOrder(
     vehicleType ?? undefined
   );
 
+  // Coupon discounts the delivery fee only — the per-dropoff deliveryFeeKobo
+  // riders are paid from (below) stays undiscounted; the reduction is applied
+  // only to the order's totalKobo.
+  let discountKobo = 0;
+  let promotionId: string | undefined;
+  if (data.couponCode) {
+    const promo = await promotionService.applyPromoCode({
+      code: data.couponCode,
+      orderType: OrderType.PARCEL,
+      deliveryFeeKobo: quote.priceBreakdown.deliveryFeeKobo,
+      orderValueKobo: quote.priceBreakdown.totalKobo,
+    });
+    discountKobo = promo.discountKobo;
+    promotionId = promo.promotionId;
+  }
+
   const trackingCode = generateTrackingCode();
   // Pre-generate a confirmation code per parcel. The order-level dropoff/recipient
   // fields (and confirmationCode) mirror the LAST parcel as a summary so existing
@@ -338,7 +356,9 @@ export async function placeParcelOrder(
       paymentMethod: data.paymentMethod.toUpperCase() as PaymentMethod,
       deliveryFeeKobo: quote.priceBreakdown.deliveryFeeKobo,
       serviceFeeKobo: quote.priceBreakdown.serviceFeeKobo,
-      totalKobo: quote.priceBreakdown.totalKobo,
+      discountKobo,
+      promotionId,
+      totalKobo: quote.priceBreakdown.totalKobo - discountKobo,
       estimatedMinutes: quote.estimatedMinutes,
       scheduledAt: data.scheduleAt ? new Date(data.scheduleAt) : undefined,
       events: { create: { status: OrderStatus.PENDING, description: "Parcel order placed — awaiting payment" } },
@@ -364,6 +384,12 @@ export async function placeParcelOrder(
       dropoffs: { orderBy: { sequence: "asc" } },
     },
   });
+
+  if (promotionId) {
+    promotionService.incrementPromotionUsage(promotionId).catch((err) =>
+      console.error("[promotion] usage increment failed:", err)
+    );
+  }
 
   // Not yet visible to riders or broadcast — that happens once payment is
   // confirmed, via activateOrderAfterPayment().
@@ -459,11 +485,31 @@ export async function placeTruckOrder(
       totalKobo: number;
     };
     estimatedMinutes: number;
+    couponCode?: string;
   }
 ) {
   const trackingCode = generateTrackingCode();
   const confirmationCode = generateConfirmationCode();
-  return prisma.order.create({
+  const subtotalKobo = data.priceBreakdown.apartmentCostKobo + data.priceBreakdown.truckCostKobo;
+  const deliveryFeeKobo = data.priceBreakdown.kmCostKobo + data.priceBreakdown.loadersCostKobo;
+
+  // Coupon discounts the delivery fee only — deliveryFeeKobo above stays at
+  // its original value (riders are paid from it); the reduction is applied
+  // only to the order's totalKobo.
+  let discountKobo = 0;
+  let promotionId: string | undefined;
+  if (data.couponCode) {
+    const promo = await promotionService.applyPromoCode({
+      code: data.couponCode,
+      orderType: OrderType.TRUCK,
+      deliveryFeeKobo,
+      orderValueKobo: data.priceBreakdown.totalKobo,
+    });
+    discountKobo = promo.discountKobo;
+    promotionId = promo.promotionId;
+  }
+
+  const order = await prisma.order.create({
     data: {
       trackingCode,
       confirmationCode,
@@ -481,9 +527,11 @@ export async function placeTruckOrder(
       dropoffLng: data.dropoff.lng,
       stops: data.stops ?? [],
       paymentMethod: data.paymentMethod.toUpperCase() as PaymentMethod,
-      subtotalKobo: data.priceBreakdown.apartmentCostKobo + data.priceBreakdown.truckCostKobo,
-      deliveryFeeKobo: data.priceBreakdown.kmCostKobo + data.priceBreakdown.loadersCostKobo,
-      totalKobo: data.priceBreakdown.totalKobo,
+      subtotalKobo,
+      deliveryFeeKobo,
+      discountKobo,
+      promotionId,
+      totalKobo: data.priceBreakdown.totalKobo - discountKobo,
       estimatedMinutes: data.estimatedMinutes,
       scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : undefined,
       notes: data.notes,
@@ -491,6 +539,14 @@ export async function placeTruckOrder(
     },
     include: { apartmentType: true, truckType: true },
   });
+
+  if (promotionId) {
+    promotionService.incrementPromotionUsage(promotionId).catch((err) =>
+      console.error("[promotion] usage increment failed:", err)
+    );
+  }
+
+  return order;
 }
 
 export async function listAllOrders(opts: {

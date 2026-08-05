@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as vendorService from "../services/vendorService";
+import { InvalidCouponError } from "../services/promotionService";
 import { ok, fail } from "../utils/response";
 import { paginate, buildMeta } from "../utils/pagination";
 
@@ -74,7 +75,7 @@ export async function getRestaurantReviews(req: Request, res: Response, next: Ne
 
 export async function checkout(req: Request, res: Response, next: NextFunction) {
   try {
-    const { vendorId, items, deliveryAddress, paymentMethod } = req.body;
+    const { vendorId, items, deliveryAddress, paymentMethod, couponCode } = req.body;
     const userId = req.user!.id;
     const order = await vendorService.createFoodOrder({
       userId,
@@ -82,9 +83,11 @@ export async function checkout(req: Request, res: Response, next: NextFunction) 
       items,
       deliveryAddress,
       paymentMethod,
+      couponCode,
     });
     ok(res, { success: true, order });
-  } catch (err) {
+  } catch (err: any) {
+    if (err instanceof InvalidCouponError) return fail(res, err.message, 422);
     next(err);
   }
 }

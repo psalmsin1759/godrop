@@ -195,6 +195,7 @@ class _FindingRiderScreenState extends State<FindingRiderScreen>
         vehicleTypeId: routeData?.vehicleTypeId,
         paymentMethod: paymentMethod,
         parcels: parcels,
+        couponCode: routeData?.couponCode,
       ));
 
       if (!mounted) return;

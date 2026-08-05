@@ -180,8 +180,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (ctx, state) {
-        if (state is AuthLoggedOut || state is AuthAccountDeleted) {
+        if (state is AuthLoggedOut) {
           ctx.go('/onboarding');
+        } else if (state is AuthAccountDeleted) {
+          ctx.go('/auth/login');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(ctx).showSnackBar(
             SnackBar(

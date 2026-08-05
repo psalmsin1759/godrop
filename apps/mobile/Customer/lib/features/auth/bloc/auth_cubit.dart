@@ -131,6 +131,7 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> deleteAccount() async {
     emit(AuthLoading());
     try {
+      await PushNotificationService.removeToken();
       await _authService.deleteAccount();
       await _clearLocalData();
       emit(AuthAccountDeleted());

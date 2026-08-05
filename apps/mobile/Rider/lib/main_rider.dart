@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'app/rider_app.dart';
+import 'app/router.dart';
 import 'features/auth/bloc/auth_cubit.dart';
 import 'features/jobs/bloc/jobs_cubit.dart';
 import 'features/active/bloc/active_cubit.dart';
@@ -11,6 +12,7 @@ import 'features/earnings/bloc/earnings_cubit.dart';
 import 'features/profile/bloc/profile_cubit.dart';
 import 'features/notifications/bloc/notifications_cubit.dart';
 import 'shared/services/rider_prefs.dart';
+import 'shared/services/app_update_service.dart';
 import 'shared/services/push_notification_service.dart';
 
 @pragma('vm:entry-point')
@@ -43,4 +45,9 @@ void main() async {
       child: const RiderApp(),
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx != null) AppUpdateService.checkForUpdate(ctx);
+  });
 }

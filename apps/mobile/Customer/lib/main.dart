@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'app/customer_app.dart';
+import 'app/router.dart';
 import 'features/auth/bloc/auth_cubit.dart';
 import 'features/parcel/models/parcel_location.dart';
 import 'features/orders/models/active_order.dart';
@@ -17,6 +18,7 @@ import 'shared/bloc/favorites_cubit.dart';
 import 'features/profile/bloc/profile_cubit.dart';
 import 'features/profile/bloc/wallet_cubit.dart';
 import 'features/profile/bloc/notifications_cubit.dart';
+import 'shared/services/app_update_service.dart';
 import 'shared/services/push_notification_service.dart';
 import 'shared/services/user_prefs.dart';
 
@@ -70,4 +72,9 @@ void main() async {
       child: const GodropCustomerApp(),
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx != null) AppUpdateService.checkForUpdate(ctx);
+  });
 }

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../../app/router.dart';
 import '../../services/token_storage.dart';
 
 /// Attaches the access token and transparently refreshes it once on 401
@@ -33,7 +34,11 @@ class AuthInterceptor extends QueuedInterceptor {
     }
 
     final refreshToken = await TokenStorage.getRefreshToken();
-    if (refreshToken == null || refreshToken.isEmpty) return handler.next(err);
+    if (refreshToken == null || refreshToken.isEmpty) {
+      await TokenStorage.clear();
+      _redirectToLogin();
+      return handler.next(err);
+    }
 
     try {
       final refreshDio = Dio(BaseOptions(baseUrl: _dio.options.baseUrl));
@@ -54,7 +59,13 @@ class AuthInterceptor extends QueuedInterceptor {
       return handler.resolve(response);
     } catch (_) {
       await TokenStorage.clear();
+      _redirectToLogin();
       return handler.next(err);
     }
   }
+}
+
+/// Session is no longer valid — bounce the user to the sign-in screen.
+void _redirectToLogin() {
+  appRouter.go('/auth/sign-in');
 }

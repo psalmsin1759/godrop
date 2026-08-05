@@ -41,4 +41,11 @@ class UserPrefs {
   static Future<void> clear() async {
     await _prefs.clear();
   }
+
+  // ── App update prompt ────────────────────────────────────────────────────────
+  static String get dismissedUpdateVersion =>
+      _prefs.getString('dismissed_update_version') ?? '';
+
+  static Future<void> saveDismissedUpdateVersion(String version) =>
+      _prefs.setString('dismissed_update_version', version);
 }

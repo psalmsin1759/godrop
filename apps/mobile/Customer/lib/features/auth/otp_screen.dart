@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
+import '../../shared/api/api.dart';
 import '../../shared/widgets/background_blobs.dart';
 import '../../shared/widgets/godrop_back_button.dart';
 import '../../shared/widgets/godrop_button.dart';
 import 'bloc/auth_cubit.dart';
 import 'bloc/auth_state.dart';
+
+const _maxRetriesBeforeSupport = 3;
 
 class OtpScreen extends StatefulWidget {
   final String phone;
@@ -21,14 +25,29 @@ class _OtpScreenState extends State<OtpScreen> {
   final _codes = List.generate(6, (_) => TextEditingController());
   final _focusNodes = List.generate(6, (_) => FocusNode());
   int _seconds = 60;
+  int _resendCount = 0;
+  String? _supportPhone;
 
   @override
   void initState() {
     super.initState();
     _startTimer();
+    _loadSupportPhone();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_focusNodes[0]);
     });
+  }
+
+  Future<void> _loadSupportPhone() async {
+    try {
+      final res = await DioClient.instance.get('/config');
+      final data = res.data as Map<String, dynamic>;
+      final raw = data['data'] as Map<String, dynamic>? ?? data;
+      final phone = raw['customerServicePhone'] as String?;
+      if (mounted && phone != null && phone.isNotEmpty) {
+        setState(() => _supportPhone = phone);
+      }
+    } catch (_) {}
   }
 
   void _startTimer() {
@@ -42,10 +61,28 @@ class _OtpScreenState extends State<OtpScreen> {
 
   void _resend(BuildContext ctx) {
     for (final c in _codes) c.clear();
-    setState(() => _seconds = 60);
+    setState(() {
+      _seconds = 60;
+      _resendCount++;
+    });
     _startTimer();
     FocusScope.of(context).requestFocus(_focusNodes[0]);
     ctx.read<AuthCubit>().requestOtp(widget.phone);
+    if (_resendCount == _maxRetriesBeforeSupport) {
+      _showCallSupportSheet(ctx);
+    }
+  }
+
+  void _showCallSupportSheet(BuildContext ctx) {
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CallSupportSheet(
+        phone: widget.phone,
+        supportPhone: _supportPhone,
+      ),
+    );
   }
 
   String get _otp => _codes.map((c) => c.text).join();
@@ -307,6 +344,12 @@ class _OtpScreenState extends State<OtpScreen> {
                                 ),
                               ),
                       ),
+                      if (_resendCount >= _maxRetriesBeforeSupport) ...[
+                        const SizedBox(height: 16),
+                        _CallSupportBanner(
+                          onTap: () => _showCallSupportSheet(ctx),
+                        ),
+                      ],
                       const SizedBox(height: 32),
                       GodropButton(
                         label: loading ? 'Verifying...' : 'Verify',
@@ -321,6 +364,158 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _CallSupportBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CallSupportBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: GodropColors.orange.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: GodropColors.orange.withValues(alpha: 0.3)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.support_agent_rounded,
+                color: GodropColors.orange, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Still no code? Call customer service to verify manually.",
+                style: TextStyle(
+                    fontSize: 13,
+                    color: GodropColors.ink,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: GodropColors.orange, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CallSupportSheet extends StatelessWidget {
+  final String phone;
+  final String? supportPhone;
+  const _CallSupportSheet({required this.phone, required this.supportPhone});
+
+  Future<void> _call(String number) async {
+    final uri = Uri(scheme: 'tel', path: number);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          24, 24, 24, MediaQuery.of(context).padding.bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: GodropColors.orange.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.support_agent_rounded,
+                color: GodropColors.orange, size: 26),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "Still haven't received your code?",
+            style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: GodropColors.ink),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Our customer service team can verify your number manually over the phone.',
+            style: TextStyle(fontSize: 14, color: GodropColors.slate, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: GodropColors.orange.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GodropColors.orange.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_rounded, color: GodropColors.orange, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                          fontSize: 13, color: GodropColors.ink, height: 1.4),
+                      children: [
+                        const TextSpan(
+                            text: 'Important: ',
+                            style: TextStyle(fontWeight: FontWeight.w700)),
+                        const TextSpan(
+                            text: 'You must call from '),
+                        TextSpan(
+                          text: phone,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: GodropColors.orange),
+                        ),
+                        const TextSpan(
+                            text:
+                                ' — the number you\'re verifying — so we can confirm it\'s you.'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (supportPhone != null && supportPhone!.isNotEmpty)
+            GodropButton(
+              label: 'Call $supportPhone',
+              trailingIcon: Icons.call_rounded,
+              onTap: () => _call(supportPhone!),
+            )
+          else
+            const Text(
+              'Customer service number is currently unavailable. Please try resending your code again shortly.',
+              style: TextStyle(fontSize: 13, color: GodropColors.mute),
+            ),
+          const SizedBox(height: 12),
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Keep waiting',
+                  style: TextStyle(color: GodropColors.slate)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

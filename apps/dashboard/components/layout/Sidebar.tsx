@@ -23,6 +23,7 @@ import {
   Mail,
   ImagePlay,
   Building2,
+  KeyRound,
 } from 'lucide-react'
 
 function GodropMark({ size = 22 }: { size?: number }) {
@@ -99,9 +100,20 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
   const isBusiness = session?.admin?.type === 'BUSINESS'
   const isVendor = session?.admin?.type === 'VENDOR'
   const isVendorStaff = isVendor && session?.admin?.role === 'STAFF'
+  const isSuperAdmin = session?.admin?.role === 'SUPER_ADMIN'
 
   const mainNav = isBusiness ? businessNav : isVendorStaff ? vendorStaffNav : isVendor ? vendorNav : systemNav
-  const reportsNav = isBusiness ? businessReportsNav : isVendorStaff ? vendorStaffReportsNav : isVendor ? vendorReportsNav : systemReportsNav
+  const reportsNav = isBusiness
+    ? businessReportsNav
+    : isVendorStaff
+    ? vendorStaffReportsNav
+    : isVendor
+    ? vendorReportsNav
+    : [
+        ...systemReportsNav.slice(0, 3),
+        ...(isSuperAdmin ? [{ href: '/otp-assist', icon: KeyRound, label: 'OTP Assist' }] : []),
+        ...systemReportsNav.slice(3),
+      ]
   const messagingNav = !isVendor && !isBusiness ? systemMessagingNav : null
 
   const adminInitials = session?.admin

@@ -43,13 +43,19 @@ enum UserStatus {
   DEACTIVATED
 }
 
+enum OtpIssuedVia {
+  SMS
+  ADMIN
+}
+
 model Otp {
-  id        String   @id @default(cuid())
+  id        String       @id @default(cuid())
   phone     String
   code      String
   expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  used      Boolean      @default(false)
+  issuedVia OtpIssuedVia @default(SMS)
+  createdAt DateTime     @default(now())
 
   @@index([phone])
 }
@@ -286,6 +292,7 @@ model PlatformSettings {
   standardDeliveryFeeKobo  Int     @default(75000)   // ₦750 baseline delivery fee
   serviceChargeKobo        Int     @default(25000)   // ₦250 platform service charge
   costPerKmKobo            Int     @default(10000)   // ₦100 per km charged on top
+  customerServicePhone     String? // shown in-app as the number to call for OTP/support help
   updatedAt                DateTime @updatedAt
 }
 

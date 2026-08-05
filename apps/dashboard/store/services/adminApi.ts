@@ -56,10 +56,15 @@ export const adminApi = api.injectEndpoints({
       transformResponse: (res: Wrap<PlatformSettings>) => res.data,
     }),
 
-    updatePlatformSettings: build.mutation<PlatformSettings, Partial<Pick<PlatformSettings, 'riderEarningRate' | 'coverageRadiusKm' | 'vendorPlatformFeeRate' | 'paystackPublicKey' | 'paystackSecretKey'>>>({
+    updatePlatformSettings: build.mutation<PlatformSettings, Partial<Pick<PlatformSettings, 'riderEarningRate' | 'coverageRadiusKm' | 'vendorPlatformFeeRate' | 'paystackPublicKey' | 'paystackSecretKey' | 'standardDeliveryFeeKobo' | 'serviceChargeKobo' | 'costPerKmKobo' | 'customerServicePhone'>>>({
       query: (body) => ({ url: '/admin/platform-settings', method: 'PATCH', body }),
       invalidatesTags: ['PlatformSettings'],
       transformResponse: (res: Wrap<PlatformSettings>) => res.data,
+    }),
+
+    issueManualOtp: build.mutation<{ phone: string; code: string; expiresIn: number }, { phone: string }>({
+      query: (body) => ({ url: '/admin/manual-otp', method: 'POST', body }),
+      transformResponse: (res: Wrap<{ phone: string; code: string; expiresIn: number }>) => res.data,
     }),
 
     getAdmins: build.query<{ data: AdminUser[]; total: number; page: number; limit: number }, { page?: number; limit?: number } | void>({
@@ -107,4 +112,5 @@ export const {
   useUpdateAdminEmailPrefsMutation,
   useGetPlatformSettingsQuery,
   useUpdatePlatformSettingsMutation,
+  useIssueManualOtpMutation,
 } = adminApi

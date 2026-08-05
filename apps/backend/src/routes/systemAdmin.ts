@@ -21,6 +21,7 @@ import {
   updateAdminSettingsSchema,
   forgotAdminPasswordSchema,
   resetAdminPasswordSchema,
+  issueManualOtpSchema,
 } from "../validators/systemAdminValidators";
 import * as ctrl from "../controllers/systemAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
@@ -82,6 +83,15 @@ router.patch("/me/settings", validate(updateAdminSettingsSchema), ctrl.updateSet
 
 router.get("/platform-settings", requireSystemRole("ADMIN"), ctrl.getPlatformSettings);
 router.patch("/platform-settings", requireSystemRole("ADMIN"), ctrl.updatePlatformSettings);
+
+// ─── Manual OTP (SUPER_ADMIN only) ────────────────────────────
+router.post(
+  "/manual-otp",
+  requireSystemRole("SUPER_ADMIN"),
+  validate(issueManualOtpSchema),
+  auditSystemAction({ action: "ISSUE_MANUAL_OTP", entity: "Otp", getEntityId: (r) => r.body.phone }),
+  ctrl.issueManualOtp
+);
 
 // ─── Admin Management (SUPER_ADMIN only) ─────────────────────
 router.get(

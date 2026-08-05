@@ -10,6 +10,7 @@ import {
   useReinstateVendorMutation,
 } from './store/vendorsApi'
 import type { Vendor, VendorStatus, VendorType } from '@/types/api'
+import { exportToCsv } from '@/lib/exportCsv'
 import {
   Search,
   Plus,
@@ -25,27 +26,16 @@ import {
 } from 'lucide-react'
 
 function exportVendorsCSV(vendors: Vendor[]) {
-  const headers = ['Name', 'Email', 'Phone', 'Type', 'Status', 'Address', 'Rating', 'Joined']
-  const rows = vendors.map((v) => [
-    v.name,
-    v.email,
-    v.phone,
-    v.type,
-    v.status,
-    v.address,
-    v.rating != null ? v.rating.toFixed(1) : '',
-    new Date(v.createdAt).toLocaleDateString('en-NG'),
+  exportToCsv('vendors', vendors, [
+    { header: 'Name', value: (v) => v.name },
+    { header: 'Email', value: (v) => v.email },
+    { header: 'Phone', value: (v) => v.phone },
+    { header: 'Type', value: (v) => v.type },
+    { header: 'Status', value: (v) => v.status },
+    { header: 'Address', value: (v) => v.address },
+    { header: 'Rating', value: (v) => (v.rating != null ? v.rating.toFixed(1) : '') },
+    { header: 'Joined', value: (v) => new Date(v.createdAt).toLocaleDateString('en-NG') },
   ])
-  const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    .join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `vendors-${new Date().toISOString().slice(0, 10)}.csv`
-  link.click()
-  URL.revokeObjectURL(url)
 }
 
 const statusConfig: Record<VendorStatus, { bg: string; text: string; label: string }> = {

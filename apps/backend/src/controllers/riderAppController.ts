@@ -96,7 +96,15 @@ export async function requestOtp(req: Request, res: Response, next: NextFunction
     const { phone } = req.body;
     const rider = await prisma.rider.findUnique({ where: { phone } });
     if (!rider) return fail(res, "No rider account found for this phone number", 404);
-    if (!rider.isActive) return fail(res, "Account is inactive. Contact support.", 403);
+    if (!rider.isActive) {
+      return fail(
+        res,
+        rider.passwordHash
+          ? "Account is inactive. Contact support."
+          : "Your application is still under review. We'll notify you once it's approved.",
+        403
+      );
+    }
     if (rider.passwordHash) {
       return fail(res, "This account is already activated. Please log in with your phone or email and password.", 400);
     }
@@ -120,7 +128,15 @@ export async function verifyOtp(req: Request, res: Response, next: NextFunction)
 
     const rider = await prisma.rider.findUnique({ where: { phone } });
     if (!rider) return fail(res, "Rider not found", 404);
-    if (!rider.isActive) return fail(res, "Account is inactive. Contact support.", 403);
+    if (!rider.isActive) {
+      return fail(
+        res,
+        rider.passwordHash
+          ? "Account is inactive. Contact support."
+          : "Your application is still under review. We'll notify you once it's approved.",
+        403
+      );
+    }
 
     if (!rider.passwordHash) {
       return ok(res, { requiresPasswordSetup: true, riderId: rider.id });

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import {
-  Send, Loader2, CheckCircle2, XCircle, Plus, Trash2, Radio, Users, Bike, X, Search,
+  Send, Loader2, CheckCircle2, XCircle, Plus, Trash2, Radio, Users, Bike, Store, X, Search,
 } from 'lucide-react'
 import {
   useBroadcastToCustomersMutation,
@@ -11,12 +11,16 @@ import {
   useBroadcastToRidersMutation,
   useSendToRiderBatchMutation,
   useSendToRiderMutation,
+  useBroadcastToVendorsMutation,
+  useSendToVendorBatchMutation,
+  useSendToVendorMutation,
 } from '@/store/services/pushApi'
 import { useGetCustomersQuery } from '@/features/customers/store/customersApi'
 import { useGetRidersQuery } from '@/store/services/ridersApi'
+import { useGetVendorsQuery } from '@/features/vendors/store/vendorsApi'
 import type { PushSendResult } from '@/types/api'
 
-type Audience = 'customers' | 'riders'
+type Audience = 'customers' | 'riders' | 'vendors'
 type Mode = 'broadcast' | 'batch' | 'single'
 interface KVEntry { key: string; value: string }
 interface SelectOption { id: string; label: string; sub: string }
@@ -96,8 +100,14 @@ function UserSelect({ audience, multi, onChange }: UserSelectProps) {
     { search: debouncedSearch, limit: 20 },
     { skip: audience !== 'riders' },
   )
+  // Vendors have no server-side search endpoint — the full list is small
+  // enough (same source the Vendors page's export button uses) to filter
+  // client-side instead of adding one.
+  const { data: vendorsData, isFetching: fetchingV } = useGetVendorsQuery(undefined, {
+    skip: audience !== 'vendors',
+  })
 
-  const fetching = fetchingC || fetchingR
+  const fetching = fetchingC || fetchingR || fetchingV
 
   const options: SelectOption[] = audience === 'customers'
     ? (customersData?.data ?? []).map((c) => ({
@@ -105,11 +115,19 @@ function UserSelect({ audience, multi, onChange }: UserSelectProps) {
         label: `${c.firstName} ${c.lastName}`,
         sub: c.email ?? c.phone,
       }))
-    : (ridersData?.data ?? []).map((r) => ({
+    : audience === 'riders'
+    ? (ridersData?.data ?? []).map((r) => ({
         id: r.id,
         label: `${r.firstName} ${r.lastName}`,
         sub: r.email ?? r.phone,
       }))
+    : (vendorsData ?? [])
+        .filter((v) => v.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
+        .map((v) => ({
+          id: v.id,
+          label: v.name,
+          sub: v.email,
+        }))
 
   const filtered = options.filter((o) => !selected.some((s) => s.id === o.id))
 
@@ -139,7 +157,7 @@ function UserSelect({ audience, multi, onChange }: UserSelectProps) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const entity = audience === 'customers' ? 'customer' : 'rider'
+  const entity = audience === 'customers' ? 'customer' : audience === 'riders' ? 'rider' : 'vendor'
 
   return (
     <div ref={containerRef} className="relative">
@@ -251,8 +269,11 @@ export default function PushNotificationsPage() {
   const [broadcastRiders, { isLoading: br }] = useBroadcastToRidersMutation()
   const [batchRiders, { isLoading: btr }] = useSendToRiderBatchMutation()
   const [singleRider, { isLoading: sr }] = useSendToRiderMutation()
+  const [broadcastVendors, { isLoading: bv }] = useBroadcastToVendorsMutation()
+  const [batchVendors, { isLoading: btv }] = useSendToVendorBatchMutation()
+  const [singleVendor, { isLoading: sv }] = useSendToVendorMutation()
 
-  const sending = bc || btc || sc || br || btr || sr
+  const sending = bc || btc || sc || br || btr || sr || bv || btv || sv
 
   function buildPayload() {
     const data: Record<string, string> = {}
@@ -284,7 +305,7 @@ export default function PushNotificationsPage() {
           if (!selectedIds[0]) { setError('Select a customer.'); return }
           res = await singleCustomer({ ...payload, id: selectedIds[0] }).unwrap()
         }
-      } else {
+      } else if (audience === 'riders') {
         if (mode === 'broadcast') {
           res = await broadcastRiders(payload).unwrap()
         } else if (mode === 'batch') {
@@ -293,6 +314,16 @@ export default function PushNotificationsPage() {
         } else {
           if (!selectedIds[0]) { setError('Select a rider.'); return }
           res = await singleRider({ ...payload, id: selectedIds[0] }).unwrap()
+        }
+      } else {
+        if (mode === 'broadcast') {
+          res = await broadcastVendors(payload).unwrap()
+        } else if (mode === 'batch') {
+          if (!selectedIds.length) { setError('Select at least one vendor.'); return }
+          res = await batchVendors({ ...payload, vendorIds: selectedIds }).unwrap()
+        } else {
+          if (!selectedIds[0]) { setError('Select a vendor.'); return }
+          res = await singleVendor({ ...payload, id: selectedIds[0] }).unwrap()
         }
       }
       setResult(res!)
@@ -307,13 +338,13 @@ export default function PushNotificationsPage() {
     setKvPairs((p) => p.map((entry, idx) => idx === i ? { ...entry, [field]: val } : entry))
   }
 
-  const audienceLabel = audience === 'customers' ? 'Customers' : 'Riders'
+  const audienceLabel = audience === 'customers' ? 'Customers' : audience === 'riders' ? 'Riders' : 'Vendors'
 
   return (
     <div className="space-y-5 max-w-2xl">
       <div>
         <h1 className="text-lg font-bold text-[#0D1426]">Push Notifications</h1>
-        <p className="text-xs text-[#9AA1B4] mt-0.5">Send FCM push notifications to customers or riders</p>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">Send FCM push notifications to customers, riders, or vendors</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -321,7 +352,7 @@ export default function PushNotificationsPage() {
         <SectionCard>
           <p className="text-xs font-semibold text-[#0D1426]">Audience</p>
           <div className="flex gap-3">
-            {(['customers', 'riders'] as Audience[]).map((a) => (
+            {(['customers', 'riders', 'vendors'] as Audience[]).map((a) => (
               <button
                 key={a}
                 type="button"
@@ -332,8 +363,8 @@ export default function PushNotificationsPage() {
                     : 'border-[#E7EAF1] text-[#525A72] hover:border-[#1E5FFF]/40 hover:text-[#1E5FFF]'
                 }`}
               >
-                {a === 'customers' ? <Users className="w-3.5 h-3.5" /> : <Bike className="w-3.5 h-3.5" />}
-                {a === 'customers' ? 'Customers' : 'Riders'}
+                {a === 'customers' ? <Users className="w-3.5 h-3.5" /> : a === 'riders' ? <Bike className="w-3.5 h-3.5" /> : <Store className="w-3.5 h-3.5" />}
+                {a === 'customers' ? 'Customers' : a === 'riders' ? 'Riders' : 'Vendors'}
               </button>
             ))}
           </div>
@@ -375,7 +406,7 @@ export default function PushNotificationsPage() {
               <label className="block text-xs font-medium text-[#525A72] mb-2">
                 {mode === 'batch'
                   ? `Select ${audienceLabel}`
-                  : `Select ${audience === 'customers' ? 'Customer' : 'Rider'}`}
+                  : `Select ${audience === 'customers' ? 'Customer' : audience === 'riders' ? 'Rider' : 'Vendor'}`}
                 {mode === 'batch' && selectedIds.length > 0 && (
                   <span className="ml-1.5 font-normal text-[#9AA1B4]">({selectedIds.length} selected)</span>
                 )}

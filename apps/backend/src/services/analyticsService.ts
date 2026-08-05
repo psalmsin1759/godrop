@@ -123,6 +123,8 @@ export async function getSystemAnalytics({ from, to }: DateRange) {
   const totalVendors = vendorStatusGroups.reduce((s, g) => s + g._count._all, 0);
   const activeVendors = vendorStatusGroups.find(g => g.status === 'APPROVED')?._count._all ?? 0;
   const pendingVendors = vendorStatusGroups.find(g => g.status === 'PENDING')?._count._all ?? 0;
+  const rejectedVendors = vendorStatusGroups.find(g => g.status === 'REJECTED')?._count._all ?? 0;
+  const suspendedVendors = vendorStatusGroups.find(g => g.status === 'SUSPENDED')?._count._all ?? 0;
   const totalOrders = statusGroups.reduce((s, g) => s + g._count._all, 0);
   const completedOrders = statusGroups.find(g => g.status === OrderStatus.DELIVERED)?._count._all ?? 0;
   const totalRevenueKobo = revenueResult._sum.totalKobo ?? 0;
@@ -168,6 +170,8 @@ export async function getSystemAnalytics({ from, to }: DateRange) {
       totalVendors,
       activeVendors,
       pendingVendors,
+      rejectedVendors,
+      suspendedVendors,
       totalOrders,
       completedOrders,
       totalRevenueKobo,

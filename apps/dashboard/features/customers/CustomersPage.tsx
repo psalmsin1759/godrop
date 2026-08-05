@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useGetCustomersQuery } from './store/customersApi'
 import type { CustomerStatus } from '@/types/api'
 import { formatAmount, formatDate } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import {
   Search, ChevronLeft, ChevronRight, Loader2, Users,
-  CheckCircle, ShieldOff, UserX, Eye,
+  CheckCircle, ShieldOff, UserX, Eye, Download,
 } from 'lucide-react'
 
 const STATUS_CONFIG: Record<CustomerStatus, { bg: string; text: string; label: string }> = {
@@ -91,6 +92,22 @@ export default function CustomersPage() {
         {isFetching && !isLoading && (
           <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E5FFF]" />
         )}
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={() => exportToCsv('customers', customers, [
+            { header: 'Name', value: (c) => `${c.firstName} ${c.lastName}` },
+            { header: 'Email', value: (c) => c.email ?? '' },
+            { header: 'Phone', value: (c) => c.phone },
+            { header: 'Status', value: (c) => c.status },
+            { header: 'Wallet', value: (c) => c.wallet ? formatAmount(c.wallet.balance) : '' },
+            { header: 'Orders', value: (c) => c._count.orders },
+            { header: 'Joined', value: (c) => formatDate(c.createdAt) },
+          ])}
+          className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+        >
+          <Download className="w-3.5 h-3.5" /> Export
+        </button>
       </div>
 
       {/* Table */}

@@ -9,6 +9,7 @@ import {
 } from '@/features/coupons/store/couponsApi'
 import type { Promotion, PromotionType, CreatePromotionRequest, UpdatePromotionRequest } from '@/types/api'
 import { formatNaira } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import {
   Plus,
   Loader2,
@@ -20,6 +21,7 @@ import {
   XCircle,
   BadgePercent,
   Clock,
+  Download,
 } from 'lucide-react'
 
 const ORDER_TYPES = ['FOOD', 'GROCERY', 'RETAIL', 'PHARMACY', 'PARCEL', 'TRUCK'] as const
@@ -400,13 +402,31 @@ export default function CouponsPage() {
           <h1 className="text-lg font-bold text-[#0D1426]">Coupons</h1>
           <p className="text-xs text-[#9AA1B4] mt-0.5">Manage delivery-fee discount codes customers can redeem at checkout</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs bg-[#1E5FFF] text-white rounded-lg hover:bg-[#0A3FD1] transition-colors font-medium"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          New Coupon
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportToCsv('coupons', promotions, [
+              { header: 'Code', value: (p) => p.code },
+              { header: 'Description', value: (p) => p.description },
+              { header: 'Type', value: (p) => p.type },
+              { header: 'Value', value: (p) => p.value },
+              { header: 'Uses', value: (p) => p.usageCount },
+              { header: 'Valid From', value: (p) => new Date(p.validFrom).toLocaleDateString('en-NG') },
+              { header: 'Valid Until', value: (p) => new Date(p.validUntil).toLocaleDateString('en-NG') },
+              { header: 'Status', value: (p) => p.isActive ? 'Active' : 'Inactive' },
+            ])}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded-lg hover:bg-[#F7F9FC] font-medium"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs bg-[#1E5FFF] text-white rounded-lg hover:bg-[#0A3FD1] transition-colors font-medium"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Coupon
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

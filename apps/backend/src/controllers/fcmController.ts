@@ -76,3 +76,42 @@ export async function broadcastToRiders(req: Request, res: Response, next: NextF
     next(err);
   }
 }
+
+// ─── Vendor push ───────────────────────────────────────────────
+// "Vendor" here is a business — sending to one notifies all of its
+// (active, VENDOR-type) staff accounts, not a single admin user.
+
+export async function notifyVendor(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const { title, body, data } = req.body;
+
+    const vendor = await prisma.vendor.findUnique({ where: { id } });
+    if (!vendor) return fail(res, "Vendor not found", 404);
+
+    const result = await fcmService.sendToVendorAdmins([id], { title, body }, data);
+    ok(res, { message: "Notification sent", ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function notifyVendorBatch(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { vendorIds, title, body, data } = req.body;
+    const result = await fcmService.sendToVendorAdmins(vendorIds, { title, body }, data);
+    ok(res, { message: "Notifications sent", ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function broadcastToVendors(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { title, body, data } = req.body;
+    const result = await fcmService.sendToAllVendorAdmins({ title, body }, data);
+    ok(res, { message: "Broadcast sent to all vendors", ...result });
+  } catch (err) {
+    next(err);
+  }
+}

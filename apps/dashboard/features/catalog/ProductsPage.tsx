@@ -14,6 +14,7 @@ import type { ProductAdmin } from '@/types/api'
 import ProductFormDialog, { type ProductFormValues } from '@/components/catalog/ProductFormDialog'
 import ConfirmDeleteDialog from '@/components/catalog/ConfirmDeleteDialog'
 import { formatNaira } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import {
   Plus,
   Pencil,
@@ -25,6 +26,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Package,
+  Download,
 } from 'lucide-react'
 
 const PAGE_SIZE = 20
@@ -141,9 +143,24 @@ function ProductsPageInner() {
             {total > 0 ? `${total} product${total !== 1 ? 's' : ''} total` : 'Manage your product catalogue'}
           </p>
         </div>
-        <button onClick={openCreate} disabled={categories.length === 0} className="btn-primary flex items-center gap-1.5 disabled:opacity-50" title={categories.length === 0 ? 'Create a category first' : undefined}>
-          <Plus className="w-3.5 h-3.5" /> New Product
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportToCsv('products', products, [
+              { header: 'Name', value: (p) => p.name },
+              { header: 'Category', value: (p) => p.category.name },
+              { header: 'Price', value: (p) => formatNaira(p.priceKobo) },
+              { header: 'Stock', value: (p) => p.stock ?? '' },
+              { header: 'Available', value: (p) => p.isAvailable ? 'Yes' : 'No' },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
+          <button onClick={openCreate} disabled={categories.length === 0} className="btn-primary flex items-center gap-1.5 disabled:opacity-50" title={categories.length === 0 ? 'Create a category first' : undefined}>
+            <Plus className="w-3.5 h-3.5" /> New Product
+          </button>
+        </div>
       </div>
 
       {error && (

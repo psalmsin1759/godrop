@@ -26,6 +26,7 @@ import {
   KeyRound,
   Megaphone,
   TicketPercent,
+  Smartphone,
 } from 'lucide-react'
 
 function GodropMark({ size = 22 }: { size?: number }) {
@@ -60,6 +61,7 @@ const systemReportsNav = [
 
 const systemMessagingNav = [
   { href: '/messaging/email', icon: Mail, label: 'Email' },
+  { href: '/messaging/sms', icon: Smartphone, label: 'Test OTP SMS' },
   { href: '/push', icon: Bell, label: 'Push Notifications' },
 ]
 

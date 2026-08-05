@@ -198,6 +198,31 @@ export async function sendToAllRiders(
   return sendToRiderTokens(records.map((r) => r.token), notification, data);
 }
 
+export async function sendToVendorAdmins(
+  vendorIds: string[],
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  const admins = await prisma.admin.findMany({
+    where: { vendorId: { in: vendorIds }, type: "VENDOR", isActive: true },
+    select: { pushTokens: { select: { token: true } } },
+  });
+  const tokens = admins.flatMap((a) => a.pushTokens.map((t) => t.token));
+  return sendToVendorAdminTokens(tokens, notification, data);
+}
+
+export async function sendToAllVendorAdmins(
+  notification: { title: string; body: string },
+  data?: Record<string, string>
+): Promise<SendResult> {
+  const admins = await prisma.admin.findMany({
+    where: { type: "VENDOR", isActive: true },
+    select: { pushTokens: { select: { token: true } } },
+  });
+  const tokens = admins.flatMap((a) => a.pushTokens.map((t) => t.token));
+  return sendToVendorAdminTokens(tokens, notification, data);
+}
+
 // ─── Startup credential check ─────────────────────────────────
 
 export function validateFcmCredentials(): void {

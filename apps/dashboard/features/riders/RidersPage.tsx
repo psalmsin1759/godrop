@@ -33,8 +33,10 @@ import {
   FileText,
   ExternalLink,
   FileCheck,
+  Download,
 } from 'lucide-react'
 import { formatAmount } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 
 function formatNaira(kobo: number) {
   return '₦' + (kobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -785,6 +787,22 @@ export default function RidersPage() {
               className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] focus:border-[#1E5FFF] w-52"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => exportToCsv('riders', riders, [
+              { header: 'Name', value: (r) => `${r.firstName} ${r.lastName}` },
+              { header: 'Email', value: (r) => r.email ?? '' },
+              { header: 'Phone', value: (r) => r.phone },
+              { header: 'Vehicle', value: (r) => r.vehicleType ?? '' },
+              { header: 'KYC', value: (r) => r.kycStatus },
+              { header: 'Status', value: (r) => r.isActive ? 'Active' : 'Inactive' },
+              { header: 'Rating', value: (r) => r.rating ?? '' },
+              { header: 'Joined', value: (r) => new Date(r.createdAt).toLocaleDateString('en-NG') },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
         </div>
       </div>
 

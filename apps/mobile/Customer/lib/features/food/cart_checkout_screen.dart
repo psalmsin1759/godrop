@@ -10,6 +10,7 @@ import '../../shared/models/food_models.dart';
 import '../../shared/models/store_models.dart';
 import '../../shared/models/wallet_models.dart';
 import '../../shared/utils/currency.dart';
+import '../../shared/widgets/coupon_input.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../orders/bloc/order_cubit.dart';
 import '../orders/models/active_order.dart';
@@ -56,6 +57,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
   _PlatformConfig _config = const _PlatformConfig();
   bool _codEnabled = false;
   double _walletBalance = 0;
+  AppliedCoupon? _coupon;
 
   String _fmt(int kobo) =>
       '₦${(kobo / 100).toStringAsFixed(0).replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',')}';
@@ -108,7 +110,10 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
       context.go(cart.partnerType.listRoute);
       return;
     }
-    final total = cart.subtotalKobo + _config.standardDeliveryFeeKobo + _config.serviceChargeKobo;
+    final total = cart.subtotalKobo +
+        _config.standardDeliveryFeeKobo +
+        _config.serviceChargeKobo -
+        (_coupon?.discountKobo ?? 0);
     // TEMP BRIDGE: total is still Kobo (Orders domain not yet converted).
     if (_paymentMethod == 'wallet' && _walletBalance < total / 100) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -140,6 +145,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
             items: items,
             deliveryAddress: deliveryAddress,
             paymentMethod: checkoutPaymentMethod,
+            couponCode: _coupon?.code,
           ),
         );
         orderId = response.order.id;
@@ -154,6 +160,7 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
           items: items,
           deliveryAddress: deliveryAddress,
           paymentMethod: checkoutPaymentMethod,
+          couponCode: _coupon?.code,
         );
         final StoreOrderResponse response;
         switch (cart.partnerType) {
@@ -181,7 +188,10 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
       if (!mounted) return;
 
       // Step 3: Handle payment response
-      final fallbackTotal = cart.subtotalKobo + _config.standardDeliveryFeeKobo + _config.serviceChargeKobo;
+      final fallbackTotal = cart.subtotalKobo +
+          _config.standardDeliveryFeeKobo +
+          _config.serviceChargeKobo -
+          (_coupon?.discountKobo ?? 0);
       final displayTotal = orderTotalKobo > 0 ? orderTotalKobo : fallbackTotal;
       final summaryItems = cart.items.take(2).map((i) => i.name.split(' ').take(2).join(' ')).join(', ');
       final extra = cart.items.length > 2 ? ' +${cart.items.length - 2} more' : '';
@@ -326,7 +336,8 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
         final subtotal = cart.subtotalKobo;
         final deliveryFee = _config.standardDeliveryFeeKobo;
         final serviceFee = _config.serviceChargeKobo;
-        final total = subtotal + deliveryFee + serviceFee;
+        final couponDiscount = _coupon?.discountKobo ?? 0;
+        final total = subtotal + deliveryFee + serviceFee - couponDiscount;
 
         // TEMP BRIDGE: convert Naira wallet balance to Kobo to combine with
         // still-Kobo `total` (Orders domain not yet converted).
@@ -528,6 +539,24 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                           ),
                           const SizedBox(height: 12),
 
+                          // Coupon code
+                          const Padding(
+                            padding: EdgeInsets.only(left: 2, bottom: 8),
+                            child: Text('Coupon code',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    color: GodropColors.slate,
+                                    fontWeight: FontWeight.w500)),
+                          ),
+                          CouponInputCard(
+                            orderType: cart.partnerType.orderTypeKey.toUpperCase(),
+                            deliveryFeeKobo: deliveryFee,
+                            orderValueKobo: subtotal,
+                            applied: _coupon,
+                            onChanged: (c) => setState(() => _coupon = c),
+                          ),
+                          const SizedBox(height: 16),
+
                           // Payment method — inline selectable cards
                           const Padding(
                             padding: EdgeInsets.only(left: 2, bottom: 8),
@@ -554,6 +583,12 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                                 _SummaryRow('Delivery fee', _fmt(deliveryFee)),
                                 const SizedBox(height: 8),
                                 _SummaryRow('Service fee', _fmt(serviceFee)),
+                                if (couponDiscount > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _SummaryRow('Coupon (${_coupon!.code})',
+                                      _fmt(couponDiscount),
+                                      isDiscount: true),
+                                ],
                                 if (_paymentMethod == 'wallet_card' || _paymentMethod == 'wallet') ...[
                                   const SizedBox(height: 8),
                                   _SummaryRow('Wallet', _fmt(walletCovers), isDiscount: true),

@@ -1127,6 +1127,95 @@ export interface UpdateHeroRequest {
   ctaLink?: string | null
 }
 
+// ─── Promo Banners (home-screen "use code" card) ───────────────────────────────
+export interface Banner {
+  id: string
+  imageUrl: string | null
+  badge: string | null
+  title: string | null
+  ctaLabel: string | null
+  linkType: string | null
+  linkValue: string | null
+  isActive: boolean
+  sortOrder: number
+  createdAt: string
+}
+
+export interface CreateBannerRequest {
+  imageUrl?: string | null
+  badge?: string | null
+  title?: string | null
+  ctaLabel?: string | null
+  linkType?: string | null
+  linkValue?: string | null
+  isActive?: boolean
+  sortOrder?: number
+}
+
+export interface UpdateBannerRequest {
+  imageUrl?: string | null
+  badge?: string | null
+  title?: string | null
+  ctaLabel?: string | null
+  linkType?: string | null
+  linkValue?: string | null
+  isActive?: boolean
+  sortOrder?: number
+}
+
+// ─── Coupons ────────────────────────────────────────────────────────────────────
+export type PromotionType = 'percent' | 'fixed'
+
+export interface Promotion {
+  id: string
+  code: string
+  description: string
+  type: PromotionType
+  value: number
+  maxDiscount: number | null
+  minOrderKobo: number | null
+  orderTypes: string[]
+  usageLimit: number | null
+  usageCount: number
+  validFrom: string
+  validUntil: string
+  isActive: boolean
+  createdAt: string
+}
+
+export interface PromotionDetail extends Promotion {
+  ordersRedeemed: number
+  totalDiscountKobo: number
+}
+
+export interface CreatePromotionRequest {
+  code: string
+  description: string
+  type: PromotionType
+  value: number
+  maxDiscount?: number
+  minOrderKobo?: number
+  orderTypes?: string[]
+  usageLimit?: number
+  validFrom: string
+  validUntil: string
+  isActive?: boolean
+}
+
+export interface UpdatePromotionRequest {
+  code?: string
+  description?: string
+  type?: PromotionType
+  value?: number
+  maxDiscount?: number | null
+  minOrderKobo?: number | null
+  orderTypes?: string[]
+  usageLimit?: number | null
+  validFrom?: string
+  validUntil?: string
+  isActive?: boolean
+}
+
 // ─── Push Notifications ────────────────────────────────────────────────────────
 export interface PushNotificationPayload {
   title: string

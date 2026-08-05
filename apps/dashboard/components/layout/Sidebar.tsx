@@ -24,6 +24,8 @@ import {
   ImagePlay,
   Building2,
   KeyRound,
+  Megaphone,
+  TicketPercent,
 } from 'lucide-react'
 
 function GodropMark({ size = 22 }: { size?: number }) {
@@ -51,6 +53,8 @@ const systemReportsNav = [
   { href: '/admins', icon: UserCog, label: 'Admins' },
   { href: '/businesses', icon: Building2, label: 'Businesses' },
   { href: '/heroes', icon: ImagePlay, label: 'Hero Slides' },
+  { href: '/banners', icon: Megaphone, label: 'Promo Banners' },
+  { href: '/coupons', icon: TicketPercent, label: 'Coupons' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 

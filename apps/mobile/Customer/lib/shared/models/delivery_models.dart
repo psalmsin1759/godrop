@@ -146,6 +146,7 @@ class ParcelOrderBody {
   final String paymentMethod;
   final String? scheduleAt;
   final List<ParcelItemBody> parcels;
+  final String? couponCode;
 
   const ParcelOrderBody({
     required this.pickup,
@@ -153,6 +154,7 @@ class ParcelOrderBody {
     required this.paymentMethod,
     this.scheduleAt,
     required this.parcels,
+    this.couponCode,
   });
 
   factory ParcelOrderBody.fromJson(Map<String, dynamic> json) =>
@@ -324,6 +326,7 @@ class TruckOrderBody {
   final String? scheduledAt;
   final String paymentMethod;
   final String? notes;
+  final String? couponCode;
 
   const TruckOrderBody({
     required this.apartmentTypeId,
@@ -335,6 +338,7 @@ class TruckOrderBody {
     this.scheduledAt,
     required this.paymentMethod,
     this.notes,
+    this.couponCode,
   });
 
   factory TruckOrderBody.fromJson(Map<String, dynamic> json) =>

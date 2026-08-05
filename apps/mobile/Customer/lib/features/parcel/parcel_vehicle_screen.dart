@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../shared/api/api.dart';
 import '../../shared/models/common_models.dart';
 import '../../shared/models/delivery_models.dart';
+import '../../shared/widgets/coupon_input.dart';
 import '../../shared/widgets/godrop_button.dart';
 import '../../shared/widgets/payment_method_selector.dart';
 import '../../shared/widgets/section_header.dart';
@@ -49,6 +50,7 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
   // 'card' | 'wallet' | 'wallet_card'
   String _paymentMethod = 'card';
   double _walletBalance = 0;
+  AppliedCoupon? _coupon;
 
   @override
   void initState() {
@@ -129,7 +131,7 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
 
   void _proceed(ParcelLoaded parcelState) {
     final selected = parcelState.selectedType;
-    final total = parcelState.quote?.totalKobo ?? 0;
+    final total = (parcelState.quote?.totalKobo ?? 0) - (_coupon?.discountKobo ?? 0);
     final walletBalanceKobo = (_walletBalance * 100).round();
     if (_paymentMethod == 'wallet' && walletBalanceKobo < total) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -144,9 +146,10 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
         parcels: _parcels,
         vehicleTypeId: selected?.id ?? '',
         vehicleLabel: selected?.name ?? '',
-        quotedTotalKobo: parcelState.quote?.totalKobo,
+        quotedTotalKobo: total,
         estimatedMinutes: parcelState.estimatedMinutes,
         paymentMethod: _paymentMethod,
+        couponCode: _coupon?.code,
       ),
     );
   }
@@ -294,6 +297,8 @@ class _ParcelVehicleScreenState extends State<ParcelVehicleScreen> {
                       walletBalance: _walletBalance,
                       onPaymentMethodChanged: (m) =>
                           setState(() => _paymentMethod = m),
+                      coupon: _coupon,
+                      onCouponChanged: (c) => setState(() => _coupon = c),
                     );
                   }
                   return const SizedBox.shrink();
@@ -319,6 +324,8 @@ class _VehicleContent extends StatelessWidget {
   final String paymentMethod;
   final double walletBalance;
   final ValueChanged<String> onPaymentMethodChanged;
+  final AppliedCoupon? coupon;
+  final ValueChanged<AppliedCoupon?> onCouponChanged;
 
   const _VehicleContent({
     required this.state,
@@ -330,12 +337,17 @@ class _VehicleContent extends StatelessWidget {
     required this.paymentMethod,
     required this.walletBalance,
     required this.onPaymentMethodChanged,
+    required this.coupon,
+    required this.onCouponChanged,
   });
+
+  int get _discountedTotal =>
+      (state.quote?.totalKobo ?? 0) - (coupon?.discountKobo ?? 0);
 
   bool get _walletInsufficient {
     final quote = state.quote;
     if (quote == null || paymentMethod != 'wallet') return false;
-    return (walletBalance * 100).round() < quote.totalKobo;
+    return (walletBalance * 100).round() < _discountedTotal;
   }
 
   String _buttonLabel() {
@@ -350,7 +362,7 @@ class _VehicleContent extends StatelessWidget {
     if (paymentMethod == 'wallet_card') {
       final split = PaymentSplit.compute(
         method: paymentMethod,
-        totalKobo: quote.totalKobo,
+        totalKobo: _discountedTotal,
         walletBalanceNaira: walletBalance,
       );
       if (split.cardCoversKobo > 0) {
@@ -358,7 +370,7 @@ class _VehicleContent extends StatelessWidget {
       }
       return 'Book ${selected.name} · Pay from wallet';
     }
-    return 'Book ${selected.name} · ${_formatKobo(quote.totalKobo)}';
+    return 'Book ${selected.name} · ${_formatKobo(_discountedTotal)}';
   }
 
   void _onVehicleSelected(BuildContext context, ParcelVehicleType type) {
@@ -433,12 +445,22 @@ class _VehicleContent extends StatelessWidget {
                   ],
                   if (state.selectedType != null && state.quote != null) ...[
                     const SizedBox(height: 16),
+                    const GodropSectionHeader(title: 'Coupon code'),
+                    const SizedBox(height: 12),
+                    CouponInputCard(
+                      orderType: 'PARCEL',
+                      deliveryFeeKobo: state.quote!.deliveryFeeKobo,
+                      orderValueKobo: state.quote!.totalKobo,
+                      applied: coupon,
+                      onChanged: onCouponChanged,
+                    ),
+                    const SizedBox(height: 16),
                     const GodropSectionHeader(title: 'Payment method'),
                     const SizedBox(height: 12),
                     PaymentMethodSelector(
                       selected: paymentMethod,
                       onChanged: onPaymentMethodChanged,
-                      totalKobo: state.quote!.totalKobo,
+                      totalKobo: _discountedTotal,
                       walletBalance: walletBalance,
                     ),
                   ],

@@ -195,6 +195,7 @@ FoodCheckoutRequest _$FoodCheckoutRequestFromJson(Map<String, dynamic> json) =>
           .toList(),
       deliveryAddress: json['deliveryAddress'] as String,
       paymentMethod: json['paymentMethod'] as String,
+      couponCode: json['couponCode'] as String?,
     );
 
 Map<String, dynamic> _$FoodCheckoutRequestToJson(
@@ -204,12 +205,14 @@ Map<String, dynamic> _$FoodCheckoutRequestToJson(
       'items': instance.items,
       'deliveryAddress': instance.deliveryAddress,
       'paymentMethod': instance.paymentMethod,
+      if (instance.couponCode case final value?) 'couponCode': value,
     };
 
 PlacedOrder _$PlacedOrderFromJson(Map<String, dynamic> json) => PlacedOrder(
       id: json['id'] as String,
       status: json['status'] as String,
       totalKobo: (json['totalKobo'] as num).toInt(),
+      discountKobo: (json['discountKobo'] as num?)?.toInt() ?? 0,
       confirmationCode: json['confirmationCode'] as String?,
     );
 
@@ -218,6 +221,7 @@ Map<String, dynamic> _$PlacedOrderToJson(PlacedOrder instance) =>
       'id': instance.id,
       'status': instance.status,
       'totalKobo': instance.totalKobo,
+      'discountKobo': instance.discountKobo,
       'confirmationCode': instance.confirmationCode,
     };
 

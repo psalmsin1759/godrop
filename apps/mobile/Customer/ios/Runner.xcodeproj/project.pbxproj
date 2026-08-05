@@ -204,6 +204,7 @@
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				F91675C5FBA2BA9E8E432B04 /* [CP] Embed Pods Frameworks */,
 				970BAD4887561B73E41CF50C /* [CP] Copy Pods Resources */,
+				FFEF45BCF0229417D68AC62B /* Generate Missing dSYMs */,
 			);
 			buildRules = (
 			);
@@ -276,6 +277,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		FFEF45BCF0229417D68AC62B /* Generate Missing dSYMs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate Missing dSYMs";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Some embedded frameworks (e.g. Flutter native-assets frameworks like\n# objective_c.framework) don't ship a dSYM, which makes Xcode/App Store\n# Connect warn or fail symbol upload on archive. Generate one for any\n# embedded framework that's missing it.\nif [ -z \"${DWARF_DSYM_FOLDER_PATH}\" ]; then\n  exit 0\nfi\nFRAMEWORKS_DIR=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nif [ -d \"$FRAMEWORKS_DIR\" ]; then\n  find \"$FRAMEWORKS_DIR\" -maxdepth 1 -name \"*.framework\" -type d | while read -r framework; do\n    name=\"$(basename \"$framework\" .framework)\"\n    binary=\"$framework/$name\"\n    dsym=\"${DWARF_DSYM_FOLDER_PATH}/${name}.framework.dSYM\"\n    if [ -f \"$binary\" ] && [ ! -d \"$dsym\" ]; then\n      echo \"Generating missing dSYM for $name\"\n      xcrun dsymutil \"$binary\" -o \"$dsym\"\n    fi\n  done\nfi\n";
+		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -478,7 +494,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;
@@ -609,7 +625,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -660,7 +676,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = iphoneos;

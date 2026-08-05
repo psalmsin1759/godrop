@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import {
   LayoutDashboard,
@@ -27,6 +28,8 @@ import {
   Megaphone,
   TicketPercent,
   Smartphone,
+  Pin,
+  PinOff,
 } from 'lucide-react'
 
 function GodropMark({ size = 22 }: { size?: number }) {
@@ -38,7 +41,20 @@ function GodropMark({ size = 22 }: { size?: number }) {
   )
 }
 
-const systemNav = [
+interface NavLinkItem {
+  href: string
+  icon: React.ElementType
+  label: string
+  badge?: number
+}
+
+interface NavSection {
+  label: string
+  items: NavLinkItem[]
+}
+
+// ─── System admin ───────────────────────────────────────────────────────────
+const systemOperations: NavLinkItem[] = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/orders', icon: ShoppingBag, label: 'Orders' },
   { href: '/vendors', icon: Store, label: 'Vendors' },
@@ -47,102 +63,128 @@ const systemNav = [
   { href: '/trucks', icon: Truck, label: 'Trucks' },
   { href: '/parcels', icon: Package, label: 'Parcels' },
 ]
-
-const systemReportsNav = [
-  { href: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs', badge: 0 },
-  { href: '/admins', icon: UserCog, label: 'Admins' },
-  { href: '/businesses', icon: Building2, label: 'Businesses' },
+const systemGrowth: NavLinkItem[] = [
   { href: '/heroes', icon: ImagePlay, label: 'Hero Slides' },
   { href: '/banners', icon: Megaphone, label: 'Promo Banners' },
   { href: '/coupons', icon: TicketPercent, label: 'Coupons' },
+]
+const systemInsights: NavLinkItem[] = [
+  { href: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs', badge: 0 },
+]
+const systemAdministration: NavLinkItem[] = [
+  { href: '/admins', icon: UserCog, label: 'Admins' },
+  { href: '/businesses', icon: Building2, label: 'Businesses' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
-
-const systemMessagingNav = [
+const systemMessaging: NavLinkItem[] = [
   { href: '/messaging/email', icon: Mail, label: 'Email' },
   { href: '/messaging/sms', icon: Smartphone, label: 'Test OTP SMS' },
   { href: '/push', icon: Bell, label: 'Push Notifications' },
 ]
 
-const vendorNav = [
+// ─── Vendor ──────────────────────────────────────────────────────────────────
+const vendorOperations: NavLinkItem[] = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/orders', icon: ShoppingBag, label: 'Orders' },
   { href: '/catalog', icon: Tag, label: 'Catalogue' },
   { href: '/wallet', icon: Wallet, label: 'Wallet' },
 ]
-
-const vendorReportsNav = [
+const vendorInsights: NavLinkItem[] = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs' },
+]
+const vendorAdministration: NavLinkItem[] = [
   { href: '/team', icon: UserCog, label: 'Team' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
-const vendorStaffNav = [
+const vendorStaffOperations: NavLinkItem[] = [
   { href: '/orders', icon: ShoppingBag, label: 'Orders' },
   { href: '/catalog', icon: Tag, label: 'Catalogue' },
 ]
-
-const vendorStaffReportsNav = [
+const vendorStaffAdministration: NavLinkItem[] = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
-const businessNav = [
+// ─── Business ────────────────────────────────────────────────────────────────
+const businessOperations: NavLinkItem[] = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/business/riders', icon: Bike, label: 'Riders' },
   { href: '/business/wallet', icon: Wallet, label: 'Wallet' },
 ]
-
-const businessReportsNav = [
+const businessAdministration: NavLinkItem[] = [
   { href: '/business/team', icon: UserCog, label: 'Team' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
-export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function Sidebar({
+  isOpen,
+  onClose,
+  pinned,
+  onTogglePin,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  pinned: boolean
+  onTogglePin: () => void
+}) {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const [hovered, setHovered] = useState(false)
 
   const isBusiness = session?.admin?.type === 'BUSINESS'
   const isVendor = session?.admin?.type === 'VENDOR'
   const isVendorStaff = isVendor && session?.admin?.role === 'STAFF'
   const isSuperAdmin = session?.admin?.role === 'SUPER_ADMIN'
 
-  const mainNav = isBusiness ? businessNav : isVendorStaff ? vendorStaffNav : isVendor ? vendorNav : systemNav
-  const reportsNav = isBusiness
-    ? businessReportsNav
-    : isVendorStaff
-    ? vendorStaffReportsNav
-    : isVendor
-    ? vendorReportsNav
-    : [
-        ...systemReportsNav.slice(0, 3),
-        ...(isSuperAdmin ? [{ href: '/otp-assist', icon: KeyRound, label: 'OTP Assist' }] : []),
-        ...systemReportsNav.slice(3),
+  const sections: NavSection[] = isBusiness
+    ? [
+        { label: 'Operations', items: businessOperations },
+        { label: 'Administration', items: businessAdministration },
       ]
-  const messagingNav = !isVendor && !isBusiness ? systemMessagingNav : null
+    : isVendorStaff
+    ? [
+        { label: 'Operations', items: vendorStaffOperations },
+        { label: 'Administration', items: vendorStaffAdministration },
+      ]
+    : isVendor
+    ? [
+        { label: 'Operations', items: vendorOperations },
+        { label: 'Insights', items: vendorInsights },
+        { label: 'Administration', items: vendorAdministration },
+      ]
+    : [
+        { label: 'Operations', items: systemOperations },
+        { label: 'Growth', items: systemGrowth },
+        { label: 'Insights', items: systemInsights },
+        {
+          label: 'Administration',
+          items: isSuperAdmin
+            ? [...systemAdministration, { href: '/otp-assist', icon: KeyRound, label: 'OTP Assist' }]
+            : systemAdministration,
+        },
+        { label: 'Messaging', items: systemMessaging },
+      ]
 
   const adminInitials = session?.admin
     ? `${session.admin.firstName[0]}${session.admin.lastName[0]}`
     : '?'
 
-  function NavItem({
-    href,
-    icon: Icon,
-    label,
-    badge,
-  }: {
-    href: string
-    icon: React.ElementType
-    label: string
-    badge?: number
-  }) {
+  const expanded = pinned || hovered
+
+  function NavItem({ href, icon: Icon, label, badge }: NavLinkItem) {
     const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
     return (
-      <Link href={href} onClick={onClose} className={isActive ? 'sidebar-link-active' : 'sidebar-link'}>
+      <Link
+        href={href}
+        onClick={onClose}
+        title={!expanded ? label : undefined}
+        className={`${isActive ? 'sidebar-link-active' : 'sidebar-link'} ${!expanded ? 'justify-center !px-0' : ''}`}
+      >
         <Icon className="w-[18px] h-[18px] shrink-0 opacity-90" strokeWidth={isActive ? 2.5 : 2} />
-        <span className="flex-1 truncate">{label}</span>
-        {badge !== undefined && badge > 0 && !isActive && (
+        {expanded && <span className="flex-1 truncate">{label}</span>}
+        {expanded && badge !== undefined && badge > 0 && !isActive && (
           <span
             className="ml-auto min-w-[20px] h-5 rounded-full flex items-center justify-center text-[10px] font-bold font-mono px-1"
             style={{ backgroundColor: 'var(--red, #FF3B30)', color: '#fff' }}
@@ -150,23 +192,26 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
             {badge}
           </span>
         )}
-        {isActive && <ChevronRight className="w-3 h-3 ml-auto opacity-50 shrink-0" />}
+        {expanded && isActive && <ChevronRight className="w-3 h-3 ml-auto opacity-50 shrink-0" />}
       </Link>
     )
   }
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-full z-30 flex flex-col gap-1.5 px-3.5 py-4.5 transition-transform duration-300 border-r border-white/[0.06] ${
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={`fixed left-0 top-0 h-full flex flex-col gap-1.5 px-3.5 py-4.5 transition-all duration-200 border-r border-white/[0.06] ${
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      }`}
+      } ${hovered && !pinned ? 'shadow-2xl' : ''}`}
       style={{
-        width: 'var(--sidebar-width)',
+        width: expanded ? '220px' : '76px',
+        zIndex: hovered && !pinned ? 40 : 30,
         background: 'linear-gradient(185deg,#0C2150 0%,#081A3F 55%,#06122E 100%)',
       }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-2 pt-1.5 pb-4">
+      {/* Logo + pin toggle */}
+      <div className={`flex items-center gap-2.5 px-2 pt-1.5 pb-4 ${!expanded ? 'justify-center' : ''}`}>
         <div
           className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center shrink-0"
           style={{
@@ -176,72 +221,80 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         >
           <GodropMark size={22} />
         </div>
-        <div className="leading-tight">
-          <p className="text-white font-extrabold text-[18px] tracking-tight leading-none">GoDrop</p>
-          <p className="font-mono text-[9.5px] font-medium tracking-[1.6px] uppercase text-white/40 mt-1">
-            {isBusiness ? 'Business Console' : isVendor ? 'Vendor Console' : 'Admin Console'}
-          </p>
-        </div>
-        
+        {expanded && (
+          <>
+            <div className="leading-tight flex-1 min-w-0">
+              <p className="text-white font-extrabold text-[18px] tracking-tight leading-none">GoDrop</p>
+              <p className="font-mono text-[9.5px] font-medium tracking-[1.6px] uppercase text-white/40 mt-1">
+                {isBusiness ? 'Business Console' : isVendor ? 'Vendor Console' : 'Admin Console'}
+              </p>
+            </div>
+            <button
+              onClick={onTogglePin}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 shrink-0 transition-colors"
+              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+            >
+              {pinned ? (
+                <PinOff className="w-3.5 h-3.5 text-white/60" />
+              ) : (
+                <Pin className="w-3.5 h-3.5 text-white/60" />
+              )}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto flex flex-col gap-0.5 min-h-0">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mb-1.5">
-          Main Menu
-        </p>
-        {mainNav.map((item) => (
-          <NavItem key={item.href} {...item} />
-        ))}
-
-
-         {messagingNav && (
-          <>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mt-4 mb-1.5">
-              Messaging
-            </p>
-            {messagingNav.map((item) => (
-              <NavItem key={item.href} {...item} />
-            ))}
-          </>
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 min-h-0">
+        {sections.map((section, i) =>
+          section.items.length === 0 ? null : (
+            <div key={section.label}>
+              {expanded && (
+                <p
+                  className={`text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mb-1.5 ${
+                    i === 0 ? '' : 'mt-4'
+                  }`}
+                >
+                  {section.label}
+                </p>
+              )}
+              {section.items.map((item) => (
+                <NavItem key={item.href} {...item} />
+              ))}
+            </div>
+          )
         )}
-
-        <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mt-4 mb-1.5">
-          {isVendor || isBusiness ? 'Manage' : 'Settings'}
-        </p>
-        {reportsNav.map((item) => (
-          <NavItem key={item.href} {...item} />
-        ))}
-
-       
       </nav>
 
       {/* Status + user footer */}
       <div className="flex flex-col gap-1.5">
-        
-
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl group">
+        <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl group ${!expanded ? 'justify-center !px-0' : ''}`}>
           <div
             className="w-8 h-8 rounded-[9px] flex items-center justify-center text-white text-xs font-extrabold shrink-0"
             style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}
+            title={!expanded ? (session?.admin ? `${session.admin.firstName} ${session.admin.lastName}` : 'Admin') : undefined}
           >
             {adminInitials}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-white text-xs font-semibold leading-tight truncate">
-              {session?.admin ? `${session.admin.firstName} ${session.admin.lastName}` : 'Admin'}
-            </p>
-            <p className="text-white/40 text-[10px] truncate font-mono">
-              {session?.admin?.email ?? '—'}
-            </p>
-          </div>
-          <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-white/10 shrink-0"
-            title="Sign out"
-          >
-            <LogOut className="w-3.5 h-3.5 text-white/60" />
-          </button>
+          {expanded && (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-white text-xs font-semibold leading-tight truncate">
+                  {session?.admin ? `${session.admin.firstName} ${session.admin.lastName}` : 'Admin'}
+                </p>
+                <p className="text-white/40 text-[10px] truncate font-mono">
+                  {session?.admin?.email ?? '—'}
+                </p>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center rounded-lg hover:bg-white/10 shrink-0"
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5 text-white/60" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 

@@ -661,7 +661,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 await ctx.read<ProfileCubit>().deleteAccount();
                 if (!ctx.mounted) return;
                 await ctx.read<AuthCubit>().logout();
-                if (ctx.mounted) ctx.go('/auth/phone');
+                if (ctx.mounted) ctx.go('/auth/login');
               } on DioException catch (e) {
                 if (!ctx.mounted) return;
                 final message = (e.response?.data is Map)

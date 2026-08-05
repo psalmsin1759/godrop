@@ -1,9 +1,19 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, ChevronRight, ChevronDown, Calendar, User, KeyRound, LogOut, Menu } from 'lucide-react'
+import {
+  Search, ChevronRight, ChevronDown, Calendar, User, KeyRound, LogOut, Menu,
+  Loader2, ShoppingBag, Users, Bike, Store,
+} from 'lucide-react'
 import { useSession, signOut } from 'next-auth/react'
+import { useGetAdminOrdersQuery } from '@/store/services/adminOrdersApi'
+import { useGetVendorOrdersQuery } from '@/store/services/vendorOrdersApi'
+import { useGetCustomersQuery } from '@/features/customers/store/customersApi'
+import { useGetRidersQuery } from '@/store/services/ridersApi'
+import { useGetVendorsQuery } from '@/features/vendors/store/vendorsApi'
+import { personName } from '@/lib/utils'
 import NotificationBell from './NotificationBell'
 
 interface TopbarProps {
@@ -12,10 +22,64 @@ interface TopbarProps {
   pinned: boolean
 }
 
+function useDebounce(value: string, delay = 300) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(t)
+  }, [value, delay])
+  return debounced
+}
+
+function SearchGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#9AA1B4]">{title}</p>
+      {children}
+    </div>
+  )
+}
+
+function SearchResultRow({
+  icon,
+  primary,
+  secondary,
+  onClick,
+}: {
+  icon: React.ReactNode
+  primary: string
+  secondary: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); onClick() }}
+      className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[#F7F9FC] transition-colors"
+    >
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-[#E7EEFF] text-[#1E5FFF]">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-[#0D1426] truncate">{primary}</p>
+        <p className="text-[11px] text-[#9AA1B4] truncate">{secondary}</p>
+      </div>
+    </button>
+  )
+}
+
 export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'], onMenuToggle, pinned }: TopbarProps) {
   const { data: session } = useSession()
+  const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [query, setQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const debouncedQuery = useDebounce(query)
+  const searching = debouncedQuery.trim().length >= 2
+
   const today = new Date()
   const dateStr = today.toLocaleDateString('en-NG', {
     weekday: 'short',
@@ -28,14 +92,82 @@ export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'],
     ? `${session.admin.firstName[0]}${session.admin.lastName[0]}`
     : '?'
 
+  const isVendorRole = session?.admin?.type === 'VENDOR'
+  const isBusinessRole = session?.admin?.type === 'BUSINESS'
+  // Vendor/business admins can't hit the system-wide search endpoints (permission-scoped
+  // to system admins) — for them, search is limited to their own order history instead.
+  const crossEntitySearch = !isVendorRole && !isBusinessRole
+
+  const { data: ordersData, isFetching: fetchingOrders } = useGetAdminOrdersQuery(
+    { search: debouncedQuery, limit: 5 },
+    { skip: !searching || !crossEntitySearch }
+  )
+  const { data: vendorOrdersData, isFetching: fetchingVendorOrders } = useGetVendorOrdersQuery(
+    { limit: 50 },
+    { skip: !searching || crossEntitySearch }
+  )
+  const { data: customersData, isFetching: fetchingCustomers } = useGetCustomersQuery(
+    { search: debouncedQuery, limit: 5 },
+    { skip: !searching || !crossEntitySearch }
+  )
+  const { data: ridersData, isFetching: fetchingRiders } = useGetRidersQuery(
+    { search: debouncedQuery, limit: 5 },
+    { skip: !searching || !crossEntitySearch }
+  )
+  const { data: vendorsData, isFetching: fetchingVendors } = useGetVendorsQuery(undefined, {
+    skip: !searching || !crossEntitySearch,
+  })
+
+  const q = debouncedQuery.trim().toLowerCase()
+  const vendorOwnOrders = (vendorOrdersData?.data ?? [])
+    .filter((o) =>
+      o.trackingCode.toLowerCase().includes(q) ||
+      personName(o.customer.firstName, o.customer.lastName).toLowerCase().includes(q)
+    )
+    .slice(0, 5)
+  const orderResults = crossEntitySearch ? ordersData?.data ?? [] : vendorOwnOrders
+  const customerResults = crossEntitySearch ? customersData?.data ?? [] : []
+  const riderResults = crossEntitySearch ? ridersData?.data ?? [] : []
+  const vendorResults = crossEntitySearch
+    ? (vendorsData ?? []).filter((v) => v.name.toLowerCase().includes(q)).slice(0, 5)
+    : []
+
+  const fetching = fetchingOrders || fetchingVendorOrders || fetchingCustomers || fetchingRiders || fetchingVendors
+  const hasResults =
+    orderResults.length + customerResults.length + riderResults.length + vendorResults.length > 0
+
+  function goTo(href: string) {
+    router.push(href)
+    setSearchOpen(false)
+    setQuery('')
+  }
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false)
       }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+        setSearchOpen(true)
+      } else if (e.key === 'Escape') {
+        setSearchOpen(false)
+        searchInputRef.current?.blur()
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
   }, [])
 
   return (
@@ -71,14 +203,89 @@ export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'],
       </div>
 
       {/* Search */}
-      <div className="hidden sm:flex items-center gap-2.5 flex-1 max-w-[440px] h-10 px-3 rounded-[11px] border border-[#E7EAF1] bg-white transition-all focus-within:border-[#1E5FFF] focus-within:ring-4 focus-within:ring-[#1E5FFF]/[0.14]">
-        <Search className="w-[15px] h-[15px] text-[#9AA1B4] shrink-0" />
-        <input
-          type="text"
-          placeholder="Search orders, riders, merchants…"
-          className="flex-1 min-w-0 border-0 outline-none bg-transparent text-[13.5px] font-medium text-[#0D1426] placeholder:text-[#9AA1B4]"
-        />
-        <kbd className="font-mono text-[11px] text-[#9AA1B4] bg-[#F7F9FC] border border-[#E7EAF1] rounded-md px-1.5 py-0.5">⌘K</kbd>
+      <div className="hidden sm:block relative flex-1 max-w-[440px]" ref={searchRef}>
+        <div className="flex items-center gap-2.5 h-10 px-3 rounded-[11px] border border-[#E7EAF1] bg-white transition-all focus-within:border-[#1E5FFF] focus-within:ring-4 focus-within:ring-[#1E5FFF]/[0.14]">
+          <Search className="w-[15px] h-[15px] text-[#9AA1B4] shrink-0" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setSearchOpen(true) }}
+            onFocus={() => setSearchOpen(true)}
+            placeholder={crossEntitySearch ? 'Search orders, riders, merchants…' : 'Search your orders…'}
+            className="flex-1 min-w-0 border-0 outline-none bg-transparent text-[13.5px] font-medium text-[#0D1426] placeholder:text-[#9AA1B4]"
+          />
+          {fetching ? (
+            <Loader2 className="w-3.5 h-3.5 text-[#9AA1B4] animate-spin shrink-0" />
+          ) : (
+            <kbd className="font-mono text-[11px] text-[#9AA1B4] bg-[#F7F9FC] border border-[#E7EAF1] rounded-md px-1.5 py-0.5">⌘K</kbd>
+          )}
+        </div>
+
+        {searchOpen && searching && (
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-[#E7EAF1] rounded-xl shadow-lg max-h-[420px] overflow-y-auto z-30">
+            {!hasResults ? (
+              <p className="text-xs text-[#9AA1B4] text-center py-6">
+                {fetching ? 'Searching…' : `No results for "${debouncedQuery}"`}
+              </p>
+            ) : (
+              <>
+                {orderResults.length > 0 && (
+                  <SearchGroup title="Orders">
+                    {orderResults.map((o) => (
+                      <SearchResultRow
+                        key={o.id}
+                        icon={<ShoppingBag className="w-3.5 h-3.5" />}
+                        primary={o.trackingCode}
+                        secondary={personName(o.customer.firstName, o.customer.lastName)}
+                        onClick={() => goTo(`/orders/${o.id}`)}
+                      />
+                    ))}
+                  </SearchGroup>
+                )}
+                {customerResults.length > 0 && (
+                  <SearchGroup title="Customers">
+                    {customerResults.map((c) => (
+                      <SearchResultRow
+                        key={c.id}
+                        icon={<Users className="w-3.5 h-3.5" />}
+                        primary={personName(c.firstName, c.lastName)}
+                        secondary={c.phone}
+                        onClick={() => goTo(`/customers/${c.id}`)}
+                      />
+                    ))}
+                  </SearchGroup>
+                )}
+                {riderResults.length > 0 && (
+                  <SearchGroup title="Riders">
+                    {riderResults.map((r) => (
+                      <SearchResultRow
+                        key={r.id}
+                        icon={<Bike className="w-3.5 h-3.5" />}
+                        primary={personName(r.firstName, r.lastName)}
+                        secondary={r.phone}
+                        onClick={() => goTo(`/riders?riderId=${r.id}`)}
+                      />
+                    ))}
+                  </SearchGroup>
+                )}
+                {vendorResults.length > 0 && (
+                  <SearchGroup title="Vendors">
+                    {vendorResults.map((v) => (
+                      <SearchResultRow
+                        key={v.id}
+                        icon={<Store className="w-3.5 h-3.5" />}
+                        primary={v.name}
+                        secondary={v.email}
+                        onClick={() => goTo(`/vendors/${v.id}`)}
+                      />
+                    ))}
+                  </SearchGroup>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right actions */}

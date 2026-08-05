@@ -18,6 +18,7 @@ import {
 import { useGetCustomersQuery } from '@/features/customers/store/customersApi'
 import { useGetRidersQuery } from '@/store/services/ridersApi'
 import { useGetVendorsQuery } from '@/features/vendors/store/vendorsApi'
+import { personName } from '@/lib/utils'
 import type { PushSendResult } from '@/types/api'
 
 type Audience = 'customers' | 'riders' | 'vendors'
@@ -112,7 +113,7 @@ function UserSelect({ audience, multi, onChange }: UserSelectProps) {
   const options: SelectOption[] = audience === 'customers'
     ? (customersData?.data ?? []).map((c) => ({
         id: c.id,
-        label: `${c.firstName} ${c.lastName}`,
+        label: personName(c.firstName, c.lastName),
         sub: c.email ?? c.phone,
       }))
     : audience === 'riders'

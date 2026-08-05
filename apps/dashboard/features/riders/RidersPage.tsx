@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   useGetRidersQuery,
   useGetRiderStatsQuery,
@@ -704,12 +705,13 @@ function RiderStatsBar() {
 }
 
 export default function RidersPage() {
+  const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [kycFilter, setKycFilter] = useState<RiderKycStatus | 'ALL'>('ALL')
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'active' | 'inactive'>('ALL')
   const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const [viewId, setViewId] = useState<string | null>(null)
+  const [viewId, setViewId] = useState<string | null>(searchParams.get('riderId'))
   const [showCreate, setShowCreate] = useState(false)
 
   const params = {

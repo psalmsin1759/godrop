@@ -817,8 +817,8 @@ export type CustomerStatus = 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'
 
 export interface AdminCustomer {
   id: string
-  firstName: string
-  lastName: string
+  firstName: string | null
+  lastName: string | null
   phone: string
   email: string | null
   avatarUrl: string | null
@@ -831,8 +831,8 @@ export interface AdminCustomer {
 
 export interface AdminCustomerDetail {
   id: string
-  firstName: string
-  lastName: string
+  firstName: string | null
+  lastName: string | null
   phone: string
   email: string | null
   avatarUrl: string | null

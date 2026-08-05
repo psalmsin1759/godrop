@@ -9,7 +9,7 @@ import {
   useUpdateCustomerStatusMutation,
 } from '../store/customersApi'
 import type { CustomerStatus, OrderStatus, WalletTransactionType } from '@/types/api'
-import { formatNaira, formatAmount, formatAmountFull, formatDate, formatDateTime } from '@/lib/utils'
+import { formatNaira, formatAmount, formatAmountFull, formatDate, formatDateTime, personName, personInitials } from '@/lib/utils'
 import {
   ArrowLeft, Loader2, ChevronLeft, ChevronRight,
   Wallet, ShoppingBag, User, Shield, ShieldOff, UserX,
@@ -182,7 +182,7 @@ export default function CustomerDetailPage({ customerId }: { customerId: string 
           </button>
           <div>
             <h1 className="text-lg font-bold text-[#0D1426]">
-              {customer.firstName} {customer.lastName}
+              {personName(customer.firstName, customer.lastName)}
             </h1>
             <p className="text-xs text-[#9AA1B4] mt-0.5">Customer profile</p>
           </div>
@@ -195,11 +195,11 @@ export default function CustomerDetailPage({ customerId }: { customerId: string 
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-[#E7EEFF] flex items-center justify-center text-base font-bold text-[#1E5FFF] shrink-0">
-                  {customer.firstName[0]}{customer.lastName[0]}
+                  {personInitials(customer.firstName, customer.lastName)}
                 </div>
                 <div>
                   <p className="text-sm font-bold text-[#0D1426]">
-                    {customer.firstName} {customer.lastName}
+                    {personName(customer.firstName, customer.lastName)}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span

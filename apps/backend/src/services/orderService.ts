@@ -554,6 +554,7 @@ export async function listAllOrders(opts: {
   type?: string;
   customerId?: string;
   vendorId?: string;
+  search?: string;
   page?: number;
   limit?: number;
 }) {
@@ -563,6 +564,15 @@ export async function listAllOrders(opts: {
   if (opts.type) where.type = opts.type.toUpperCase();
   if (opts.customerId) where.customerId = opts.customerId;
   if (opts.vendorId) where.vendorId = opts.vendorId;
+  if (opts.search) {
+    where.OR = [
+      { trackingCode: { contains: opts.search, mode: "insensitive" } },
+      { customer: { is: { firstName: { contains: opts.search, mode: "insensitive" } } } },
+      { customer: { is: { lastName: { contains: opts.search, mode: "insensitive" } } } },
+      { customer: { is: { phone: { contains: opts.search } } } },
+      { vendor: { is: { name: { contains: opts.search, mode: "insensitive" } } } },
+    ];
+  }
 
   const [data, total] = await prisma.$transaction([
     prisma.order.findMany({
@@ -570,7 +580,12 @@ export async function listAllOrders(opts: {
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
-      include: { items: true, dropoffs: { orderBy: { sequence: "asc" } } },
+      include: {
+        items: true,
+        dropoffs: { orderBy: { sequence: "asc" } },
+        customer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        vendor: { select: { id: true, name: true, type: true } },
+      },
     }),
     prisma.order.count({ where }),
   ]);

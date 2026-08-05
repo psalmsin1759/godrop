@@ -12,7 +12,8 @@ import {
 import type { ProductCategory } from '@/types/api'
 import CategoryFormDialog, { type CategoryFormValues } from '@/components/catalog/CategoryFormDialog'
 import ConfirmDeleteDialog from '@/components/catalog/ConfirmDeleteDialog'
-import { Plus, Pencil, Trash2, Loader2, ToggleLeft, ToggleRight, Tag } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, ToggleLeft, ToggleRight, Tag, Download } from 'lucide-react'
+import { exportToCsv } from '@/lib/exportCsv'
 
 export default function CategoriesPage() {
   const router = useRouter()
@@ -98,9 +99,24 @@ export default function CategoriesPage() {
           <h2 className="text-base font-bold text-[#0D1426]">Product Categories</h2>
           <p className="text-xs text-[#9AA1B4] mt-0.5">Organise products into browsable categories</p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-          <Plus className="w-3.5 h-3.5" /> New Category
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportToCsv('categories', categories, [
+              { header: 'Name', value: (c) => c.name },
+              { header: 'Description', value: (c) => c.description ?? '' },
+              { header: 'Status', value: (c) => c.isActive ? 'Active' : 'Inactive' },
+              { header: 'Products', value: (c) => c._count?.products ?? 0 },
+              { header: 'Sort Order', value: (c) => c.sortOrder },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
+          <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+            <Plus className="w-3.5 h-3.5" /> New Category
+          </button>
+        </div>
       </div>
 
       {error && (

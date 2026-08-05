@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useGetAuditLogsQuery, useGetVendorAuditLogsQuery } from './store/auditApi'
-import { Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertTriangle, RefreshCw } from 'lucide-react'
+import { exportToCsv } from '@/lib/exportCsv'
+import { Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertTriangle, RefreshCw, Download } from 'lucide-react'
 
 const actionColors: Record<string, { bg: string; text: string }> = {
   approve: { bg: '#DFF5EC', text: '#1DB980' },
@@ -71,12 +72,28 @@ export default function DisputesPage() {
             {isVendor ? 'Activity log for your store' : 'Track all admin actions across the platform'}
           </p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
-        >
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportToCsv('audit-log', visibleLogs, [
+              { header: 'Date', value: (log) => new Date(log.createdAt).toLocaleString('en-NG') },
+              { header: 'Admin', value: (log) => log.admin ? `${log.admin.firstName} ${log.admin.lastName}` : '' },
+              { header: 'Email', value: (log) => log.admin?.email ?? '' },
+              { header: 'Action', value: (log) => log.action },
+              { header: 'Entity', value: (log) => log.entity },
+              { header: 'Vendor', value: (log) => log.vendor?.name ?? '' },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

@@ -45,6 +45,7 @@ import {
   sendToSingleSchema,
   sendToCustomerBatchSchema,
   sendToRiderBatchSchema,
+  sendToVendorBatchSchema,
   broadcastSchema,
 } from "../validators/fcmValidators";
 import {
@@ -93,6 +94,12 @@ router.post(
   validate(issueManualOtpSchema),
   auditSystemAction({ action: "ISSUE_MANUAL_OTP", entity: "Otp", getEntityId: (r) => r.body.phone }),
   ctrl.issueManualOtp
+);
+router.post(
+  "/messaging/test-otp",
+  requireSystemRole("SUPER_ADMIN"),
+  validate(issueManualOtpSchema),
+  ctrl.testOtpSms
 );
 
 // ─── Admin Management (SUPER_ADMIN only) ─────────────────────
@@ -274,6 +281,10 @@ router.post("/push/customers/:id", requireSystemRole("ADMIN"), validate(sendToSi
 router.post("/push/riders/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToRiders);
 router.post("/push/riders/batch", requireSystemRole("ADMIN"), validate(sendToRiderBatchSchema), fcmCtrl.notifyRiderBatch);
 router.post("/push/riders/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyRider);
+
+router.post("/push/vendors/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToVendors);
+router.post("/push/vendors/batch", requireSystemRole("ADMIN"), validate(sendToVendorBatchSchema), fcmCtrl.notifyVendorBatch);
+router.post("/push/vendors/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyVendor);
 
 // ─── Business Management (ADMIN+) ────────────────────────────
 router.get("/businesses", requireSystemRole("ADMIN"), businessCtrl.listBusinesses);

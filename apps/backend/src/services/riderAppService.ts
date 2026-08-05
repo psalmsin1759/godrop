@@ -81,6 +81,11 @@ export async function onboardRider(
       guarantors: guarantors.length > 0 ? (guarantors as any) : undefined,
       documents: Object.keys(documents).length > 0 ? (documents as any) : undefined,
       kycStatus: "SUBMITTED",
+      // Self-onboarded riders need admin review before they can activate —
+      // an admin flips this via the existing activate/deactivate toggle.
+      // Admin-created riders (POST /admin/riders) are unaffected; they keep
+      // the schema default of `true`.
+      isActive: false,
     },
   });
 }

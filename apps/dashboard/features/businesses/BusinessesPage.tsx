@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus, X, Loader2, Building2, ChevronRight, ChevronLeft, Upload, CheckCircle, File as FileIcon } from 'lucide-react'
+import { Plus, X, Loader2, Building2, ChevronRight, ChevronLeft, Upload, CheckCircle, File as FileIcon, Download } from 'lucide-react'
 import {
   useGetBusinessesQuery,
   useCreateBusinessMutation,
 } from '@/store/services/businessApi'
 import { formatAmount } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import type { BusinessDocumentField, CreateBusinessRequest } from '@/types/api'
 
 // ─── Nigerian banks ───────────────────────────────────────────
@@ -405,13 +406,30 @@ export default function BusinessesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-[#0D1426]">Businesses</h1>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg"
-          style={{ backgroundColor: '#1E5FFF' }}
-        >
-          <Plus className="w-4 h-4" /> Create Business
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportToCsv('businesses', businesses, [
+              { header: 'Name', value: (b) => b.name },
+              { header: 'Owner', value: (b) => b.ownerFullName ?? '' },
+              { header: 'Phone', value: (b) => b.ownerPhoneNumber ?? '' },
+              { header: 'Status', value: (b) => b.status },
+              { header: 'Riders', value: (b) => b._count?.riders ?? 0 },
+              { header: 'Wallet', value: (b) => formatAmount(b.wallet?.balance ?? 0) },
+              { header: 'Admins', value: (b) => b._count?.admins ?? 0 },
+            ])}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#525A72] bg-white border border-[#E7EAF1] rounded-lg hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-4 h-4" /> Export
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg"
+            style={{ backgroundColor: '#1E5FFF' }}
+          >
+            <Plus className="w-4 h-4" /> Create Business
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">

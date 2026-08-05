@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Loader2, UserCheck, UserX } from 'lucide-react'
+import { Plus, X, Loader2, UserCheck, UserX, Download } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import {
   useGetBusinessTeamQuery,
@@ -9,6 +9,7 @@ import {
   useUpdateBusinessMemberMutation,
 } from '@/store/services/businessApi'
 import { formatDateTime } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import type { BusinessMember } from '@/types/api'
 
 function AddMemberModal({ onClose }: { onClose: () => void }) {
@@ -152,15 +153,30 @@ export default function BusinessTeamPage() {
           <h1 className="text-xl font-bold text-[#0D1426]">Team</h1>
           <p className="text-sm text-[#525A72] mt-0.5">Manage admins who have access to your business dashboard.</p>
         </div>
-        {isOwner && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg"
-            style={{ backgroundColor: '#1E5FFF' }}
+            type="button"
+            onClick={() => exportToCsv('business-team', team ?? [], [
+              { header: 'Name', value: (m) => `${m.firstName} ${m.lastName}` },
+              { header: 'Email', value: (m) => m.email },
+              { header: 'Role', value: (m) => m.role },
+              { header: 'Status', value: (m) => m.isActive ? 'Active' : 'Inactive' },
+              { header: 'Joined', value: (m) => formatDateTime(m.createdAt) },
+            ])}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-[#525A72] bg-white border border-[#E7EAF1] rounded-lg hover:bg-[#F7F9FC]"
           >
-            <Plus className="w-4 h-4" /> Add Admin
+            <Download className="w-4 h-4" /> Export
           </button>
-        )}
+          {isOwner && (
+            <button
+              onClick={() => setShowAdd(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg"
+              style={{ backgroundColor: '#1E5FFF' }}
+            >
+              <Plus className="w-4 h-4" /> Add Admin
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">

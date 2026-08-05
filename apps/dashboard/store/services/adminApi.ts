@@ -67,6 +67,11 @@ export const adminApi = api.injectEndpoints({
       transformResponse: (res: Wrap<{ phone: string; code: string; expiresIn: number }>) => res.data,
     }),
 
+    testOtpSms: build.mutation<{ message: string }, { phone: string }>({
+      query: (body) => ({ url: '/admin/messaging/test-otp', method: 'POST', body }),
+      transformResponse: (res: { success: boolean; message: string }) => ({ message: res.message }),
+    }),
+
     getAdmins: build.query<{ data: AdminUser[]; total: number; page: number; limit: number }, { page?: number; limit?: number } | void>({
       query: (params) => ({ url: '/admin/admins', params: params ?? {} }),
       providesTags: ['Admin'],
@@ -113,4 +118,5 @@ export const {
   useGetPlatformSettingsQuery,
   useUpdatePlatformSettingsMutation,
   useIssueManualOtpMutation,
+  useTestOtpSmsMutation,
 } = adminApi

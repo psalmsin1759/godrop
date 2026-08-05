@@ -24,7 +24,9 @@ import {
   Bell,
   Store,
   Bike,
+  Download,
 } from 'lucide-react'
+import { exportToCsv } from '@/lib/exportCsv'
 
 const roleConfig: Record<SystemAdminRole, { label: string; bg: string; text: string }> = {
   SUPER_ADMIN: { label: 'Super Admin', bg: '#FFE3E1', text: '#FF3B30' },
@@ -432,11 +434,26 @@ export default function AdminsPage() {
           <h1 className="text-lg font-bold text-[#0D1426]">System Admins</h1>
           <p className="text-xs text-[#9AA1B4] mt-0.5">Manage admin accounts, access levels, and email notifications</p>
         </div>
-        {isSuperAdmin && (
-          <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-1.5">
-            <Plus className="w-3.5 h-3.5" /> Add Admin
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => exportToCsv('admins', admins, [
+              { header: 'Name', value: (a) => `${a.firstName} ${a.lastName}` },
+              { header: 'Email', value: (a) => a.email },
+              { header: 'Role', value: (a) => a.role },
+              { header: 'Status', value: (a) => a.isActive ? 'Active' : 'Inactive' },
+              { header: 'Joined', value: (a) => new Date(a.createdAt).toLocaleDateString('en-NG') },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
           </button>
-        )}
+          {isSuperAdmin && (
+            <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-1.5">
+              <Plus className="w-3.5 h-3.5" /> Add Admin
+            </button>
+          )}
+        </div>
       </div>
 
       {!isSuperAdmin && (

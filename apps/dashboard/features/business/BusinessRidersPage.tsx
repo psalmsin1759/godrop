@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Plus, Trash2, ChevronRight, Loader2, X } from 'lucide-react'
+import { Search, Plus, Trash2, ChevronRight, Loader2, X, Download } from 'lucide-react'
 import {
   useGetBusinessRidersQuery,
   useAssignBusinessRiderMutation,
@@ -10,6 +10,7 @@ import {
 } from '@/store/services/businessApi'
 import { useSession } from 'next-auth/react'
 import { formatNaira, formatDateTime } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import type { Rider } from '@/types/api'
 
 function AssignRiderModal({ onClose }: { onClose: () => void }) {
@@ -147,14 +148,30 @@ export default function BusinessRidersPage() {
         )}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B4]" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or phone..."
-          className="w-full pl-9 pr-4 py-2.5 border border-[#E7EAF1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
-        />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1B4]" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or phone..."
+            className="w-full pl-9 pr-4 py-2.5 border border-[#E7EAF1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => exportToCsv('business-riders', riders, [
+            { header: 'Name', value: (r) => `${r.firstName} ${r.lastName}` },
+            { header: 'Phone', value: (r) => r.phone },
+            { header: 'Vehicle', value: (r) => r.vehicleType ?? '' },
+            { header: 'KYC', value: (r) => r.kycStatus },
+            { header: 'Status', value: (r) => r.isActive ? 'Active' : 'Inactive' },
+            { header: 'Orders', value: (r) => r._count?.orders ?? 0 },
+          ])}
+          className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded-lg px-3 py-2.5 hover:bg-[#F7F9FC] shrink-0"
+        >
+          <Download className="w-3.5 h-3.5" /> Export
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-[#E7EAF1] overflow-hidden">

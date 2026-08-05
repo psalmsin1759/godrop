@@ -320,6 +320,8 @@ export interface SystemAnalyticsSummary {
   totalVendors: number
   activeVendors: number
   pendingVendors: number
+  rejectedVendors: number
+  suspendedVendors: number
   totalOrders: number
   completedOrders: number
   totalRevenueKobo: number

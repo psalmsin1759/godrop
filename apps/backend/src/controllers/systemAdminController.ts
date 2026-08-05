@@ -131,6 +131,19 @@ export async function issueManualOtp(req: Request, res: Response, next: NextFunc
   }
 }
 
+// Sends a real SMS in the OTP format so an admin can confirm SMS delivery
+// is actually working — doesn't create a real OTP session (see
+// otpService.sendTestOtpSms for why).
+export async function testOtpSms(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { phone } = req.body;
+    await otpService.sendTestOtpSms(phone);
+    return ok(res, { message: `Test SMS sent to ${phone}` });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ─── System Admin Management ──────────────────────────────────
 
 export async function listAdmins(req: Request, res: Response, next: NextFunction) {

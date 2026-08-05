@@ -11,7 +11,8 @@ import {
 } from '@/store/services/teamApi'
 import type { TeamMember, TeamMemberRole } from '@/types/api'
 import { formatDate } from '@/lib/utils'
-import { Plus, Loader2, UserX, UserCog, UserCheck } from 'lucide-react'
+import { exportToCsv } from '@/lib/exportCsv'
+import { Plus, Loader2, UserX, UserCog, UserCheck, Download } from 'lucide-react'
 
 const ROLE_CONFIG: Record<TeamMemberRole, { label: string; bg: string; text: string }> = {
   OWNER: { label: 'Owner', bg: '#E7EEFF', text: '#1E5FFF' },
@@ -196,15 +197,30 @@ export default function TeamPage() {
           <h1 className="text-lg font-bold text-[#0D1426]">Team</h1>
           <p className="text-xs text-[#9AA1B4] mt-0.5">Manage your store staff and permissions</p>
         </div>
-        {!isStaff && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowInvite(true)}
-            className="flex items-center gap-1.5 text-xs text-white font-semibold px-3 py-1.5 rounded"
-            style={{ backgroundColor: '#0D1426' }}
+            type="button"
+            onClick={() => exportToCsv('team', members, [
+              { header: 'Name', value: (m) => `${m.firstName} ${m.lastName}` },
+              { header: 'Email', value: (m) => m.email },
+              { header: 'Role', value: (m) => m.role },
+              { header: 'Status', value: (m) => m.isActive ? 'Active' : 'Inactive' },
+              { header: 'Joined', value: (m) => formatDate(m.createdAt) },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
           >
-            <Plus className="w-3.5 h-3.5" /> Invite Member
+            <Download className="w-3.5 h-3.5" /> Export
           </button>
-        )}
+          {!isStaff && (
+            <button
+              onClick={() => setShowInvite(true)}
+              className="flex items-center gap-1.5 text-xs text-white font-semibold px-3 py-1.5 rounded"
+              style={{ backgroundColor: '#0D1426' }}
+            >
+              <Plus className="w-3.5 h-3.5" /> Invite Member
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

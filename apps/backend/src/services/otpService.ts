@@ -65,6 +65,19 @@ export async function issueAdminOtp(phone: string): Promise<{ code: string; expi
   return { code, expiresIn: OTP_EXPIRY_MINUTES * 60 };
 }
 
+// Sends a real SMS in the exact OTP format/copy, so an admin can confirm
+// SMS delivery is working end-to-end — but doesn't touch the `Otp` table,
+// so it can't be used to actually log in and doesn't disturb a real
+// in-flight OTP session for that phone number.
+export async function sendTestOtpSms(phone: string): Promise<{ code: string }> {
+  const code = generateCode();
+  await sendSms(
+    phone,
+    `Your Godrop verification code is ${code}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`
+  );
+  return { code };
+}
+
 export async function verifyOtp(phone: string, code: string): Promise<boolean> {
   const otp = await prisma.otp.findFirst({
     where: { phone, code },

@@ -15,6 +15,7 @@ import {
   useGetVendorGraphQuery,
 } from '@/store/services/analyticsApi'
 import { useGetRiderStatsQuery, useGetRidersQuery } from '@/store/services/ridersApi'
+import { useGetVendorsQuery } from '@/features/vendors/store/vendorsApi'
 import { formatNaira, formatNumber } from '@/lib/utils'
 import { Loader2, TrendingUp, ShoppingBag, Users, Store, Bike, Star, UserCheck, Shield } from 'lucide-react'
 import type { GraphGranularity } from '@/types/api'
@@ -22,6 +23,10 @@ import type { GraphGranularity } from '@/types/api'
 const TYPE_COLORS: Record<string, string> = {
   FOOD: '#1E5FFF', GROCERY: '#1DB980', RETAIL: '#E8930C',
   PHARMACY: '#FF6A2C', PARCEL: '#7A5AE0', TRUCK: '#FF3B30',
+  RESTAURANT: '#1E5FFF', // Vendor.type value (distinct enum from Order.type's FOOD)
+}
+const VENDOR_STATUS_COLORS: Record<string, string> = {
+  APPROVED: '#1DB980', PENDING: '#E8930C', REJECTED: '#FF3B30', SUSPENDED: '#9AA1B4',
 }
 const KYC_COLORS: Record<string, string> = {
   PENDING: '#E8930C', SUBMITTED: '#1E5FFF', VERIFIED: '#1DB980', REJECTED: '#FF3B30',
@@ -67,7 +72,7 @@ const granularities: { value: GraphGranularity; label: string }[] = [
   { value: 'month', label: 'Monthly' },
 ]
 
-type SystemTab = 'platform' | 'riders'
+type SystemTab = 'platform' | 'riders' | 'vendors'
 
 function SystemAnalyticsView() {
   const [tab, setTab] = useState<SystemTab>('platform')
@@ -97,6 +102,7 @@ function SystemAnalyticsView() {
         {([
           { id: 'platform', label: 'Platform', icon: <ShoppingBag className="w-3.5 h-3.5" /> },
           { id: 'riders',   label: 'Riders',   icon: <Bike className="w-3.5 h-3.5" /> },
+          { id: 'vendors',  label: 'Vendors',  icon: <Store className="w-3.5 h-3.5" /> },
         ] as { id: SystemTab; label: string; icon: React.ReactNode }[]).map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${
@@ -110,6 +116,7 @@ function SystemAnalyticsView() {
       </div>
 
       {tab === 'riders' && <RidersAnalyticsView />}
+      {tab === 'vendors' && <VendorsAnalyticsView analytics={analytics} />}
       {tab === 'platform' && <>
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -476,6 +483,184 @@ function RidersAnalyticsView() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Vendors Analytics (system-admin, cross-vendor) ───────────────────────────
+
+function VendorsAnalyticsView({ analytics }: { analytics: import('@/types/api').SystemAnalytics | undefined }) {
+  const { data: vendors = [], isLoading: vendorsLoading } = useGetVendorsQuery()
+  const s = analytics?.summary
+
+  // Vendors created per month, last 6 months — same client-side-from-raw-list
+  // approach the Riders tab uses (no dedicated backend endpoint needed).
+  const monthsBack = 6
+  const now = new Date()
+  const months = Array.from({ length: monthsBack }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (monthsBack - 1 - i), 1)
+    return { key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString('en-US', { month: 'short' }) }
+  })
+  const growthCounts = vendors.reduce<Record<string, number>>((acc, v) => {
+    const d = new Date(v.createdAt)
+    const key = `${d.getFullYear()}-${d.getMonth()}`
+    acc[key] = (acc[key] ?? 0) + 1
+    return acc
+  }, {})
+  const growthData = months.map((m) => ({ date: m.label, Vendors: growthCounts[m.key] ?? 0 }))
+
+  const typeCounts = vendors.reduce<Record<string, number>>((acc, v) => {
+    acc[v.type] = (acc[v.type] ?? 0) + 1
+    return acc
+  }, {})
+  const typeData = Object.entries(typeCounts).map(([name, value]) => ({ name, value }))
+
+  if (!analytics && !vendorsLoading) return null
+
+  return (
+    <div className="space-y-5">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          { label: 'Total Vendors', value: s ? formatNumber(s.totalVendors) : '—', icon: Store, color: '#1E5FFF', bg: '#E7EEFF' },
+          { label: 'Active', value: s ? formatNumber(s.activeVendors) : '—', icon: UserCheck, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Pending', value: s ? formatNumber(s.pendingVendors) : '—', icon: Loader2, color: '#E8930C', bg: '#FBEDD7' },
+          { label: 'Rejected', value: s ? formatNumber(s.rejectedVendors) : '—', icon: Shield, color: '#FF3B30', bg: '#FFE3E1' },
+          { label: 'Suspended', value: s ? formatNumber(s.suspendedVendors) : '—', icon: Shield, color: '#9AA1B4', bg: '#EDF0F6' },
+        ].map((c) => (
+          <div key={c.label} className="card p-4">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ backgroundColor: c.bg }}>
+              <c.icon style={{ color: c.color, width: 18, height: 18 }} />
+            </div>
+            <p className="text-lg font-bold text-[#0D1426]">{c.value}</p>
+            <p className="text-xs text-[#525A72] mt-0.5">{c.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* New vendors over time */}
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">New Vendors (last 6 months)</h3></div>
+          <div className="p-4">
+            {vendorsLoading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={growthData} barSize={28}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EDF0F6" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#9AA1B4' }} axisLine={false} tickLine={false} width={28} allowDecimals={false} />
+                  <Tooltip formatter={(v: number) => [formatNumber(v), 'Vendors']} />
+                  <Bar dataKey="Vendors" fill="#1E5FFF" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        {/* Vendor type breakdown */}
+        <div className="card">
+          <div className="card-header"><h3 className="card-title">Vendors by Type</h3></div>
+          <div className="p-4">
+            {typeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={typeData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
+                    paddingAngle={2} dataKey="value" nameKey="name">
+                    {typeData.map((entry, i) => (
+                      <Cell key={i} fill={TYPE_COLORS[entry.name] ?? '#9AA1B4'} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(v: number) => formatNumber(v)} />
+                  <Legend formatter={(value) => (
+                    <span style={{ fontSize: 11, color: '#525A72', textTransform: 'capitalize' }}>
+                      {value.toLowerCase()}
+                    </span>
+                  )} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-xs text-[#9AA1B4]">No data</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Top vendors by orders/revenue */}
+      {analytics?.topVendors?.length ? (
+        <div className="card overflow-hidden">
+          <div className="card-header"><h3 className="card-title">Top Performing Vendors</h3></div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[#EDF0F6] bg-[#F7F9FC]">
+                  {['Vendor', 'Type', 'Rating', 'Orders', 'Revenue'].map((h) => (
+                    <th key={h} className="text-left text-[11px] font-semibold text-[#9AA1B4] uppercase tracking-wide px-4 py-3 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F7F9FC]">
+                {analytics.topVendors.map((v) => (
+                  <tr key={v.id} className="hover:bg-[#F7F9FC] transition-colors">
+                    <td className="px-4 py-2.5 text-xs font-medium text-[#0D1426]">{v.name}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="text-[11px] font-medium capitalize" style={{ color: TYPE_COLORS[v.type] ?? '#9AA1B4' }}>
+                        {v.type.toLowerCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-xs font-semibold text-[#0D1426]">{v.rating?.toFixed(1) ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-xs font-semibold text-[#1E5FFF]">{formatNumber(v.orders)}</td>
+                    <td className="px-4 py-2.5 text-xs font-semibold text-[#0D1426]">{formatNaira(v.revenueKobo)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Vendor status breakdown */}
+      <div className="card">
+        <div className="card-header"><h3 className="card-title">Vendors by Status</h3></div>
+        <div className="p-4">
+          {s ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'APPROVED', value: s.activeVendors },
+                    { name: 'PENDING', value: s.pendingVendors },
+                    { name: 'REJECTED', value: s.rejectedVendors },
+                    { name: 'SUSPENDED', value: s.suspendedVendors },
+                  ].filter((d) => d.value > 0)}
+                  cx="50%" cy="50%" innerRadius={45} outerRadius={72}
+                  paddingAngle={2} dataKey="value" nameKey="name"
+                >
+                  {[
+                    { name: 'APPROVED', value: s.activeVendors },
+                    { name: 'PENDING', value: s.pendingVendors },
+                    { name: 'REJECTED', value: s.rejectedVendors },
+                    { name: 'SUSPENDED', value: s.suspendedVendors },
+                  ].filter((d) => d.value > 0).map((entry, i) => (
+                    <Cell key={i} fill={VENDOR_STATUS_COLORS[entry.name] ?? '#9AA1B4'} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatNumber(v)} />
+                <Legend formatter={(value) => (
+                  <span style={{ fontSize: 11, color: '#525A72', textTransform: 'capitalize' }}>
+                    {value.toLowerCase()}
+                  </span>
+                )} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center text-xs text-[#9AA1B4]">No data</div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

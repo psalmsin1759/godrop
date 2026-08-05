@@ -196,14 +196,36 @@ class _PhoneScreenState extends State<PhoneScreen> {
                                 offset: const Offset(0, 3)),
                           ],
                         ),
-                        child: const Text(
-                          'Only registered riders can log in.\nContact your dispatcher if you need access.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: GodropColors.mute,
-                            height: 1.6,
-                          ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Only registered riders can log in.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: GodropColors.mute,
+                                height: 1.6,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () => ctx.go('/auth/onboard'),
+                              child: RichText(
+                                text: const TextSpan(
+                                  style: TextStyle(
+                                      fontSize: 13, color: GodropColors.mute),
+                                  children: [
+                                    TextSpan(text: 'New rider? '),
+                                    TextSpan(
+                                        text: 'Apply here',
+                                        style: TextStyle(
+                                            color: GodropColors.blue,
+                                            fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 32),

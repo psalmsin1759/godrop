@@ -16,4 +16,8 @@ export const sendToRiderBatchSchema = notificationBase.extend({
   riderIds: z.array(z.string().cuid()).min(1, "Provide at least one riderId"),
 });
 
+export const sendToVendorBatchSchema = notificationBase.extend({
+  vendorIds: z.array(z.string().cuid()).min(1, "Provide at least one vendorId"),
+});
+
 export const broadcastSchema = notificationBase;

@@ -16,6 +16,7 @@ import {
 } from '@/store/services/adminOrdersApi'
 import type { VendorOrder, VendorOrderStatus, AdminOrder, OrderStatus, OrderType } from '@/types/api'
 import { formatNaira, formatDateTime } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import {
   Search, ChevronLeft, ChevronRight, Eye, MoreHorizontal,
   Download, Loader2, CheckCircle, XCircle, Clock, Ban,
@@ -202,6 +203,21 @@ function VendorOrdersTable() {
               className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] w-48"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => exportToCsv('orders', filtered, [
+              { header: 'Tracking', value: (o) => o.trackingCode },
+              { header: 'Customer', value: (o) => o.customer ? `${o.customer.firstName} ${o.customer.lastName}` : '' },
+              { header: 'Type', value: (o) => o.type },
+              { header: 'Amount', value: (o) => formatNaira(o.totalKobo) },
+              { header: 'Status', value: (o) => o.status },
+              { header: 'Payment', value: (o) => o.paymentStatus },
+              { header: 'Time', value: (o) => formatDateTime(o.createdAt) },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
         </div>
       </div>
 
@@ -487,6 +503,23 @@ function SystemOrdersTable() {
           {(typeFilter !== 'ALL' || from || to) && (
             <button onClick={resetFilters} className="text-xs text-[#FF3B30] hover:underline">Clear</button>
           )}
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => exportToCsv('orders', orders, [
+              { header: 'Tracking', value: (o) => o.trackingCode },
+              { header: 'Customer', value: (o) => o.customer ? `${o.customer.firstName} ${o.customer.lastName}` : '' },
+              { header: 'Vendor', value: (o) => o.vendor?.name ?? '' },
+              { header: 'Type', value: (o) => o.type },
+              { header: 'Amount', value: (o) => formatNaira(o.totalKobo) },
+              { header: 'Status', value: (o) => o.status },
+              { header: 'Payment', value: (o) => o.paymentStatus },
+              { header: 'Date', value: (o) => formatDateTime(o.createdAt) },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
         </div>
       </div>
 
@@ -595,16 +628,11 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-[#0D1426]">Orders</h1>
-          <p className="text-xs text-[#9AA1B4] mt-0.5">
-            {isVendor ? 'Manage your incoming and active orders' : 'Monitor and manage all platform orders'}
-          </p>
-        </div>
-        <button className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]">
-          <Download className="w-3.5 h-3.5" /> Export
-        </button>
+      <div>
+        <h1 className="text-lg font-bold text-[#0D1426]">Orders</h1>
+        <p className="text-xs text-[#9AA1B4] mt-0.5">
+          {isVendor ? 'Manage your incoming and active orders' : 'Monitor and manage all platform orders'}
+        </p>
       </div>
       {isVendor ? <VendorOrdersTable /> : <SystemOrdersTable />}
     </div>

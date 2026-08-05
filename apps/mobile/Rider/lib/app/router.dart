@@ -7,6 +7,7 @@ import '../features/auth/otp_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/create_password_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/jobs/jobs_screen.dart';
 import '../features/jobs/job_detail_screen.dart';
 import '../features/active/active_delivery_screen.dart';
@@ -56,6 +57,10 @@ final router = GoRouter(
     GoRoute(
       path: '/auth/phone',
       pageBuilder: (ctx, state) => _slide(state, const PhoneScreen()),
+    ),
+    GoRoute(
+      path: '/auth/onboard',
+      pageBuilder: (ctx, state) => _slide(state, const RiderOnboardingScreen()),
     ),
     GoRoute(
       path: '/auth/otp',

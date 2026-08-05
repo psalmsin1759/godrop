@@ -3,6 +3,7 @@ import type { PushNotificationPayload, PushSendResult } from '@/types/api'
 
 type CustomerBatchPayload = PushNotificationPayload & { customerIds: string[] }
 type RiderBatchPayload = PushNotificationPayload & { riderIds: string[] }
+type VendorBatchPayload = PushNotificationPayload & { vendorIds: string[] }
 type SinglePayload = { id: string } & PushNotificationPayload
 
 const wrap = (res: { success: boolean; message: string; successCount?: number; failureCount?: number }): PushSendResult => ({
@@ -43,6 +44,21 @@ export const pushApi = api.injectEndpoints({
       query: ({ id, ...body }) => ({ url: `/admin/push/riders/${id}`, method: 'POST', body }),
       transformResponse: wrap,
     }),
+
+    broadcastToVendors: build.mutation<PushSendResult, PushNotificationPayload>({
+      query: (body) => ({ url: '/admin/push/vendors/broadcast', method: 'POST', body }),
+      transformResponse: wrap,
+    }),
+
+    sendToVendorBatch: build.mutation<PushSendResult, VendorBatchPayload>({
+      query: (body) => ({ url: '/admin/push/vendors/batch', method: 'POST', body }),
+      transformResponse: wrap,
+    }),
+
+    sendToVendor: build.mutation<PushSendResult, SinglePayload>({
+      query: ({ id, ...body }) => ({ url: `/admin/push/vendors/${id}`, method: 'POST', body }),
+      transformResponse: wrap,
+    }),
   }),
   overrideExisting: false,
 })
@@ -54,4 +70,7 @@ export const {
   useBroadcastToRidersMutation,
   useSendToRiderBatchMutation,
   useSendToRiderMutation,
+  useBroadcastToVendorsMutation,
+  useSendToVendorBatchMutation,
+  useSendToVendorMutation,
 } = pushApi

@@ -19,10 +19,11 @@ import {
 } from './store/trucksApi'
 import type { TruckType, ApartmentType, OrderStatus } from '@/types/api'
 import { formatNaira, formatDateTime } from '@/lib/utils'
+import { exportToCsv } from '@/lib/exportCsv'
 import {
   Plus, Pencil, Trash2, Loader2, Truck, X, ChevronLeft,
   ChevronRight, Search, CheckCircle2, ToggleLeft, ToggleRight,
-  Home, Gauge, Users, ExternalLink, ImageIcon, Upload,
+  Home, Gauge, Users, ExternalLink, ImageIcon, Upload, Download,
 } from 'lucide-react'
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024
@@ -601,6 +602,18 @@ function BookingsTab() {
               className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] w-52"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => exportToCsv('truck-bookings', filtered, [
+              { header: 'Tracking Code', value: (o) => o.trackingCode },
+              { header: 'Status', value: (o) => o.status },
+              { header: 'Amount', value: (o) => formatNaira(o.totalKobo) },
+              { header: 'Booked At', value: (o) => formatDateTime(o.createdAt) },
+            ])}
+            className="flex items-center gap-1.5 text-xs text-[#525A72] bg-white border border-[#E7EAF1] rounded px-3 py-1.5 hover:bg-[#F7F9FC]"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
         </div>
       </div>
 

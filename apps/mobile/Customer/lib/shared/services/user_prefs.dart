@@ -47,4 +47,11 @@ class UserPrefs {
       _box?.put('delivery_address', address);
 
   static Future<void> clear() async => _box?.clear();
+
+  // ── App update prompt ────────────────────────────────────────────────────────
+  static String get dismissedUpdateVersion =>
+      _box?.get('dismissed_update_version', defaultValue: '') ?? '';
+
+  static Future<void> saveDismissedUpdateVersion(String version) async =>
+      _box?.put('dismissed_update_version', version);
 }

@@ -18,7 +18,10 @@ import '../features/profile/bank_screen.dart';
 import '../features/notifications/notifications_screen.dart';
 import '../shared/widgets/rider_shell.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final router = GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/',
   redirect: (context, state) async {
     if (state.matchedLocation != '/') return null;

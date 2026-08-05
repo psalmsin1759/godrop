@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../../app/router.dart';
 import '../../services/token_storage.dart';
 
 class RefreshInterceptor extends Interceptor {
@@ -37,6 +38,8 @@ class RefreshInterceptor extends Interceptor {
     try {
       final refreshToken = await TokenStorage.getRefreshToken();
       if (refreshToken == null) {
+        await TokenStorage.clear();
+        _redirectToLogin();
         await _failAll(err, handler);
         return;
       }
@@ -63,6 +66,7 @@ class RefreshInterceptor extends Interceptor {
       _queue.clear();
     } catch (_) {
       await TokenStorage.clear();
+      _redirectToLogin();
       await _failAll(err, handler);
     } finally {
       _isRefreshing = false;
@@ -96,4 +100,11 @@ class RefreshInterceptor extends Interceptor {
     _queue.clear();
     handler.next(err);
   }
+}
+
+/// Session is no longer valid — bounce the user to the login screen.
+/// Login/OTP/etc. requests are excluded from refresh above, so this only
+/// fires for genuinely expired sessions, not failed login attempts.
+void _redirectToLogin() {
+  appRouter.go('/auth/login');
 }

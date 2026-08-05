@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import '../../../app/router.dart';
 import '../../services/token_storage.dart';
 
 class RefreshInterceptor extends Interceptor {
@@ -16,10 +17,17 @@ class RefreshInterceptor extends Interceptor {
       handler.next(err);
       return;
     }
+    // Wrong-credentials errors on the auth endpoints themselves shouldn't
+    // trigger a refresh attempt or a redirect — the user is already there.
+    if (err.requestOptions.path.contains('/auth/')) {
+      handler.next(err);
+      return;
+    }
 
     final refreshToken = await TokenStorage.getRefreshToken();
     if (refreshToken == null) {
       await TokenStorage.clear();
+      _redirectToLogin();
       handler.next(err);
       return;
     }
@@ -51,6 +59,7 @@ class RefreshInterceptor extends Interceptor {
       handler.resolve(await _retry(err.requestOptions));
     } catch (_) {
       await TokenStorage.clear();
+      _redirectToLogin();
       for (final c in _queue) {
         c.completeError(err);
       }
@@ -66,4 +75,9 @@ class RefreshInterceptor extends Interceptor {
     options.headers['Authorization'] = 'Bearer $token';
     return _dio.fetch(options);
   }
+}
+
+/// Session is no longer valid — bounce the user to the login screen.
+void _redirectToLogin() {
+  router.go('/auth/login');
 }

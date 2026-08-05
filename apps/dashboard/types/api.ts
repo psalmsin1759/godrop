@@ -521,6 +521,10 @@ export interface PlatformSettings {
   vendorPlatformFeeRate?: number
   paystackPublicKey?: string
   paystackSecretKey?: string
+  standardDeliveryFeeKobo?: number
+  serviceChargeKobo?: number
+  costPerKmKobo?: number
+  customerServicePhone?: string
   updatedAt: string
 }
 

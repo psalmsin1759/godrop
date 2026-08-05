@@ -14,6 +14,7 @@ router.get("/", async (_req: Request, res: Response) => {
       standardDeliveryFeeKobo: settings?.standardDeliveryFeeKobo ?? 75000,
       serviceChargeKobo: settings?.serviceChargeKobo ?? 25000,
       costPerKmKobo: settings?.costPerKmKobo ?? 10000,
+      customerServicePhone: settings?.customerServicePhone ?? null,
     },
   });
 });

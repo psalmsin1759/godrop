@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ok, fail } from "../utils/response";
 import * as svc from "../services/systemAdminService";
+import * as otpService from "../services/otpService";
 import * as orderService from "../services/orderService";
 import * as notifSvc from "../services/notificationService";
 import { logAction } from "../services/auditLogService";
@@ -114,6 +115,18 @@ export async function updatePlatformSettings(req: Request, res: Response, next: 
     return ok(res, { data: settings });
   } catch (err: any) {
     if (err.message?.includes("between 0 and 1")) return fail(res, err.message, 400);
+    next(err);
+  }
+}
+
+// Lets a SUPER_ADMIN read a valid OTP aloud to a user who called customer
+// service because they never received (or can't receive) the automated SMS.
+export async function issueManualOtp(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { phone } = req.body;
+    const result = await otpService.issueAdminOtp(phone);
+    return ok(res, { data: { phone, code: result.code, expiresIn: result.expiresIn } });
+  } catch (err) {
     next(err);
   }
 }

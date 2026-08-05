@@ -145,6 +145,7 @@ export async function updatePlatformSettings(data: {
   standardDeliveryFeeKobo?: number;
   serviceChargeKobo?: number;
   costPerKmKobo?: number;
+  customerServicePhone?: string;
 }) {
   if (data.riderEarningRate !== undefined && (data.riderEarningRate < 0 || data.riderEarningRate > 1)) {
     throw new Error("riderEarningRate must be between 0 and 1");

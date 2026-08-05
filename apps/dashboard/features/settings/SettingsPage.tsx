@@ -699,6 +699,7 @@ function SystemPlatformSettings() {
   const [deliveryFeeNaira, setDeliveryFeeNaira] = useState('')
   const [serviceChargeNaira, setServiceChargeNaira] = useState('')
   const [costPerKmNaira, setCostPerKmNaira] = useState('')
+  const [customerServicePhone, setCustomerServicePhone] = useState('')
 
   useEffect(() => {
     if (settings) {
@@ -707,9 +708,10 @@ function SystemPlatformSettings() {
       setVendorFeePct(String(Math.round((settings.vendorPlatformFeeRate ?? 0.2) * 100)))
       setPaystackPublicKey(settings.paystackPublicKey ?? '')
       setPaystackSecretKey(settings.paystackSecretKey ?? '')
-      setDeliveryFeeNaira(String(((settings as any).standardDeliveryFeeKobo ?? 75000) / 100))
-      setServiceChargeNaira(String(((settings as any).serviceChargeKobo ?? 25000) / 100))
-      setCostPerKmNaira(String(((settings as any).costPerKmKobo ?? 10000) / 100))
+      setDeliveryFeeNaira(String((settings.standardDeliveryFeeKobo ?? 75000) / 100))
+      setServiceChargeNaira(String((settings.serviceChargeKobo ?? 25000) / 100))
+      setCostPerKmNaira(String((settings.costPerKmKobo ?? 10000) / 100))
+      setCustomerServicePhone(settings.customerServicePhone ?? '')
     }
   }, [settings])
 
@@ -736,7 +738,8 @@ function SystemPlatformSettings() {
       standardDeliveryFeeKobo: Math.round(deliveryFee * 100),
       serviceChargeKobo: Math.round(serviceCharge * 100),
       costPerKmKobo: Math.round(costPerKm * 100),
-    } as any).unwrap()
+      customerServicePhone: customerServicePhone || undefined,
+    }).unwrap()
     flash()
   }
 
@@ -886,6 +889,25 @@ function SystemPlatformSettings() {
             />
             <p className="text-xs text-[#9AA1B4] mt-1">Added on top of delivery fee</p>
           </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Customer Service">
+        <p className="text-xs text-[#9AA1B4]">
+          Shown in the Customer and Rider apps when a user can&apos;t receive their OTP after a few retries,
+          so they can call in and have an admin verify them manually from the OTP Assist tool.
+        </p>
+        <div className="max-w-xs">
+          <label className="block text-xs font-medium text-[#525A72] mb-1">
+            Customer Service Phone Number
+          </label>
+          <input
+            type="tel"
+            value={customerServicePhone}
+            onChange={(e) => setCustomerServicePhone(e.target.value)}
+            placeholder="+2348001234567"
+            className={inputCls()}
+          />
         </div>
       </SectionCard>
 

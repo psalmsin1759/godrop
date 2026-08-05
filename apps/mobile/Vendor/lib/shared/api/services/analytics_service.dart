@@ -20,4 +20,7 @@ abstract class AnalyticsService {
     @Query('to') String? to,
     @Query('granularity') String granularity = 'day',
   });
+
+  @GET('/vendor-admin/analytics/lifetime')
+  Future<LifetimeStatsResponse> getLifetime();
 }

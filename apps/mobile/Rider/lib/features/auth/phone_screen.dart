@@ -86,7 +86,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
                       ),
                       const SizedBox(height: 24),
                       const Text(
-                        'Rider Login',
+                        'Activate Your Account',
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w700,
@@ -96,7 +96,7 @@ class _PhoneScreenState extends State<PhoneScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Enter your registered phone number to receive a login code.',
+                        'Enter the phone number you used when you applied to verify your identity and set up your password.',
                         style: TextStyle(
                           fontSize: 15,
                           color: GodropColors.slate,
@@ -161,6 +161,26 @@ class _PhoneScreenState extends State<PhoneScreen> {
                         label: loading ? 'Sending code...' : 'Send Code',
                         onTap: (_valid && !loading) ? () => _submit(ctx) : null,
                         isLoading: loading,
+                      ),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => ctx.go('/auth/login'),
+                          child: RichText(
+                            text: const TextSpan(
+                              style: TextStyle(
+                                  fontSize: 14, color: GodropColors.slate),
+                              children: [
+                                TextSpan(text: 'Already activated? '),
+                                TextSpan(
+                                    text: 'Sign in',
+                                    style: TextStyle(
+                                        color: GodropColors.blue,
+                                        fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 24),
                       Container(

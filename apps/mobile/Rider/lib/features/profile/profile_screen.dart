@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -130,6 +131,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                   AnimatedEntrance(
                     delay: const Duration(milliseconds: 200),
                     child: _logoutButton(ctx),
+                  ),
+                  const SizedBox(height: 12),
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 220),
+                    child: _deleteAccountButton(ctx),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -606,6 +612,72 @@ class _ProfileScreenState extends State<ProfileScreen>
             },
             child: const Text('Log Out',
                 style: TextStyle(color: GodropColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _deleteAccountButton(BuildContext ctx) {
+    return GestureDetector(
+      onTap: () => _confirmDeleteAccount(ctx),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.red.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.red.withValues(alpha: 0.15)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_forever_rounded, color: Colors.red, size: 18),
+            SizedBox(width: 8),
+            Text('Delete Account',
+                style: TextStyle(
+                    color: Colors.red, fontSize: 14, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteAccount(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      builder: (dCtx) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+            'This will permanently delete your account, KYC documents, and personal data. This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dCtx);
+              try {
+                await ctx.read<ProfileCubit>().deleteAccount();
+                if (!ctx.mounted) return;
+                await ctx.read<AuthCubit>().logout();
+                if (ctx.mounted) ctx.go('/auth/phone');
+              } on DioException catch (e) {
+                if (!ctx.mounted) return;
+                final message = (e.response?.data is Map)
+                    ? ((e.response!.data['error'] ?? e.response!.data['message'])
+                            as String? ??
+                        'Something went wrong. Please try again.')
+                    : 'Something went wrong. Please try again.';
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(
+                      content: Text(message),
+                      backgroundColor: Colors.red.shade700),
+                );
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

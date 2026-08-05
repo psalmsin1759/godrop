@@ -19,17 +19,33 @@ class OrdersScreen extends StatefulWidget {
 class _OrdersScreenState extends State<OrdersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabs;
+  final _activeScroll = ScrollController();
+  final _historyScroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
     context.read<RemoteOrdersCubit>().load();
+    _activeScroll.addListener(() {
+      if (_activeScroll.position.pixels >
+          _activeScroll.position.maxScrollExtent - 300) {
+        context.read<RemoteOrdersCubit>().loadMoreActive();
+      }
+    });
+    _historyScroll.addListener(() {
+      if (_historyScroll.position.pixels >
+          _historyScroll.position.maxScrollExtent - 300) {
+        context.read<RemoteOrdersCubit>().loadMoreHistory();
+      }
+    });
   }
 
   @override
   void dispose() {
     _tabs.dispose();
+    _activeScroll.dispose();
+    _historyScroll.dispose();
     super.dispose();
   }
 
@@ -111,12 +127,16 @@ class _OrdersScreenState extends State<OrdersScreen>
                   children: [
                     _RemoteOrdersList(
                       orders: remoteState is RemoteOrdersLoaded
-                          ? remoteState.active
+                          ? remoteState.active.items
                           : [],
                       loading: remoteState is RemoteOrdersLoading,
                       error: remoteState is RemoteOrdersError
                           ? remoteState.message
                           : null,
+                      loadingMore: remoteState is RemoteOrdersLoaded
+                          ? remoteState.active.loadingMore
+                          : false,
+                      scrollController: _activeScroll,
                       emptyIcon: Icons.local_shipping_outlined,
                       emptyText: 'No active orders',
                       emptySubtitle:
@@ -127,13 +147,16 @@ class _OrdersScreenState extends State<OrdersScreen>
                     ),
                     _RemoteOrdersList(
                       orders: remoteState is RemoteOrdersLoaded
-                          ? ([...remoteState.completed, ...remoteState.cancelled]
-                            ..sort((a, b) => b.createdAt.compareTo(a.createdAt)))
+                          ? remoteState.history.items
                           : [],
                       loading: remoteState is RemoteOrdersLoading,
                       error: remoteState is RemoteOrdersError
                           ? remoteState.message
                           : null,
+                      loadingMore: remoteState is RemoteOrdersLoaded
+                          ? remoteState.history.loadingMore
+                          : false,
+                      scrollController: _historyScroll,
                       emptyIcon: Icons.receipt_long_rounded,
                       emptyText: 'No completed orders yet',
                       emptySubtitle:
@@ -162,6 +185,8 @@ class _RemoteOrdersList extends StatelessWidget {
   final VoidCallback onRetry;
   final Future<void> Function()? onRefresh;
   final bool isActive;
+  final bool loadingMore;
+  final ScrollController? scrollController;
 
   const _RemoteOrdersList({
     required this.orders,
@@ -173,6 +198,8 @@ class _RemoteOrdersList extends StatelessWidget {
     required this.onRetry,
     this.onRefresh,
     this.isActive = false,
+    this.loadingMore = false,
+    this.scrollController,
   });
 
   IconData _iconFor(String type) {
@@ -416,17 +443,31 @@ class _RemoteOrdersList extends StatelessWidget {
     }
 
     final list = ListView.separated(
+      controller: scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: orders.length,
+      itemCount: orders.length + (loadingMore ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (ctx, i) {
+        if (i >= orders.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: GodropColors.blue),
+              ),
+            ),
+          );
+        }
         final order = orders[i];
         final (statusLabel, statusColor) =
             _statusDisplay(order.status, isActive);
         return AnimatedEntrance(
           delay: Duration(milliseconds: i * 70),
           child: _OrderCard(
-            id: '#${order.id.substring(0, 6).toUpperCase()}',
+            id: '#${order.trackingCode ?? order.id.substring(0, 6).toUpperCase()}',
             type: _labelFor(order.type),
             icon: _iconFor(order.type),
             iconBg: _colorFor(order.type),
@@ -436,6 +477,11 @@ class _RemoteOrdersList extends StatelessWidget {
             status: statusLabel,
             statusColor: statusColor,
             badge: order.isMultiParcel ? '×${order.dropoffs!.length} parcels' : null,
+            confirmationCode: !order.isMultiParcel &&
+                    order.confirmationCode != null &&
+                    order.confirmationCode!.isNotEmpty
+                ? order.confirmationCode
+                : null,
             onTap: () => context.push('/orders/${order.id}'),
           ),
         );

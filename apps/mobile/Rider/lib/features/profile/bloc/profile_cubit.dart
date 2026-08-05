@@ -40,6 +40,8 @@ class ProfileCubit extends Cubit<ProfileState> {
     return super.close();
   }
 
+  Future<void> deleteAccount() => _service.deleteAccount();
+
   Future<void> loadProfile() async {
     emit(const ProfileLoading());
     try {

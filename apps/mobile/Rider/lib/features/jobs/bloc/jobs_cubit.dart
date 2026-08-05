@@ -19,6 +19,9 @@ class JobsCubit extends Cubit<JobsState> {
   StreamSubscription? _fcmSub;
   bool _connecting = false;
 
+  static const _pageSize = 20;
+  int _pendingPage = 1;
+
   static Uri _buildWsUri(String? token) {
     final query = token != null ? '?token=${Uri.encodeComponent(token)}' : '';
     return Uri.parse('wss://api.naijagodrop.com/ws/rider/jobs$query');
@@ -112,8 +115,9 @@ class JobsCubit extends Cubit<JobsState> {
   Future<void> loadJobs() async {
     emit(const JobsLoading());
     try {
-      final availableData =
-          await _service.listAvailableOrders() as Map<String, dynamic>;
+      _pendingPage = 1;
+      final availableData = await _service.listAvailableOrders(
+          page: _pendingPage, limit: _pageSize) as Map<String, dynamic>;
       final assignedData =
           await _service.listOrders(status: 'ACCEPTED') as Map<String, dynamic>;
 
@@ -123,10 +127,47 @@ class JobsCubit extends Cubit<JobsState> {
       final assigned = (assignedData['data'] as List)
           .map((j) => RiderOrder.fromJson(j as Map<String, dynamic>))
           .toList();
+      final totalPages =
+          (availableData['meta']?['totalPages'] as num?)?.toInt() ?? 1;
 
-      emit(JobsLoaded(pending: pending, assigned: assigned));
+      emit(JobsLoaded(
+        pending: pending,
+        assigned: assigned,
+        hasMore: _pendingPage < totalPages,
+      ));
     } on DioException catch (e) {
       emit(JobsError(_parseError(e)));
+    }
+  }
+
+  Future<void> loadMorePending() async {
+    final current = state;
+    if (current is! JobsLoaded || !current.hasMore || current.loadingMore) {
+      return;
+    }
+    emit(current.copyWith(loadingMore: true));
+    try {
+      final nextPage = _pendingPage + 1;
+      final availableData = await _service.listAvailableOrders(
+          page: nextPage, limit: _pageSize) as Map<String, dynamic>;
+      final more = (availableData['data'] as List)
+          .map((j) => RiderOrder.fromJson(j as Map<String, dynamic>))
+          .toList();
+      final totalPages =
+          (availableData['meta']?['totalPages'] as num?)?.toInt() ?? nextPage;
+      _pendingPage = nextPage;
+
+      if (state is! JobsLoaded) return;
+      final latest = state as JobsLoaded;
+      emit(latest.copyWith(
+        pending: [...latest.pending, ...more],
+        hasMore: _pendingPage < totalPages,
+        loadingMore: false,
+      ));
+    } on DioException catch (_) {
+      if (state is JobsLoaded) {
+        emit((state as JobsLoaded).copyWith(loadingMore: false));
+      }
     }
   }
 

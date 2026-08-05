@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "2691529395",
-    "project_id": "naijagodrop",
-    "storage_bucket": "naijagodrop.firebasestorage.app"
+    "project_number": "639712829781",
+    "project_id": "godrop-34d3f",
+    "storage_bucket": "godrop-34d3f.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:2691529395:android:ec1ff8ad2a5428548e0ec6",
+        "mobilesdk_app_id": "1:639712829781:android:8fe262266fa445a08a4fdc",
         "android_client_info": {
-          "package_name": "com.qnetix.naijagodrop"
+          "package_name": "com.qnetix.godrop"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
+          "current_key": "AIzaSyAmmF561nW_WrTp_s7_hlAzfPiHXNzqvGM"
         }
       ],
       "services": {
@@ -26,15 +26,15 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:2691529395:android:aa320883f467d3058e0ec6",
+        "mobilesdk_app_id": "1:639712829781:android:b802b25edcde6c5c8a4fdc",
         "android_client_info": {
-          "package_name": "com.qnetix.naijagodroprider"
+          "package_name": "com.qnetix.godroprider"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
+          "current_key": "AIzaSyAmmF561nW_WrTp_s7_hlAzfPiHXNzqvGM"
         }
       ],
       "services": {
@@ -45,15 +45,15 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:2691529395:android:7b3e825e1fc230748e0ec6",
+        "mobilesdk_app_id": "1:639712829781:android:ba4d20b65b75a7b98a4fdc",
         "android_client_info": {
-          "package_name": "com.qnetix.naijagodropvendor"
+          "package_name": "com.qnetix.godropvendor"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBbWk6um3tlkYWUDYdUcwSgSQHd5t38XUk"
+          "current_key": "AIzaSyAmmF561nW_WrTp_s7_hlAzfPiHXNzqvGM"
         }
       ],
       "services": {

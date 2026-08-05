@@ -21,13 +21,16 @@ class DashboardCubit extends Cubit<DashboardState> {
       // Analytics is MANAGER+ — a STAFF login gets 403 and a slimmer home.
       VendorAnalytics? analytics;
       GraphData? graph;
+      LifetimeStats? lifetime;
       try {
         final results = await Future.wait([
           _analytics.getAnalytics(),
           _analytics.getGraph(),
+          _analytics.getLifetime(),
         ]);
         analytics = (results[0] as VendorAnalyticsResponse).data;
         graph = (results[1] as GraphDataResponse).data;
+        lifetime = (results[2] as LifetimeStatsResponse).data;
       } on DioException catch (e) {
         if (e.response?.statusCode != 403) rethrow;
       }
@@ -48,6 +51,7 @@ class DashboardCubit extends Cubit<DashboardState> {
       emit(DashboardLoaded(
         analytics: analytics,
         graph: graph,
+        lifetime: lifetime,
         pendingOrders: pending.data,
         pendingTotal: pending.total,
         unreadNotifications: unread,
@@ -57,6 +61,27 @@ class DashboardCubit extends Cubit<DashboardState> {
       emit(DashboardError(parseDioError(e)));
     } catch (_) {
       emit(DashboardError('Failed to load dashboard. Pull to refresh.'));
+    }
+  }
+
+  /// Re-fetches just the revenue trend at a new granularity (day/week/month/
+  /// year), without reloading the rest of the dashboard.
+  Future<void> setGraphGranularity(String granularity) async {
+    final current = state;
+    if (current is! DashboardLoaded) return;
+    if (current.graphGranularity == granularity && !current.graphLoading) {
+      return;
+    }
+    emit(current.copyWith(graphGranularity: granularity, graphLoading: true));
+    try {
+      final res = await _analytics.getGraph(granularity: granularity);
+      final latest = state;
+      if (latest is! DashboardLoaded) return;
+      emit(latest.copyWith(graph: res.data, graphLoading: false));
+    } on DioException catch (_) {
+      final latest = state;
+      if (latest is! DashboardLoaded) return;
+      emit(latest.copyWith(graphLoading: false));
     }
   }
 

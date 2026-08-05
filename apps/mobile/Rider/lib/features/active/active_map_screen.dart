@@ -11,8 +11,27 @@ import '../../shared/models/rider_models.dart';
 import 'bloc/active_cubit.dart';
 import 'bloc/active_state.dart';
 
+class _Stop {
+  final String? id;
+  final LatLng position;
+  final String address;
+  final String? recipientName;
+  final String status;
+
+  const _Stop({
+    this.id,
+    required this.position,
+    required this.address,
+    this.recipientName,
+    this.status = '',
+  });
+}
+
 class ActiveMapScreen extends StatefulWidget {
-  const ActiveMapScreen({super.key});
+  /// When set, focuses the map on this specific drop-off (a multi-parcel
+  /// order's `RiderParcelDropoff.id`). Null shows the whole route/overview.
+  final String? focusDropoffId;
+  const ActiveMapScreen({super.key, this.focusDropoffId});
 
   @override
   State<ActiveMapScreen> createState() => _ActiveMapScreenState();
@@ -45,7 +64,6 @@ class _ActiveMapScreenState extends State<ActiveMapScreen> {
       );
       if (mounted) {
         setState(() => _riderPosition = LatLng(last.latitude, last.longitude));
-        _fitBounds();
       }
     } catch (_) {}
 
@@ -66,21 +84,49 @@ class _ActiveMapScreenState extends State<ActiveMapScreen> {
     super.dispose();
   }
 
-  void _fitBounds([RiderOrderDetail? order]) {
+  List<_Stop> _stopsFor(RiderOrderDetail order) {
+    if (order.isMultiParcel) {
+      return order.dropoffs!
+          .map((d) => _Stop(
+                id: d.id,
+                position: LatLng(d.lat, d.lng),
+                address: d.address,
+                recipientName: d.recipientName,
+                status: d.status,
+              ))
+          .toList();
+    }
+    return [
+      _Stop(
+        position: LatLng(order.dropoffLat, order.dropoffLng),
+        address: order.dropoffAddress,
+      ),
+    ];
+  }
+
+  _Stop? _findFocused(List<_Stop> stops) {
+    final focusId = widget.focusDropoffId;
+    if (focusId == null) return null;
+    for (final s in stops) {
+      if (s.id == focusId) return s;
+    }
+    return null;
+  }
+
+  void _fitBounds(List<_Stop> targets) {
     final controller = _mapController;
     final rider = _riderPosition;
-    if (controller == null || rider == null || order == null || _fitted) return;
+    if (controller == null || rider == null || targets.isEmpty || _fitted) {
+      return;
+    }
     _fitted = true;
-    final dropoff = LatLng(order.dropoffLat, order.dropoffLng);
-    final minLat = min(rider.latitude, dropoff.latitude);
-    final maxLat = max(rider.latitude, dropoff.latitude);
-    final minLng = min(rider.longitude, dropoff.longitude);
-    final maxLng = max(rider.longitude, dropoff.longitude);
+    final lats = [rider.latitude, ...targets.map((t) => t.position.latitude)];
+    final lngs = [rider.longitude, ...targets.map((t) => t.position.longitude)];
     controller.animateCamera(
       CameraUpdate.newLatLngBounds(
         LatLngBounds(
-          southwest: LatLng(minLat - 0.01, minLng - 0.01),
-          northeast: LatLng(maxLat + 0.01, maxLng + 0.01),
+          southwest: LatLng(lats.reduce(min) - 0.01, lngs.reduce(min) - 0.01),
+          northeast: LatLng(lats.reduce(max) + 0.01, lngs.reduce(max) + 0.01),
         ),
         80,
       ),
@@ -92,6 +138,18 @@ class _ActiveMapScreenState extends State<ActiveMapScreen> {
     final rider = _riderPosition;
     if (controller == null || rider == null) return;
     controller.animateCamera(CameraUpdate.newLatLngZoom(rider, 15));
+  }
+
+  double _hueFor(_Stop s, bool focused) {
+    if (focused) return BitmapDescriptor.hueOrange;
+    switch (s.status) {
+      case 'DELIVERED':
+        return BitmapDescriptor.hueGreen;
+      case 'FAILED':
+        return BitmapDescriptor.hueRose;
+      default:
+        return BitmapDescriptor.hueAzure;
+    }
   }
 
   @override
@@ -116,44 +174,58 @@ class _ActiveMapScreenState extends State<ActiveMapScreen> {
             );
           }
 
-          final dropoff = LatLng(order.dropoffLat, order.dropoffLng);
-          _fitBounds(order);
+          final stops = _stopsFor(order);
+          final focused = _findFocused(stops);
+          final unresolvedStops = stops
+              .where((s) => s.status != 'DELIVERED' && s.status != 'FAILED')
+              .toList();
+          _fitBounds(focused != null ? [focused] : stops);
 
           final markers = <Marker>{
-            Marker(
-              markerId: const MarkerId('dropoff'),
-              position: dropoff,
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueRed),
-              infoWindow: InfoWindow(
-                title: 'Dropoff',
-                snippet: order.dropoffAddress,
+            for (final s in stops)
+              Marker(
+                markerId: MarkerId(s.id ?? 'dropoff'),
+                position: s.position,
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                    _hueFor(s, s.id != null && s.id == focused?.id)),
+                infoWindow: InfoWindow(
+                  title: s.recipientName ?? 'Drop-off',
+                  snippet: s.address,
+                ),
               ),
-            ),
           };
 
+          final routeTargets =
+              focused != null ? [focused] : unresolvedStops;
           final polylines = <Polyline>{
             if (_riderPosition != null)
-              Polyline(
-                polylineId: const PolylineId('route'),
-                points: [_riderPosition!, dropoff],
-                color: GodropColors.blue,
-                width: 4,
-                patterns: [PatternItem.dash(20), PatternItem.gap(10)],
-              ),
+              for (final s in routeTargets)
+                Polyline(
+                  polylineId: PolylineId('route_${s.id ?? 'dropoff'}'),
+                  points: [_riderPosition!, s.position],
+                  color: GodropColors.blue,
+                  width: 4,
+                  patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+                ),
           };
+
+          final headerLabel = focused != null
+              ? '${focused.recipientName != null ? '${focused.recipientName} · ' : ''}${focused.address}'
+              : order.isMultiParcel
+                  ? '${unresolvedStops.length} of ${stops.length} drop-offs left'
+                  : order.dropoffAddress;
 
           return Stack(
             children: [
               Positioned.fill(
                 child: GoogleMap(
                   initialCameraPosition: CameraPosition(
-                    target: _riderPosition ?? dropoff,
+                    target: _riderPosition ?? stops.first.position,
                     zoom: 14,
                   ),
                   onMapCreated: (controller) {
                     _mapController = controller;
-                    _fitBounds(order);
+                    _fitBounds(focused != null ? [focused] : stops);
                   },
                   markers: markers,
                   polylines: polylines,
@@ -200,7 +272,7 @@ class _ActiveMapScreenState extends State<ActiveMapScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          order.dropoffAddress,
+                          headerLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

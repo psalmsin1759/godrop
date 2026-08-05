@@ -29,6 +29,17 @@ class AuthAuthenticated extends AuthState {
   List<Object?> get props => [rider];
 }
 
+class AuthPasswordSetupRequired extends AuthState {
+  final String riderId;
+  const AuthPasswordSetupRequired(this.riderId);
+  @override
+  List<Object?> get props => [riderId];
+}
+
+class AuthForgotPasswordSent extends AuthState {
+  const AuthForgotPasswordSent();
+}
+
 class AuthError extends AuthState {
   final String message;
   const AuthError(this.message);

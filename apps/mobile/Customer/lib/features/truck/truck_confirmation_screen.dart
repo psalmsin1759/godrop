@@ -12,6 +12,7 @@ import '../../shared/models/order_models.dart';
 import '../../shared/models/wallet_models.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/widgets/godrop_button.dart';
+import '../../shared/widgets/payment_method_selector.dart';
 import '../orders/bloc/order_cubit.dart';
 import '../orders/models/active_order.dart';
 import 'models/truck_booking_data.dart';
@@ -28,7 +29,30 @@ class TruckConfirmationScreen extends StatefulWidget {
 class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
   bool _placing = false;
 
+  // 'card' | 'wallet' | 'wallet_card'
+  String _paymentMethod = 'card';
+  double _walletBalance = 0;
+
   TruckBookingData get b => widget.booking;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final balance = await WalletService(DioClient.instance).getBalance();
+      if (mounted) setState(() => _walletBalance = balance.balance);
+    } catch (_) {}
+  }
+
+  bool get _walletInsufficient {
+    final bd = b.priceBreakdown;
+    if (bd == null || _paymentMethod != 'wallet') return false;
+    return (_walletBalance * 100).round() < bd.totalKobo;
+  }
 
   String _fmt(int kobo) {
     final n = (kobo ~/ 100).toString();
@@ -46,6 +70,10 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
 
   Future<void> _confirmBooking() async {
     if (_placing) return;
+    if (_walletInsufficient) {
+      _showError('Insufficient wallet balance for this option.');
+      return;
+    }
     setState(() => _placing = true);
 
     try {
@@ -67,7 +95,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
         dropoff: LocationPoint(
             lat: b.dropoff.lat, lng: b.dropoff.lng, address: b.dropoff.name),
         scheduledAt: scheduledAt,
-        paymentMethod: 'card',
+        paymentMethod: _paymentMethod,
       ));
 
       if (!mounted) return;
@@ -79,7 +107,7 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
         return;
       }
 
-      await _startCardPayment(orderId);
+      await _startPayment(orderId);
     } on DioException catch (e) {
       if (!mounted) return;
       setState(() => _placing = false);
@@ -91,13 +119,14 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
     }
   }
 
-  /// Initializes a Paystack payment for the truck order just created. If a
-  /// hosted checkout URL comes back, shows it in a WebView and only
-  /// completes the booking once the payment is verified as successful.
-  Future<void> _startCardPayment(String orderId) async {
+  /// Initializes payment for the truck order just created using the chosen
+  /// method (card, wallet, or wallet + card). If a hosted Paystack checkout
+  /// URL comes back, shows it in a WebView and only completes the booking
+  /// once the payment is verified as successful.
+  Future<void> _startPayment(String orderId) async {
     try {
       final payRes = await PaymentService(DioClient.instance).initPayment(
-        PaymentInitBody(orderId: orderId, method: 'card'),
+        PaymentInitBody(orderId: orderId, method: _paymentMethod),
       );
 
       if (!mounted) return;
@@ -245,6 +274,13 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
     final topPad = MediaQuery.of(context).padding.top;
     final bottomPad = MediaQuery.of(context).padding.bottom;
     final bd = b.priceBreakdown;
+    final split = bd != null
+        ? PaymentSplit.compute(
+            method: _paymentMethod,
+            totalKobo: bd.totalKobo,
+            walletBalanceNaira: _walletBalance,
+          )
+        : null;
 
     return Scaffold(
       backgroundColor: GodropColors.background,
@@ -526,13 +562,25 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                       title: 'Payment Method',
                       icon: Icons.payments_rounded,
                       children: [
-                        _PaymentOption(
-                          icon: Icons.credit_card_rounded,
-                          label: 'Pay with Card',
-                          sublabel: 'Paystack · Debit / Credit card',
-                          selected: true,
-                          onTap: () {},
-                        ),
+                        if (bd != null)
+                          PaymentMethodSelector(
+                            selected: _paymentMethod,
+                            onChanged: (m) => setState(() => _paymentMethod = m),
+                            totalKobo: bd.totalKobo,
+                            walletBalance: _walletBalance,
+                          )
+                        else
+                          Shimmer.fromColors(
+                            baseColor: Colors.grey.shade200,
+                            highlightColor: Colors.grey.shade50,
+                            child: Container(
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -597,7 +645,12 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                             TextStyle(fontSize: 13, color: GodropColors.slate)),
                     bd != null
                         ? Text(
-                            _fmt(bd.totalKobo),
+                            _paymentMethod == 'wallet_card' &&
+                                    split!.cardCoversKobo > 0
+                                ? '${_fmt(split.cardCoversKobo)} via card'
+                                : _paymentMethod == 'wallet'
+                                    ? 'From wallet'
+                                    : _fmt(bd.totalKobo),
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
@@ -620,9 +673,13 @@ class _TruckConfirmationScreenState extends State<TruckConfirmationScreen> {
                 ),
                 const SizedBox(height: 10),
                 GodropButton(
-                  label: _placing ? 'Booking...' : 'Confirm & Book',
-                  onTap: _placing ? null : _confirmBooking,
-                  color: GodropColors.orange,
+                  label: _placing
+                      ? 'Booking...'
+                      : _walletInsufficient
+                          ? 'Insufficient wallet balance'
+                          : 'Confirm & Book',
+                  onTap: (_placing || _walletInsufficient) ? null : _confirmBooking,
+                  color: _walletInsufficient ? GodropColors.border : GodropColors.orange,
                 ),
               ],
             ),
@@ -788,90 +845,6 @@ class _PriceRow extends StatelessWidget {
   }
 }
 
-// ── Payment option ────────────────────────────────────────────────────────────
-
-class _PaymentOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String sublabel;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _PaymentOption({
-    required this.icon,
-    required this.label,
-    required this.sublabel,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: selected
-              ? GodropColors.blue.withValues(alpha: 0.06)
-              : GodropColors.background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? GodropColors.blue : GodropColors.border,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                gradient: selected ? GodropColors.blueGradient : null,
-                color: selected ? null : Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon,
-                  size: 20,
-                  color: selected ? Colors.white : GodropColors.slate),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: selected ? GodropColors.blue : GodropColors.ink,
-                    ),
-                  ),
-                  Text(sublabel,
-                      style: const TextStyle(
-                          fontSize: 12, color: GodropColors.mute)),
-                ],
-              ),
-            ),
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selected ? GodropColors.blue : GodropColors.border,
-                  width: selected ? 5 : 1.5,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ── Paystack WebView sheet ────────────────────────────────────────────────────
 

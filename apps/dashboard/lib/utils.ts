@@ -56,3 +56,14 @@ export function formatDateTime(date: Date | string): string {
     hour: '2-digit', minute: '2-digit', hour12: true,
   })
 }
+
+/** Customers can exist with no name yet (phone/OTP signup before profile completion). */
+export function personName(firstName: string | null, lastName: string | null): string {
+  const name = [firstName, lastName].filter(Boolean).join(' ')
+  return name || 'Unnamed customer'
+}
+
+export function personInitials(firstName: string | null, lastName: string | null): string {
+  const initials = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`
+  return initials || '?'
+}

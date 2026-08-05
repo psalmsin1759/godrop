@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import {
   LayoutDashboard,
@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Settings,
   ChevronRight,
+  ChevronDown,
   LogOut,
   Tag,
   UserCog,
@@ -118,6 +119,8 @@ const businessAdministration: NavLinkItem[] = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
+const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections'
+
 export default function Sidebar({
   isOpen,
   onClose,
@@ -132,6 +135,24 @@ export default function Sidebar({
   const pathname = usePathname()
   const { data: session } = useSession()
   const [hovered, setHovered] = useState(false)
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_SECTIONS_KEY)
+      if (raw) setCollapsedSections(new Set(JSON.parse(raw)))
+    } catch {}
+  }, [])
+
+  function toggleSection(label: string) {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify(Array.from(next)))
+      return next
+    })
+  }
 
   const isBusiness = session?.admin?.type === 'BUSINESS'
   const isVendor = session?.admin?.type === 'VENDOR'
@@ -246,24 +267,34 @@ export default function Sidebar({
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col gap-0.5 min-h-0">
-        {sections.map((section, i) =>
-          section.items.length === 0 ? null : (
+        {sections.map((section, i) => {
+          if (section.items.length === 0) return null
+          const collapsed = expanded && collapsedSections.has(section.label)
+          return (
             <div key={section.label}>
               {expanded && (
-                <p
-                  className={`text-[10px] font-bold uppercase tracking-widest text-white/30 px-3 mb-1.5 ${
+                <button
+                  type="button"
+                  onClick={() => toggleSection(section.label)}
+                  className={`w-full flex items-center justify-between gap-1 px-3 mb-1.5 group/section ${
                     i === 0 ? '' : 'mt-4'
                   }`}
                 >
-                  {section.label}
-                </p>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/30 group-hover/section:text-white/60 transition-colors">
+                    {section.label}
+                  </span>
+                  <ChevronDown
+                    className={`w-3 h-3 text-white/30 group-hover/section:text-white/60 transition-transform ${
+                      collapsed ? '-rotate-90' : ''
+                    }`}
+                  />
+                </button>
               )}
-              {section.items.map((item) => (
-                <NavItem key={item.href} {...item} />
-              ))}
+              {!collapsed &&
+                section.items.map((item) => <NavItem key={item.href} {...item} />)}
             </div>
           )
-        )}
+        })}
       </nav>
 
       {/* Status + user footer */}

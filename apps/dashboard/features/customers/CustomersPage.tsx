@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGetCustomersQuery } from './store/customersApi'
 import type { CustomerStatus } from '@/types/api'
-import { formatAmount, formatDate } from '@/lib/utils'
+import { formatAmount, formatDate, personName, personInitials } from '@/lib/utils'
 import { exportToCsv } from '@/lib/exportCsv'
 import {
   Search, ChevronLeft, ChevronRight, Loader2, Users,
@@ -96,7 +96,7 @@ export default function CustomersPage() {
         <button
           type="button"
           onClick={() => exportToCsv('customers', customers, [
-            { header: 'Name', value: (c) => `${c.firstName} ${c.lastName}` },
+            { header: 'Name', value: (c) => personName(c.firstName, c.lastName) },
             { header: 'Email', value: (c) => c.email ?? '' },
             { header: 'Phone', value: (c) => c.phone },
             { header: 'Status', value: (c) => c.status },
@@ -142,10 +142,10 @@ export default function CustomersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-[#E7EEFF] flex items-center justify-center shrink-0 text-[11px] font-bold text-[#1E5FFF]">
-                          {c.firstName[0]}{c.lastName[0]}
+                          {personInitials(c.firstName, c.lastName)}
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-[#0D1426]">{c.firstName} {c.lastName}</p>
+                          <p className="text-xs font-semibold text-[#0D1426]">{personName(c.firstName, c.lastName)}</p>
                           {c.email && <p className="text-[10px] text-[#9AA1B4]">{c.email}</p>}
                         </div>
                       </div>

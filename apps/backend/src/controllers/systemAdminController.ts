@@ -355,6 +355,7 @@ export async function listOrders(req: Request, res: Response, next: NextFunction
       type: q.type,
       customerId: q.customerId,
       vendorId: q.vendorId,
+      search: q.search,
       page,
       limit,
     });

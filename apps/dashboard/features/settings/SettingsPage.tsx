@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { formatNaira } from '@/lib/utils'
 import {
@@ -668,8 +669,12 @@ const VENDOR_TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'security', label: 'Security', icon: <Lock className="w-3.5 h-3.5" /> },
 ]
 
-function VendorSettingsPage({ role }: { role: string }) {
-  const [tab, setTab] = useState<TabId>('store')
+const VENDOR_TAB_IDS: TabId[] = ['store', 'notifications', 'profile', 'security']
+
+function VendorSettingsPage({ role, initialTab }: { role: string; initialTab?: string | null }) {
+  const [tab, setTab] = useState<TabId>(
+    VENDOR_TAB_IDS.includes(initialTab as TabId) ? (initialTab as TabId) : 'store'
+  )
   const isOwner = role === 'OWNER'
 
   return (
@@ -967,8 +972,12 @@ const SYSTEM_TABS: { id: SystemTabId; label: string; icon: React.ReactNode }[] =
   { id: 'security', label: 'Security', icon: <Lock className="w-3.5 h-3.5" /> },
 ]
 
-function SystemSettingsPage() {
-  const [tab, setTab] = useState<SystemTabId>('platform')
+const SYSTEM_TAB_IDS: SystemTabId[] = ['platform', 'profile', 'notifications', 'security']
+
+function SystemSettingsPage({ initialTab }: { initialTab?: string | null }) {
+  const [tab, setTab] = useState<SystemTabId>(
+    SYSTEM_TAB_IDS.includes(initialTab as SystemTabId) ? (initialTab as SystemTabId) : 'platform'
+  )
 
   return (
     <>
@@ -1000,6 +1009,8 @@ function SystemSettingsPage() {
 
 export default function SettingsPage() {
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
+  const initialTab = searchParams.get('tab')
   const isVendor = session?.admin?.type === 'VENDOR'
   const role = session?.admin?.role ?? ''
 
@@ -1011,7 +1022,11 @@ export default function SettingsPage() {
           {isVendor ? 'Manage your store and account' : 'Platform and account configuration'}
         </p>
       </div>
-      {isVendor ? <VendorSettingsPage role={role} /> : <SystemSettingsPage />}
+      {isVendor ? (
+        <VendorSettingsPage role={role} initialTab={initialTab} />
+      ) : (
+        <SystemSettingsPage initialTab={initialTab} />
+      )}
     </div>
   )
 }

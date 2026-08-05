@@ -8,8 +8,8 @@ class AllServicesScreen extends StatelessWidget {
   static const _services = [
     _Service(icon: Icons.inventory_2_rounded, iconBg: Color(0xFFE8EFFF), iconColor: GodropColors.blue, label: 'Send a Parcel', sub: 'Door-to-door in 30 min', tag: 'From ₦1,050', route: '/parcel/addresses'),
     _Service(icon: Icons.local_shipping_rounded, iconBg: Color(0xFFE8EFFF), iconColor: GodropColors.blue, label: 'Book a Truck', sub: 'Relocate or move goods', tag: 'From ₦15,000', route: '/truck'),
-    _Service(icon: Icons.restaurant_rounded, iconBg: Color(0xFFFFF0E8), iconColor: GodropColors.orange, label: 'Order Food', sub: '480+ restaurants near you', tag: 'Free delivery*', route: '/food/restaurants'),
-    _Service(icon: Icons.shopping_basket_rounded, iconBg: Color(0xFFE8F5FF), iconColor: Color(0xFF0EA5E9), label: 'Grocery Run', sub: 'Shoprite, Ebeano, markets', tag: '2-hr delivery', route: '/grocery'),
+    _Service(icon: Icons.restaurant_rounded, iconBg: Color(0xFFFFF0E8), iconColor: GodropColors.orange, label: 'Order Food', sub: 'Cooked fresh, delivered', tag: 'Free delivery*', route: '/food/restaurants'),
+    _Service(icon: Icons.shopping_basket_rounded, iconBg: Color(0xFFE8F5FF), iconColor: Color(0xFF0EA5E9), label: 'Grocery Run', sub: 'Groceries & essentials', tag: '2-hr delivery', route: '/grocery'),
     _Service(icon: Icons.storefront_rounded, iconBg: Color(0xFFE8F5FF), iconColor: Color(0xFF8B5CF6), label: 'Retail Shopping', sub: 'Fashion, gadgets, home', tag: 'Same-day', route: '/services'),
   ];
 

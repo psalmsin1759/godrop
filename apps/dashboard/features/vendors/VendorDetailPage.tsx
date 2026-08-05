@@ -388,7 +388,9 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                 </div>
                 <div>
                   <p className="text-[11px] text-[#9AA1B4]">Coordinates</p>
-                  <p className="text-xs text-[#525A72] font-mono">{vendor.lat.toFixed(5)}, {vendor.lng.toFixed(5)}</p>
+                  <p className="text-xs text-[#525A72] font-mono">
+                    {vendor.lat != null && vendor.lng != null ? `${vendor.lat.toFixed(5)}, ${vendor.lng.toFixed(5)}` : '—'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -458,7 +460,7 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                 <div key={day} className="flex items-center justify-between px-4 py-2.5">
                   <span className="text-xs font-medium text-[#0D1426]">{DAY_LABELS[day] ?? day}</span>
                   <span className="text-xs text-[#525A72] font-mono">
-                    {hours.open} – {hours.close}
+                    {hours?.open ?? '—'} – {hours?.close ?? '—'}
                   </span>
                 </div>
               ))}

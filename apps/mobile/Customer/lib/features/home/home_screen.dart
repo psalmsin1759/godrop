@@ -7,6 +7,8 @@ import '../../shared/services/user_prefs.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../orders/bloc/remote_orders_cubit.dart';
 import '../orders/bloc/remote_orders_state.dart';
+import '../profile/bloc/notifications_cubit.dart';
+import '../profile/bloc/notifications_state.dart';
 import '../food/bloc/cart_cubit.dart';
 import '../food/bloc/cart_state.dart';
 import '../food/models/restaurant_data.dart';
@@ -81,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     context.read<RemoteOrdersCubit>().load();
+    context.read<NotificationsCubit>().load();
     _loadBanner();
   }
 
@@ -119,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _Category(
         icon: Icons.restaurant_rounded,
         label: 'Food',
-        sub: '480+ restaurants',
+        sub: 'Cooked fresh, delivered',
         route: '/food/restaurants',
         tag: 'HOT',
         tagColor: GodropColors.orange,
@@ -127,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _Category(
         icon: Icons.shopping_basket_rounded,
         label: 'Grocery',
-        sub: 'Shoprite, Ebeano',
+        sub: 'Groceries & essentials',
         route: '/grocery/stores',
         tag: 'NEW',
         tagColor: Color(0xFF0EA5E9),
@@ -416,17 +419,59 @@ class _HomeHeaderState extends State<_HomeHeader> {
                                   fontWeight: FontWeight.w700)),
                           const Spacer(),
                           // Notification icon
-                          GestureDetector(
-                            onTap: () => context.go('/notifications'),
-                            child: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.18),
-                                  shape: BoxShape.circle,
+                          BlocBuilder<NotificationsCubit, NotificationsState>(
+                            builder: (context, notifState) {
+                              final unread = notifState is NotificationsLoaded
+                                  ? notifState.unreadCount
+                                  : 0;
+                              return GestureDetector(
+                                onTap: () => context.go('/notifications'),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.18),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                          Icons.notifications_outlined,
+                                          color: Colors.white,
+                                          size: 20),
+                                    ),
+                                    if (unread > 0)
+                                      Positioned(
+                                        top: -2,
+                                        right: -2,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(3),
+                                          constraints: const BoxConstraints(
+                                              minWidth: 18, minHeight: 18),
+                                          decoration: BoxDecoration(
+                                            color: GodropColors.orange,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                                color: GodropColors.blueDark,
+                                                width: 1.5),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              unread > 9 ? '9+' : '$unread',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w700),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                                child: const Icon(Icons.notifications_outlined,
-                                    color: Colors.white, size: 20)),
+                              );
+                            },
                           ),
                           const SizedBox(width: 8),
                           // ── Feature 6: Cart icon with badge ──────────────

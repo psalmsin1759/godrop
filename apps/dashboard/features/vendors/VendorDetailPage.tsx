@@ -425,6 +425,12 @@ export default function VendorDetailPage({ vendorId }: { vendorId: string }) {
                   <span className="text-xs font-semibold text-[#0D1426]">{vendor.estimatedMinutes} min</span>
                 </div>
               )}
+              {vendor.disputeCount != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-[#9AA1B4]">Disputes</span>
+                  <span className="text-xs font-semibold text-[#0D1426]">{vendor.disputeCount}</span>
+                </div>
+              )}
               {vendor.cuisines && vendor.cuisines.length > 0 && (
                 <div>
                   <p className="text-[11px] text-[#9AA1B4] mb-1">Cuisines</p>

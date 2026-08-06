@@ -1,5 +1,6 @@
 export 'client/dio_client.dart';
 export 'services/auth_service.dart';
+export 'services/disputes_service.dart';
 export 'services/favorites_service.dart';
 export 'services/food_service.dart';
 export 'services/grocery_service.dart';

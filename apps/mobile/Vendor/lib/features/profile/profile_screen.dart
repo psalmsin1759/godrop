@@ -96,6 +96,11 @@ class ProfileScreen extends StatelessWidget {
               label: 'Notifications',
               onTap: () => context.push('/notifications'),
             ),
+            _MenuItem(
+              icon: Icons.support_agent_rounded,
+              label: 'My Reports',
+              onTap: () => context.push('/disputes'),
+            ),
           ]),
           const SizedBox(height: 16),
           _MenuGroup(items: [

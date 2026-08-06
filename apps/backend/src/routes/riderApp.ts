@@ -1,8 +1,14 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import { validate } from "../middleware/validate";
 import { requireRiderAuth } from "../middleware/riderAuth";
-import { documentUpload } from "../middleware/upload";
+import { documentUpload, upload } from "../middleware/upload";
 import * as ctrl from "../controllers/riderAppController";
+import * as disputeCtrl from "../controllers/disputeController";
+import {
+  createMyDisputeSchema,
+  myDisputeQuerySchema,
+  addMyMessageSchema,
+} from "../validators/disputeValidators";
 import {
   riderRequestOtpSchema,
   riderVerifyOtpSchema,
@@ -106,6 +112,14 @@ router.get("/earnings/withdrawals", validate(earningsQuerySchema, "query"), ctrl
 
 // Analytics
 router.get("/analytics", ctrl.getAnalytics);
+
+// Disputes
+const riderActor = (req: Request) => ({ type: "RIDER" as const, id: req.rider!.id });
+router.post("/disputes/upload", upload.single("file"), disputeCtrl.uploadDisputeEvidence);
+router.post("/disputes", validate(createMyDisputeSchema), disputeCtrl.createMyDispute(riderActor));
+router.get("/disputes", validate(myDisputeQuerySchema, "query"), disputeCtrl.listMyDisputes(riderActor));
+router.get("/disputes/:id", disputeCtrl.getMyDispute(riderActor));
+router.post("/disputes/:id/messages", validate(addMyMessageSchema), disputeCtrl.addMyMessage(riderActor));
 
 // Notifications
 router.get("/notifications", validate(notificationsQuerySchema, "query"), ctrl.listNotifications);

@@ -140,6 +140,52 @@ export async function getEarningsSummary(riderId: string) {
   };
 }
 
+type DailyEarningRow = { date: string; deliveries: bigint; earnings_kobo: bigint };
+
+export async function getRiderAnalytics(riderId: string, days: number) {
+  const from = new Date();
+  from.setDate(from.getDate() - (days - 1));
+  from.setHours(0, 0, 0, 0);
+
+  const [rider, dailyRows, typeGroups, deliveredCount, periodEarnings] = await Promise.all([
+    prisma.rider.findUnique({ where: { id: riderId }, select: { rating: true, ratingCount: true } }),
+    prisma.$queryRaw<DailyEarningRow[]>`
+      SELECT
+        TO_CHAR(DATE_TRUNC('day', "createdAt" AT TIME ZONE 'Africa/Lagos'), 'YYYY-MM-DD') AS date,
+        COUNT(*)::bigint AS deliveries,
+        COALESCE(SUM("amountKobo"), 0)::bigint AS earnings_kobo
+      FROM "RiderEarning"
+      WHERE "riderId" = ${riderId} AND "createdAt" >= ${from}
+      GROUP BY DATE_TRUNC('day', "createdAt" AT TIME ZONE 'Africa/Lagos')
+      ORDER BY DATE_TRUNC('day', "createdAt" AT TIME ZONE 'Africa/Lagos')
+    `,
+    prisma.order.groupBy({
+      by: ["type"],
+      where: { riderId, status: "DELIVERED", createdAt: { gte: from } },
+      orderBy: { type: "asc" },
+      _count: { _all: true },
+    }),
+    prisma.order.count({ where: { riderId, status: "DELIVERED", createdAt: { gte: from } } }),
+    prisma.riderEarning.aggregate({
+      where: { riderId, createdAt: { gte: from } },
+      _sum: { amountKobo: true },
+    }),
+  ]);
+
+  return {
+    rating: rider?.rating ?? 0,
+    ratingCount: rider?.ratingCount ?? 0,
+    deliveredCount,
+    periodEarningsKobo: periodEarnings._sum.amountKobo ?? 0,
+    dailyEarnings: dailyRows.map((r) => ({
+      date: r.date,
+      deliveries: Number(r.deliveries),
+      earningsKobo: Number(r.earnings_kobo),
+    })),
+    ordersByType: typeGroups.map((g) => ({ type: g.type, count: g._count._all })),
+  };
+}
+
 export async function requestWithdrawal(
   riderId: string,
   amountKobo: number,

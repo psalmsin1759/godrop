@@ -1,22 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../services/disputes_unread_service.dart';
 
-class RiderShell extends StatelessWidget {
+class RiderShell extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
 
   const RiderShell({super.key, required this.navigationShell});
 
   @override
+  State<RiderShell> createState() => _RiderShellState();
+}
+
+class _RiderShellState extends State<RiderShell> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    DisputesUnreadService.refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) DisputesUnreadService.refresh();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GodropColors.background,
-      body: navigationShell,
+      body: widget.navigationShell,
       bottomNavigationBar: _RiderBottomNav(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (i) => navigationShell.goBranch(
+        currentIndex: widget.navigationShell.currentIndex,
+        onTap: (i) => widget.navigationShell.goBranch(
           i,
-          initialLocation: i == navigationShell.currentIndex,
+          initialLocation: i == widget.navigationShell.currentIndex,
         ),
       ),
     );
@@ -27,7 +51,9 @@ class _NavItemData {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  const _NavItemData(this.icon, this.activeIcon, this.label);
+  final bool showDisputesBadge;
+  const _NavItemData(this.icon, this.activeIcon, this.label,
+      {this.showDisputesBadge = false});
 }
 
 const _kNavItems = [
@@ -37,7 +63,8 @@ const _kNavItems = [
       Icons.account_balance_wallet_rounded, 'Earnings'),
   _NavItemData(
       Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Analytics'),
-  _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+  _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile',
+      showDisputesBadge: true),
 ];
 
 class _RiderBottomNav extends StatelessWidget {
@@ -148,11 +175,18 @@ class _NavItemState extends State<_NavItem>
                 children: [
                   ScaleTransition(
                     scale: _bounce,
-                    child: Icon(
-                      selected ? widget.data.activeIcon : widget.data.icon,
-                      color: color,
-                      size: 22,
-                    ),
+                    child: widget.data.showDisputesBadge
+                        ? _DisputesBadgeIcon(
+                            icon: selected
+                                ? widget.data.activeIcon
+                                : widget.data.icon,
+                            color: color,
+                          )
+                        : Icon(
+                            selected ? widget.data.activeIcon : widget.data.icon,
+                            color: color,
+                            size: 22,
+                          ),
                   ),
                   AnimatedSize(
                     duration: const Duration(milliseconds: 220),
@@ -177,6 +211,50 @@ class _NavItemState extends State<_NavItem>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DisputesBadgeIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  const _DisputesBadgeIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: DisputesUnreadService.count,
+      builder: (ctx, count, __) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(icon, color: color, size: 22),
+            if (count > 0)
+              Positioned(
+                top: -4,
+                right: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  constraints: const BoxConstraints(minWidth: 16),
+                  decoration: BoxDecoration(
+                    color: GodropColors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: GodropColors.white, width: 1.5),
+                  ),
+                  child: Text(
+                    count > 99 ? '99+' : '$count',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

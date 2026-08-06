@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../shared/api/api.dart';
 import '../../shared/models/dispute_models.dart';
+import '../../shared/services/disputes_unread_service.dart';
 import '../../shared/widgets/empty_state.dart';
 import 'dispute_ui.dart';
 
@@ -84,7 +85,9 @@ class _MyDisputesScreenState extends State<MyDisputesScreen> {
                           final d = _disputes[i];
                           final (label, color) = disputeStatusDisplay(d.status);
                           return GestureDetector(
-                            onTap: () => context.push('/disputes/${d.id}'),
+                            onTap: () => context
+                                .push('/disputes/${d.id}')
+                                .then((_) => DisputesUnreadService.refresh()),
                             child: Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(

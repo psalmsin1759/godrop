@@ -118,6 +118,7 @@ const riderActor = (req: Request) => ({ type: "RIDER" as const, id: req.rider!.i
 router.post("/disputes/upload", upload.single("file"), disputeCtrl.uploadDisputeEvidence);
 router.post("/disputes", validate(createMyDisputeSchema), disputeCtrl.createMyDispute(riderActor));
 router.get("/disputes", validate(myDisputeQuerySchema, "query"), disputeCtrl.listMyDisputes(riderActor));
+router.get("/disputes/unread-count", disputeCtrl.getMyDisputesUnreadCount(riderActor));
 router.get("/disputes/:id", disputeCtrl.getMyDispute(riderActor));
 router.post("/disputes/:id/messages", validate(addMyMessageSchema), disputeCtrl.addMyMessage(riderActor));
 

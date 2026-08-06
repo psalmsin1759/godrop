@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
+import '../../shared/services/disputes_unread_service.dart';
 import '../../shared/widgets/animated_entrance.dart';
 import '../../shared/widgets/availability_toggle.dart';
 import '../../shared/widgets/rider_header.dart';
@@ -532,8 +533,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       child: Column(
         children: items.map((item) {
           final (icon, label, route) = item;
+          final isDisputes = route == '/disputes';
           return GestureDetector(
-            onTap: () => ctx.push(route),
+            onTap: () => isDisputes
+                ? ctx
+                    .push(route)
+                    .then((_) => DisputesUnreadService.refresh())
+                : ctx.push(route),
             child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -556,6 +562,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                             fontWeight: FontWeight.w500,
                             color: GodropColors.ink)),
                   ),
+                  if (isDisputes)
+                    ValueListenableBuilder<int>(
+                      valueListenable: DisputesUnreadService.count,
+                      builder: (_, count, __) => count > 0
+                          ? Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: _UnreadCountPill(count: count),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   const Icon(Icons.chevron_right_rounded,
                       color: GodropColors.mute, size: 18),
                 ],
@@ -750,5 +766,31 @@ class _StatDivider extends StatelessWidget {
         width: 1,
         height: 28,
         color: GodropColors.white.withValues(alpha: 0.2));
+  }
+}
+
+class _UnreadCountPill extends StatelessWidget {
+  final int count;
+  const _UnreadCountPill({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      constraints: const BoxConstraints(minWidth: 20),
+      decoration: BoxDecoration(
+        color: GodropColors.orange,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }

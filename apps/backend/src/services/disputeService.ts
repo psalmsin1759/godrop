@@ -452,7 +452,50 @@ export async function listDisputesForActor(
 export async function getDisputeForActor(disputeId: string, actor: DisputeActor) {
   await assertOwnership(disputeId, actor);
   const dispute = await getDisputeDetail(disputeId);
+  // Viewing the conversation clears its unread badge for this raiser.
+  await prisma.dispute.update({ where: { id: disputeId }, data: { raiserLastReadAt: new Date() } });
   return { ...dispute, messages: dispute.messages.filter((m) => !m.isInternal) };
+}
+
+function actorWhere(actor: DisputeActor) {
+  const where: any = { raisedByType: actor.type };
+  if (actor.type === "CUSTOMER") where.raisedByCustomerId = actor.id;
+  if (actor.type === "VENDOR") where.raisedByVendorId = actor.id;
+  if (actor.type === "RIDER") where.raisedByRiderId = actor.id;
+  return where;
+}
+
+/**
+ * Number of the actor's disputes with activity (an admin reply, or a
+ * resolution) they haven't viewed yet. Drives the unread badge in the
+ * mobile apps' bottom nav and "My reports" entry point.
+ */
+export async function getUnreadCountForActor(actor: DisputeActor) {
+  const disputes = await prisma.dispute.findMany({
+    where: actorWhere(actor),
+    select: {
+      status: true,
+      resolvedAt: true,
+      raiserLastReadAt: true,
+      messages: {
+        where: { senderType: "ADMIN", isInternal: false },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { createdAt: true },
+      },
+    },
+  });
+
+  let count = 0;
+  for (const d of disputes) {
+    const lastRead = d.raiserLastReadAt;
+    const lastAdminMessageAt = d.messages[0]?.createdAt;
+    const hasUnreadMessage = !!lastAdminMessageAt && (!lastRead || lastAdminMessageAt > lastRead);
+    const isClosed = d.status === "RESOLVED" || d.status === "REJECTED";
+    const hasUnreadResolution = isClosed && !!d.resolvedAt && (!lastRead || d.resolvedAt > lastRead);
+    if (hasUnreadMessage || hasUnreadResolution) count++;
+  }
+  return count;
 }
 
 export async function addActorMessage(

@@ -46,6 +46,7 @@ void main() async {
   await initLocalNotifications();
   setupForegroundMessageListener();
   setupOrderCompletionListener();
+  setupDisputeNotificationListener();
   await PushNotificationService.init();
 
   await Hive.initFlutter();

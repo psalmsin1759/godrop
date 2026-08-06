@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../../shared/models/auth_models.dart';
+import '../../../shared/services/disputes_unread_service.dart';
 import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/token_storage.dart';
 import '../../../shared/services/user_prefs.dart';
@@ -151,6 +152,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (_) {}
     await _clearLocalData();
+    DisputesUnreadService.reset();
     emit(AuthLoggedOut());
   }
 

@@ -148,34 +148,52 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   }
 
   Widget _summaryRow(RiderAnalytics a) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _statCard(
-            icon: Icons.star_rounded,
-            color: GodropColors.orange,
-            value: a.ratingCount > 0 ? a.rating.toStringAsFixed(1) : '—',
-            label:
-                a.ratingCount > 0 ? '${a.ratingCount} ratings' : 'No ratings',
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                icon: Icons.star_rounded,
+                color: GodropColors.orange,
+                value: a.ratingCount > 0 ? a.rating.toStringAsFixed(1) : '—',
+                label: a.ratingCount > 0
+                    ? '${a.ratingCount} ratings'
+                    : 'No ratings',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _statCard(
+                icon: Icons.account_balance_wallet_rounded,
+                color: GodropColors.success,
+                value: formatNaira(a.periodEarnings, decimals: 0),
+                label: 'Earned',
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _statCard(
-            icon: Icons.local_shipping_rounded,
-            color: GodropColors.blue,
-            value: '${a.deliveredCount}',
-            label: 'Deliveries',
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _statCard(
-            icon: Icons.account_balance_wallet_rounded,
-            color: GodropColors.success,
-            value: formatNaira(a.periodEarnings, decimals: 0),
-            label: 'Earned',
-          ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _statCard(
+                icon: Icons.local_shipping_rounded,
+                color: GodropColors.blue,
+                value: '${a.deliveredCount}',
+                label: 'Completed',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _statCard(
+                icon: Icons.cancel_rounded,
+                color: GodropColors.error,
+                value: '${a.rejectedCount}',
+                label: 'Rejected',
+              ),
+            ),
+          ],
         ),
       ],
     );

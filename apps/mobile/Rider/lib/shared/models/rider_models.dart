@@ -488,6 +488,7 @@ class RiderAnalytics {
   final double rating;
   final int ratingCount;
   final int deliveredCount;
+  final int rejectedCount;
   final double periodEarnings;
   final List<DailyEarningPoint> dailyEarnings;
   final List<OrderTypeCount> ordersByType;
@@ -496,6 +497,7 @@ class RiderAnalytics {
     required this.rating,
     required this.ratingCount,
     required this.deliveredCount,
+    required this.rejectedCount,
     required this.periodEarnings,
     required this.dailyEarnings,
     required this.ordersByType,

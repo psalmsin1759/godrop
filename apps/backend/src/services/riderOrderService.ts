@@ -293,13 +293,18 @@ export async function rejectOrder(riderId: string, orderId: string, reason?: str
   if (order.riderId !== riderId) throw new Error("Order not found");
   if (order.status !== "ACCEPTED") throw new Error("Order cannot be rejected at this stage");
 
-  await prisma.orderEvent.create({
-    data: {
-      orderId,
-      status: order.status,
-      description: reason ? `Rider rejected: ${reason}` : "Rider rejected the order",
-    },
-  });
+  await prisma.$transaction([
+    prisma.orderEvent.create({
+      data: {
+        orderId,
+        status: order.status,
+        description: reason ? `Rider rejected: ${reason}` : "Rider rejected the order",
+      },
+    }),
+    prisma.riderRejection.create({
+      data: { riderId, orderId, reason },
+    }),
+  ]);
 
   const updated = await prisma.order.update({
     where: { id: orderId },

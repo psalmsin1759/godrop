@@ -323,6 +323,11 @@ function RiderDetailContent({ rider }: { rider: RiderDetail }) {
         )}
       </div>
 
+      <Section title="Performance">
+        <Field label="Completed orders" value={rider.completedOrders} />
+        <Field label="Rejected orders" value={rider.rejectedOrders} />
+      </Section>
+
       <Section title="Personal">
         <Field label="Email" value={rider.email} />
         <Field label="Date of birth" value={rider.dateOfBirth} />

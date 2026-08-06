@@ -517,11 +517,12 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items    OrderItem[]
-  events   OrderEvent[]
-  review   Review?
-  earnings RiderEarning[]
-  dropoffs ParcelDropoff[]
+  items      OrderItem[]
+  events     OrderEvent[]
+  review     Review?
+  earnings   RiderEarning[]
+  dropoffs   ParcelDropoff[]
+  rejections RiderRejection[]
 
   @@index([customerId])
   @@index([vendorId])
@@ -687,8 +688,25 @@ model Rider {
   notifications RiderNotification[]
   earnings      RiderEarning[]
   withdrawals   RiderWithdrawal[]
+  rejections    RiderRejection[]
 
   @@index([businessId])
+}
+
+// Log of every order a rider accepted and then backed out of. The order
+// itself gets reassigned (riderId cleared) so this is the only durable
+// record tying the rejection back to the rider who made it.
+model RiderRejection {
+  id        String   @id @default(cuid())
+  riderId   String
+  rider     Rider    @relation(fields: [riderId], references: [id])
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([riderId])
+  @@index([orderId])
 }
 
 // ─── Heroes ───────────────────────────────────────────────────

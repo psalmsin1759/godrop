@@ -147,7 +147,7 @@ export async function getRiderAnalytics(riderId: string, days: number) {
   from.setDate(from.getDate() - (days - 1));
   from.setHours(0, 0, 0, 0);
 
-  const [rider, dailyRows, typeGroups, deliveredCount, periodEarnings] = await Promise.all([
+  const [rider, dailyRows, typeGroups, deliveredCount, rejectedCount, periodEarnings] = await Promise.all([
     prisma.rider.findUnique({ where: { id: riderId }, select: { rating: true, ratingCount: true } }),
     prisma.$queryRaw<DailyEarningRow[]>`
       SELECT
@@ -166,6 +166,7 @@ export async function getRiderAnalytics(riderId: string, days: number) {
       _count: { _all: true },
     }),
     prisma.order.count({ where: { riderId, status: "DELIVERED", createdAt: { gte: from } } }),
+    prisma.riderRejection.count({ where: { riderId, createdAt: { gte: from } } }),
     prisma.riderEarning.aggregate({
       where: { riderId, createdAt: { gte: from } },
       _sum: { amountKobo: true },
@@ -176,6 +177,7 @@ export async function getRiderAnalytics(riderId: string, days: number) {
     rating: rider?.rating ?? 0,
     ratingCount: rider?.ratingCount ?? 0,
     deliveredCount,
+    rejectedCount,
     periodEarningsKobo: periodEarnings._sum.amountKobo ?? 0,
     dailyEarnings: dailyRows.map((r) => ({
       date: r.date,

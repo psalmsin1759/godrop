@@ -601,6 +601,29 @@ export async function getEarningsSummary(req: Request, res: Response, next: Next
   }
 }
 
+export async function getAnalytics(req: Request, res: Response, next: NextFunction) {
+  try {
+    const days = Math.min(90, Math.max(7, Number(req.query.days) || 30));
+    const analytics = await riderEarningService.getRiderAnalytics(req.rider!.id, days);
+    return ok(res, {
+      data: {
+        rating: analytics.rating,
+        ratingCount: analytics.ratingCount,
+        deliveredCount: analytics.deliveredCount,
+        periodEarnings: toNaira(analytics.periodEarningsKobo),
+        dailyEarnings: analytics.dailyEarnings.map((d) => ({
+          date: d.date,
+          deliveries: d.deliveries,
+          earnings: toNaira(d.earningsKobo),
+        })),
+        ordersByType: analytics.ordersByType,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function requestWithdrawal(req: Request, res: Response, next: NextFunction) {
   try {
     const { amountKobo, bankName, bankCode, accountNumber, accountName } = req.body;

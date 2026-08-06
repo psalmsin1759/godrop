@@ -13,6 +13,7 @@ import '../features/jobs/job_detail_screen.dart';
 import '../features/active/active_delivery_screen.dart';
 import '../features/active/active_map_screen.dart';
 import '../features/earnings/earnings_screen.dart';
+import '../features/analytics/analytics_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/profile/kyc_screen.dart';
 import '../features/profile/bank_screen.dart';
@@ -70,7 +71,7 @@ final router = GoRouter(
       },
     ),
 
-    // Main shell — 4 tabs
+    // Main shell — 5 tabs
     StatefulShellRoute.indexedStack(
       builder: (ctx, state, shell) => RiderShell(navigationShell: shell),
       branches: [
@@ -114,6 +115,15 @@ final router = GoRouter(
             GoRoute(
               path: '/earnings',
               pageBuilder: (ctx, state) => _fade(state, const EarningsScreen()),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/analytics',
+              pageBuilder: (ctx, state) =>
+                  _fade(state, const AnalyticsScreen()),
             ),
           ],
         ),

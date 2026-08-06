@@ -163,22 +163,16 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
 
   /// Pick a drop-off location, then capture recipient + optional description /
   /// weight for that parcel and add it to the list.
-  Future<void> _addParcel(
-    SavedAddressesState savedState, {
-    ParcelLocation? presetLocation,
-  }) async {
-    ParcelLocation? location = presetLocation;
-    if (location == null) {
-      location = await showModalBottomSheet<ParcelLocation>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => LocationPickerSheet(
-          title: 'Where to?',
-          savedAddresses: savedState.addresses,
-        ),
-      );
-    }
+  Future<void> _addParcel(SavedAddressesState savedState) async {
+    final location = await showModalBottomSheet<ParcelLocation>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => LocationPickerSheet(
+        title: 'Where to?',
+        savedAddresses: savedState.addresses,
+      ),
+    );
     if (location == null || !mounted) return;
 
     final item = await showModalBottomSheet<ParcelItem>(
@@ -186,7 +180,7 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => ParcelDetailsSheet(
-        dropoff: location!,
+        dropoff: location,
         parcelIndex: _parcels.length + 1,
       ),
     );
@@ -215,25 +209,6 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
   void _removeParcel(int index) {
     setState(() => _parcels.removeAt(index));
     _updateCamera();
-  }
-
-  Future<void> _useCurrentLocationForPickup() async {
-    setState(() => _locating = true);
-    await _resolveCurrentLocation();
-  }
-
-  Future<void> _onQuickAddress(
-      SavedAddressesState savedState, String label) async {
-    final saved = label == 'Home' ? savedState.home : savedState.work;
-    if (saved != null) {
-      await _addParcel(
-        savedState,
-        presetLocation:
-            ParcelLocation(lat: saved.lat, lng: saved.lng, name: saved.address),
-      );
-      return;
-    }
-    await _addParcel(savedState);
   }
 
   @override
@@ -432,35 +407,6 @@ class _ParcelAddressesScreenState extends State<ParcelAddressesScreen> {
                                 onTap: _locating
                                     ? null
                                     : () => _addParcel(savedState),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  _QuickChip(
-                                    icon: Icons.my_location_rounded,
-                                    label: 'My location',
-                                    gradient: GodropColors.blueGradient,
-                                    onTap: _useCurrentLocationForPickup,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  _QuickChip(
-                                    icon: Icons.home_rounded,
-                                    label: 'Home',
-                                    saved: savedState.home != null,
-                                    gradient: GodropColors.blueGradient,
-                                    onTap: () =>
-                                        _onQuickAddress(savedState, 'Home'),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  _QuickChip(
-                                    icon: Icons.work_rounded,
-                                    label: 'Work',
-                                    saved: savedState.work != null,
-                                    gradient: GodropColors.orangeGradient,
-                                    onTap: () =>
-                                        _onQuickAddress(savedState, 'Work'),
-                                  ),
-                                ],
                               ),
                             ],
                           ),
@@ -713,66 +659,3 @@ class _AddressTimelineRow extends StatelessWidget {
   }
 }
 
-class _QuickChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final LinearGradient gradient;
-  final bool? saved;
-  final VoidCallback onTap;
-
-  const _QuickChip({
-    required this.icon,
-    required this.label,
-    required this.gradient,
-    required this.onTap,
-    this.saved,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isAddState = saved == false;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: GodropColors.card,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: GodropColors.border),
-            boxShadow: GodropColors.softShadow,
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: isAddState ? null : gradient,
-                  color: isAddState ? GodropColors.background : null,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isAddState ? Icons.add_rounded : icon,
-                  size: 18,
-                  color: isAddState ? GodropColors.slate : Colors.white,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                isAddState ? 'Add $label' : label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: GodropColors.ink,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

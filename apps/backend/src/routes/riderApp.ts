@@ -104,6 +104,9 @@ router.get("/earnings/summary", ctrl.getEarningsSummary);
 router.post("/earnings/withdrawal", validate(withdrawalSchema), ctrl.requestWithdrawal);
 router.get("/earnings/withdrawals", validate(earningsQuerySchema, "query"), ctrl.listWithdrawals);
 
+// Analytics
+router.get("/analytics", ctrl.getAnalytics);
+
 // Notifications
 router.get("/notifications", validate(notificationsQuerySchema, "query"), ctrl.listNotifications);
 router.get("/notifications/unread-count", ctrl.getUnreadCount);

@@ -35,6 +35,8 @@ const _kNavItems = [
   _NavItemData(Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Orders'),
   _NavItemData(Icons.account_balance_wallet_outlined,
       Icons.account_balance_wallet_rounded, 'Earnings'),
+  _NavItemData(
+      Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Analytics'),
   _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
 ];
 

@@ -257,6 +257,13 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
             delay: const Duration(milliseconds: 250),
             child: _failedButton(ctx, order, loading),
           ),
+          if (order.status == 'ACCEPTED') ...[
+            const SizedBox(height: 10),
+            AnimatedEntrance(
+              delay: const Duration(milliseconds: 280),
+              child: _rejectButton(ctx, order, loading),
+            ),
+          ],
           const SizedBox(height: 16),
         ],
       ],
@@ -771,6 +778,73 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
       label: 'Report Failed Delivery',
       color: GodropColors.error,
       onTap: loading ? null : () => _showFailedDialog(ctx),
+    );
+  }
+
+  Widget _rejectButton(
+      BuildContext ctx, RiderOrderDetail order, bool loading) {
+    return GodropOutlineButton(
+      label: 'Reject Order',
+      color: GodropColors.error,
+      onTap: loading ? null : () => _showRejectDialog(ctx),
+    );
+  }
+
+  void _showRejectDialog(BuildContext ctx) {
+    final controller = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: GodropColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(bctx).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Reject this order?',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: GodropColors.ink)),
+            const SizedBox(height: 8),
+            const Text(
+              "The customer will be notified we're finding another rider. "
+              'Please provide a reason (optional)',
+              style: TextStyle(color: GodropColors.slate, fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: 'e.g. Too far away',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: GodropColors.border),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 20),
+            GodropButton(
+              label: 'Confirm Rejection',
+              gradientColors: [GodropColors.error, GodropColors.error],
+              onTap: () {
+                Navigator.pop(bctx);
+                ctx.read<ActiveCubit>().rejectOrder(
+                    reason: controller.text.trim().isNotEmpty
+                        ? controller.text.trim()
+                        : null);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

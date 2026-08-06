@@ -667,7 +667,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             top: topPad + 12,
             left: 16,
             child: GestureDetector(
-              onTap: () => context.pop(),
+              onTap: () => context.canPop() ? context.pop() : context.go('/orders'),
               child: Container(
                 width: 40,
                 height: 40,

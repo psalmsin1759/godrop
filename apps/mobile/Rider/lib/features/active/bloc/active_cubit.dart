@@ -89,6 +89,23 @@ class ActiveCubit extends Cubit<ActiveState> {
     }
   }
 
+  /// Backs out of an already-accepted order before pickup. The backend puts
+  /// it back into the available pool for other riders and notifies the
+  /// customer that we're finding someone else.
+  Future<void> rejectOrder({String? reason}) async {
+    final current = state;
+    if (current is! ActiveLoaded) return;
+    emit(ActiveActionLoading(current.order));
+    try {
+      await _ordersService.rejectOrder(
+          current.order.id, {'reason': reason ?? 'Rider declined'});
+      _stopLocationUpdates();
+      emit(const ActiveNone());
+    } on DioException catch (e) {
+      emit(ActiveLoaded(current.order, errorMessage: _parseError(e)));
+    }
+  }
+
   /// Deliver one parcel in a multi-drop-off order, using that recipient's code.
   /// Reloads the order so the remaining stops update; the backend closes the
   /// order automatically once every parcel is resolved.

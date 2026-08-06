@@ -35,6 +35,7 @@ model User {
   auditLogs     AuditLog[]
   savedCards    SavedCard[]
   favorites     Favorite[]
+  disputes      Dispute[]
 }
 
 enum UserStatus {
@@ -189,6 +190,7 @@ model Vendor {
   wallet       VendorWallet?
   bankAccount  VendorBankAccount?
   favorites    Favorite[]
+  disputes     Dispute[]
 }
 
 enum VendorType {
@@ -317,9 +319,10 @@ model Admin {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  auditLogs     AuditLog[]
-  notifications AdminNotification[]
-  pushTokens    AdminPushToken[]
+  auditLogs        AuditLog[]
+  notifications    AdminNotification[]
+  pushTokens       AdminPushToken[]
+  assignedDisputes Dispute[]
 
   @@index([vendorId])
   @@index([businessId])
@@ -523,6 +526,7 @@ model Order {
   earnings   RiderEarning[]
   dropoffs   ParcelDropoff[]
   rejections RiderRejection[]
+  disputes   Dispute[]
 
   @@index([customerId])
   @@index([vendorId])
@@ -689,6 +693,7 @@ model Rider {
   earnings      RiderEarning[]
   withdrawals   RiderWithdrawal[]
   rejections    RiderRejection[]
+  disputes      Dispute[]
 
   @@index([businessId])
 }
@@ -707,6 +712,107 @@ model RiderRejection {
 
   @@index([riderId])
   @@index([orderId])
+}
+
+// ─── Disputes ─────────────────────────────────────────────────
+
+enum DisputeRaisedByType {
+  CUSTOMER
+  VENDOR
+  RIDER
+}
+
+enum DisputeCategory {
+  WRONG_ITEM
+  MISSING_ITEMS
+  DAMAGED_ITEM
+  FOOD_QUALITY
+  LATE_DELIVERY
+  NEVER_ARRIVED
+  RIDER_BEHAVIOR
+  VENDOR_BEHAVIOR
+  CUSTOMER_BEHAVIOR
+  PAYMENT_ISSUE
+  OTHER
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  AWAITING_RESPONSE
+  ESCALATED
+  RESOLVED
+  REJECTED
+}
+
+enum DisputeResolutionType {
+  REFUND_CUSTOMER
+  COMPENSATE_RIDER
+  NO_ACTION
+  REJECTED
+}
+
+enum DisputeSenderType {
+  CUSTOMER
+  VENDOR
+  RIDER
+  ADMIN
+}
+
+// A customer, vendor, or rider flagging a problem with a specific order.
+// Worked by a system admin through DisputeMessage (a support-ticket-style
+// thread) to a resolution — refund, rider compensation, or no action.
+model Dispute {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  raisedByType       DisputeRaisedByType
+  raisedByCustomerId String?
+  raisedByCustomer   User?               @relation(fields: [raisedByCustomerId], references: [id])
+  raisedByVendorId   String?
+  raisedByVendor     Vendor?             @relation(fields: [raisedByVendorId], references: [id])
+  raisedByRiderId    String?
+  raisedByRider      Rider?              @relation(fields: [raisedByRiderId], references: [id])
+
+  category     DisputeCategory
+  description  String
+  evidenceUrls String[]
+
+  status          DisputeStatus @default(OPEN)
+  assignedAdminId String?
+  assignedAdmin   Admin?        @relation(fields: [assignedAdminId], references: [id])
+
+  resolutionType       DisputeResolutionType?
+  resolutionNotes      String?
+  resolutionAmountKobo Int?
+  resolvedAt           DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages DisputeMessage[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([raisedByCustomerId])
+  @@index([raisedByVendorId])
+  @@index([raisedByRiderId])
+  @@index([assignedAdminId])
+}
+
+model DisputeMessage {
+  id             String            @id @default(cuid())
+  disputeId      String
+  dispute        Dispute           @relation(fields: [disputeId], references: [id])
+  senderType     DisputeSenderType
+  senderId       String
+  message        String
+  attachmentUrls String[]
+  isInternal     Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+
+  @@index([disputeId])
 }
 
 // ─── Heroes ───────────────────────────────────────────────────

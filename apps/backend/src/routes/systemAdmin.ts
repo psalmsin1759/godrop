@@ -23,7 +23,16 @@ import {
   resetAdminPasswordSchema,
   issueManualOtpSchema,
 } from "../validators/systemAdminValidators";
+import {
+  createDisputeSchema,
+  disputeQuerySchema,
+  addDisputeMessageSchema,
+  assignDisputeSchema,
+  updateDisputeStatusSchema,
+  resolveDisputeSchema,
+} from "../validators/disputeValidators";
 import * as ctrl from "../controllers/systemAdminController";
+import * as disputeCtrl from "../controllers/disputeController";
 import * as analyticsCtrl from "../controllers/analyticsController";
 import * as riderCtrl from "../controllers/riderController";
 import * as businessCtrl from "../controllers/businessAdminController";
@@ -205,6 +214,49 @@ router.get(
   requireSystemRole("ADMIN"),
   validate(auditLogQuerySchema, "query"),
   ctrl.listAuditLogs
+);
+
+// ─── Disputes (ADMIN+) ─────────────────────────────────────────
+router.get(
+  "/disputes",
+  requireSystemRole("ADMIN"),
+  validate(disputeQuerySchema, "query"),
+  disputeCtrl.listDisputes
+);
+router.post(
+  "/disputes",
+  requireSystemRole("ADMIN"),
+  validate(createDisputeSchema),
+  auditSystemAction({ action: "CREATE_DISPUTE", entity: "Dispute" }),
+  disputeCtrl.createDispute
+);
+router.get("/disputes/:id", requireSystemRole("ADMIN"), disputeCtrl.getDispute);
+router.post(
+  "/disputes/:id/messages",
+  requireSystemRole("ADMIN"),
+  validate(addDisputeMessageSchema),
+  disputeCtrl.addMessage
+);
+router.patch(
+  "/disputes/:id/assign",
+  requireSystemRole("ADMIN"),
+  validate(assignDisputeSchema),
+  auditSystemAction({ action: "ASSIGN_DISPUTE", entity: "Dispute", getEntityId: (r) => r.params.id }),
+  disputeCtrl.assignDispute
+);
+router.patch(
+  "/disputes/:id/status",
+  requireSystemRole("ADMIN"),
+  validate(updateDisputeStatusSchema),
+  auditSystemAction({ action: "UPDATE_DISPUTE_STATUS", entity: "Dispute", getEntityId: (r) => r.params.id }),
+  disputeCtrl.updateStatus
+);
+router.patch(
+  "/disputes/:id/resolve",
+  requireSystemRole("ADMIN"),
+  validate(resolveDisputeSchema),
+  auditSystemAction({ action: "RESOLVE_DISPUTE", entity: "Dispute", getEntityId: (r) => r.params.id }),
+  disputeCtrl.resolveDispute
 );
 
 // ─── Orders (ADMIN+) ─────────────────────────────────────────

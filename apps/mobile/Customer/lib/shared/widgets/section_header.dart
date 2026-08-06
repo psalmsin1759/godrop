@@ -10,6 +10,7 @@ class GodropSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 4,
@@ -20,13 +21,15 @@ class GodropSectionHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: GodropColors.ink,
-            letterSpacing: -0.3,
+        Flexible(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: GodropColors.ink,
+              letterSpacing: -0.3,
+            ),
           ),
         ),
       ],

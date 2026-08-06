@@ -442,10 +442,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 label: 'Orders',
                               )),
                               const _StatDivider(),
-                              const Expanded(
-                                  child: _StatItem(
-                                      value: '—', label: 'Avg rating')),
-                              const _StatDivider(),
                               Expanded(
                                   child: _StatItem(
                                       value: walletBalance, label: 'Wallet')),

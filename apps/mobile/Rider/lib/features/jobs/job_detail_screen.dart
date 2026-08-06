@@ -30,66 +30,6 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
   void _accept() => context.read<JobDetailCubit>().acceptOrder(widget.orderId);
 
-  void _reject() => _showRejectDialog();
-
-  void _showRejectDialog() {
-    final controller = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: GodropColors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Reject Order?',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: GodropColors.ink),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Please provide a reason (optional)',
-              style: TextStyle(color: GodropColors.slate, fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'e.g. Too far away',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: GodropColors.border),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
-              ),
-            ),
-            const SizedBox(height: 20),
-            GodropButton(
-              label: 'Confirm Rejection',
-              gradientColors: [GodropColors.error, GodropColors.error],
-              onTap: () {
-                Navigator.pop(ctx);
-                context.read<JobDetailCubit>().rejectOrder(
-                    widget.orderId,
-                    reason: controller.text.isNotEmpty ? controller.text : null);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<JobDetailCubit, JobDetailState>(
@@ -236,9 +176,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                                 : order.dropoffAddress,
                             subtext: order.isMultiParcel
                                 ? null
-                                : (order.recipientName != null
-                                    ? '${order.recipientName} · ${order.recipientPhone ?? ''}'
-                                    : null),
+                                : (isPending
+                                    ? 'Recipient details available after you accept'
+                                    : (order.recipientName != null
+                                        ? '${order.recipientName} · ${order.recipientPhone ?? ''}'
+                                        : null)),
                           ),
                         ],
                       ),
@@ -414,24 +356,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GodropOutlineButton(
-                        label: 'Reject',
-                        color: GodropColors.error,
-                        onTap: _reject,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: GodropButton(
-                        label: 'Accept Order',
-                        onTap: _accept,
-                      ),
-                    ),
-                  ],
+                child: GodropButton(
+                  label: 'Accept Order',
+                  onTap: _accept,
                 ),
               ),
             )

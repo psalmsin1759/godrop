@@ -359,7 +359,9 @@ class _CartCheckoutScreenState extends State<CartCheckoutScreen> {
                 backgroundColor: GodropColors.white,
                 elevation: 0,
                 leading: GestureDetector(
-                  onTap: () => context.go(cart.partnerType.listRoute),
+                  onTap: () => context.canPop()
+                      ? context.pop()
+                      : context.go(cart.partnerType.listRoute),
                   child: const Icon(Icons.chevron_left_rounded,
                       size: 28, color: GodropColors.ink),
                 ),

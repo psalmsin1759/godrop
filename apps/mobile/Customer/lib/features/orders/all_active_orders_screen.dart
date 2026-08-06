@@ -40,7 +40,10 @@ class _AllActiveOrdersScreenState extends State<AllActiveOrdersScreen> {
       backgroundColor: GodropColors.background,
       appBar: AppBar(
         backgroundColor: GodropColors.white,
-        leading: GestureDetector(onTap: () => context.pop(), child: const Icon(Icons.chevron_left_rounded, size: 28)),
+        leading: GestureDetector(
+          onTap: () => context.canPop() ? context.pop() : context.go('/home'),
+          child: const Icon(Icons.chevron_left_rounded, size: 28),
+        ),
         title: const Text('Active orders'),
       ),
       body: BlocBuilder<RemoteOrdersCubit, RemoteOrdersState>(

@@ -31,6 +31,7 @@ import {
   Smartphone,
   Pin,
   PinOff,
+  MessageSquareWarning,
 } from 'lucide-react'
 
 function GodropMark({ size = 22 }: { size?: number }) {
@@ -71,7 +72,8 @@ const systemGrowth: NavLinkItem[] = [
 ]
 const systemInsights: NavLinkItem[] = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs', badge: 0 },
+  { href: '/disputes', icon: MessageSquareWarning, label: 'Disputes', badge: 0 },
+  { href: '/audit-logs', icon: AlertTriangle, label: 'Audit Logs' },
 ]
 const systemAdministration: NavLinkItem[] = [
   { href: '/admins', icon: UserCog, label: 'Admins' },
@@ -93,7 +95,7 @@ const vendorOperations: NavLinkItem[] = [
 ]
 const vendorInsights: NavLinkItem[] = [
   { href: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { href: '/disputes', icon: AlertTriangle, label: 'Audit Logs' },
+  { href: '/audit-logs', icon: AlertTriangle, label: 'Audit Logs' },
 ]
 const vendorAdministration: NavLinkItem[] = [
   { href: '/team', icon: UserCog, label: 'Team' },

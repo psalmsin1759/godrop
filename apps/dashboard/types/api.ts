@@ -1233,3 +1233,92 @@ export interface PushSendResult {
   successCount: number
   failureCount: number
 }
+
+// ─── Disputes ────────────────────────────────────────────────────────────────
+export type DisputeRaisedByType = 'CUSTOMER' | 'VENDOR' | 'RIDER'
+export type DisputeCategory =
+  | 'WRONG_ITEM'
+  | 'MISSING_ITEMS'
+  | 'DAMAGED_ITEM'
+  | 'FOOD_QUALITY'
+  | 'LATE_DELIVERY'
+  | 'NEVER_ARRIVED'
+  | 'RIDER_BEHAVIOR'
+  | 'VENDOR_BEHAVIOR'
+  | 'CUSTOMER_BEHAVIOR'
+  | 'PAYMENT_ISSUE'
+  | 'OTHER'
+export type DisputeStatus = 'OPEN' | 'UNDER_REVIEW' | 'AWAITING_RESPONSE' | 'ESCALATED' | 'RESOLVED' | 'REJECTED'
+export type DisputeResolutionType = 'REFUND_CUSTOMER' | 'COMPENSATE_RIDER' | 'NO_ACTION' | 'REJECTED'
+export type DisputeSenderType = 'CUSTOMER' | 'VENDOR' | 'RIDER' | 'ADMIN'
+
+export interface DisputeOrderSummary {
+  id: string
+  trackingCode: string
+  type: OrderType
+  status: OrderStatus
+  totalKobo: number
+  customerId: string
+  vendorId?: string | null
+  riderId?: string | null
+}
+
+export interface DisputeMessage {
+  id: string
+  disputeId: string
+  senderType: DisputeSenderType
+  senderId: string
+  message: string
+  attachmentUrls: string[]
+  isInternal: boolean
+  createdAt: string
+}
+
+export interface Dispute {
+  id: string
+  orderId: string
+  order: DisputeOrderSummary
+  raisedByType: DisputeRaisedByType
+  raisedByCustomer?: { id: string; firstName?: string | null; lastName?: string | null; phone: string } | null
+  raisedByVendor?: { id: string; name: string } | null
+  raisedByRider?: { id: string; firstName: string; lastName: string; phone: string } | null
+  category: DisputeCategory
+  description: string
+  evidenceUrls: string[]
+  status: DisputeStatus
+  assignedAdminId?: string | null
+  assignedAdmin?: { id: string; firstName: string; lastName: string } | null
+  resolutionType?: DisputeResolutionType | null
+  resolutionNotes?: string | null
+  resolutionAmountKobo?: number | null
+  resolvedAt?: string | null
+  createdAt: string
+  updatedAt: string
+  _count?: { messages: number }
+}
+
+export interface DisputeDetail extends Dispute {
+  messages: DisputeMessage[]
+}
+
+export interface DisputesListParams {
+  status?: DisputeStatus
+  category?: DisputeCategory
+  raisedByType?: DisputeRaisedByType
+  search?: string
+  page?: number
+  limit?: number
+}
+
+export interface DisputesListMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export interface ResolveDisputeRequest {
+  resolutionType: DisputeResolutionType
+  resolutionNotes?: string
+  resolutionAmountKobo?: number
+}

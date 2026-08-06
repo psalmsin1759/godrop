@@ -180,7 +180,24 @@ export async function getRiderOrderDetail(riderId: string, orderId: string) {
   const isAssignedToRider = order.riderId === riderId;
   const isAvailableToView = order.riderId === null && order.status === "READY_FOR_PICKUP";
   if (!isAssignedToRider && !isAvailableToView) throw new Error("Order no longer available");
-  return withRecipientFallback(order);
+
+  const withFallback = withRecipientFallback(order);
+
+  if (isAssignedToRider) return withFallback;
+
+  // Still just browsing an unassigned order — don't expose the customer's or
+  // recipients' identity until the rider actually commits by accepting.
+  return {
+    ...withFallback,
+    customer: null,
+    recipientName: null,
+    recipientPhone: null,
+    dropoffs: withFallback.dropoffs.map((d) => ({
+      ...d,
+      recipientName: "Hidden until accepted",
+      recipientPhone: "",
+    })),
+  };
 }
 
 export async function acceptOrder(riderId: string, orderId: string) {
@@ -250,6 +267,26 @@ async function notifyCustomerRiderAccepted(order: Order) {
   ]);
 }
 
+async function notifyCustomerOrderRejected(order: Order) {
+  const title = "Finding you another rider";
+  const body = `Your rider had to step away from order #${order.trackingCode}. We're finding you another rider now.`;
+  const data = { type: "ORDER_REJECTED", orderId: order.id, trackingCode: order.trackingCode };
+
+  const tokens = await prisma.pushToken.findMany({
+    where: { userId: order.customerId },
+    select: { token: true },
+  });
+
+  await Promise.all([
+    tokens.length > 0
+      ? sendToCustomerTokens(tokens.map((t) => t.token), { title, body }, data)
+      : Promise.resolve(),
+    prisma.notification.create({
+      data: { userId: order.customerId, title, body, data },
+    }),
+  ]);
+}
+
 export async function rejectOrder(riderId: string, orderId: string, reason?: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new Error("Order not found");
@@ -264,10 +301,14 @@ export async function rejectOrder(riderId: string, orderId: string, reason?: str
     },
   });
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: { riderId: null, status: "READY_FOR_PICKUP" },
   });
+
+  notifyCustomerOrderRejected(updated).catch(() => {});
+
+  return updated;
 }
 
 export async function markPickedUp(riderId: string, orderId: string) {

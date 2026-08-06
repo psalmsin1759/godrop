@@ -73,7 +73,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         backgroundColor: GodropColors.white,
         leading: GestureDetector(
-          onTap: () => context.go('/profile'),
+          onTap: () => context.canPop() ? context.pop() : context.go('/home'),
           child: const Icon(Icons.chevron_left_rounded, size: 28),
         ),
         title: BlocBuilder<NotificationsCubit, NotificationsState>(

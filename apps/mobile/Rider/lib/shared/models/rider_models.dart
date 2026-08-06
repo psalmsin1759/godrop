@@ -453,3 +453,55 @@ class Bank {
   factory Bank.fromJson(Map<String, dynamic> json) => _$BankFromJson(json);
   Map<String, dynamic> toJson() => _$BankToJson(this);
 }
+
+@JsonSerializable()
+class DailyEarningPoint {
+  final String date;
+  final int deliveries;
+  final double earnings;
+
+  const DailyEarningPoint({
+    required this.date,
+    required this.deliveries,
+    required this.earnings,
+  });
+
+  factory DailyEarningPoint.fromJson(Map<String, dynamic> json) =>
+      _$DailyEarningPointFromJson(json);
+  Map<String, dynamic> toJson() => _$DailyEarningPointToJson(this);
+}
+
+@JsonSerializable()
+class OrderTypeCount {
+  final String type;
+  final int count;
+
+  const OrderTypeCount({required this.type, required this.count});
+
+  factory OrderTypeCount.fromJson(Map<String, dynamic> json) =>
+      _$OrderTypeCountFromJson(json);
+  Map<String, dynamic> toJson() => _$OrderTypeCountToJson(this);
+}
+
+@JsonSerializable()
+class RiderAnalytics {
+  final double rating;
+  final int ratingCount;
+  final int deliveredCount;
+  final double periodEarnings;
+  final List<DailyEarningPoint> dailyEarnings;
+  final List<OrderTypeCount> ordersByType;
+
+  const RiderAnalytics({
+    required this.rating,
+    required this.ratingCount,
+    required this.deliveredCount,
+    required this.periodEarnings,
+    required this.dailyEarnings,
+    required this.ordersByType,
+  });
+
+  factory RiderAnalytics.fromJson(Map<String, dynamic> json) =>
+      _$RiderAnalyticsFromJson(json);
+  Map<String, dynamic> toJson() => _$RiderAnalyticsToJson(this);
+}

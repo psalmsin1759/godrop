@@ -395,3 +395,53 @@ Map<String, dynamic> _$BankToJson(Bank instance) => <String, dynamic>{
       'code': instance.code,
       'slug': instance.slug,
     };
+
+DailyEarningPoint _$DailyEarningPointFromJson(Map<String, dynamic> json) =>
+    DailyEarningPoint(
+      date: json['date'] as String,
+      deliveries: (json['deliveries'] as num).toInt(),
+      earnings: (json['earnings'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$DailyEarningPointToJson(DailyEarningPoint instance) =>
+    <String, dynamic>{
+      'date': instance.date,
+      'deliveries': instance.deliveries,
+      'earnings': instance.earnings,
+    };
+
+OrderTypeCount _$OrderTypeCountFromJson(Map<String, dynamic> json) =>
+    OrderTypeCount(
+      type: json['type'] as String,
+      count: (json['count'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$OrderTypeCountToJson(OrderTypeCount instance) =>
+    <String, dynamic>{
+      'type': instance.type,
+      'count': instance.count,
+    };
+
+RiderAnalytics _$RiderAnalyticsFromJson(Map<String, dynamic> json) =>
+    RiderAnalytics(
+      rating: (json['rating'] as num).toDouble(),
+      ratingCount: (json['ratingCount'] as num).toInt(),
+      deliveredCount: (json['deliveredCount'] as num).toInt(),
+      periodEarnings: (json['periodEarnings'] as num).toDouble(),
+      dailyEarnings: (json['dailyEarnings'] as List<dynamic>)
+          .map((e) => DailyEarningPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      ordersByType: (json['ordersByType'] as List<dynamic>)
+          .map((e) => OrderTypeCount.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$RiderAnalyticsToJson(RiderAnalytics instance) =>
+    <String, dynamic>{
+      'rating': instance.rating,
+      'ratingCount': instance.ratingCount,
+      'deliveredCount': instance.deliveredCount,
+      'periodEarnings': instance.periodEarnings,
+      'dailyEarnings': instance.dailyEarnings,
+      'ordersByType': instance.ordersByType,
+    };

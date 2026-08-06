@@ -90,7 +90,9 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
               child: BlocBuilder<JobsCubit, JobsState>(
                 builder: (ctx, state) {
                   if (state is JobsLoading) return _buildShimmer();
-                  if (state is JobsError) return _buildError(ctx, state.message);
+                  if (state is JobsError) {
+                    return _refreshable(_buildError(ctx, state.message));
+                  }
                   if (state is JobsLoaded) {
                     return BlocBuilder<ProfileCubit, ProfileState>(
                       builder: (pctx, pstate) {
@@ -125,12 +127,34 @@ class _JobsScreenState extends State<JobsScreen> with AutomaticKeepAliveClientMi
     );
   }
 
+  /// Wraps non-list states (empty/offline/error) in a scrollable container
+  /// so pull-to-refresh works even when there's nothing to show — a bare
+  /// `Center` has no scrollable ancestor for `RefreshIndicator` to detect
+  /// the drag gesture on.
+  Widget _refreshable(Widget child) {
+    return RefreshIndicator(
+      onRefresh: () => context.read<JobsCubit>().loadJobs(),
+      color: GodropColors.blue,
+      child: LayoutBuilder(
+        builder: (ctx, constraints) => ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: constraints.maxHeight,
+              child: child,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildContent(BuildContext ctx, JobsLoaded state, bool isAvailable) {
     if (!isAvailable && state.assigned.isEmpty) {
-      return _buildOffline();
+      return _refreshable(_buildOffline());
     }
     if (state.pending.isEmpty && state.assigned.isEmpty) {
-      return _buildEmpty();
+      return _refreshable(_buildEmpty());
     }
     return RefreshIndicator(
       onRefresh: () => ctx.read<JobsCubit>().loadJobs(),

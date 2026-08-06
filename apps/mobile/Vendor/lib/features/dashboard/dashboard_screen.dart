@@ -55,6 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             }
             final loaded = state as DashboardLoaded;
+            final isStaff = ctx.watch<SessionCubit>().isStaff;
             return RefreshIndicator(
               onRefresh: () =>
                   ctx.read<DashboardCubit>().load(silent: true),
@@ -63,33 +64,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   _Header(unread: loaded.unreadNotifications),
                   const SizedBox(height: 16),
-                  AnimatedEntrance(child: _StoreToggleCard(loaded: loaded)),
-                  const SizedBox(height: 16),
-                  if (loaded.lifetime != null) ...[
-                    AnimatedEntrance(
-                      delay: const Duration(milliseconds: 40),
-                      child: _LifetimeRevenueCard(lifetime: loaded.lifetime!),
-                    ),
+                  if (isStaff) ...[
+                    const AnimatedEntrance(child: _StaffQuickActionsCard()),
                     const SizedBox(height: 16),
-                  ],
-                  if (loaded.analytics != null) ...[
-                    AnimatedEntrance(
-                      delay: const Duration(milliseconds: 60),
-                      child: _StatsGrid(summary: loaded.analytics!.summary),
-                    ),
-                    const SizedBox(height: 20),
-                    if (loaded.graph != null) ...[
+                  ] else ...[
+                    AnimatedEntrance(child: _StoreToggleCard(loaded: loaded)),
+                    const SizedBox(height: 16),
+                    if (loaded.lifetime != null) ...[
                       AnimatedEntrance(
-                        delay: const Duration(milliseconds: 120),
-                        child: _RevenueChartCard(
-                          graph: loaded.graph!,
-                          loading: loaded.graphLoading,
-                          onGranularityChanged: (g) => ctx
-                              .read<DashboardCubit>()
-                              .setGraphGranularity(g),
-                        ),
+                        delay: const Duration(milliseconds: 40),
+                        child:
+                            _LifetimeRevenueCard(lifetime: loaded.lifetime!),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (loaded.analytics != null) ...[
+                      AnimatedEntrance(
+                        delay: const Duration(milliseconds: 60),
+                        child: _StatsGrid(summary: loaded.analytics!.summary),
                       ),
                       const SizedBox(height: 20),
+                      if (loaded.graph != null) ...[
+                        AnimatedEntrance(
+                          delay: const Duration(milliseconds: 120),
+                          child: _RevenueChartCard(
+                            graph: loaded.graph!,
+                            loading: loaded.graphLoading,
+                            onGranularityChanged: (g) => ctx
+                                .read<DashboardCubit>()
+                                .setGraphGranularity(g),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ],
                   ],
                   const GodropSectionHeader(title: 'Pending orders'),
@@ -115,7 +122,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                     ),
-                  if (loaded.analytics != null &&
+                  if (!isStaff &&
+                      loaded.analytics != null &&
                       loaded.analytics!.topProducts.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     const GodropSectionHeader(title: 'Top products (30 days)'),
@@ -296,6 +304,98 @@ class _StoreToggleCard extends StatelessWidget {
                 : null,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Shown to STAFF in place of the store toggle and financial cards, which
+/// only OWNER/MANAGER can see. Gives staff something actionable instead of
+/// an empty gap at the top of the dashboard.
+class _StaffQuickActionsCard extends StatelessWidget {
+  const _StaffQuickActionsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: GodropColors.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: GodropColors.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Quick actions',
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: GodropColors.ink),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Sales figures and store hours are managed by the owner.',
+            style: TextStyle(fontSize: 12, color: GodropColors.mute),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Orders',
+                  onTap: () => context.go('/orders'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.restaurant_menu_rounded,
+                  label: 'Menu',
+                  onTap: () => context.go('/catalog'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: GodropColors.background,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: GodropColors.blue, size: 20),
+            const SizedBox(height: 6),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: GodropColors.ink)),
+          ],
+        ),
       ),
     );
   }

@@ -15,6 +15,7 @@ class SessionCubit extends Cubit<VendorAdmin?> {
   String get role => state?.role ?? UserPrefs.adminRole;
   bool get isOwner => role == 'OWNER';
   bool get isManagerOrAbove => role == 'OWNER' || role == 'MANAGER';
+  bool get isStaff => role == 'STAFF';
 
   void set(VendorAdmin admin) => emit(admin);
 

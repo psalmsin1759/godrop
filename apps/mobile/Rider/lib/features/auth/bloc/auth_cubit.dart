@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../../shared/models/rider_models.dart';
+import '../../../shared/services/disputes_unread_service.dart';
 import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/token_storage.dart';
 import '../../../shared/services/rider_prefs.dart';
@@ -100,6 +101,7 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (_) {}
     await TokenStorage.clear();
     await RiderPrefs.clear();
+    DisputesUnreadService.reset();
     emit(const AuthInitial());
   }
 

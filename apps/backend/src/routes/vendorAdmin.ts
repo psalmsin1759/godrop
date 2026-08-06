@@ -175,6 +175,11 @@ router.get(
   validate(myDisputeQuerySchema, "query"),
   disputeCtrl.listMyDisputes(vendorActor)
 );
+router.get(
+  "/disputes/unread-count",
+  requireVendorRole("STAFF"),
+  disputeCtrl.getMyDisputesUnreadCount(vendorActor)
+);
 router.get("/disputes/:id", requireVendorRole("STAFF"), disputeCtrl.getMyDispute(vendorActor));
 router.post(
   "/disputes/:id/messages",

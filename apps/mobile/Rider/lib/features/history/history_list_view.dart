@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../app/theme.dart';
 import '../../shared/models/rider_models.dart';
@@ -190,51 +191,79 @@ class _HistoryCard extends StatelessWidget {
         border: Border.all(color: GodropColors.border),
         boxShadow: GodropColors.softShadow,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: GodropColors.success.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.check_circle_outline_rounded,
-                color: GodropColors.success, size: 22),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: GodropColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.check_circle_outline_rounded,
+                    color: GodropColors.success, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.vendor?.name ?? _typeLabel(order.type),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: GodropColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      order.dropoffAddress,
+                      style: const TextStyle(
+                          fontSize: 12, color: GodropColors.mute),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      _relativeDate(order.createdAt),
+                      style: const TextStyle(
+                          fontSize: 11, color: GodropColors.mute),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                _fmt(order.deliveryFeeKobo),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: GodropColors.orange,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order.vendor?.name ?? _typeLabel(order.type),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: GodropColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  order.dropoffAddress,
-                  style: const TextStyle(fontSize: 12, color: GodropColors.mute),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  _relativeDate(order.createdAt),
-                  style: const TextStyle(fontSize: 11, color: GodropColors.mute),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            _fmt(order.deliveryFeeKobo),
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: GodropColors.orange,
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => context.push(
+                '/orders/${order.id}/report-issue',
+                extra: order.trackingCode,
+              ),
+              icon: const Icon(Icons.flag_outlined,
+                  size: 14, color: GodropColors.slate),
+              label: const Text('Report an issue',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: GodropColors.slate)),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
           ),
         ],

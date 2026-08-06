@@ -10,7 +10,7 @@ export const createDisputeSchema = z
     raisedByRiderId: z.string().optional(),
     category: z.nativeEnum(DisputeCategory),
     description: z.string().min(5).max(2000),
-    evidenceUrls: z.array(z.string().url()).max(10).optional(),
+    evidenceUrls: z.array(z.string().url()).max(10).nullable().optional(),
   })
   .refine(
     (d) =>
@@ -31,7 +31,7 @@ export const disputeQuerySchema = z.object({
 
 export const addDisputeMessageSchema = z.object({
   message: z.string().min(1).max(2000),
-  attachmentUrls: z.array(z.string().url()).max(10).optional(),
+  attachmentUrls: z.array(z.string().url()).max(10).nullable().optional(),
   isInternal: z.boolean().optional(),
 });
 
@@ -49,7 +49,7 @@ export const createMyDisputeSchema = z.object({
   orderId: z.string().min(1),
   category: z.nativeEnum(DisputeCategory),
   description: z.string().min(5).max(2000),
-  evidenceUrls: z.array(z.string().url()).max(10).optional(),
+  evidenceUrls: z.array(z.string().url()).max(10).nullable().optional(),
 });
 
 export const myDisputeQuerySchema = z.object({
@@ -60,7 +60,7 @@ export const myDisputeQuerySchema = z.object({
 
 export const addMyMessageSchema = z.object({
   message: z.string().min(1).max(2000),
-  attachmentUrls: z.array(z.string().url()).max(10).optional(),
+  attachmentUrls: z.array(z.string().url()).max(10).nullable().optional(),
 });
 
 export const resolveDisputeSchema = z

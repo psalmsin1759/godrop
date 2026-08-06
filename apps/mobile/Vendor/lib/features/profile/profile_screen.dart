@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../shared/services/disputes_unread_service.dart';
 import '../../shared/services/user_prefs.dart';
 import '../auth/bloc/auth_cubit.dart';
 import 'bloc/session_cubit.dart';
@@ -99,7 +100,18 @@ class ProfileScreen extends StatelessWidget {
             _MenuItem(
               icon: Icons.support_agent_rounded,
               label: 'My Reports',
-              onTap: () => context.push('/disputes'),
+              trailing: ValueListenableBuilder<int>(
+                valueListenable: DisputesUnreadService.count,
+                builder: (_, count, __) => count > 0
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: _UnreadCountPill(count: count),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              onTap: () => context
+                  .push('/disputes')
+                  .then((_) => DisputesUnreadService.refresh()),
             ),
           ]),
           const SizedBox(height: 16),
@@ -219,12 +231,40 @@ class _MenuItem {
   final String label;
   final VoidCallback onTap;
   final bool destructive;
+  final Widget? trailing;
   const _MenuItem({
     required this.icon,
     required this.label,
     required this.onTap,
     this.destructive = false,
+    this.trailing,
   });
+}
+
+class _UnreadCountPill extends StatelessWidget {
+  final int count;
+  const _UnreadCountPill({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      constraints: const BoxConstraints(minWidth: 20),
+      decoration: BoxDecoration(
+        color: GodropColors.orange,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 }
 
 class _MenuGroup extends StatelessWidget {
@@ -268,6 +308,7 @@ class _MenuGroup extends StatelessWidget {
                                   ? GodropColors.error
                                   : GodropColors.ink)),
                     ),
+                    if (items[i].trailing != null) items[i].trailing!,
                     if (!items[i].destructive)
                       const Icon(Icons.chevron_right_rounded,
                           size: 20, color: GodropColors.mute),

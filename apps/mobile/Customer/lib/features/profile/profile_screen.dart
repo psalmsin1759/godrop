@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../app/theme.dart';
 import '../../shared/api/client/dio_client.dart';
+import '../../shared/services/disputes_unread_service.dart';
 import '../../shared/services/user_prefs.dart';
 import '../../shared/utils/currency.dart';
 import '../../shared/widgets/animated_entrance.dart';
@@ -528,7 +529,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   icon: Icons.support_agent_rounded,
                                   iconColor: GodropColors.blue,
                                   label: 'My reports',
-                                  onTap: () => context.push('/disputes'),
+                                  trailing: ValueListenableBuilder<int>(
+                                    valueListenable: DisputesUnreadService.count,
+                                    builder: (ctx, count, __) => Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (count > 0)
+                                          _UnreadCountPill(count: count),
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.chevron_right_rounded,
+                                            size: 18, color: GodropColors.mute),
+                                      ],
+                                    ),
+                                  ),
+                                  onTap: () => context
+                                      .push('/disputes')
+                                      .then((_) => DisputesUnreadService.refresh()),
                                 ),
                               ]),
                             ],
@@ -744,6 +760,32 @@ class _PTile extends StatelessWidget {
               const Icon(Icons.chevron_right_rounded,
                   size: 18, color: GodropColors.mute),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UnreadCountPill extends StatelessWidget {
+  final int count;
+  const _UnreadCountPill({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      constraints: const BoxConstraints(minWidth: 20),
+      decoration: BoxDecoration(
+        color: GodropColors.orange,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

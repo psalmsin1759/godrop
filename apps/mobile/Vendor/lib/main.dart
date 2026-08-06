@@ -41,6 +41,7 @@ void main() async {
   await initLocalNotifications();
   setupForegroundMessageListener();
   setupNewOrderTapListener();
+  setupDisputeNotificationListener();
   await PushNotificationService.init();
 
   runApp(

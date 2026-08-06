@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../shared/api/api.dart';
 import '../../../shared/models/admin_models.dart';
+import '../../../shared/services/disputes_unread_service.dart';
 import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/token_storage.dart';
 import '../../../shared/services/user_prefs.dart';
@@ -67,6 +68,7 @@ class AuthCubit extends Cubit<AuthState> {
     await PushNotificationService.removeToken();
     await TokenStorage.clear();
     await UserPrefs.clear();
+    DisputesUnreadService.reset();
     emit(AuthLoggedOut());
   }
 

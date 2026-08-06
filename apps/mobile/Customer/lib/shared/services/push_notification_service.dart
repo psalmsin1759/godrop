@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../app/router.dart';
 import '../api/api.dart';
 import '../models/notification_models.dart';
+import 'disputes_unread_service.dart';
 import 'user_prefs.dart';
 
 const _kChannelId = 'godrop_orders';
@@ -93,6 +94,34 @@ void _showOrderCompletion(String orderId) {
   final current = appRouter.routerDelegate.currentConfiguration.uri.path;
   if (current == target) return;
   appRouter.push(target);
+}
+
+// ─── Dispute replies/resolutions → refresh badge, tap to open thread ────────
+
+void setupDisputeNotificationListener() {
+  void handleForeground(RemoteMessage message) {
+    if (message.data['type'] != 'DISPUTE_REPLY' &&
+        message.data['type'] != 'DISPUTE_RESOLVED') {
+      return;
+    }
+    DisputesUnreadService.refresh();
+  }
+
+  void handleTap(RemoteMessage message) {
+    if (message.data['type'] != 'DISPUTE_REPLY' &&
+        message.data['type'] != 'DISPUTE_RESOLVED') {
+      return;
+    }
+    final disputeId = message.data['disputeId'] as String?;
+    if (disputeId == null || disputeId.isEmpty) return;
+    appRouter.push('/disputes/$disputeId');
+  }
+
+  FirebaseMessaging.onMessage.listen(handleForeground);
+  FirebaseMessaging.onMessageOpenedApp.listen(handleTap);
+  FirebaseMessaging.instance.getInitialMessage().then((message) {
+    if (message != null) handleTap(message);
+  });
 }
 
 // ─── Called after successful auth ────────────────────────────────────────────

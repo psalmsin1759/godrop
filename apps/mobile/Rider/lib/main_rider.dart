@@ -29,6 +29,7 @@ void main() async {
   await initLocalNotifications();
   FirebaseMessaging.onBackgroundMessage(_fcmBackgroundHandler);
   setupForegroundMessageListener();
+  setupDisputeNotificationListener();
   await RiderPushNotificationService.init();
 
   runApp(

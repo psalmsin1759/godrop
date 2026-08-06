@@ -138,6 +138,17 @@ export function listMyDisputes(actor: (req: Request) => DisputeActor) {
   };
 }
 
+export function getMyDisputesUnreadCount(actor: (req: Request) => DisputeActor) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const count = await disputeService.getUnreadCountForActor(actor(req));
+      return ok(res, { data: { count } });
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
 export function getMyDispute(actor: (req: Request) => DisputeActor) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {

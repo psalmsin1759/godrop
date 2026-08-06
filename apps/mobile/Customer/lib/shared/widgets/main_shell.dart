@@ -4,20 +4,44 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../features/food/bloc/cart_cubit.dart';
 import '../../features/food/bloc/cart_state.dart';
+import '../services/disputes_unread_service.dart';
 
-class MainShell extends StatelessWidget {
+class MainShell extends StatefulWidget {
   final StatefulNavigationShell shell;
   const MainShell({super.key, required this.shell});
+
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    DisputesUnreadService.refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) DisputesUnreadService.refresh();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GodropColors.background,
-      body: shell,
+      body: widget.shell,
       bottomNavigationBar: _GodropBottomNav(
-        currentIndex: shell.currentIndex,
-        onTap: (i) =>
-            shell.goBranch(i, initialLocation: i == shell.currentIndex),
+        currentIndex: widget.shell.currentIndex,
+        onTap: (i) => widget.shell
+            .goBranch(i, initialLocation: i == widget.shell.currentIndex),
       ),
     );
   }
@@ -28,8 +52,9 @@ class _NavItemData {
   final IconData activeIcon;
   final String label;
   final bool showCartBadge;
+  final bool showDisputesBadge;
   const _NavItemData(this.icon, this.activeIcon, this.label,
-      {this.showCartBadge = false});
+      {this.showCartBadge = false, this.showDisputesBadge = false});
 }
 
 const _kNavItems = [
@@ -40,7 +65,8 @@ const _kNavItems = [
       'Cart', showCartBadge: true),
   _NavItemData(Icons.account_balance_wallet_outlined,
       Icons.account_balance_wallet_rounded, 'Wallet'),
-  _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+  _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Profile',
+      showDisputesBadge: true),
 ];
 
 class _GodropBottomNav extends StatelessWidget {
@@ -158,11 +184,20 @@ class _NavItemState extends State<_NavItem>
                                 : widget.data.icon,
                             color: color,
                           )
-                        : Icon(
-                            selected ? widget.data.activeIcon : widget.data.icon,
-                            color: color,
-                            size: 22,
-                          ),
+                        : widget.data.showDisputesBadge
+                            ? _DisputesBadgeIcon(
+                                icon: selected
+                                    ? widget.data.activeIcon
+                                    : widget.data.icon,
+                                color: color,
+                              )
+                            : Icon(
+                                selected
+                                    ? widget.data.activeIcon
+                                    : widget.data.icon,
+                                color: color,
+                                size: 22,
+                              ),
                   ),
                   AnimatedSize(
                     duration: const Duration(milliseconds: 220),
@@ -187,6 +222,50 @@ class _NavItemState extends State<_NavItem>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DisputesBadgeIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  const _DisputesBadgeIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: DisputesUnreadService.count,
+      builder: (ctx, count, __) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(icon, color: color, size: 22),
+            if (count > 0)
+              Positioned(
+                top: -4,
+                right: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  constraints: const BoxConstraints(minWidth: 16),
+                  decoration: BoxDecoration(
+                    color: GodropColors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: GodropColors.white, width: 1.5),
+                  ),
+                  child: Text(
+                    count > 99 ? '99+' : '$count',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

@@ -18,6 +18,7 @@ const customerActor = (req: Request) => ({ type: "CUSTOMER" as const, id: req.us
 router.post("/upload", upload.single("file"), disputeCtrl.uploadDisputeEvidence);
 router.post("/", validate(createMyDisputeSchema), disputeCtrl.createMyDispute(customerActor));
 router.get("/", validate(myDisputeQuerySchema, "query"), disputeCtrl.listMyDisputes(customerActor));
+router.get("/unread-count", disputeCtrl.getMyDisputesUnreadCount(customerActor));
 router.get("/:id", disputeCtrl.getMyDispute(customerActor));
 router.post("/:id/messages", validate(addMyMessageSchema), disputeCtrl.addMyMessage(customerActor));
 

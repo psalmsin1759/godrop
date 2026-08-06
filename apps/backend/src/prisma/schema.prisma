@@ -788,6 +788,10 @@ model Dispute {
   resolutionAmountKobo Int?
   resolvedAt           DateTime?
 
+  // When the raiser (customer/vendor/rider) last viewed this dispute's
+  // conversation — drives the unread-reply badge in the mobile apps.
+  raiserLastReadAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

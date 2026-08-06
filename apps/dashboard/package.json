@@ -2,6 +2,9 @@
   "name": "@godrop/dashboard",
   "version": "0.1.0",
   "private": true,
+  "pnpm": {
+    "ignoredBuiltDependencies": ["msw", "unrs-resolver"]
+  },
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",

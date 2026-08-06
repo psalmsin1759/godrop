@@ -173,6 +173,8 @@ export interface Vendor {
   documents?: VendorDocuments | null
   createdAt: string
   updatedAt: string
+  /** Only present on the single-vendor detail endpoint. */
+  disputeCount?: number
 }
 
 export interface AuditLog {
@@ -940,6 +942,7 @@ export interface RiderDetail extends Omit<Rider, '_count'> {
   updatedAt: string
   completedOrders: number
   rejectedOrders: number
+  disputeCount: number
 }
 
 export interface CreateRiderRequest {

@@ -55,6 +55,22 @@ const categoryLabels: Record<DisputeCategory, string> = {
   OTHER: 'Other',
 }
 
+// Auto-triage: a starting suggestion for the resolution panel based on the
+// dispute's category, so common cases need less admin judgment. Always
+// editable — this only pre-fills the form, it never auto-resolves anything.
+const resolutionSuggestions: Partial<Record<DisputeCategory, { type: DisputeResolutionType; fullRefund?: boolean }>> = {
+  NEVER_ARRIVED: { type: 'REFUND_CUSTOMER', fullRefund: true },
+  WRONG_ITEM: { type: 'REFUND_CUSTOMER', fullRefund: true },
+  DAMAGED_ITEM: { type: 'REFUND_CUSTOMER', fullRefund: true },
+  MISSING_ITEMS: { type: 'REFUND_CUSTOMER' },
+  FOOD_QUALITY: { type: 'REFUND_CUSTOMER' },
+  LATE_DELIVERY: { type: 'NO_ACTION' },
+  RIDER_BEHAVIOR: { type: 'NO_ACTION' },
+  VENDOR_BEHAVIOR: { type: 'NO_ACTION' },
+  CUSTOMER_BEHAVIOR: { type: 'NO_ACTION' },
+  PAYMENT_ISSUE: { type: 'NO_ACTION' },
+}
+
 const raisedByLabels: Record<DisputeRaisedByType, string> = {
   CUSTOMER: 'Customer',
   VENDOR: 'Vendor',
@@ -351,7 +367,12 @@ function DisputeDrawer({ id, onClose }: { id: string; onClose: () => void }) {
 
             {/* Resolution */}
             {!closed ? (
-              <ResolutionPanel disputeId={id} order={dispute.order} hasRider={!!(dispute.raisedByRider || dispute.order.riderId)} />
+              <ResolutionPanel
+                disputeId={id}
+                order={dispute.order}
+                category={dispute.category}
+                hasRider={!!(dispute.raisedByRider || dispute.order.riderId)}
+              />
             ) : (
               <div className="px-5 py-4 border-t border-[#EDF0F6]">
                 <p className="text-[11px] font-bold text-[#1E5FFF] uppercase tracking-wider mb-2">Resolution</p>
@@ -371,10 +392,23 @@ function DisputeDrawer({ id, onClose }: { id: string; onClose: () => void }) {
   )
 }
 
-function ResolutionPanel({ disputeId, order, hasRider }: { disputeId: string; order: Dispute['order']; hasRider: boolean }) {
+function ResolutionPanel({
+  disputeId,
+  order,
+  category,
+  hasRider,
+}: {
+  disputeId: string
+  order: Dispute['order']
+  category: DisputeCategory
+  hasRider: boolean
+}) {
   const [resolve, { isLoading }] = useResolveDisputeMutation()
-  const [type, setType] = useState<DisputeResolutionType>('REFUND_CUSTOMER')
-  const [amountNaira, setAmountNaira] = useState('')
+  const suggestion = resolutionSuggestions[category]
+  const [type, setType] = useState<DisputeResolutionType>(suggestion?.type ?? 'REFUND_CUSTOMER')
+  const [amountNaira, setAmountNaira] = useState(
+    suggestion?.fullRefund ? (order.totalKobo / 100).toFixed(2) : ''
+  )
   const [notes, setNotes] = useState('')
 
   const needsAmount = type === 'REFUND_CUSTOMER' || type === 'COMPENSATE_RIDER'
@@ -390,6 +424,11 @@ function ResolutionPanel({ disputeId, order, hasRider }: { disputeId: string; or
   return (
     <div className="px-5 py-4 border-t border-[#EDF0F6] space-y-3">
       <p className="text-[11px] font-bold text-[#1E5FFF] uppercase tracking-wider">Resolve dispute</p>
+      {suggestion && (
+        <p className="text-[11px] text-[#9AA1B4] -mt-1">
+          Suggested based on category — feel free to adjust.
+        </p>
+      )}
       <select
         value={type}
         onChange={(e) => setType(e.target.value as DisputeResolutionType)}

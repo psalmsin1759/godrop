@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validate } from "../middleware/validate";
 import { requireVendorAuth, requireVendorRole } from "../middleware/vendorAuth";
 import { auditVendorAction } from "../middleware/auditLog";
-import { catalogImageUpload } from "../middleware/upload";
+import { catalogImageUpload, upload } from "../middleware/upload";
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -25,6 +25,12 @@ import {
 } from "../validators/vendorAdminValidators";
 import * as ctrl from "../controllers/vendorAdminController";
 import * as analyticsCtrl from "../controllers/analyticsController";
+import * as disputeCtrl from "../controllers/disputeController";
+import {
+  createMyDisputeSchema,
+  myDisputeQuerySchema,
+  addMyMessageSchema,
+} from "../validators/disputeValidators";
 import { auditLogQuerySchema } from "../validators/systemAdminValidators";
 
 const router = Router();
@@ -149,6 +155,32 @@ router.patch(
   validate(cancelOrderSchema),
   auditVendorAction({ action: "CANCEL_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.cancelOrder
+);
+
+// Disputes (STAFF+ — same visibility as orders)
+const vendorActor = (req: Parameters<typeof ctrl.getProfile>[0]) => ({
+  type: "VENDOR" as const,
+  id: req.admin!.vendorId!,
+});
+router.post("/disputes/upload", requireVendorRole("STAFF"), upload.single("file"), disputeCtrl.uploadDisputeEvidence);
+router.post(
+  "/disputes",
+  requireVendorRole("STAFF"),
+  validate(createMyDisputeSchema),
+  disputeCtrl.createMyDispute(vendorActor)
+);
+router.get(
+  "/disputes",
+  requireVendorRole("STAFF"),
+  validate(myDisputeQuerySchema, "query"),
+  disputeCtrl.listMyDisputes(vendorActor)
+);
+router.get("/disputes/:id", requireVendorRole("STAFF"), disputeCtrl.getMyDispute(vendorActor));
+router.post(
+  "/disputes/:id/messages",
+  requireVendorRole("STAFF"),
+  validate(addMyMessageSchema),
+  disputeCtrl.addMyMessage(vendorActor)
 );
 
 // Analytics (MANAGER+)

@@ -43,6 +43,26 @@ export const updateDisputeStatusSchema = z.object({
   status: z.enum(["UNDER_REVIEW", "AWAITING_RESPONSE", "ESCALATED"]),
 });
 
+// ─── Self-service (customer/vendor/rider app) ───────────────────
+
+export const createMyDisputeSchema = z.object({
+  orderId: z.string().min(1),
+  category: z.nativeEnum(DisputeCategory),
+  description: z.string().min(5).max(2000),
+  evidenceUrls: z.array(z.string().url()).max(10).optional(),
+});
+
+export const myDisputeQuerySchema = z.object({
+  status: z.nativeEnum(DisputeStatus).optional(),
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().positive().max(100).optional().default(20),
+});
+
+export const addMyMessageSchema = z.object({
+  message: z.string().min(1).max(2000),
+  attachmentUrls: z.array(z.string().url()).max(10).optional(),
+});
+
 export const resolveDisputeSchema = z
   .object({
     resolutionType: z.nativeEnum(DisputeResolutionType),

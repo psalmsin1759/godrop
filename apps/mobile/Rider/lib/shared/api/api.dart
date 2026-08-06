@@ -5,3 +5,4 @@ export 'services/rider_orders_service.dart';
 export 'services/rider_earnings_service.dart';
 export 'services/rider_notifications_service.dart';
 export 'services/rider_analytics_service.dart';
+export 'services/rider_disputes_service.dart';

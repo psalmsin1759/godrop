@@ -264,6 +264,22 @@ class _ActiveDeliveryScreenState extends State<ActiveDeliveryScreen>
               child: _rejectButton(ctx, order, loading),
             ),
           ],
+          const SizedBox(height: 12),
+          Center(
+            child: TextButton.icon(
+              onPressed: () => ctx.push(
+                '/orders/${order.id}/report-issue',
+                extra: order.trackingCode,
+              ),
+              icon: const Icon(Icons.flag_outlined,
+                  size: 16, color: GodropColors.slate),
+              label: const Text('Report an issue',
+                  style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: GodropColors.slate)),
+            ),
+          ),
           const SizedBox(height: 16),
         ],
       ],

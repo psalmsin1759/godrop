@@ -517,6 +517,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 20),
                         AnimatedEntrance(
+                          delay: const Duration(milliseconds: 90),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _PSectionLabel('SUPPORT'),
+                              const SizedBox(height: 8),
+                              _PGroup(children: [
+                                _PTile(
+                                  icon: Icons.support_agent_rounded,
+                                  iconColor: GodropColors.blue,
+                                  label: 'My reports',
+                                  onTap: () => context.push('/disputes'),
+                                ),
+                              ]),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        AnimatedEntrance(
                           delay: const Duration(milliseconds: 120),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

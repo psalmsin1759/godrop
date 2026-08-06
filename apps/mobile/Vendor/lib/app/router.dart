@@ -23,6 +23,9 @@ import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/change_password_screen.dart';
 import '../features/profile/notifications_screen.dart';
 import '../features/profile/audit_logs_screen.dart';
+import '../features/disputes/report_issue_screen.dart';
+import '../features/disputes/my_disputes_screen.dart';
+import '../features/disputes/dispute_detail_screen.dart';
 import '../shared/models/catalog_models.dart';
 import '../shared/services/user_prefs.dart';
 import '../shared/widgets/main_shell.dart';
@@ -136,6 +139,27 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (_, state) => _fadeUp(
         state,
         OrderDetailScreen(orderId: state.pathParameters['id']!),
+      ),
+    ),
+    GoRoute(
+      path: '/orders/:id/report-issue',
+      pageBuilder: (_, state) => _slide(
+        state,
+        ReportIssueScreen(
+          orderId: state.pathParameters['id']!,
+          trackingCode: (state.extra as String?) ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/disputes',
+      pageBuilder: (_, state) => _slide(state, const MyDisputesScreen()),
+    ),
+    GoRoute(
+      path: '/disputes/:id',
+      pageBuilder: (_, state) => _slide(
+        state,
+        DisputeDetailScreen(disputeId: state.pathParameters['id']!),
       ),
     ),
     GoRoute(

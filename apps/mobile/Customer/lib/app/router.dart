@@ -36,6 +36,9 @@ import '../features/profile/wallet_screen.dart';
 import '../features/profile/notifications_screen.dart';
 import '../features/webview/webview_screen.dart';
 import '../features/profile/saved_cards_screen.dart';
+import '../features/disputes/report_issue_screen.dart';
+import '../features/disputes/my_disputes_screen.dart';
+import '../features/disputes/dispute_detail_screen.dart';
 import '../shared/widgets/main_shell.dart';
 import '../shared/services/user_prefs.dart';
 
@@ -274,6 +277,27 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (_, state) => _fadeUp(
         state,
         DeliveredRateScreen(orderId: state.pathParameters['id']!),
+      ),
+    ),
+    GoRoute(
+      path: '/orders/:id/report-issue',
+      pageBuilder: (_, state) => _slide(
+        state,
+        ReportIssueScreen(
+          orderId: state.pathParameters['id']!,
+          trackingCode: (state.extra as String?) ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/disputes',
+      pageBuilder: (_, state) => _slide(state, const MyDisputesScreen()),
+    ),
+    GoRoute(
+      path: '/disputes/:id',
+      pageBuilder: (_, state) => _slide(
+        state,
+        DisputeDetailScreen(disputeId: state.pathParameters['id']!),
       ),
     ),
     GoRoute(

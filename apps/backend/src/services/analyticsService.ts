@@ -19,13 +19,14 @@ export async function getVendorAnalytics(vendorId: string, { from, to }: DateRan
     createdAt: { gte: from, lte: to },
   };
 
-  const [statusGroups, revenueResult] = await Promise.all([
+  const [statusGroups, revenueResult, disputeCount] = await Promise.all([
     prisma.order.groupBy({ by: ['status'], where, _count: { _all: true } }),
     prisma.order.aggregate({
       where: { ...where, paymentStatus: 'PAID' },
       _sum: { subtotalKobo: true },
       _avg: { subtotalKobo: true },
     }),
+    prisma.dispute.count({ where: { order: { vendorId }, createdAt: { gte: from, lte: to } } }),
   ]);
 
   const totalOrders = statusGroups.reduce((s, g) => s + g._count._all, 0);
@@ -64,7 +65,7 @@ export async function getVendorAnalytics(vendorId: string, { from, to }: DateRan
   ]);
 
   return {
-    summary: { totalOrders, completedOrders, cancelledOrders, totalRevenueKobo, avgOrderValueKobo },
+    summary: { totalOrders, completedOrders, cancelledOrders, totalRevenueKobo, avgOrderValueKobo, disputeCount },
     ordersByStatus: statusGroups.map(g => ({ status: g.status, count: g._count._all })),
     revenueByDay: dailyRows.map(r => ({
       date: r.date,

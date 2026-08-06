@@ -16,8 +16,9 @@ import {
 } from '@/store/services/analyticsApi'
 import { useGetRiderStatsQuery, useGetRidersQuery } from '@/store/services/ridersApi'
 import { useGetVendorsQuery } from '@/features/vendors/store/vendorsApi'
+import { useGetDisputesQuery } from '@/store/services/disputesApi'
 import { formatNaira, formatNumber } from '@/lib/utils'
-import { Loader2, TrendingUp, ShoppingBag, Users, Store, Bike, Star, UserCheck, Shield } from 'lucide-react'
+import { Loader2, TrendingUp, ShoppingBag, Users, Store, Bike, Star, UserCheck, Shield, MessageSquareWarning } from 'lucide-react'
 import type { GraphGranularity } from '@/types/api'
 
 const TYPE_COLORS: Record<string, string> = {
@@ -79,6 +80,7 @@ function SystemAnalyticsView() {
   const [granularity, setGranularity] = useState<GraphGranularity>('day')
   const { data: analytics, isLoading } = useGetSystemAnalyticsQuery()
   const { data: graph, isLoading: graphLoading } = useGetSystemGraphQuery({ granularity })
+  const { data: openDisputes } = useGetDisputesQuery({ status: 'OPEN', limit: 1 })
 
   const chartData = graph?.points.map((p) => ({
     date: p.date.slice(5),
@@ -119,12 +121,13 @@ function SystemAnalyticsView() {
       {tab === 'vendors' && <VendorsAnalyticsView analytics={analytics} />}
       {tab === 'platform' && <>
       {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Revenue', value: s ? formatNaira(s.totalRevenueKobo) : '—', icon: TrendingUp, color: '#E8930C', bg: '#FBEDD7' },
           { label: 'Total Orders', value: s ? formatNumber(s.totalOrders) : '—', icon: ShoppingBag, color: '#1E5FFF', bg: '#E7EEFF' },
           { label: 'Total Users', value: s ? formatNumber(s.totalUsers) : '—', icon: Users, color: '#1DB980', bg: '#DFF5EC' },
           { label: 'Active Vendors', value: s ? formatNumber(s.activeVendors) : '—', icon: Store, color: '#FF6A2C', bg: '#FFEAE1' },
+          { label: 'Open Disputes', value: openDisputes ? formatNumber(openDisputes.meta.total) : '—', icon: MessageSquareWarning, color: '#FF3B30', bg: '#FFE3E1' },
         ].map((c) => (
           <div key={c.label} className="card p-4">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ backgroundColor: c.bg }}>

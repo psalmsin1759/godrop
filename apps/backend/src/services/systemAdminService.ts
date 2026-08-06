@@ -338,24 +338,29 @@ export async function listVendors(opts: {
 }
 
 export async function getVendorDetail(vendorId: string) {
-  return prisma.vendor.findUniqueOrThrow({
-    where: { id: vendorId },
-    include: {
-      admins: {
-        select: {
-          id: true,
-          type: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
+  const [vendor, disputeCount] = await Promise.all([
+    prisma.vendor.findUniqueOrThrow({
+      where: { id: vendorId },
+      include: {
+        admins: {
+          select: {
+            id: true,
+            type: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            isActive: true,
+            createdAt: true,
+          },
         },
+        _count: { select: { orders: true, categories: true } },
       },
-      _count: { select: { orders: true, categories: true } },
-    },
-  });
+    }),
+    prisma.dispute.count({ where: { order: { vendorId } } }),
+  ]);
+
+  return { ...vendor, disputeCount };
 }
 
 export async function approveVendor(vendorId: string) {

@@ -65,12 +65,13 @@ export async function getRiderDetail(id: string) {
   const rider = await prisma.rider.findUnique({ where: { id } });
   if (!rider) throw new Error("Rider not found");
 
-  const [completedOrders, rejectedOrders] = await Promise.all([
+  const [completedOrders, rejectedOrders, disputeCount] = await Promise.all([
     prisma.order.count({ where: { riderId: id, status: "DELIVERED" } }),
     prisma.riderRejection.count({ where: { riderId: id } }),
+    prisma.dispute.count({ where: { order: { riderId: id } } }),
   ]);
 
-  return { ...rider, completedOrders, rejectedOrders };
+  return { ...rider, completedOrders, rejectedOrders, disputeCount };
 }
 
 export async function createRider(data: {

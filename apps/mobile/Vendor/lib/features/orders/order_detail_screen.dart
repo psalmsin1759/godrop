@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../shared/models/order_models.dart';
 import '../../shared/utils/currency.dart';
@@ -148,6 +149,22 @@ class _OrderDetailView extends StatelessWidget {
                         const SizedBox(height: 12),
                         _TimelineCard(events: order.events),
                       ],
+                      const SizedBox(height: 20),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () => ctx.push(
+                            '/orders/${order.id}/report-issue',
+                            extra: order.trackingCode,
+                          ),
+                          icon: const Icon(Icons.flag_outlined,
+                              size: 16, color: GodropColors.slate),
+                          label: const Text('Report an issue',
+                              style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: GodropColors.slate)),
+                        ),
+                      ),
                     ],
                   ),
                 ),

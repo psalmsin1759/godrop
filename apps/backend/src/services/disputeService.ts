@@ -369,3 +369,103 @@ async function notifyRaiserResolved(dispute: {
     ]);
   }
 }
+
+// ─── Self-service (customer/vendor/rider app) ───────────────────
+//
+// The admin functions above operate on any dispute. These wrap them with an
+// ownership check so a customer/vendor/rider can only touch their own
+// disputes, and strip internal admin notes out of anything sent back to them.
+
+export type DisputeActor = { type: DisputeRaisedByType; id: string };
+
+async function verifyActorOnOrder(orderId: string, actor: DisputeActor) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new Error("Order not found");
+
+  if (actor.type === "CUSTOMER" && order.customerId === actor.id) return order;
+  if (actor.type === "VENDOR" && order.vendorId === actor.id) return order;
+  if (actor.type === "RIDER") {
+    if (order.riderId === actor.id) return order;
+    const everInvolved =
+      (await prisma.riderEarning.findFirst({ where: { orderId, riderId: actor.id } })) ??
+      (await prisma.riderRejection.findFirst({ where: { orderId, riderId: actor.id } }));
+    if (everInvolved) return order;
+  }
+  throw new Error("You are not associated with this order");
+}
+
+async function assertOwnership(disputeId: string, actor: DisputeActor) {
+  const dispute = await prisma.dispute.findUnique({ where: { id: disputeId } });
+  if (!dispute) throw new Error("Dispute not found");
+  const ownerId =
+    actor.type === "CUSTOMER"
+      ? dispute.raisedByCustomerId
+      : actor.type === "VENDOR"
+      ? dispute.raisedByVendorId
+      : dispute.raisedByRiderId;
+  if (dispute.raisedByType !== actor.type || ownerId !== actor.id) throw new Error("Dispute not found");
+  return dispute;
+}
+
+export async function createDisputeAsActor(
+  actor: DisputeActor,
+  input: { orderId: string; category: DisputeCategory; description: string; evidenceUrls?: string[] }
+) {
+  await verifyActorOnOrder(input.orderId, actor);
+  return createDispute({
+    orderId: input.orderId,
+    raisedByType: actor.type,
+    raisedByCustomerId: actor.type === "CUSTOMER" ? actor.id : undefined,
+    raisedByVendorId: actor.type === "VENDOR" ? actor.id : undefined,
+    raisedByRiderId: actor.type === "RIDER" ? actor.id : undefined,
+    category: input.category,
+    description: input.description,
+    evidenceUrls: input.evidenceUrls,
+  });
+}
+
+export async function listDisputesForActor(
+  actor: DisputeActor,
+  opts: { status?: DisputeStatus; page: number; limit: number }
+) {
+  const { skip } = paginate(opts.page, opts.limit);
+  const where: any = { raisedByType: actor.type };
+  if (actor.type === "CUSTOMER") where.raisedByCustomerId = actor.id;
+  if (actor.type === "VENDOR") where.raisedByVendorId = actor.id;
+  if (actor.type === "RIDER") where.raisedByRiderId = actor.id;
+  if (opts.status) where.status = opts.status;
+
+  const [data, total] = await prisma.$transaction([
+    prisma.dispute.findMany({
+      where,
+      skip,
+      take: opts.limit,
+      orderBy: { createdAt: "desc" },
+      include: { order: { select: orderSummarySelect }, _count: { select: { messages: true } } },
+    }),
+    prisma.dispute.count({ where }),
+  ]);
+
+  return { data, total, page: opts.page, limit: opts.limit };
+}
+
+export async function getDisputeForActor(disputeId: string, actor: DisputeActor) {
+  await assertOwnership(disputeId, actor);
+  const dispute = await getDisputeDetail(disputeId);
+  return { ...dispute, messages: dispute.messages.filter((m) => !m.isInternal) };
+}
+
+export async function addActorMessage(
+  disputeId: string,
+  actor: DisputeActor,
+  input: { message: string; attachmentUrls?: string[] }
+) {
+  await assertOwnership(disputeId, actor);
+  return addMessage(disputeId, {
+    senderType: actor.type as unknown as DisputeSenderType,
+    senderId: actor.id,
+    message: input.message,
+    attachmentUrls: input.attachmentUrls,
+    isInternal: false,
+  });
+}

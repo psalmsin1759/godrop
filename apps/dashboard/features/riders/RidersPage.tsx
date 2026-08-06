@@ -326,6 +326,7 @@ function RiderDetailContent({ rider }: { rider: RiderDetail }) {
       <Section title="Performance">
         <Field label="Completed orders" value={rider.completedOrders} />
         <Field label="Rejected orders" value={rider.rejectedOrders} />
+        <Field label="Disputes" value={rider.disputeCount} />
       </Section>
 
       <Section title="Personal">

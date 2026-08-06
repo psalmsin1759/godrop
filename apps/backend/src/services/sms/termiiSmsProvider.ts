@@ -42,7 +42,7 @@ export class TermiiSmsProvider implements SmsProvider {
     const apiKey = process.env.TERMII_API_KEY;
     if (!apiKey) throw new Error("TERMII_API_KEY is not set");
 
-    const baseUrl = process.env.TERMII_BASE_URL ?? "https://v3.api.termii.com";
+    const baseUrl = process.env.TERMII_BASE_URL ?? "https://v4.api.termii.com";
 
     try {
       const { data } = await axios.get(`${baseUrl}/api/sender-id`, {

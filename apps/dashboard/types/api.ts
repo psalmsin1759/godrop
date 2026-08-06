@@ -938,6 +938,8 @@ export interface RiderDetail extends Omit<Rider, '_count'> {
   guarantors?: RiderGuarantor[] | null
   documents?: RiderDocuments | null
   updatedAt: string
+  completedOrders: number
+  rejectedOrders: number
 }
 
 export interface CreateRiderRequest {

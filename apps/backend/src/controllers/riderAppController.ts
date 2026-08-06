@@ -610,6 +610,7 @@ export async function getAnalytics(req: Request, res: Response, next: NextFuncti
         rating: analytics.rating,
         ratingCount: analytics.ratingCount,
         deliveredCount: analytics.deliveredCount,
+        rejectedCount: analytics.rejectedCount,
         periodEarnings: toNaira(analytics.periodEarningsKobo),
         dailyEarnings: analytics.dailyEarnings.map((d) => ({
           date: d.date,

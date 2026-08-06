@@ -427,6 +427,7 @@ RiderAnalytics _$RiderAnalyticsFromJson(Map<String, dynamic> json) =>
       rating: (json['rating'] as num).toDouble(),
       ratingCount: (json['ratingCount'] as num).toInt(),
       deliveredCount: (json['deliveredCount'] as num).toInt(),
+      rejectedCount: (json['rejectedCount'] as num).toInt(),
       periodEarnings: (json['periodEarnings'] as num).toDouble(),
       dailyEarnings: (json['dailyEarnings'] as List<dynamic>)
           .map((e) => DailyEarningPoint.fromJson(e as Map<String, dynamic>))
@@ -441,6 +442,7 @@ Map<String, dynamic> _$RiderAnalyticsToJson(RiderAnalytics instance) =>
       'rating': instance.rating,
       'ratingCount': instance.ratingCount,
       'deliveredCount': instance.deliveredCount,
+      'rejectedCount': instance.rejectedCount,
       'periodEarnings': instance.periodEarnings,
       'dailyEarnings': instance.dailyEarnings,
       'ordersByType': instance.ordersByType,

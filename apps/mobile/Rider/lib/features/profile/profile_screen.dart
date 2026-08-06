@@ -520,6 +520,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _menuSection(BuildContext ctx) {
     final items = [
       (Icons.notifications_outlined, 'Notifications', '/notifications'),
+      (Icons.support_agent_rounded, 'My Reports', '/disputes'),
     ];
     return Container(
       decoration: BoxDecoration(

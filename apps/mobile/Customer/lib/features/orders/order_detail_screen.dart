@@ -652,6 +652,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                               ),
                             ),
                           ],
+
+                          // Report an issue
+                          const SizedBox(height: 20),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: () => context.push(
+                                '/orders/${widget.orderId}/report-issue',
+                                extra: trackingCode,
+                              ),
+                              icon: const Icon(Icons.flag_outlined,
+                                  size: 16, color: GodropColors.slate),
+                              label: const Text('Report an issue',
+                                  style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: GodropColors.slate)),
+                            ),
+                          ),
                         ],
                       ),
                     ),

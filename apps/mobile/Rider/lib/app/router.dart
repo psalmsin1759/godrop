@@ -18,6 +18,9 @@ import '../features/profile/profile_screen.dart';
 import '../features/profile/kyc_screen.dart';
 import '../features/profile/bank_screen.dart';
 import '../features/notifications/notifications_screen.dart';
+import '../features/disputes/report_issue_screen.dart';
+import '../features/disputes/my_disputes_screen.dart';
+import '../features/disputes/dispute_detail_screen.dart';
 import '../shared/widgets/rider_shell.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -155,6 +158,27 @@ final router = GoRouter(
       path: '/notifications',
       pageBuilder: (ctx, state) =>
           _slide(state, const NotificationsScreen()),
+    ),
+    GoRoute(
+      path: '/orders/:id/report-issue',
+      pageBuilder: (ctx, state) => _slide(
+        state,
+        ReportIssueScreen(
+          orderId: state.pathParameters['id']!,
+          trackingCode: (state.extra as String?) ?? '',
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/disputes',
+      pageBuilder: (ctx, state) => _slide(state, const MyDisputesScreen()),
+    ),
+    GoRoute(
+      path: '/disputes/:id',
+      pageBuilder: (ctx, state) => _slide(
+        state,
+        DisputeDetailScreen(disputeId: state.pathParameters['id']!),
+      ),
     ),
   ],
 );

@@ -19,4 +19,17 @@ class UploadService {
     final data = res.data as Map<String, dynamic>;
     return UploadedImage.fromJson(data['data'] as Map<String, dynamic>).url;
   }
+
+  Future<String> uploadDisputeEvidence(String filePath) async {
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath),
+    });
+    final res = await _dio.post(
+      '/vendor-admin/disputes/upload',
+      data: form,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+    final data = res.data as Map<String, dynamic>;
+    return UploadedImage.fromJson(data['data'] as Map<String, dynamic>).url;
+  }
 }

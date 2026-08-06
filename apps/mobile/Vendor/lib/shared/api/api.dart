@@ -3,6 +3,7 @@ export 'services/analytics_service.dart';
 export 'services/audit_service.dart';
 export 'services/auth_service.dart';
 export 'services/catalog_service.dart';
+export 'services/disputes_service.dart';
 export 'services/notifications_service.dart';
 export 'services/onboarding_service.dart';
 export 'services/orders_service.dart';

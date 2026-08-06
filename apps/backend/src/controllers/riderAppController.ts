@@ -611,6 +611,7 @@ export async function getAnalytics(req: Request, res: Response, next: NextFuncti
         ratingCount: analytics.ratingCount,
         deliveredCount: analytics.deliveredCount,
         rejectedCount: analytics.rejectedCount,
+        disputeCount: analytics.disputeCount,
         periodEarnings: toNaira(analytics.periodEarningsKobo),
         dailyEarnings: analytics.dailyEarnings.map((d) => ({
           date: d.date,

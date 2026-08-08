@@ -27,7 +27,7 @@ const DEFAULT_ROLES: {
   },
   {
     name: 'Finance Admin', type: AdminType.SYSTEM,
-    permissions: ['vendors:read', 'riders:payouts', 'analytics:read', 'audit_logs:read'],
+    permissions: ['vendors:read', 'riders:read', 'riders:payouts', 'analytics:read', 'audit_logs:read'],
     description: 'Payouts and financial oversight',
   },
   {

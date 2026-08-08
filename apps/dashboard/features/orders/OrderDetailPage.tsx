@@ -587,6 +587,9 @@ function SystemOrderDetail({ orderId }: { orderId: string }) {
             <div className="divide-y divide-[#F7F9FC]">
               <InfoRow label="Method" value={order.paymentMethod} />
               <InfoRow label="Status" value={<PaymentStatusBadge status={order.paymentStatus} />} />
+              {order.paystackRef && (
+                <InfoRow label="Reference" value={<span className="font-mono">{order.paystackRef}</span>} />
+              )}
             </div>
           </Section>
 

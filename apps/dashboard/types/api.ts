@@ -776,6 +776,7 @@ export interface AdminOrder {
   totalKobo: number
   paymentMethod: PaymentMethod
   paymentStatus: PaymentStatus
+  paystackRef?: string | null
   scheduledAt?: string | null
   estimatedMinutes?: number | null
   notes?: string | null

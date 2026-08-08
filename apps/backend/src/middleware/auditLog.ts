@@ -34,3 +34,4 @@ function auditAdminAction(config: AuditConfig) {
 
 export const auditVendorAction = auditAdminAction;
 export const auditSystemAction = auditAdminAction;
+export const auditBusinessAction = auditAdminAction;

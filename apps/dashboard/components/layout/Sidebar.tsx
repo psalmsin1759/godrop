@@ -82,7 +82,7 @@ const systemAdministration: NavLinkItem[] = [
   { href: '/admins', icon: UserCog, label: 'Admins', permission: 'admins:read' },
   { href: '/roles', icon: ShieldCheck, label: 'Roles', permission: 'roles:read' },
   { href: '/businesses', icon: Building2, label: 'Businesses', permission: 'businesses:read' },
-  { href: '/settings', icon: Settings, label: 'Settings', permission: 'settings:read' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
   { href: '/otp-assist', icon: KeyRound, label: 'OTP Assist', permission: 'otp:issue' },
 ]
 const systemMessaging: NavLinkItem[] = [
@@ -104,7 +104,7 @@ const vendorInsights: NavLinkItem[] = [
 ]
 const vendorAdministration: NavLinkItem[] = [
   { href: '/team', icon: UserCog, label: 'Team', permission: 'team:read' },
-  { href: '/settings', icon: Settings, label: 'Settings', permission: 'settings:read' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 // ─── Business ────────────────────────────────────────────────────────────────
@@ -115,7 +115,7 @@ const businessOperations: NavLinkItem[] = [
 ]
 const businessAdministration: NavLinkItem[] = [
   { href: '/business/team', icon: UserCog, label: 'Team', permission: 'team:read' },
-  { href: '/settings', icon: Settings, label: 'Settings', permission: 'settings:read' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections'

@@ -977,14 +977,20 @@ const SYSTEM_TABS: { id: SystemTabId; label: string; icon: React.ReactNode }[] =
 const SYSTEM_TAB_IDS: SystemTabId[] = ['platform', 'profile', 'notifications', 'security']
 
 function SystemSettingsPage({ initialTab }: { initialTab?: string | null }) {
+  const { data: session } = useSession()
+  const canViewPlatformSettings = hasPermission(session, 'settings:read')
+  const tabs = SYSTEM_TABS.filter((t) => t.id !== 'platform' || canViewPlatformSettings)
+  const defaultTab: SystemTabId = canViewPlatformSettings ? 'platform' : 'profile'
   const [tab, setTab] = useState<SystemTabId>(
-    SYSTEM_TAB_IDS.includes(initialTab as SystemTabId) ? (initialTab as SystemTabId) : 'platform'
+    SYSTEM_TAB_IDS.includes(initialTab as SystemTabId) && (initialTab !== 'platform' || canViewPlatformSettings)
+      ? (initialTab as SystemTabId)
+      : defaultTab
   )
 
   return (
     <>
       <div className="flex gap-1 border-b border-[#E7EAF1] mb-5">
-        {SYSTEM_TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}

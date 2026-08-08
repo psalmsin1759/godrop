@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireVendorAuth, requireVendorRole } from "../middleware/vendorAuth";
+import { requireVendorAuth, requirePermission, requireOwner } from "../middleware/vendorAuth";
 import { validate } from "../middleware/validate";
 import { auditVendorAction } from "../middleware/auditLog";
 import * as vendorWalletController from "../controllers/vendorWalletController";
@@ -12,9 +12,9 @@ import {
 const router = Router();
 
 router.use(requireVendorAuth);
-// Wallet is money-visibility: STAFF have no business here (withdraw is
-// further restricted to OWNER below).
-router.use(requireVendorRole("MANAGER"));
+// Wallet is money-visibility: needs wallet:read (moving money out is
+// further restricted to the account owner below, regardless of role).
+router.use(requirePermission("wallet:read"));
 
 router.get("/", vendorWalletController.getWallet);
 router.get("/transactions", vendorWalletController.getTransactions);
@@ -23,13 +23,13 @@ router.post("/resolve-account", validate(resolveAccountSchema), vendorWalletCont
 router.get("/bank-account", vendorWalletController.getBankAccount);
 router.post(
   "/bank-account",
-  requireVendorRole("OWNER"),
+  requireOwner,
   validate(saveBankAccountSchema),
   vendorWalletController.saveBankAccount
 );
 router.post(
   "/withdraw",
-  requireVendorRole("OWNER"),
+  requireOwner,
   validate(withdrawSchema),
   auditVendorAction({ action: "WALLET_WITHDRAWAL", entity: "VendorWallet" }),
   vendorWalletController.withdraw

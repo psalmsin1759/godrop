@@ -8,25 +8,38 @@ import {
   useInviteTeamMemberMutation,
   useUpdateTeamMemberRoleMutation,
   useRemoveTeamMemberMutation,
+  useGetVendorPermissionsQuery,
+  useGetVendorRolesQuery,
+  useCreateVendorRoleMutation,
+  useUpdateVendorRoleMutation,
+  useDeleteVendorRoleMutation,
 } from '@/store/services/teamApi'
-import type { TeamMember, TeamMemberRole } from '@/types/api'
+import type { TeamMember, Role, AdminRoleRef } from '@/types/api'
+import { hasPermission } from '@/lib/permissions'
 import { formatDate } from '@/lib/utils'
 import { exportToCsv } from '@/lib/exportCsv'
-import { Plus, Loader2, UserX, UserCog, UserCheck, Download } from 'lucide-react'
+import { Plus, Loader2, UserX, UserCog, Download } from 'lucide-react'
+import RoleManager from '@/features/roles/RoleManager'
 
-const ROLE_CONFIG: Record<TeamMemberRole, { label: string; bg: string; text: string }> = {
-  OWNER: { label: 'Owner', bg: '#E7EEFF', text: '#1E5FFF' },
-  MANAGER: { label: 'Manager', bg: '#FFEAE1', text: '#FF6A2C' },
-  STAFF: { label: 'Staff', bg: '#EDF0F6', text: '#525A72' },
+function RoleBadge({ role }: { role: AdminRoleRef }) {
+  const isFullAccess = role.permissions.includes('*')
+  return (
+    <span
+      className="text-[11px] font-medium rounded-full px-2 py-0.5"
+      style={isFullAccess ? { backgroundColor: '#FFE3E1', color: '#FF3B30' } : { backgroundColor: '#E7EEFF', color: '#1E5FFF' }}
+    >
+      {role.name}
+    </span>
+  )
 }
 
-function InviteDialog({ onClose }: { onClose: () => void }) {
+function InviteDialog({ roles, onClose }: { roles: Role[]; onClose: () => void }) {
   const [invite, { isLoading }] = useInviteTeamMemberMutation()
   const [form, setForm] = useState({
     email: '',
     firstName: '',
     lastName: '',
-    role: 'STAFF' as 'MANAGER' | 'STAFF',
+    roleId: roles.find((r) => r.name === 'Staff')?.id ?? roles[0]?.id ?? '',
   })
   const [error, setError] = useState('')
 
@@ -81,12 +94,13 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
           <div>
             <label className="block text-xs font-medium text-[#525A72] mb-1">Role</label>
             <select
-              value={form.role}
-              onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as 'MANAGER' | 'STAFF' }))}
+              value={form.roleId}
+              onChange={(e) => setForm((f) => ({ ...f, roleId: e.target.value }))}
               className="w-full px-3 py-2 text-xs rounded border border-[#E7EAF1] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]"
             >
-              <option value="STAFF">Staff</option>
-              <option value="MANAGER">Manager</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
             </select>
           </div>
           {error && <p className="text-xs text-[#FF3B30]">{error}</p>}
@@ -113,12 +127,12 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-function MemberActions({ member, onClose }: { member: TeamMember; onClose: () => void }) {
+function MemberActions({ member, roles, onClose }: { member: TeamMember; roles: Role[]; onClose: () => void }) {
   const [updateRole, { isLoading: updating }] = useUpdateTeamMemberRoleMutation()
   const [remove, { isLoading: removing }] = useRemoveTeamMemberMutation()
   const [confirmRemove, setConfirmRemove] = useState(false)
 
-  if (member.role === 'OWNER') return null
+  if (member.isOwner) return null
 
   if (confirmRemove) return (
     <div className="absolute right-0 top-8 z-50 w-56 bg-white rounded-lg border border-[#E7EAF1] shadow-lg p-3 space-y-2">
@@ -139,25 +153,20 @@ function MemberActions({ member, onClose }: { member: TeamMember; onClose: () =>
   )
 
   return (
-    <div className="absolute right-0 top-8 z-50 w-44 bg-white rounded-lg border border-[#E7EAF1] shadow-lg py-1">
-      {member.role === 'STAFF' && (
-        <button
+    <div className="absolute right-0 top-8 z-50 w-56 bg-white rounded-lg border border-[#E7EAF1] shadow-lg py-1">
+      <div className="px-3 py-2">
+        <label className="block text-[10px] font-medium text-[#9AA1B4] mb-1">Change role</label>
+        <select
           disabled={updating}
-          onClick={async () => { await updateRole({ memberId: member.id, role: 'MANAGER' }).unwrap(); onClose() }}
-          className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#FF6A2C] hover:bg-[#F7F9FC]"
+          value={member.role.id}
+          onChange={async (e) => { await updateRole({ memberId: member.id, roleId: e.target.value }).unwrap(); onClose() }}
+          className="w-full text-xs rounded border border-[#E7EAF1] px-2 py-1.5"
         >
-          <UserCog className="w-3.5 h-3.5" /> Make Manager
-        </button>
-      )}
-      {member.role === 'MANAGER' && (
-        <button
-          disabled={updating}
-          onClick={async () => { await updateRole({ memberId: member.id, role: 'STAFF' }).unwrap(); onClose() }}
-          className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#525A72] hover:bg-[#F7F9FC]"
-        >
-          <UserCheck className="w-3.5 h-3.5" /> Downgrade to Staff
-        </button>
-      )}
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </select>
+      </div>
       <button
         onClick={() => setConfirmRemove(true)}
         className="flex items-center gap-2 w-full px-3 py-2 text-xs text-[#FF3B30] hover:bg-[#F7F9FC] border-t border-[#EDF0F6] mt-1"
@@ -177,20 +186,28 @@ function MemberActions({ member, onClose }: { member: TeamMember; onClose: () =>
 export default function TeamPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const { data: members = [], isLoading, isError } = useGetTeamMembersQuery()
+  const canViewTeam = hasPermission(session, 'team:read')
+  const canManageTeam = hasPermission(session, 'team:write')
+
+  const { data: members = [], isLoading, isError } = useGetTeamMembersQuery(undefined, { skip: !canViewTeam })
+  const { data: roles = [] } = useGetVendorRolesQuery(undefined, { skip: !canViewTeam })
+  const { data: permissions = [] } = useGetVendorPermissionsQuery(undefined, { skip: !canManageTeam })
+  const [createRole] = useCreateVendorRoleMutation()
+  const [updateRole] = useUpdateVendorRoleMutation()
+  const [deleteRole] = useDeleteVendorRoleMutation()
+
   const [showInvite, setShowInvite] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const isStaff = session?.admin?.role === 'STAFF'
 
   useEffect(() => {
-    if (isStaff) router.replace('/orders')
-  }, [isStaff, router])
+    if (!canViewTeam) router.replace('/orders')
+  }, [canViewTeam, router])
 
-  if (isStaff) return null
+  if (!canViewTeam) return null
 
   return (
     <div className="space-y-5" onClick={() => setOpenMenu(null)}>
-      {showInvite && <InviteDialog onClose={() => setShowInvite(false)} />}
+      {showInvite && <InviteDialog roles={roles} onClose={() => setShowInvite(false)} />}
 
       <div className="flex items-center justify-between">
         <div>
@@ -203,7 +220,7 @@ export default function TeamPage() {
             onClick={() => exportToCsv('team', members, [
               { header: 'Name', value: (m) => `${m.firstName} ${m.lastName}` },
               { header: 'Email', value: (m) => m.email },
-              { header: 'Role', value: (m) => m.role },
+              { header: 'Role', value: (m) => m.role.name },
               { header: 'Status', value: (m) => m.isActive ? 'Active' : 'Inactive' },
               { header: 'Joined', value: (m) => formatDate(m.createdAt) },
             ])}
@@ -211,7 +228,7 @@ export default function TeamPage() {
           >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
-          {!isStaff && (
+          {canManageTeam && (
             <button
               onClick={() => setShowInvite(true)}
               className="flex items-center gap-1.5 text-xs text-white font-semibold px-3 py-1.5 rounded"
@@ -226,8 +243,8 @@ export default function TeamPage() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Total Members', value: members.length, color: '#1E5FFF', bg: '#E7EEFF' },
-          { label: 'Managers', value: members.filter((m) => m.role === 'MANAGER').length, color: '#FF6A2C', bg: '#FFEAE1' },
-          { label: 'Staff', value: members.filter((m) => m.role === 'STAFF').length, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Active', value: members.filter((m) => m.isActive).length, color: '#1DB980', bg: '#DFF5EC' },
+          { label: 'Owners', value: members.filter((m) => m.isOwner).length, color: '#FF6A2C', bg: '#FFEAE1' },
         ].map((s) => (
           <div key={s.label} className="card p-4">
             <p className="text-lg font-bold text-[#0D1426] leading-none" style={{ color: s.color }}>{s.value}</p>
@@ -261,71 +278,73 @@ export default function TeamPage() {
                     <td colSpan={6} className="text-center py-10 text-xs text-[#9AA1B4]">No team members yet.</td>
                   </tr>
                 ) : (
-                  members.map((m) => {
-                    const role = ROLE_CONFIG[m.role]
-                    return (
-                      <tr key={m.id} className="hover:bg-[#F7F9FC] transition-colors" onClick={(e) => e.stopPropagation()}>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                              style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}
-                            >
-                              {m.firstName[0]}
-                            </div>
-                            <span className="text-xs font-semibold text-[#0D1426]">
-                              {m.firstName} {m.lastName}
-                            </span>
+                  members.map((m) => (
+                    <tr key={m.id} className="hover:bg-[#F7F9FC] transition-colors" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                            style={{ background: 'linear-gradient(135deg, #1E5FFF, #FF6A2C)' }}
+                          >
+                            {m.firstName[0]}
                           </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs text-[#525A72]">{m.email}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="text-[11px] font-medium rounded-full px-2 py-0.5"
-                            style={{ backgroundColor: role.bg, color: role.text }}
-                          >
-                            {role.label}
+                          <span className="text-xs font-semibold text-[#0D1426]">
+                            {m.firstName} {m.lastName}
                           </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="text-[11px] font-medium rounded-full px-2 py-0.5"
-                            style={m.isActive
-                              ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
-                              : { backgroundColor: '#EDF0F6', color: '#9AA1B4' }}
-                          >
-                            {m.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-[11px] text-[#9AA1B4]">{formatDate(m.createdAt)}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {m.role !== 'OWNER' && (
-                            <div className="relative" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                onClick={() => setOpenMenu(openMenu === m.id ? null : m.id)}
-                                className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#EDF0F6]"
-                              >
-                                <UserCog className="w-3.5 h-3.5 text-[#9AA1B4]" />
-                              </button>
-                              {openMenu === m.id && (
-                                <MemberActions member={m} onClose={() => setOpenMenu(null)} />
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-[#525A72]">{m.email}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <RoleBadge role={m.role} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className="text-[11px] font-medium rounded-full px-2 py-0.5"
+                          style={m.isActive
+                            ? { backgroundColor: '#DFF5EC', color: '#1DB980' }
+                            : { backgroundColor: '#EDF0F6', color: '#9AA1B4' }}
+                        >
+                          {m.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-[11px] text-[#9AA1B4]">{formatDate(m.createdAt)}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {canManageTeam && !m.isOwner && (
+                          <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => setOpenMenu(openMenu === m.id ? null : m.id)}
+                              className="w-6 h-6 rounded flex items-center justify-center hover:bg-[#EDF0F6]"
+                            >
+                              <UserCog className="w-3.5 h-3.5 text-[#9AA1B4]" />
+                            </button>
+                            {openMenu === m.id && (
+                              <MemberActions member={m} roles={roles} onClose={() => setOpenMenu(null)} />
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      <RoleManager
+        permissions={permissions}
+        roles={roles}
+        isLoading={false}
+        canManage={canManageTeam}
+        onCreate={(body) => createRole(body).unwrap()}
+        onUpdate={(args) => updateRole(args).unwrap()}
+        onDelete={(id) => deleteRole(id).unwrap()}
+      />
     </div>
   )
 }

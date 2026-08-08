@@ -186,6 +186,7 @@ model Vendor {
   orders       Order[]
   reviews      Review[]
   admins       Admin[]
+  roles        Role[]
   auditLogs    AuditLog[]
   wallet       VendorWallet?
   bankAccount  VendorBankAccount?
@@ -301,7 +302,9 @@ model PlatformSettings {
 model Admin {
   id         String    @id @default(cuid())
   type       AdminType
-  role       AdminRole
+  roleId     String
+  role       Role      @relation(fields: [roleId], references: [id])
+  isOwner    Boolean   @default(false) // VENDOR/BUSINESS account owner — protected from removal/demotion, independent of roleId
   vendorId   String?
   vendor     Vendor?   @relation(fields: [vendorId], references: [id])
   businessId String?
@@ -326,6 +329,7 @@ model Admin {
 
   @@index([vendorId])
   @@index([businessId])
+  @@index([roleId])
 }
 
 enum AdminType {
@@ -334,14 +338,29 @@ enum AdminType {
   BUSINESS
 }
 
-enum AdminRole {
-  // System roles
-  SUPER_ADMIN
-  ADMIN
-  // Vendor roles
-  OWNER
-  MANAGER
-  STAFF
+// Granular RBAC: a Role is a named, editable bundle of permission keys (see
+// backend/src/lib/permissions.ts for the catalog). SYSTEM roles are global
+// (vendorId/businessId null). VENDOR/BUSINESS default templates (Owner/
+// Manager/Staff) are also global (isDefault: true); individual vendors/
+// businesses can additionally create roles scoped to just their own team.
+model Role {
+  id          String    @id @default(cuid())
+  name        String
+  type        AdminType
+  vendorId    String?
+  vendor      Vendor?   @relation(fields: [vendorId], references: [id])
+  businessId  String?
+  business    Business? @relation(fields: [businessId], references: [id])
+  permissions String[] // permission keys, e.g. ["orders:read", "disputes:write"]; ["*"] = full access for the type
+  isDefault   Boolean   @default(false) // seeded template — cannot be deleted
+  description String?
+  admins      Admin[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([name, type, vendorId, businessId])
+  @@index([vendorId])
+  @@index([businessId])
 }
 
 // ─── Audit Log ────────────────────────────────────────────────
@@ -1089,6 +1108,7 @@ model Business {
   updatedAt DateTime @updatedAt
 
   admins Admin[]
+  roles  Role[]
   riders Rider[]
   wallet BusinessWallet?
 }

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { requireAdminAuth, requireVendorAdmin, requireVendorRole } from "./adminAuth";
+import { requireAdminAuth, requireVendorAdmin, requirePermission, requireOwner } from "./adminAuth";
 
-export { requireVendorRole };
+export { requirePermission, requireOwner };
 
 export function requireVendorAuth(req: Request, res: Response, next: NextFunction) {
   requireAdminAuth(req, res, (err?: any) => {

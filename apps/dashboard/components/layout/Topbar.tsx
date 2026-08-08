@@ -327,7 +327,7 @@ export default function Topbar({ breadcrumb = ['Dashboard', 'Home', 'Overview'],
                 <p className="text-[13px] font-bold text-[#0D1426]">
                   {session.admin.firstName} {session.admin.lastName}
                 </p>
-                <p className="text-[10.5px] text-[#9AA1B4] font-mono">{session.admin.role}</p>
+                <p className="text-[10.5px] text-[#9AA1B4] font-mono">{session.admin.role.name}</p>
               </div>
             )}
             <ChevronDown className={`w-3.5 h-3.5 text-[#9AA1B4] transition-transform ${menuOpen ? 'rotate-180' : ''}`} />

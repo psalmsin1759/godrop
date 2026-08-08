@@ -3,19 +3,21 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
-import { AdminRole, AdminType, UserStatus, VendorStatus } from "@prisma/client";
+import { AdminType, UserStatus, VendorStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { sendEmail, systemAdminInviteEmail, vendorApprovedEmail, vendorRejectedEmail, adminPasswordResetEmail } from "./emailService";
 import { logAction } from "./auditLogService";
+import { getDefaultRole } from "./roleService";
 
 const SALT_ROUNDS = 12;
+const ROLE_SELECT = { select: { id: true, name: true, type: true, permissions: true } } as const;
 
 // ─── Auth ─────────────────────────────────────────────────────
 
 export async function loginAdmin(email: string, password: string) {
   const admin = await prisma.admin.findUnique({
     where: { email },
-    include: { vendor: true },
+    include: { vendor: true, role: true },
   });
   if (!admin || !admin.isActive) throw new Error("Invalid credentials");
 
@@ -200,10 +202,18 @@ export async function createSystemAdmin(data: {
   email: string;
   firstName: string;
   lastName: string;
-  role?: Extract<AdminRole, "SUPER_ADMIN" | "ADMIN">;
+  roleId?: string;
 }) {
   const existing = await prisma.admin.findUnique({ where: { email: data.email } });
   if (existing) throw new Error("An admin with this email already exists");
+
+  let role;
+  if (data.roleId) {
+    role = await prisma.role.findFirst({ where: { id: data.roleId, type: AdminType.SYSTEM } });
+    if (!role) throw new Error("Invalid role");
+  } else {
+    role = await getDefaultRole(AdminType.SYSTEM, "Operations Admin");
+  }
 
   const tempPassword = nanoid(12);
   const hashed = await bcrypt.hash(tempPassword, SALT_ROUNDS);
@@ -214,14 +224,15 @@ export async function createSystemAdmin(data: {
       firstName: data.firstName,
       lastName: data.lastName,
       password: hashed,
-      role: data.role ?? AdminRole.ADMIN,
+      roleId: role.id,
     },
+    include: { role: true },
   });
 
   await sendEmail(systemAdminInviteEmail({
     firstName: data.firstName,
     email: data.email,
-    role: admin.role,
+    role: admin.role.name,
     temporaryPassword: tempPassword,
   }));
 
@@ -243,7 +254,7 @@ export async function listSystemAdmins(page: number, limit: number) {
         email: true,
         firstName: true,
         lastName: true,
-        role: true,
+        role: ROLE_SELECT,
         isActive: true,
         receiveVendorEmails: true,
         receiveRiderEmails: true,
@@ -261,21 +272,26 @@ export async function updateSystemAdmin(
     firstName?: string;
     lastName?: string;
     isActive?: boolean;
-    role?: Extract<AdminRole, "SUPER_ADMIN" | "ADMIN">;
+    roleId?: string;
     receiveVendorEmails?: boolean;
     receiveRiderEmails?: boolean;
   }
 ) {
+  const { roleId, ...rest } = data;
+  if (roleId) {
+    const role = await prisma.role.findFirst({ where: { id: roleId, type: AdminType.SYSTEM } });
+    if (!role) throw new Error("Invalid role");
+  }
   return prisma.admin.update({
     where: { id },
-    data,
+    data: { ...rest, ...(roleId ? { roleId } : {}) },
     select: {
       id: true,
       type: true,
       email: true,
       firstName: true,
       lastName: true,
-      role: true,
+      role: ROLE_SELECT,
       isActive: true,
       receiveVendorEmails: true,
       receiveRiderEmails: true,
@@ -295,7 +311,7 @@ export async function updateAdminEmailPrefs(
       email: true,
       firstName: true,
       lastName: true,
-      role: true,
+      role: ROLE_SELECT,
       isActive: true,
       receiveVendorEmails: true,
       receiveRiderEmails: true,
@@ -325,7 +341,7 @@ export async function listVendors(opts: {
       take: opts.limit,
       include: {
         admins: {
-          where: { role: AdminRole.OWNER },
+          where: { isOwner: true },
           select: { id: true, email: true, firstName: true, lastName: true },
         },
         _count: { select: { orders: true, categories: true } },
@@ -349,7 +365,8 @@ export async function getVendorDetail(vendorId: string) {
             email: true,
             firstName: true,
             lastName: true,
-            role: true,
+            role: ROLE_SELECT,
+            isOwner: true,
             isActive: true,
             createdAt: true,
           },
@@ -373,7 +390,7 @@ export async function approveVendor(vendorId: string) {
   });
 
   const owner = await prisma.admin.findFirst({
-    where: { vendorId, role: AdminRole.OWNER },
+    where: { vendorId, isOwner: true },
   });
   if (owner) {
     await sendEmail(
@@ -397,7 +414,7 @@ export async function rejectVendor(vendorId: string, reason: string) {
     data: { status: VendorStatus.REJECTED, isActive: false, rejectionReason: reason },
   });
 
-  const owner = await prisma.admin.findFirst({ where: { vendorId, role: AdminRole.OWNER } });
+  const owner = await prisma.admin.findFirst({ where: { vendorId, isOwner: true } });
   if (owner) {
     await sendEmail(
       vendorRejectedEmail({

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validate } from "../middleware/validate";
-import { requireSystemAuth, requireSystemRole } from "../middleware/systemAuth";
+import { requireSystemAuth, requirePermission } from "../middleware/systemAuth";
 import { auditSystemAction } from "../middleware/auditLog";
 import {
   adminLoginSchema,
@@ -22,6 +22,8 @@ import {
   forgotAdminPasswordSchema,
   resetAdminPasswordSchema,
   issueManualOtpSchema,
+  createRoleSchema,
+  updateRoleSchema,
 } from "../validators/systemAdminValidators";
 import {
   createDisputeSchema,
@@ -32,6 +34,7 @@ import {
   resolveDisputeSchema,
 } from "../validators/disputeValidators";
 import * as ctrl from "../controllers/systemAdminController";
+import * as roleCtrl from "../controllers/roleController";
 import * as disputeCtrl from "../controllers/disputeController";
 import * as analyticsCtrl from "../controllers/analyticsController";
 import * as riderCtrl from "../controllers/riderController";
@@ -93,256 +96,280 @@ router.patch(
 router.get("/me/settings", ctrl.getSettings);
 router.patch("/me/settings", validate(updateAdminSettingsSchema), ctrl.updateSettings);
 
-router.get("/platform-settings", requireSystemRole("ADMIN"), ctrl.getPlatformSettings);
-router.patch("/platform-settings", requireSystemRole("ADMIN"), ctrl.updatePlatformSettings);
+router.get("/platform-settings", requirePermission("settings:read"), ctrl.getPlatformSettings);
+router.patch("/platform-settings", requirePermission("settings:write"), ctrl.updatePlatformSettings);
 
-// ─── Manual OTP (SUPER_ADMIN only) ────────────────────────────
+// ─── Manual OTP (sensitive) ────────────────────────────────────
 router.post(
   "/manual-otp",
-  requireSystemRole("SUPER_ADMIN"),
+  requirePermission("otp:issue"),
   validate(issueManualOtpSchema),
   auditSystemAction({ action: "ISSUE_MANUAL_OTP", entity: "Otp", getEntityId: (r) => r.body.phone }),
   ctrl.issueManualOtp
 );
 router.post(
   "/messaging/test-otp",
-  requireSystemRole("SUPER_ADMIN"),
+  requirePermission("otp:issue"),
   validate(issueManualOtpSchema),
   ctrl.testOtpSms
 );
 
-// ─── Admin Management (SUPER_ADMIN only) ─────────────────────
+// ─── Admin Management ──────────────────────────────────────────
 router.get(
   "/admins",
-  requireSystemRole("SUPER_ADMIN"),
+  requirePermission("admins:read"),
   ctrl.listAdmins
 );
 router.post(
   "/admins",
-  requireSystemRole("SUPER_ADMIN"),
+  requirePermission("admins:write"),
   validate(createSystemAdminSchema),
   auditSystemAction({ action: "CREATE_SYSTEM_ADMIN", entity: "SystemAdmin" }),
   ctrl.createAdmin
 );
 router.patch(
   "/admins/:id",
-  requireSystemRole("SUPER_ADMIN"),
+  requirePermission("admins:write"),
   validate(updateSystemAdminSchema),
   auditSystemAction({ action: "UPDATE_SYSTEM_ADMIN", entity: "SystemAdmin", getEntityId: (r) => r.params.id }),
   ctrl.updateAdmin
 );
 router.patch(
   "/admins/:id/email-prefs",
-  requireSystemRole("SUPER_ADMIN"),
+  requirePermission("admins:write"),
   auditSystemAction({ action: "UPDATE_ADMIN_EMAIL_PREFS", entity: "SystemAdmin", getEntityId: (r) => r.params.id }),
   ctrl.updateAdminEmailPrefs
 );
 
-// ─── Vendor Management (ADMIN+) ───────────────────────────────
-router.get("/vendors", requireSystemRole("ADMIN"), ctrl.listVendors);
-router.get("/vendors/:id", requireSystemRole("ADMIN"), ctrl.getVendor);
+// ─── Roles (RBAC) ───────────────────────────────────────────────
+router.get("/permissions", requirePermission("roles:read"), roleCtrl.listSystemPermissions);
+router.get("/roles", requirePermission("roles:read"), roleCtrl.listRoles);
+router.post(
+  "/roles",
+  requirePermission("roles:write"),
+  validate(createRoleSchema),
+  auditSystemAction({ action: "CREATE_ROLE", entity: "Role" }),
+  roleCtrl.createRole
+);
+router.patch(
+  "/roles/:id",
+  requirePermission("roles:write"),
+  validate(updateRoleSchema),
+  auditSystemAction({ action: "UPDATE_ROLE", entity: "Role", getEntityId: (r) => r.params.id }),
+  roleCtrl.updateRole
+);
+router.delete(
+  "/roles/:id",
+  requirePermission("roles:write"),
+  auditSystemAction({ action: "DELETE_ROLE", entity: "Role", getEntityId: (r) => r.params.id }),
+  roleCtrl.deleteRole
+);
+
+// ─── Vendor Management ─────────────────────────────────────────
+router.get("/vendors", requirePermission("vendors:read"), ctrl.listVendors);
+router.get("/vendors/:id", requirePermission("vendors:read"), ctrl.getVendor);
 router.patch(
   "/vendors/:id/approve",
-  requireSystemRole("ADMIN"),
+  requirePermission("vendors:write"),
   auditSystemAction({ action: "APPROVE_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
   ctrl.approveVendor
 );
 router.patch(
   "/vendors/:id/reject",
-  requireSystemRole("ADMIN"),
+  requirePermission("vendors:write"),
   validate(rejectVendorSchema),
   auditSystemAction({ action: "REJECT_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
   ctrl.rejectVendor
 );
 router.patch(
   "/vendors/:id/suspend",
-  requireSystemRole("ADMIN"),
+  requirePermission("vendors:write"),
   validate(suspendVendorSchema),
   auditSystemAction({ action: "SUSPEND_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
   ctrl.suspendVendor
 );
 router.patch(
   "/vendors/:id/reinstate",
-  requireSystemRole("ADMIN"),
+  requirePermission("vendors:write"),
   auditSystemAction({ action: "REINSTATE_VENDOR", entity: "Vendor", getEntityId: (r) => r.params.id }),
   ctrl.reinstateVendor
 );
-router.get("/vendors/:id/wallet", requireSystemRole("ADMIN"), ctrl.getVendorWalletBalance);
-router.get("/vendors/:id/withdrawals", requireSystemRole("ADMIN"), ctrl.getVendorWithdrawals);
+router.get("/vendors/:id/wallet", requirePermission("vendors:read"), ctrl.getVendorWalletBalance);
+router.get("/vendors/:id/withdrawals", requirePermission("vendors:read"), ctrl.getVendorWithdrawals);
 
-// ─── Customer Management (ADMIN+) ────────────────────────────
+// ─── Customer Management ────────────────────────────────────────
 router.get(
   "/customers",
-  requireSystemRole("ADMIN"),
+  requirePermission("customers:read"),
   validate(customerQuerySchema, "query"),
   ctrl.listCustomers
 );
-router.get("/customers/:id", requireSystemRole("ADMIN"), ctrl.getCustomer);
+router.get("/customers/:id", requirePermission("customers:read"), ctrl.getCustomer);
 router.get(
   "/customers/:id/orders",
-  requireSystemRole("ADMIN"),
+  requirePermission("customers:read"),
   validate(customerOrderQuerySchema, "query"),
   ctrl.getCustomerOrders
 );
 router.patch(
   "/customers/:id/status",
-  requireSystemRole("ADMIN"),
+  requirePermission("customers:write"),
   validate(updateCustomerStatusSchema),
   auditSystemAction({ action: "UPDATE_CUSTOMER_STATUS", entity: "User", getEntityId: (r) => r.params.id }),
   ctrl.updateCustomerStatus
 );
-router.get("/customers/:id/wallet", requireSystemRole("ADMIN"), ctrl.getCustomerWallet);
+router.get("/customers/:id/wallet", requirePermission("customers:read"), ctrl.getCustomerWallet);
 router.get(
   "/customers/:id/wallet/transactions",
-  requireSystemRole("ADMIN"),
+  requirePermission("customers:read"),
   validate(walletTxQuerySchema, "query"),
   ctrl.getCustomerWalletTransactions
 );
 
-// ─── Analytics (ADMIN+) ──────────────────────────────────────
-router.get("/analytics", requireSystemRole("ADMIN"), analyticsCtrl.systemAnalytics);
+// ─── Analytics ───────────────────────────────────────────────────
+router.get("/analytics", requirePermission("analytics:read"), analyticsCtrl.systemAnalytics);
 router.get(
   "/analytics/graph",
-  requireSystemRole("ADMIN"),
+  requirePermission("analytics:read"),
   validate(graphQuerySchema, "query"),
   analyticsCtrl.systemGraphData
 );
 
-// ─── Audit Logs (ADMIN+) ──────────────────────────────────────
+// ─── Audit Logs ────────────────────────────────────────────────
 router.get(
   "/audit-logs",
-  requireSystemRole("ADMIN"),
+  requirePermission("audit_logs:read"),
   validate(auditLogQuerySchema, "query"),
   ctrl.listAuditLogs
 );
 
-// ─── Disputes (ADMIN+) ─────────────────────────────────────────
+// ─── Disputes ────────────────────────────────────────────────────
 router.get(
   "/disputes",
-  requireSystemRole("ADMIN"),
+  requirePermission("disputes:read"),
   validate(disputeQuerySchema, "query"),
   disputeCtrl.listDisputes
 );
 router.post(
   "/disputes",
-  requireSystemRole("ADMIN"),
+  requirePermission("disputes:write"),
   validate(createDisputeSchema),
   auditSystemAction({ action: "CREATE_DISPUTE", entity: "Dispute" }),
   disputeCtrl.createDispute
 );
-router.get("/disputes/:id", requireSystemRole("ADMIN"), disputeCtrl.getDispute);
+router.get("/disputes/:id", requirePermission("disputes:read"), disputeCtrl.getDispute);
 router.post(
   "/disputes/:id/messages",
-  requireSystemRole("ADMIN"),
+  requirePermission("disputes:write"),
   validate(addDisputeMessageSchema),
   disputeCtrl.addMessage
 );
 router.patch(
   "/disputes/:id/assign",
-  requireSystemRole("ADMIN"),
+  requirePermission("disputes:write"),
   validate(assignDisputeSchema),
   auditSystemAction({ action: "ASSIGN_DISPUTE", entity: "Dispute", getEntityId: (r) => r.params.id }),
   disputeCtrl.assignDispute
 );
 router.patch(
   "/disputes/:id/status",
-  requireSystemRole("ADMIN"),
+  requirePermission("disputes:write"),
   validate(updateDisputeStatusSchema),
   auditSystemAction({ action: "UPDATE_DISPUTE_STATUS", entity: "Dispute", getEntityId: (r) => r.params.id }),
   disputeCtrl.updateStatus
 );
 router.patch(
   "/disputes/:id/resolve",
-  requireSystemRole("ADMIN"),
+  requirePermission("disputes:write"),
   validate(resolveDisputeSchema),
   auditSystemAction({ action: "RESOLVE_DISPUTE", entity: "Dispute", getEntityId: (r) => r.params.id }),
   disputeCtrl.resolveDispute
 );
 
-// ─── Orders (ADMIN+) ─────────────────────────────────────────
-router.get("/orders", requireSystemRole("ADMIN"), ctrl.listOrders);
-router.get("/orders/:id", requireSystemRole("ADMIN"), ctrl.getOrder);
+// ─── Orders ──────────────────────────────────────────────────────
+router.get("/orders", requirePermission("orders:read"), ctrl.listOrders);
+router.get("/orders/:id", requirePermission("orders:read"), ctrl.getOrder);
 router.patch(
   "/orders/:id/status",
-  requireSystemRole("ADMIN"),
+  requirePermission("orders:write"),
   validate(adminUpdateOrderStatusSchema),
   auditSystemAction({ action: "UPDATE_ORDER_STATUS", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.updateOrderStatus
 );
 router.patch(
   "/orders/:id/cancel",
-  requireSystemRole("ADMIN"),
+  requirePermission("orders:write"),
   validate(adminCancelOrderSchema),
   auditSystemAction({ action: "CANCEL_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.cancelOrder
 );
 
-// ─── Notifications (ADMIN+) ───────────────────────────────────
-router.get("/notifications", requireSystemRole("ADMIN"), ctrl.listNotifications);
-router.get("/notifications/unread-count", requireSystemRole("ADMIN"), ctrl.getNotificationsUnreadCount);
-router.patch("/notifications/read-all", requireSystemRole("ADMIN"), ctrl.markAllNotificationsRead);
-router.patch("/notifications/:id/read", requireSystemRole("ADMIN"), ctrl.markNotificationRead);
+// ─── Notifications (own account — no module permission required) ─
+router.get("/notifications", ctrl.listNotifications);
+router.get("/notifications/unread-count", ctrl.getNotificationsUnreadCount);
+router.patch("/notifications/read-all", ctrl.markAllNotificationsRead);
+router.patch("/notifications/:id/read", ctrl.markNotificationRead);
 
-// ─── Riders (ADMIN+) ─────────────────────────────────────────
-router.get("/riders/stats", requireSystemRole("ADMIN"), riderCtrl.getRiderStats);
-router.get("/riders/available", requireSystemRole("ADMIN"), riderCtrl.listAvailableRiders);
-router.get("/riders", requireSystemRole("ADMIN"), validate(riderQuerySchema, "query"), riderCtrl.listRiders);
-router.post("/riders", requireSystemRole("ADMIN"), validate(createRiderSchema), riderCtrl.createRider);
-router.get("/riders/:id", requireSystemRole("ADMIN"), riderCtrl.getRider);
-router.patch("/riders/:id", requireSystemRole("ADMIN"), validate(updateRiderSchema), riderCtrl.updateRider);
-router.patch("/riders/:id/kyc", requireSystemRole("ADMIN"), validate(updateRiderKycSchema), riderCtrl.updateRiderKyc);
-router.patch("/riders/:id/toggle-active", requireSystemRole("ADMIN"), riderCtrl.toggleRiderActive);
+// ─── Riders ──────────────────────────────────────────────────────
+router.get("/riders/stats", requirePermission("riders:read"), riderCtrl.getRiderStats);
+router.get("/riders/available", requirePermission("riders:read"), riderCtrl.listAvailableRiders);
+router.get("/riders", requirePermission("riders:read"), validate(riderQuerySchema, "query"), riderCtrl.listRiders);
+router.post("/riders", requirePermission("riders:write"), validate(createRiderSchema), riderCtrl.createRider);
+router.get("/riders/:id", requirePermission("riders:read"), riderCtrl.getRider);
+router.patch("/riders/:id", requirePermission("riders:write"), validate(updateRiderSchema), riderCtrl.updateRider);
+router.patch("/riders/:id/kyc", requirePermission("riders:write"), validate(updateRiderKycSchema), riderCtrl.updateRiderKyc);
+router.patch("/riders/:id/toggle-active", requirePermission("riders:write"), riderCtrl.toggleRiderActive);
 router.post(
   "/riders/:id/assign-order",
-  requireSystemRole("ADMIN"),
+  requirePermission("riders:write"),
   validate(assignOrderSchema),
   auditSystemAction({ action: "ASSIGN_ORDER_TO_RIDER", entity: "Order", getEntityId: (r) => r.body.orderId }),
   riderCtrl.assignOrderToRider
 );
 router.get(
   "/riders/:id/orders",
-  requireSystemRole("ADMIN"),
+  requirePermission("riders:read"),
   validate(riderOrderQuerySchema, "query"),
   riderCtrl.getRiderOrders
 );
-router.get("/riders/:id/earnings", requireSystemRole("ADMIN"), riderCtrl.getRiderEarnings);
+router.get("/riders/:id/earnings", requirePermission("riders:read"), riderCtrl.getRiderEarnings);
 router.patch(
   "/riders/:id/withdrawals/:withdrawalId",
-  requireSystemRole("ADMIN"),
+  requirePermission("riders:payouts"),
   validate(processWithdrawalSchema),
   auditSystemAction({ action: "PROCESS_RIDER_WITHDRAWAL", entity: "RiderWithdrawal", getEntityId: (r) => r.params.withdrawalId }),
   riderCtrl.processWithdrawal
 );
 
-// ─── Email Messaging (ADMIN+) ─────────────────────────────────
-router.post("/messaging/email/single", requireSystemRole("ADMIN"), validate(sendEmailSingleSchema), messagingCtrl.sendEmailSingle);
-router.post("/messaging/email/batch", requireSystemRole("ADMIN"), validate(sendEmailBatchSchema), messagingCtrl.sendEmailBatch);
-router.post("/messaging/email/all-customers", requireSystemRole("ADMIN"), validate(sendEmailAllCustomersSchema), messagingCtrl.sendEmailAllCustomers);
-router.post("/messaging/email/all-vendors", requireSystemRole("ADMIN"), validate(sendEmailAllVendorsSchema), messagingCtrl.sendEmailAllVendors);
-router.post("/messaging/email/all-riders", requireSystemRole("ADMIN"), validate(sendEmailAllRidersSchema), messagingCtrl.sendEmailAllRiders);
+// ─── Email Messaging ─────────────────────────────────────────────
+router.post("/messaging/email/single", requirePermission("messaging:send"), validate(sendEmailSingleSchema), messagingCtrl.sendEmailSingle);
+router.post("/messaging/email/batch", requirePermission("messaging:send"), validate(sendEmailBatchSchema), messagingCtrl.sendEmailBatch);
+router.post("/messaging/email/all-customers", requirePermission("messaging:send"), validate(sendEmailAllCustomersSchema), messagingCtrl.sendEmailAllCustomers);
+router.post("/messaging/email/all-vendors", requirePermission("messaging:send"), validate(sendEmailAllVendorsSchema), messagingCtrl.sendEmailAllVendors);
+router.post("/messaging/email/all-riders", requirePermission("messaging:send"), validate(sendEmailAllRidersSchema), messagingCtrl.sendEmailAllRiders);
 
-// ─── SMS Messaging (ADMIN+) ───────────────────────────────────
-router.get("/messaging/sms/sender-ids", requireSystemRole("ADMIN"), messagingCtrl.listSmsSenderIds);
-router.post("/messaging/sms/sender-ids/request", requireSystemRole("ADMIN"), validate(requestSmsSenderIdSchema), messagingCtrl.requestSmsSenderId);
+// ─── SMS Messaging ───────────────────────────────────────────────
+router.get("/messaging/sms/sender-ids", requirePermission("messaging:send"), messagingCtrl.listSmsSenderIds);
+router.post("/messaging/sms/sender-ids/request", requirePermission("messaging:send"), validate(requestSmsSenderIdSchema), messagingCtrl.requestSmsSenderId);
 
-// ─── Push Notifications (ADMIN+) ─────────────────────────────
-router.post("/push/customers/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToCustomers);
-router.post("/push/customers/batch", requireSystemRole("ADMIN"), validate(sendToCustomerBatchSchema), fcmCtrl.notifyCustomerBatch);
-router.post("/push/customers/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyCustomer);
+// ─── Push Notifications ──────────────────────────────────────────
+router.post("/push/customers/broadcast", requirePermission("push:send"), validate(broadcastSchema), fcmCtrl.broadcastToCustomers);
+router.post("/push/customers/batch", requirePermission("push:send"), validate(sendToCustomerBatchSchema), fcmCtrl.notifyCustomerBatch);
+router.post("/push/customers/:id", requirePermission("push:send"), validate(sendToSingleSchema), fcmCtrl.notifyCustomer);
 
-router.post("/push/riders/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToRiders);
-router.post("/push/riders/batch", requireSystemRole("ADMIN"), validate(sendToRiderBatchSchema), fcmCtrl.notifyRiderBatch);
-router.post("/push/riders/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyRider);
+router.post("/push/riders/broadcast", requirePermission("push:send"), validate(broadcastSchema), fcmCtrl.broadcastToRiders);
+router.post("/push/riders/batch", requirePermission("push:send"), validate(sendToRiderBatchSchema), fcmCtrl.notifyRiderBatch);
+router.post("/push/riders/:id", requirePermission("push:send"), validate(sendToSingleSchema), fcmCtrl.notifyRider);
 
-router.post("/push/vendors/broadcast", requireSystemRole("ADMIN"), validate(broadcastSchema), fcmCtrl.broadcastToVendors);
-router.post("/push/vendors/batch", requireSystemRole("ADMIN"), validate(sendToVendorBatchSchema), fcmCtrl.notifyVendorBatch);
-router.post("/push/vendors/:id", requireSystemRole("ADMIN"), validate(sendToSingleSchema), fcmCtrl.notifyVendor);
+router.post("/push/vendors/broadcast", requirePermission("push:send"), validate(broadcastSchema), fcmCtrl.broadcastToVendors);
+router.post("/push/vendors/batch", requirePermission("push:send"), validate(sendToVendorBatchSchema), fcmCtrl.notifyVendorBatch);
+router.post("/push/vendors/:id", requirePermission("push:send"), validate(sendToSingleSchema), fcmCtrl.notifyVendor);
 
-// ─── Business Management (ADMIN+) ────────────────────────────
-router.get("/businesses", requireSystemRole("ADMIN"), businessCtrl.listBusinesses);
+// ─── Business Management ────────────────────────────────────────
+router.get("/businesses", requirePermission("businesses:read"), businessCtrl.listBusinesses);
 router.post(
   "/businesses",
-  requireSystemRole("ADMIN"),
+  requirePermission("businesses:write"),
   documentUpload.fields([
     { name: "cacCertificate", maxCount: 1 },
     { name: "driversLicense", maxCount: 1 },
@@ -351,35 +378,35 @@ router.post(
   ]),
   businessCtrl.createBusiness
 );
-router.get("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.getBusiness);
-router.patch("/businesses/:id", requireSystemRole("ADMIN"), businessCtrl.updateBusiness);
-router.post("/businesses/:id/owner", requireSystemRole("ADMIN"), businessCtrl.createBusinessOwner);
-router.post("/businesses/:id/documents/:field", requireSystemRole("ADMIN"), documentUpload.single("file"), businessCtrl.uploadBusinessDocumentAsAdmin);
-router.get("/businesses/:id/riders", requireSystemRole("ADMIN"), businessCtrl.listBusinessRidersAsAdmin);
-router.get("/businesses/:id/wallet/transactions", requireSystemRole("ADMIN"), businessCtrl.listBusinessWalletTransactionsAsAdmin);
-router.get("/businesses/:id/team", requireSystemRole("ADMIN"), businessCtrl.listBusinessTeamAsAdmin);
+router.get("/businesses/:id", requirePermission("businesses:read"), businessCtrl.getBusiness);
+router.patch("/businesses/:id", requirePermission("businesses:write"), businessCtrl.updateBusiness);
+router.post("/businesses/:id/owner", requirePermission("businesses:write"), businessCtrl.createBusinessOwner);
+router.post("/businesses/:id/documents/:field", requirePermission("businesses:write"), documentUpload.single("file"), businessCtrl.uploadBusinessDocumentAsAdmin);
+router.get("/businesses/:id/riders", requirePermission("businesses:read"), businessCtrl.listBusinessRidersAsAdmin);
+router.get("/businesses/:id/wallet/transactions", requirePermission("businesses:read"), businessCtrl.listBusinessWalletTransactionsAsAdmin);
+router.get("/businesses/:id/team", requirePermission("businesses:read"), businessCtrl.listBusinessTeamAsAdmin);
 
-// ─── Heroes (ADMIN+) ──────────────────────────────────────────
-router.get("/heroes", requireSystemRole("ADMIN"), heroCtrl.listHeroes);
-router.post("/heroes", requireSystemRole("ADMIN"), heroCtrl.createHero);
-router.get("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.getHero);
-router.patch("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.updateHero);
-router.post("/heroes/:id/image", requireSystemRole("ADMIN"), upload.single("image"), heroCtrl.uploadHeroImage);
-router.delete("/heroes/:id", requireSystemRole("ADMIN"), heroCtrl.deleteHero);
+// ─── Heroes ──────────────────────────────────────────────────────
+router.get("/heroes", requirePermission("heroes:write"), heroCtrl.listHeroes);
+router.post("/heroes", requirePermission("heroes:write"), heroCtrl.createHero);
+router.get("/heroes/:id", requirePermission("heroes:write"), heroCtrl.getHero);
+router.patch("/heroes/:id", requirePermission("heroes:write"), heroCtrl.updateHero);
+router.post("/heroes/:id/image", requirePermission("heroes:write"), upload.single("image"), heroCtrl.uploadHeroImage);
+router.delete("/heroes/:id", requirePermission("heroes:write"), heroCtrl.deleteHero);
 
-// ─── Banners (ADMIN+) ─────────────────────────────────────────
-router.get("/banners", requireSystemRole("ADMIN"), bannerCtrl.listBanners);
-router.post("/banners", requireSystemRole("ADMIN"), bannerCtrl.createBanner);
-router.get("/banners/:id", requireSystemRole("ADMIN"), bannerCtrl.getBanner);
-router.patch("/banners/:id", requireSystemRole("ADMIN"), bannerCtrl.updateBanner);
-router.post("/banners/:id/image", requireSystemRole("ADMIN"), upload.single("image"), bannerCtrl.uploadBannerImage);
-router.delete("/banners/:id", requireSystemRole("ADMIN"), bannerCtrl.deleteBanner);
+// ─── Banners ─────────────────────────────────────────────────────
+router.get("/banners", requirePermission("banners:write"), bannerCtrl.listBanners);
+router.post("/banners", requirePermission("banners:write"), bannerCtrl.createBanner);
+router.get("/banners/:id", requirePermission("banners:write"), bannerCtrl.getBanner);
+router.patch("/banners/:id", requirePermission("banners:write"), bannerCtrl.updateBanner);
+router.post("/banners/:id/image", requirePermission("banners:write"), upload.single("image"), bannerCtrl.uploadBannerImage);
+router.delete("/banners/:id", requirePermission("banners:write"), bannerCtrl.deleteBanner);
 
-// ─── Promotions / Coupons (ADMIN+) ─────────────────────────────
-router.get("/promotions", requireSystemRole("ADMIN"), promotionsCtrl.listPromotions);
-router.post("/promotions", requireSystemRole("ADMIN"), promotionsCtrl.createPromotion);
-router.get("/promotions/:id", requireSystemRole("ADMIN"), promotionsCtrl.getPromotion);
-router.patch("/promotions/:id", requireSystemRole("ADMIN"), promotionsCtrl.updatePromotion);
-router.delete("/promotions/:id", requireSystemRole("ADMIN"), promotionsCtrl.deletePromotion);
+// ─── Promotions / Coupons ────────────────────────────────────────
+router.get("/promotions", requirePermission("coupons:write"), promotionsCtrl.listPromotions);
+router.post("/promotions", requirePermission("coupons:write"), promotionsCtrl.createPromotion);
+router.get("/promotions/:id", requirePermission("coupons:write"), promotionsCtrl.getPromotion);
+router.patch("/promotions/:id", requirePermission("coupons:write"), promotionsCtrl.updatePromotion);
+router.delete("/promotions/:id", requirePermission("coupons:write"), promotionsCtrl.deletePromotion);
 
 export default router;

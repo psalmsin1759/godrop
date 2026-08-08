@@ -11,6 +11,7 @@ import {
   useUpdateMyBusinessMutation,
   useUploadBusinessDocumentMutation,
 } from '@/store/services/businessApi'
+import { hasPermission } from '@/lib/permissions'
 import { formatAmount, formatDateTime } from '@/lib/utils'
 import type { BusinessDocumentField } from '@/types/api'
 
@@ -183,7 +184,7 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
 
 export default function BusinessOverviewPage() {
   const { data: session } = useSession()
-  const isOwner = session?.admin?.role === 'OWNER'
+  const isOwner = hasPermission(session, 'business:write')
   const [showEdit, setShowEdit] = useState(false)
 
   const { data: wallet, isLoading: walletLoading } = useGetBusinessWalletQuery()

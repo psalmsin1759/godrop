@@ -87,7 +87,7 @@ export async function sendEmailAllVendors(req: Request, res: Response, next: Nex
     const { subject, html, text } = req.body;
 
     const owners = await prisma.admin.findMany({
-      where: { type: "VENDOR", role: "OWNER", isActive: true, vendor: { isActive: true } },
+      where: { type: "VENDOR", isOwner: true, isActive: true, vendor: { isActive: true } },
       select: { email: true },
     });
 

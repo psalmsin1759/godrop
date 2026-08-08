@@ -4,21 +4,47 @@ export interface ApiResponse<T> {
   message?: string
 }
 
-export type SystemAdminRole = 'SUPER_ADMIN' | 'ADMIN'
-export type VendorAdminRole = 'OWNER' | 'MANAGER' | 'STAFF'
-export type BusinessAdminRole = 'OWNER' | 'ADMIN'
-export type AdminRole = SystemAdminRole | VendorAdminRole | BusinessAdminRole
 export type AdminType = 'SYSTEM' | 'VENDOR' | 'BUSINESS'
 export type VendorStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'
 export type VendorType = 'RESTAURANT' | 'GROCERY' | 'RETAIL' | 'PHARMACY'
 export type BusinessStatus = 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'
+
+// ─── RBAC ──────────────────────────────────────────────────────────────────
+// Roles are data (not a hardcoded enum) — a named, editable bundle of
+// permission keys. '*' in permissions grants everything for that admin type.
+export interface Role {
+  id: string
+  name: string
+  type: AdminType
+  vendorId: string | null
+  businessId: string | null
+  permissions: string[]
+  isDefault: boolean
+  description: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PermissionDef {
+  key: string
+  module: string
+  label: string
+}
+
+export interface AdminRoleRef {
+  id: string
+  name: string
+  type: AdminType
+  permissions: string[]
+}
 
 export interface AdminUser {
   id: string
   email: string
   firstName: string
   lastName: string
-  role: AdminRole
+  role: AdminRoleRef
+  isOwner: boolean
   type: AdminType
   vendorId?: string
   businessId?: string
@@ -83,7 +109,8 @@ export interface BusinessMember {
   email: string
   firstName: string
   lastName: string
-  role: BusinessAdminRole
+  role: AdminRoleRef
+  isOwner: boolean
   isActive: boolean
   createdAt: string
 }
@@ -127,12 +154,14 @@ export interface CreateBusinessMemberRequest {
   firstName: string
   lastName: string
   password: string
+  roleId: string
 }
 
 export interface UpdateBusinessMemberRequest {
   firstName?: string
   lastName?: string
   isActive?: boolean
+  roleId?: string
 }
 
 export interface BusinessesListParams {
@@ -213,14 +242,26 @@ export interface CreateAdminRequest {
   firstName: string
   lastName: string
   password?: string
-  role?: SystemAdminRole
+  roleId?: string
 }
 
 export interface UpdateAdminRequest {
   firstName?: string
   lastName?: string
   isActive?: boolean
-  role?: SystemAdminRole
+  roleId?: string
+}
+
+export interface CreateRoleRequest {
+  name: string
+  description?: string
+  permissions: string[]
+}
+
+export interface UpdateRoleRequest {
+  name?: string
+  description?: string
+  permissions?: string[]
 }
 
 export interface UpdateAdminEmailPrefsRequest {
@@ -473,14 +514,13 @@ export interface VendorOrdersListResponse {
 }
 
 // ─── Team ──────────────────────────────────────────────────────────────────
-export type TeamMemberRole = 'OWNER' | 'MANAGER' | 'STAFF'
-
 export interface TeamMember {
   id: string
   email: string
   firstName: string
   lastName: string
-  role: TeamMemberRole
+  role: AdminRoleRef
+  isOwner: boolean
   isActive: boolean
   createdAt: string
 }
@@ -489,7 +529,7 @@ export interface InviteTeamMemberRequest {
   email: string
   firstName: string
   lastName: string
-  role: 'MANAGER' | 'STAFF'
+  roleId: string
 }
 
 // ─── Admin Settings (Personal) ────────────────────────────────────────────

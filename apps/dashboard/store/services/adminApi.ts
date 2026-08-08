@@ -11,6 +11,10 @@ import type {
   UpdateProfileRequest,
   ChangePasswordRequest,
   PlatformSettings,
+  Role,
+  PermissionDef,
+  CreateRoleRequest,
+  UpdateRoleRequest,
 } from '@/types/api'
 
 
@@ -100,6 +104,35 @@ export const adminApi = api.injectEndpoints({
       invalidatesTags: ['Admin'],
       transformResponse: (res: Wrap<AdminUser>) => res.data,
     }),
+
+    // ─── RBAC: Roles & Permissions ────────────────────────────────
+    getSystemPermissions: build.query<PermissionDef[], void>({
+      query: () => '/admin/permissions',
+      transformResponse: (res: Wrap<PermissionDef[]>) => res.data ?? [],
+    }),
+
+    getRoles: build.query<Role[], void>({
+      query: () => '/admin/roles',
+      providesTags: ['Role'],
+      transformResponse: (res: Wrap<Role[]>) => res.data ?? [],
+    }),
+
+    createRole: build.mutation<Role, CreateRoleRequest>({
+      query: (body) => ({ url: '/admin/roles', method: 'POST', body }),
+      invalidatesTags: ['Role'],
+      transformResponse: (res: Wrap<Role>) => res.data,
+    }),
+
+    updateRole: build.mutation<Role, { id: string; body: UpdateRoleRequest }>({
+      query: ({ id, body }) => ({ url: `/admin/roles/${id}`, method: 'PATCH', body }),
+      invalidatesTags: ['Role'],
+      transformResponse: (res: Wrap<Role>) => res.data,
+    }),
+
+    deleteRole: build.mutation<void, string>({
+      query: (id) => ({ url: `/admin/roles/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Role'],
+    }),
   }),
   overrideExisting: false,
 })
@@ -119,4 +152,9 @@ export const {
   useUpdatePlatformSettingsMutation,
   useIssueManualOtpMutation,
   useTestOtpSmsMutation,
+  useGetSystemPermissionsQuery,
+  useGetRolesQuery,
+  useCreateRoleMutation,
+  useUpdateRoleMutation,
+  useDeleteRoleMutation,
 } = adminApi

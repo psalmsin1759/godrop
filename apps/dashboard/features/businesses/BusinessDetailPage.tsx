@@ -387,11 +387,8 @@ function TeamTab({ businessId }: { businessId: string }) {
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-[#1E5FFF]" /></div>
 
-  const ROLE_CFG: Record<string, { bg: string; text: string }> = {
-    OWNER:   { bg: '#E7EEFF', text: '#1E5FFF' },
-    MANAGER: { bg: '#FBEDD7', text: '#E8930C' },
-    STAFF:   { bg: '#EDF0F6', text: '#9AA1B4' },
-  }
+  const FULL_ACCESS_CFG = { bg: '#E7EEFF', text: '#1E5FFF' }
+  const DEFAULT_ROLE_CFG = { bg: '#EDF0F6', text: '#9AA1B4' }
 
   return (
     <div className="space-y-3">
@@ -421,7 +418,7 @@ function TeamTab({ businessId }: { businessId: string }) {
             </thead>
             <tbody className="divide-y divide-[#EDF0F6]">
               {members.map((m) => {
-                const roleCfg = ROLE_CFG[m.role] ?? ROLE_CFG.STAFF
+                const roleCfg = m.role.permissions.includes('*') ? FULL_ACCESS_CFG : DEFAULT_ROLE_CFG
                 return (
                   <tr key={m.id} className="hover:bg-[#F7F9FC]">
                     <td className="px-5 py-3">
@@ -430,7 +427,7 @@ function TeamTab({ businessId }: { businessId: string }) {
                     </td>
                     <td className="px-5 py-3">
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: roleCfg.bg, color: roleCfg.text }}>
-                        {m.role}
+                        {m.role.name}
                       </span>
                     </td>
                     <td className="px-5 py-3">

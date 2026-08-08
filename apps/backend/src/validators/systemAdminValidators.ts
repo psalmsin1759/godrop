@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AdminRole, OrderStatus, UserStatus } from "@prisma/client";
+import { OrderStatus, UserStatus } from "@prisma/client";
 
 export const graphQuerySchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "from must be YYYY-MM-DD").optional(),
@@ -20,14 +20,26 @@ export const createSystemAdminSchema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
-  role: z.enum([AdminRole.SUPER_ADMIN, AdminRole.ADMIN]).optional().default(AdminRole.ADMIN),
+  roleId: z.string().cuid().optional(),
 });
 
 export const updateSystemAdminSchema = z.object({
   firstName: z.string().min(1).max(50).optional(),
   lastName: z.string().min(1).max(50).optional(),
   isActive: z.boolean().optional(),
-  role: z.enum([AdminRole.SUPER_ADMIN, AdminRole.ADMIN]).optional(),
+  roleId: z.string().cuid().optional(),
+});
+
+export const createRoleSchema = z.object({
+  name: z.string().min(1).max(50),
+  description: z.string().max(200).optional(),
+  permissions: z.array(z.string()).min(1),
+});
+
+export const updateRoleSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  description: z.string().max(200).optional(),
+  permissions: z.array(z.string()).min(1).optional(),
 });
 
 export const approveVendorSchema = z.object({});

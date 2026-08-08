@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma";
-import { AdminRole, AdminType, Prisma, VendorStatus, VendorType, OrderStatus, PaymentStatus } from "@prisma/client";
+import { AdminType, Prisma, VendorStatus, VendorType, OrderStatus, PaymentStatus } from "@prisma/client";
 import * as walletService from "./walletService";
 import { paginate } from "../utils/pagination";
 import { sendEmail, vendorTeamInviteEmail, vendorWelcomeEmail, adminNewVendorApplicationEmail } from "./emailService";
@@ -9,10 +9,11 @@ import { notifyCustomerOrderUpdate, notifyOnlineRidersNewOrder } from "./fcmServ
 import { broadcastTracking, broadcastNewOrder } from "../index";
 import { uploadDocument, deleteImageByUrl } from "./cloudinaryService";
 import { getStandardDeliveryFeeKobo } from "./vendorService";
+import { getDefaultRole } from "./roleService";
 
 const SALT_ROUNDS = 12;
 
-type VendorRole = Extract<AdminRole, "OWNER" | "MANAGER" | "STAFF">;
+const ROLE_SELECT = { select: { id: true, name: true, type: true, permissions: true } } as const;
 
 // ─── Onboarding ───────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ export async function onboardVendor(data: {
   ]);
 
   const hashedPassword = await bcrypt.hash(data.ownerPassword, SALT_ROUNDS);
+  const ownerRole = await getDefaultRole(AdminType.VENDOR, "Owner");
 
   const vendor = await prisma.vendor.create({
     data: {
@@ -76,7 +78,8 @@ export async function onboardVendor(data: {
           firstName: data.ownerFirstName,
           lastName: data.ownerLastName,
           password: hashedPassword,
-          role: AdminRole.OWNER,
+          roleId: ownerRole.id,
+          isOwner: true,
         },
       },
     },
@@ -487,7 +490,8 @@ export async function listTeamMembers(vendorId: string) {
       email: true,
       firstName: true,
       lastName: true,
-      role: true,
+      role: ROLE_SELECT,
+      isOwner: true,
       isActive: true,
       createdAt: true,
     },
@@ -495,12 +499,21 @@ export async function listTeamMembers(vendorId: string) {
   });
 }
 
+async function requireVendorRole(roleId: string, vendorId: string) {
+  const role = await prisma.role.findFirst({
+    where: { id: roleId, type: AdminType.VENDOR, OR: [{ isDefault: true }, { vendorId }] },
+  });
+  if (!role) throw new Error("Invalid role for this vendor");
+  return role;
+}
+
 export async function inviteTeamMember(
   vendorId: string,
-  data: { email: string; firstName: string; lastName: string; role: VendorRole }
+  data: { email: string; firstName: string; lastName: string; roleId: string }
 ) {
   const existing = await prisma.admin.findUnique({ where: { email: data.email } });
   if (existing) throw new Error("An account with this email already exists");
+  const role = await requireVendorRole(data.roleId, vendorId);
 
   const tempPassword = nanoid(12);
   const hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
@@ -513,7 +526,7 @@ export async function inviteTeamMember(
       firstName: data.firstName,
       lastName: data.lastName,
       password: hashedPassword,
-      role: data.role,
+      roleId: role.id,
     },
   });
 
@@ -523,7 +536,7 @@ export async function inviteTeamMember(
       firstName: data.firstName,
       vendorName: vendor.name,
       email: data.email,
-      role: data.role,
+      role: role.name,
       temporaryPassword: tempPassword,
     })
   );
@@ -532,14 +545,15 @@ export async function inviteTeamMember(
   return memberSafe;
 }
 
-export async function updateTeamMemberRole(memberId: string, vendorId: string, role: VendorRole) {
+export async function updateTeamMemberRole(memberId: string, vendorId: string, roleId: string) {
   const member = await prisma.admin.findFirst({ where: { id: memberId, vendorId } });
   if (!member) throw new Error("Team member not found");
-  if (member.role === AdminRole.OWNER) throw new Error("Cannot change the role of the owner");
+  if (member.isOwner) throw new Error("Cannot change the role of the owner");
+  const role = await requireVendorRole(roleId, vendorId);
   return prisma.admin.update({
     where: { id: memberId },
-    data: { role },
-    select: { id: true, type: true, email: true, firstName: true, lastName: true, role: true, isActive: true },
+    data: { roleId: role.id },
+    select: { id: true, type: true, email: true, firstName: true, lastName: true, role: ROLE_SELECT, isActive: true },
   });
 }
 
@@ -547,11 +561,11 @@ export async function removeTeamMember(memberId: string, vendorId: string, reque
   if (memberId === requesterId) throw new Error("Cannot remove yourself");
   const member = await prisma.admin.findFirst({ where: { id: memberId, vendorId } });
   if (!member) throw new Error("Team member not found");
-  if (member.role === AdminRole.OWNER) throw new Error("Cannot remove the owner");
+  if (member.isOwner) throw new Error("Cannot remove the owner");
   await prisma.admin.update({ where: { id: memberId }, data: { isActive: false } });
 }
 
-export async function deactivateOwnAccount(adminId: string, vendorId: string, role: AdminRole) {
+export async function deactivateOwnAccount(adminId: string, vendorId: string, isOwner: boolean) {
   const randomPassword = await bcrypt.hash(nanoid(32), SALT_ROUNDS);
   const ops: Prisma.PrismaPromise<unknown>[] = [
     prisma.admin.update({
@@ -568,7 +582,7 @@ export async function deactivateOwnAccount(adminId: string, vendorId: string, ro
       },
     }),
   ];
-  if (role === AdminRole.OWNER) {
+  if (isOwner) {
     ops.push(
       prisma.vendor.update({
         where: { id: vendorId },
@@ -600,7 +614,8 @@ export async function getProfile(adminId: string) {
       email: true,
       firstName: true,
       lastName: true,
-      role: true,
+      role: ROLE_SELECT,
+      isOwner: true,
       isActive: true,
       vendorId: true,
       createdAt: true,
@@ -626,7 +641,7 @@ export async function updateProfile(
       email: true,
       firstName: true,
       lastName: true,
-      role: true,
+      role: ROLE_SELECT,
       isActive: true,
       vendorId: true,
     },

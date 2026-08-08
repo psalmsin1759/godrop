@@ -1,10 +1,20 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
-import { AdminRole, AdminType, BusinessStatus } from "@prisma/client";
+import { AdminType, BusinessStatus } from "@prisma/client";
 import { paginate } from "../utils/pagination";
 import { sendEmail, businessOwnerWelcomeEmail } from "./emailService";
+import { getDefaultRole } from "./roleService";
 
 const SALT_ROUNDS = 12;
+const ROLE_SELECT = { select: { id: true, name: true, type: true, permissions: true } } as const;
+
+async function requireBusinessRole(roleId: string, businessId: string) {
+  const role = await prisma.role.findFirst({
+    where: { id: roleId, type: AdminType.BUSINESS, OR: [{ isDefault: true }, { businessId }] },
+  });
+  if (!role) throw new Error("Invalid role for this business");
+  return role;
+}
 
 // ─── Shared business profile fields ──────────────────────────
 
@@ -125,17 +135,19 @@ export async function createBusinessOwner(
   if (conflict) throw new Error("Email already exists");
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const ownerRole = await getDefaultRole(AdminType.BUSINESS, "Owner");
   const admin = await prisma.admin.create({
     data: {
       type: AdminType.BUSINESS,
-      role: AdminRole.OWNER,
+      roleId: ownerRole.id,
+      isOwner: true,
       businessId,
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
       password: hashed,
     },
-    select: { id: true, type: true, role: true, email: true, firstName: true, lastName: true, businessId: true, isActive: true, createdAt: true },
+    select: { id: true, type: true, role: ROLE_SELECT, email: true, firstName: true, lastName: true, businessId: true, isActive: true, createdAt: true },
   });
 
   sendEmail(businessOwnerWelcomeEmail({
@@ -289,7 +301,7 @@ export async function listBusinessAdmins(businessId: string) {
     where: { businessId },
     select: {
       id: true, email: true, firstName: true, lastName: true,
-      role: true, isActive: true, createdAt: true,
+      role: ROLE_SELECT, isOwner: true, isActive: true, createdAt: true,
     },
     orderBy: { createdAt: "asc" },
   });
@@ -297,39 +309,43 @@ export async function listBusinessAdmins(businessId: string) {
 
 export async function createBusinessAdmin(
   businessId: string,
-  data: { email: string; firstName: string; lastName: string; password: string }
+  data: { email: string; firstName: string; lastName: string; password: string; roleId: string }
 ) {
   const conflict = await prisma.admin.findUnique({ where: { email: data.email } });
   if (conflict) throw new Error("Email already exists");
+  const role = await requireBusinessRole(data.roleId, businessId);
 
   const hashed = await bcrypt.hash(data.password, SALT_ROUNDS);
   return prisma.admin.create({
     data: {
       type: AdminType.BUSINESS,
-      role: AdminRole.ADMIN,
+      roleId: role.id,
       businessId,
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
       password: hashed,
     },
-    select: { id: true, type: true, role: true, email: true, firstName: true, lastName: true, businessId: true, isActive: true, createdAt: true },
+    select: { id: true, type: true, role: ROLE_SELECT, email: true, firstName: true, lastName: true, businessId: true, isActive: true, createdAt: true },
   });
 }
 
 export async function updateBusinessAdmin(
   businessId: string,
   adminId: string,
-  data: { firstName?: string; lastName?: string; isActive?: boolean }
+  data: { firstName?: string; lastName?: string; isActive?: boolean; roleId?: string }
 ) {
   const admin = await prisma.admin.findUnique({ where: { id: adminId } });
   if (!admin || admin.businessId !== businessId) throw new Error("Admin not found in this business");
-  if (admin.role === "OWNER") throw new Error("Cannot modify the business owner through this endpoint");
+  if (admin.isOwner) throw new Error("Cannot modify the business owner through this endpoint");
+
+  const { roleId, ...rest } = data;
+  const role = roleId ? await requireBusinessRole(roleId, businessId) : undefined;
 
   return prisma.admin.update({
     where: { id: adminId },
-    data,
-    select: { id: true, type: true, role: true, email: true, firstName: true, lastName: true, isActive: true },
+    data: { ...rest, ...(role ? { roleId: role.id } : {}) },
+    select: { id: true, type: true, role: ROLE_SELECT, email: true, firstName: true, lastName: true, isActive: true },
   });
 }
 

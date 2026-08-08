@@ -295,7 +295,7 @@ async function notifyVendorOwnerNewOrder(opts: {
   items: Array<{ name: string; quantity: number; unitPriceKobo: number; totalKobo: number }>;
 }) {
   const owner = await prisma.admin.findFirst({
-    where: { vendorId: opts.vendorId, role: "OWNER", isActive: true },
+    where: { vendorId: opts.vendorId, isOwner: true, isActive: true },
     select: { firstName: true, email: true },
   });
   if (!owner) return;

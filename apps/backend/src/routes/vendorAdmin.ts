@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validate } from "../middleware/validate";
-import { requireVendorAuth, requireVendorRole } from "../middleware/vendorAuth";
+import { requireVendorAuth, requirePermission, requireOwner } from "../middleware/vendorAuth";
 import { auditVendorAction } from "../middleware/auditLog";
 import { catalogImageUpload, upload } from "../middleware/upload";
 import {
@@ -22,8 +22,11 @@ import {
   pushTokenSchema,
   removePushTokenSchema,
   exportAuditLogsSchema,
+  createVendorRoleSchema,
+  updateVendorRoleSchema,
 } from "../validators/vendorAdminValidators";
 import * as ctrl from "../controllers/vendorAdminController";
+import * as roleCtrl from "../controllers/roleController";
 import * as analyticsCtrl from "../controllers/analyticsController";
 import * as disputeCtrl from "../controllers/disputeController";
 import {
@@ -40,7 +43,7 @@ router.use(requireVendorAuth);
 
 // Profile
 router.get("/me", ctrl.getProfile);
-router.delete("/me", requireVendorRole("OWNER"), ctrl.deleteAccount);
+router.delete("/me", requireOwner, ctrl.deleteAccount);
 router.post(
   "/me/change-password",
   validate(changePasswordSchema),
@@ -56,196 +59,219 @@ router.patch(
 router.get("/me/settings", ctrl.getProfileSettings);
 router.patch("/me/settings", validate(updateVendorAdminSettingsSchema), ctrl.updateProfileSettings);
 
-// ─── Catalog image upload (STAFF+) ───────────────────────────
-router.post("/catalog/image", requireVendorRole("STAFF"), catalogImageUpload.single("file"), ctrl.uploadCatalogImage);
+// ─── Catalog image upload ─────────────────────────────────────
+router.post("/catalog/image", requirePermission("catalog:write"), catalogImageUpload.single("file"), ctrl.uploadCatalogImage);
 
-// Categories (STAFF+)
-router.get("/categories", requireVendorRole("STAFF"), ctrl.listCategories);
+// Categories
+router.get("/categories", requirePermission("catalog:read"), ctrl.listCategories);
 router.post(
   "/categories",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   validate(createCategorySchema),
   auditVendorAction({ action: "CREATE_CATEGORY", entity: "ProductCategory" }),
   ctrl.createCategory
 );
-router.get("/categories/:id", requireVendorRole("STAFF"), ctrl.getCategory);
+router.get("/categories/:id", requirePermission("catalog:read"), ctrl.getCategory);
 router.put(
   "/categories/:id",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   validate(updateCategorySchema),
   auditVendorAction({ action: "UPDATE_CATEGORY", entity: "ProductCategory", getEntityId: (r) => r.params.id }),
   ctrl.updateCategory
 );
 router.patch(
   "/categories/:id/active",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   validate(toggleCategoryActiveSchema),
   auditVendorAction({ action: "TOGGLE_CATEGORY_ACTIVE", entity: "ProductCategory", getEntityId: (r) => r.params.id }),
   ctrl.toggleCategoryActive
 );
 router.delete(
   "/categories/:id",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   auditVendorAction({ action: "DELETE_CATEGORY", entity: "ProductCategory", getEntityId: (r) => r.params.id }),
   ctrl.deleteCategory
 );
 
-// Products (STAFF+)
-router.get("/products", requireVendorRole("STAFF"), ctrl.listProducts);
-router.get("/products/:id", requireVendorRole("STAFF"), ctrl.getProduct);
+// Products
+router.get("/products", requirePermission("catalog:read"), ctrl.listProducts);
+router.get("/products/:id", requirePermission("catalog:read"), ctrl.getProduct);
 router.post(
   "/products",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   validate(createProductSchema),
   auditVendorAction({ action: "CREATE_PRODUCT", entity: "Product" }),
   ctrl.createProduct
 );
 router.put(
   "/products/:id",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   validate(updateProductSchema),
   auditVendorAction({ action: "UPDATE_PRODUCT", entity: "Product", getEntityId: (r) => r.params.id }),
   ctrl.updateProduct
 );
 router.delete(
   "/products/:id",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   auditVendorAction({ action: "DELETE_PRODUCT", entity: "Product", getEntityId: (r) => r.params.id }),
   ctrl.deleteProduct
 );
 router.patch(
   "/products/:id/availability",
-  requireVendorRole("STAFF"),
+  requirePermission("catalog:write"),
   validate(toggleAvailabilitySchema),
   auditVendorAction({ action: "TOGGLE_PRODUCT_AVAILABILITY", entity: "Product", getEntityId: (r) => r.params.id }),
   ctrl.toggleProductAvailability
 );
 
-// Orders (STAFF+)
-router.get("/orders", requireVendorRole("STAFF"), ctrl.listOrders);
-router.get("/orders/:id", requireVendorRole("STAFF"), ctrl.getOrder);
+// Orders
+router.get("/orders", requirePermission("orders:read"), ctrl.listOrders);
+router.get("/orders/:id", requirePermission("orders:read"), ctrl.getOrder);
 router.patch(
   "/orders/:id/accept",
-  requireVendorRole("STAFF"),
+  requirePermission("orders:write"),
   auditVendorAction({ action: "ACCEPT_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.acceptOrder
 );
 router.patch(
   "/orders/:id/preparing",
-  requireVendorRole("STAFF"),
+  requirePermission("orders:write"),
   auditVendorAction({ action: "MARK_ORDER_PREPARING", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.markOrderPreparing
 );
 router.patch(
   "/orders/:id/ready",
-  requireVendorRole("STAFF"),
+  requirePermission("orders:write"),
   auditVendorAction({ action: "MARK_ORDER_READY", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.markOrderReady
 );
 router.patch(
   "/orders/:id/reject",
-  requireVendorRole("STAFF"),
+  requirePermission("orders:write"),
   validate(rejectOrderSchema),
   auditVendorAction({ action: "REJECT_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.rejectOrder
 );
 router.patch(
   "/orders/:id/cancel",
-  requireVendorRole("MANAGER"),
+  requirePermission("orders:write"),
   validate(cancelOrderSchema),
   auditVendorAction({ action: "CANCEL_ORDER", entity: "Order", getEntityId: (r) => r.params.id }),
   ctrl.cancelOrder
 );
 
-// Disputes (STAFF+ — same visibility as orders)
+// Disputes (same visibility as orders)
 const vendorActor = (req: Parameters<typeof ctrl.getProfile>[0]) => ({
   type: "VENDOR" as const,
   id: req.admin!.vendorId!,
 });
-router.post("/disputes/upload", requireVendorRole("STAFF"), upload.single("file"), disputeCtrl.uploadDisputeEvidence);
+router.post("/disputes/upload", requirePermission("disputes:write"), upload.single("file"), disputeCtrl.uploadDisputeEvidence);
 router.post(
   "/disputes",
-  requireVendorRole("STAFF"),
+  requirePermission("disputes:write"),
   validate(createMyDisputeSchema),
   disputeCtrl.createMyDispute(vendorActor)
 );
 router.get(
   "/disputes",
-  requireVendorRole("STAFF"),
+  requirePermission("disputes:read"),
   validate(myDisputeQuerySchema, "query"),
   disputeCtrl.listMyDisputes(vendorActor)
 );
 router.get(
   "/disputes/unread-count",
-  requireVendorRole("STAFF"),
+  requirePermission("disputes:read"),
   disputeCtrl.getMyDisputesUnreadCount(vendorActor)
 );
-router.get("/disputes/:id", requireVendorRole("STAFF"), disputeCtrl.getMyDispute(vendorActor));
+router.get("/disputes/:id", requirePermission("disputes:read"), disputeCtrl.getMyDispute(vendorActor));
 router.post(
   "/disputes/:id/messages",
-  requireVendorRole("STAFF"),
+  requirePermission("disputes:write"),
   validate(addMyMessageSchema),
   disputeCtrl.addMyMessage(vendorActor)
 );
 
-// Analytics (MANAGER+)
-router.get("/analytics", requireVendorRole("MANAGER"), analyticsCtrl.vendorAnalytics);
+// Analytics
+router.get("/analytics", requirePermission("analytics:read"), analyticsCtrl.vendorAnalytics);
 router.get(
   "/analytics/graph",
-  requireVendorRole("MANAGER"),
+  requirePermission("analytics:read"),
   validate(graphQuerySchema, "query"),
   analyticsCtrl.vendorGraphData
 );
-router.get("/analytics/lifetime", requireVendorRole("MANAGER"), analyticsCtrl.vendorLifetimeStats);
+router.get("/analytics/lifetime", requirePermission("analytics:read"), analyticsCtrl.vendorLifetimeStats);
 
-// Settings (view: MANAGER+, update: OWNER)
-router.get("/settings", requireVendorRole("MANAGER"), ctrl.getSettings);
+// Settings
+router.get("/settings", requirePermission("settings:read"), ctrl.getSettings);
 router.put(
   "/settings",
-  requireVendorRole("OWNER"),
+  requirePermission("settings:write"),
   validate(updateVendorSettingsSchema),
   auditVendorAction({ action: "UPDATE_VENDOR_SETTINGS", entity: "Vendor" }),
   ctrl.updateSettings
 );
 
-// Team (view: MANAGER+, manage: OWNER)
-router.get("/team", requireVendorRole("MANAGER"), ctrl.listTeam);
+// Team & Roles
+router.get("/team", requirePermission("team:read"), ctrl.listTeam);
 router.post(
   "/team",
-  requireVendorRole("OWNER"),
+  requirePermission("team:write"),
   validate(inviteTeamMemberSchema),
   auditVendorAction({ action: "INVITE_TEAM_MEMBER", entity: "VendorAdmin" }),
   ctrl.inviteTeamMember
 );
 router.patch(
   "/team/:memberId",
-  requireVendorRole("OWNER"),
+  requirePermission("team:write"),
   validate(updateTeamMemberSchema),
   auditVendorAction({ action: "UPDATE_TEAM_MEMBER_ROLE", entity: "VendorAdmin", getEntityId: (r) => r.params.memberId }),
   ctrl.updateTeamMember
 );
 router.delete(
   "/team/:memberId",
-  requireVendorRole("OWNER"),
+  requirePermission("team:write"),
   auditVendorAction({ action: "REMOVE_TEAM_MEMBER", entity: "VendorAdmin", getEntityId: (r) => r.params.memberId }),
   ctrl.removeTeamMember
 );
 
-// ─── Audit Logs (MANAGER+) ───────────────────────────────────
+router.get("/permissions", requirePermission("team:read"), roleCtrl.listVendorPermissions);
+router.get("/roles", requirePermission("team:read"), roleCtrl.listRoles);
+router.post(
+  "/roles",
+  requirePermission("team:write"),
+  validate(createVendorRoleSchema),
+  auditVendorAction({ action: "CREATE_ROLE", entity: "Role" }),
+  roleCtrl.createRole
+);
+router.patch(
+  "/roles/:id",
+  requirePermission("team:write"),
+  validate(updateVendorRoleSchema),
+  auditVendorAction({ action: "UPDATE_ROLE", entity: "Role", getEntityId: (r) => r.params.id }),
+  roleCtrl.updateRole
+);
+router.delete(
+  "/roles/:id",
+  requirePermission("team:write"),
+  auditVendorAction({ action: "DELETE_ROLE", entity: "Role", getEntityId: (r) => r.params.id }),
+  roleCtrl.deleteRole
+);
+
+// ─── Audit Logs ───────────────────────────────────────────────
 router.get(
   "/audit-logs",
-  requireVendorRole("MANAGER"),
+  requirePermission("audit_logs:read"),
   validate(auditLogQuerySchema, "query"),
   ctrl.listVendorAuditLogs
 );
 router.post(
   "/audit-logs/export",
-  requireVendorRole("MANAGER"),
+  requirePermission("audit_logs:read"),
   validate(exportAuditLogsSchema),
   ctrl.exportAuditLogs
 );
 
-// ─── Notifications ────────────────────────────────────────────
+// ─── Notifications (own account) ─────────────────────────────
 router.post("/me/push-token", validate(pushTokenSchema), ctrl.registerPushToken);
 router.delete("/me/push-token", validate(removePushTokenSchema), ctrl.removePushToken);
 router.get("/notifications", ctrl.listNotifications);

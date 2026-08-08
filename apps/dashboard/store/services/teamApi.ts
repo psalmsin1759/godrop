@@ -9,6 +9,10 @@ import type {
   UpdateProfileRequest,
   ChangePasswordRequest,
   AdminUser,
+  Role,
+  PermissionDef,
+  CreateRoleRequest,
+  UpdateRoleRequest,
 } from '@/types/api'
 
 type Wrap<T> = { success: boolean; data: T }
@@ -27,11 +31,11 @@ export const teamApi = api.injectEndpoints({
       transformResponse: (res: Wrap<TeamMember>) => res.data,
     }),
 
-    updateTeamMemberRole: build.mutation<TeamMember, { memberId: string; role: 'MANAGER' | 'STAFF' }>({
-      query: ({ memberId, role }) => ({
+    updateTeamMemberRole: build.mutation<TeamMember, { memberId: string; roleId: string }>({
+      query: ({ memberId, roleId }) => ({
         url: `/vendor-admin/team/${memberId}`,
         method: 'PATCH',
-        body: { role },
+        body: { roleId },
       }),
       invalidatesTags: ['TeamMember'],
       transformResponse: (res: Wrap<TeamMember>) => res.data,
@@ -40,6 +44,35 @@ export const teamApi = api.injectEndpoints({
     removeTeamMember: build.mutation<void, string>({
       query: (memberId) => ({ url: `/vendor-admin/team/${memberId}`, method: 'DELETE' }),
       invalidatesTags: ['TeamMember'],
+    }),
+
+    // ─── RBAC: Roles & Permissions ────────────────────────────────
+    getVendorPermissions: build.query<PermissionDef[], void>({
+      query: () => '/vendor-admin/permissions',
+      transformResponse: (res: Wrap<PermissionDef[]>) => res.data ?? [],
+    }),
+
+    getVendorRoles: build.query<Role[], void>({
+      query: () => '/vendor-admin/roles',
+      providesTags: ['Role'],
+      transformResponse: (res: Wrap<Role[]>) => res.data ?? [],
+    }),
+
+    createVendorRole: build.mutation<Role, CreateRoleRequest>({
+      query: (body) => ({ url: '/vendor-admin/roles', method: 'POST', body }),
+      invalidatesTags: ['Role'],
+      transformResponse: (res: Wrap<Role>) => res.data,
+    }),
+
+    updateVendorRole: build.mutation<Role, { id: string; body: UpdateRoleRequest }>({
+      query: ({ id, body }) => ({ url: `/vendor-admin/roles/${id}`, method: 'PATCH', body }),
+      invalidatesTags: ['Role'],
+      transformResponse: (res: Wrap<Role>) => res.data,
+    }),
+
+    deleteVendorRole: build.mutation<void, string>({
+      query: (id) => ({ url: `/vendor-admin/roles/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Role'],
     }),
 
     getVendorSettings: build.query<VendorSettings, void>({
@@ -90,4 +123,9 @@ export const {
   useUpdateVendorAdminSettingsMutation,
   useUpdateVendorAdminProfileMutation,
   useChangeVendorAdminPasswordMutation,
+  useGetVendorPermissionsQuery,
+  useGetVendorRolesQuery,
+  useCreateVendorRoleMutation,
+  useUpdateVendorRoleMutation,
+  useDeleteVendorRoleMutation,
 } = teamApi

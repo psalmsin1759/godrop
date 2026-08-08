@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { formatNaira } from '@/lib/utils'
+import { hasPermission } from '@/lib/permissions'
 import {
   Loader2, Save, ToggleLeft, ToggleRight, Bell, Store, User, Lock, CheckCircle2, TrendingUp,
 } from 'lucide-react'
@@ -540,7 +541,7 @@ function SystemProfileSettings() {
         </div>
         <div className="pt-1">
           <div className="text-xs text-[#9AA1B4]">
-            Role: <span className="font-medium text-[#0D1426]">{session?.admin?.role}</span>
+            Role: <span className="font-medium text-[#0D1426]">{session?.admin?.role?.name}</span>
           </div>
         </div>
       </SectionCard>
@@ -671,11 +672,12 @@ const VENDOR_TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 const VENDOR_TAB_IDS: TabId[] = ['store', 'notifications', 'profile', 'security']
 
-function VendorSettingsPage({ role, initialTab }: { role: string; initialTab?: string | null }) {
+function VendorSettingsPage({ initialTab }: { initialTab?: string | null }) {
+  const { data: session } = useSession()
   const [tab, setTab] = useState<TabId>(
     VENDOR_TAB_IDS.includes(initialTab as TabId) ? (initialTab as TabId) : 'store'
   )
-  const isOwner = role === 'OWNER'
+  const isOwner = hasPermission(session, 'settings:write')
 
   return (
     <>
@@ -1012,7 +1014,6 @@ export default function SettingsPage() {
   const searchParams = useSearchParams()
   const initialTab = searchParams.get('tab')
   const isVendor = session?.admin?.type === 'VENDOR'
-  const role = session?.admin?.role ?? ''
 
   return (
     <div className="space-y-5">
@@ -1023,7 +1024,7 @@ export default function SettingsPage() {
         </p>
       </div>
       {isVendor ? (
-        <VendorSettingsPage role={role} initialTab={initialTab} />
+        <VendorSettingsPage initialTab={initialTab} />
       ) : (
         <SystemSettingsPage initialTab={initialTab} />
       )}

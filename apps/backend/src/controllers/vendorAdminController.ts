@@ -18,7 +18,7 @@ export async function getProfile(req: Request, res: Response, next: NextFunction
 
 export async function deleteAccount(req: Request, res: Response, next: NextFunction) {
   try {
-    await svc.deactivateOwnAccount(req.admin!.id, req.admin!.vendorId!, req.admin!.role);
+    await svc.deactivateOwnAccount(req.admin!.id, req.admin!.vendorId!, req.admin!.isOwner);
     return ok(res, { message: "Account deleted" });
   } catch (err) {
     next(err);
@@ -320,7 +320,7 @@ export async function updateTeamMember(req: Request, res: Response, next: NextFu
     const member = await svc.updateTeamMemberRole(
       req.params.memberId,
       req.admin!.vendorId!,
-      req.body.role
+      req.body.roleId
     );
     return ok(res, { data: member });
   } catch (err: any) {

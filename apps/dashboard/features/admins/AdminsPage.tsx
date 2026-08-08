@@ -7,8 +7,10 @@ import {
   useCreateAdminMutation,
   useUpdateAdminMutation,
   useUpdateAdminEmailPrefsMutation,
+  useGetRolesQuery,
 } from '@/store/services/adminApi'
-import type { AdminUser, SystemAdminRole, CreateAdminRequest, UpdateAdminRequest } from '@/types/api'
+import { hasPermission } from '@/lib/permissions'
+import type { AdminUser, CreateAdminRequest, UpdateAdminRequest } from '@/types/api'
 import {
   Plus,
   MoreHorizontal,
@@ -28,20 +30,27 @@ import {
 } from 'lucide-react'
 import { exportToCsv } from '@/lib/exportCsv'
 
-const roleConfig: Record<SystemAdminRole, { label: string; bg: string; text: string }> = {
-  SUPER_ADMIN: { label: 'Super Admin', bg: '#FFE3E1', text: '#FF3B30' },
-  ADMIN:       { label: 'Admin',       bg: '#E7EEFF', text: '#1E5FFF' },
-}
-
 function inputCls() {
   return 'w-full text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] px-3 py-1.5 text-[#0D1426] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF]'
 }
 
+function RoleBadge({ admin }: { admin: AdminUser }) {
+  const isFullAccess = admin.role.permissions.includes('*')
+  return (
+    <span
+      className="text-[11px] font-medium rounded-full px-2 py-0.5"
+      style={isFullAccess ? { backgroundColor: '#FFE3E1', color: '#FF3B30' } : { backgroundColor: '#E7EEFF', color: '#1E5FFF' }}
+    >
+      {admin.role.name}
+    </span>
+  )
+}
+
 // ─── Create dialog ────────────────────────────────────────────────────────────
 
-function CreateAdminDialog({ onClose }: { onClose: () => void }) {
+function CreateAdminDialog({ roles, onClose }: { roles: { id: string; name: string }[]; onClose: () => void }) {
   const [createAdmin, { isLoading }] = useCreateAdminMutation()
-  const [form, setForm] = useState({ email: '', firstName: '', lastName: '', role: 'ADMIN' as SystemAdminRole })
+  const [form, setForm] = useState<CreateAdminRequest>({ email: '', firstName: '', lastName: '', roleId: roles[0]?.id })
   const [error, setError] = useState('')
 
   function set<K extends keyof typeof form>(field: K, value: typeof form[K]) {
@@ -91,10 +100,11 @@ function CreateAdminDialog({ onClose }: { onClose: () => void }) {
           </div>
           <div>
             <label className="block text-[11px] font-medium text-[#525A72] mb-1">Role</label>
-            <select value={form.role} onChange={(e) => set('role', e.target.value as SystemAdminRole)}
+            <select value={form.roleId} onChange={(e) => set('roleId', e.target.value)}
               className={inputCls()}>
-              <option value="ADMIN">Admin</option>
-              <option value="SUPER_ADMIN">Super Admin</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
             </select>
           </div>
 
@@ -119,12 +129,12 @@ function CreateAdminDialog({ onClose }: { onClose: () => void }) {
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-function EditAdminDialog({ admin, onClose }: { admin: AdminUser; onClose: () => void }) {
+function EditAdminDialog({ admin, roles, onClose }: { admin: AdminUser; roles: { id: string; name: string }[]; onClose: () => void }) {
   const [updateAdmin, { isLoading }] = useUpdateAdminMutation()
   const [form, setForm] = useState<UpdateAdminRequest>({
     firstName: admin.firstName,
     lastName: admin.lastName,
-    role: admin.role as SystemAdminRole,
+    roleId: admin.role.id,
     isActive: admin.isActive,
   })
   const [error, setError] = useState('')
@@ -166,11 +176,12 @@ function EditAdminDialog({ admin, onClose }: { admin: AdminUser; onClose: () => 
           </div>
           <div>
             <label className="block text-[11px] font-medium text-[#525A72] mb-1">Role</label>
-            <select value={form.role ?? 'ADMIN'}
-              onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as SystemAdminRole }))}
+            <select value={form.roleId}
+              onChange={(e) => setForm((f) => ({ ...f, roleId: e.target.value }))}
               className={inputCls()}>
-              <option value="ADMIN">Admin</option>
-              <option value="SUPER_ADMIN">Super Admin</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -415,14 +426,15 @@ export default function AdminsPage() {
   const [editAdmin, setEditAdmin] = useState<AdminUser | null>(null)
   const [emailPrefsAdmin, setEmailPrefsAdmin] = useState<AdminUser | null>(null)
 
-  const isSuperAdmin = session?.admin?.role === 'SUPER_ADMIN'
+  const canManageAdmins = hasPermission(session, 'admins:write')
 
   const { data, isLoading, isError } = useGetAdminsQuery({ page, limit: 20 })
+  const { data: roles = [] } = useGetRolesQuery(undefined, { skip: !canManageAdmins })
   const admins = data?.data ?? []
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / 20))
 
-  const superAdminCount = admins.filter((a) => a.role === 'SUPER_ADMIN').length
+  const fullAccessCount = admins.filter((a) => a.role.permissions.includes('*')).length
   const activeCount = admins.filter((a) => a.isActive).length
   const notifCount = admins.filter((a) => a.receiveVendorEmails || a.receiveRiderEmails).length
 
@@ -440,7 +452,7 @@ export default function AdminsPage() {
             onClick={() => exportToCsv('admins', admins, [
               { header: 'Name', value: (a) => `${a.firstName} ${a.lastName}` },
               { header: 'Email', value: (a) => a.email },
-              { header: 'Role', value: (a) => a.role },
+              { header: 'Role', value: (a) => a.role.name },
               { header: 'Status', value: (a) => a.isActive ? 'Active' : 'Inactive' },
               { header: 'Joined', value: (a) => new Date(a.createdAt).toLocaleDateString('en-NG') },
             ])}
@@ -448,7 +460,7 @@ export default function AdminsPage() {
           >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
-          {isSuperAdmin && (
+          {canManageAdmins && (
             <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-1.5">
               <Plus className="w-3.5 h-3.5" /> Add Admin
             </button>
@@ -456,9 +468,9 @@ export default function AdminsPage() {
         </div>
       </div>
 
-      {!isSuperAdmin && (
+      {!canManageAdmins && (
         <div className="text-xs text-[#E8930C] bg-[#FBEDD7] border border-[#F6D9A8] rounded px-4 py-2.5">
-          <strong>Super Admin</strong> role required to create or modify admin accounts.
+          The <strong>admins:write</strong> permission is required to create or modify admin accounts.
         </div>
       )}
 
@@ -467,7 +479,7 @@ export default function AdminsPage() {
         {[
           { label: 'Total Admins', value: total, icon: <Users className="w-4 h-4" />, color: '#1E5FFF', bg: '#E7EEFF' },
           { label: 'Active', value: activeCount, icon: <UserCheck className="w-4 h-4" />, color: '#1DB980', bg: '#DFF5EC' },
-          { label: 'Super Admins', value: superAdminCount, icon: <Shield className="w-4 h-4" />, color: '#FF3B30', bg: '#FFE3E1' },
+          { label: 'Full Access', value: fullAccessCount, icon: <Shield className="w-4 h-4" />, color: '#FF3B30', bg: '#FFE3E1' },
           { label: 'Get Notified', value: notifCount, icon: <Bell className="w-4 h-4" />, color: '#FF6A2C', bg: '#FBEDD7' },
         ].map((s) => (
           <div key={s.label} className="card p-4 flex items-center gap-3">
@@ -511,7 +523,6 @@ export default function AdminsPage() {
                     </tr>
                   ) : (
                     admins.map((admin) => {
-                      const rc = roleConfig[admin.role as SystemAdminRole] ?? roleConfig.ADMIN
                       const isSelf = session?.admin?.email === admin.email
                       return (
                         <tr key={admin.id} className="hover:bg-[#F7F9FC] transition-colors" onClick={(e) => e.stopPropagation()}>
@@ -531,10 +542,7 @@ export default function AdminsPage() {
                             <span className="text-xs text-[#525A72]">{admin.email}</span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-[11px] font-medium rounded-full px-2 py-0.5"
-                              style={{ backgroundColor: rc.bg, color: rc.text }}>
-                              {rc.label}
-                            </span>
+                            <RoleBadge admin={admin} />
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-[11px] font-medium rounded-full px-2 py-0.5"
@@ -553,7 +561,7 @@ export default function AdminsPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            {isSuperAdmin && (
+                            {canManageAdmins && (
                               <div className="relative" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => setOpenMenu(openMenu === admin.id ? null : admin.id)}
@@ -601,8 +609,8 @@ export default function AdminsPage() {
         )}
       </div>
 
-      {showCreate && <CreateAdminDialog onClose={() => setShowCreate(false)} />}
-      {editAdmin && <EditAdminDialog admin={editAdmin} onClose={() => setEditAdmin(null)} />}
+      {showCreate && <CreateAdminDialog roles={roles} onClose={() => setShowCreate(false)} />}
+      {editAdmin && <EditAdminDialog admin={editAdmin} roles={roles} onClose={() => setEditAdmin(null)} />}
       {emailPrefsAdmin && <EmailPrefsDialog admin={emailPrefsAdmin} onClose={() => setEmailPrefsAdmin(null)} />}
     </div>
   )

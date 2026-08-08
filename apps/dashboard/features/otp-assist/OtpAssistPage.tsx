@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useIssueManualOtpMutation } from '@/store/services/adminApi'
+import { hasPermission } from '@/lib/permissions'
 import { KeyRound, ShieldAlert, PhoneCall, Copy, Check } from 'lucide-react'
 
 function inputCls() {
@@ -11,7 +12,7 @@ function inputCls() {
 
 export default function OtpAssistPage() {
   const { data: session } = useSession()
-  const isSuperAdmin = session?.admin?.role === 'SUPER_ADMIN'
+  const isSuperAdmin = hasPermission(session, 'otp:issue')
 
   const [phone, setPhone] = useState('')
   const [issueOtp, { isLoading }] = useIssueManualOtpMutation()

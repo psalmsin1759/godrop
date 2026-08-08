@@ -13,6 +13,10 @@ import type {
   Rider,
   RidersListMeta,
   RiderOrderSummary,
+  Role,
+  PermissionDef,
+  CreateRoleRequest,
+  UpdateRoleRequest,
 } from '@/types/api'
 
 type Wrap<T> = { success: boolean; data: T }
@@ -149,6 +153,35 @@ export const businessApi = api.injectEndpoints({
       invalidatesTags: ['Business'],
     }),
 
+    // ─── RBAC: Roles & Permissions ────────────────────────────────
+    getBusinessPermissions: build.query<PermissionDef[], void>({
+      query: () => '/business-admin/permissions',
+      transformResponse: (res: Wrap<PermissionDef[]>) => res.data ?? [],
+    }),
+
+    getBusinessRoles: build.query<Role[], void>({
+      query: () => '/business-admin/roles',
+      providesTags: ['Role'],
+      transformResponse: (res: Wrap<Role[]>) => res.data ?? [],
+    }),
+
+    createBusinessRole: build.mutation<Role, CreateRoleRequest>({
+      query: (body) => ({ url: '/business-admin/roles', method: 'POST', body }),
+      invalidatesTags: ['Role'],
+      transformResponse: (res: Wrap<Role>) => res.data,
+    }),
+
+    updateBusinessRole: build.mutation<Role, { id: string; body: UpdateRoleRequest }>({
+      query: ({ id, body }) => ({ url: `/business-admin/roles/${id}`, method: 'PATCH', body }),
+      invalidatesTags: ['Role'],
+      transformResponse: (res: Wrap<Role>) => res.data,
+    }),
+
+    deleteBusinessRole: build.mutation<void, string>({
+      query: (id) => ({ url: `/business-admin/roles/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['Role'],
+    }),
+
   }),
 })
 
@@ -173,4 +206,9 @@ export const {
   useGetBusinessRidersAsAdminQuery,
   useGetBusinessWalletTransactionsAsAdminQuery,
   useGetBusinessTeamAsAdminQuery,
+  useGetBusinessPermissionsQuery,
+  useGetBusinessRolesQuery,
+  useCreateBusinessRoleMutation,
+  useUpdateBusinessRoleMutation,
+  useDeleteBusinessRoleMutation,
 } = businessApi

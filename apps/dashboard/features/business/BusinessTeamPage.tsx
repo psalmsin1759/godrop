@@ -7,13 +7,20 @@ import {
   useGetBusinessTeamQuery,
   useCreateBusinessMemberMutation,
   useUpdateBusinessMemberMutation,
+  useGetBusinessPermissionsQuery,
+  useGetBusinessRolesQuery,
+  useCreateBusinessRoleMutation,
+  useUpdateBusinessRoleMutation,
+  useDeleteBusinessRoleMutation,
 } from '@/store/services/businessApi'
+import { hasPermission } from '@/lib/permissions'
 import { formatDateTime } from '@/lib/utils'
 import { exportToCsv } from '@/lib/exportCsv'
-import type { BusinessMember } from '@/types/api'
+import type { BusinessMember, Role } from '@/types/api'
+import RoleManager from '@/features/roles/RoleManager'
 
-function AddMemberModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState({ email: '', firstName: '', lastName: '', password: '' })
+function AddMemberModal({ roles, onClose }: { roles: Role[]; onClose: () => void }) {
+  const [form, setForm] = useState({ email: '', firstName: '', lastName: '', password: '', roleId: roles[0]?.id ?? '' })
   const [create, { isLoading, error }] = useCreateBusinessMemberMutation()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -72,6 +79,18 @@ function AddMemberModal({ onClose }: { onClose: () => void }) {
               className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
             />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-[#0D1426] mb-1.5">Role</label>
+            <select
+              value={form.roleId}
+              onChange={(e) => setForm((f) => ({ ...f, roleId: e.target.value }))}
+              className="w-full border border-[#E7EAF1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E5FFF]/20 focus:border-[#1E5FFF]"
+            >
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
           {error && (
             <p className="text-xs text-[#FF3B30]">{(error as any)?.data?.error ?? 'Failed to create admin'}</p>
           )}
@@ -93,11 +112,11 @@ function AddMemberModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-function MemberRow({ member }: { member: BusinessMember }) {
+function MemberRow({ member, canManage }: { member: BusinessMember; canManage: boolean }) {
   const { data: session } = useSession()
-  const isOwner = session?.admin?.role === 'OWNER'
   const isSelf = session?.admin?.id === member.id
   const [update] = useUpdateBusinessMemberMutation()
+  const isFullAccess = member.role.permissions.includes('*')
 
   async function toggleActive() {
     if (!confirm(`${member.isActive ? 'Deactivate' : 'Activate'} this admin?`)) return
@@ -113,8 +132,8 @@ function MemberRow({ member }: { member: BusinessMember }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium text-[#0D1426]">{member.firstName} {member.lastName}</p>
-          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${member.role === 'OWNER' ? 'bg-[#FBEDD7] text-[#E8930C]' : 'bg-[#E7EEFF] text-[#1E5FFF]'}`}>
-            {member.role}
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isFullAccess ? 'bg-[#FBEDD7] text-[#E8930C]' : 'bg-[#E7EEFF] text-[#1E5FFF]'}`}>
+            {member.role.name}
           </span>
           {isSelf && <span className="text-[9px] text-[#9AA1B4]">(you)</span>}
         </div>
@@ -125,7 +144,7 @@ function MemberRow({ member }: { member: BusinessMember }) {
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${member.isActive ? 'bg-[#DFF5EC] text-[#1DB980]' : 'bg-[#FFE3E1] text-[#FF3B30]'}`}>
           {member.isActive ? 'Active' : 'Inactive'}
         </span>
-        {isOwner && !isSelf && member.role !== 'OWNER' && (
+        {canManage && !isSelf && !member.isOwner && (
           <button
             onClick={toggleActive}
             className="p-1.5 rounded hover:bg-[#EDF0F6] text-[#9AA1B4]"
@@ -141,10 +160,15 @@ function MemberRow({ member }: { member: BusinessMember }) {
 
 export default function BusinessTeamPage() {
   const { data: session } = useSession()
-  const isOwner = session?.admin?.role === 'OWNER'
+  const canManage = hasPermission(session, 'team:write')
   const [showAdd, setShowAdd] = useState(false)
 
   const { data: team, isLoading } = useGetBusinessTeamQuery()
+  const { data: roles = [] } = useGetBusinessRolesQuery()
+  const { data: permissions = [] } = useGetBusinessPermissionsQuery(undefined, { skip: !canManage })
+  const [createRole] = useCreateBusinessRoleMutation()
+  const [updateRole] = useUpdateBusinessRoleMutation()
+  const [deleteRole] = useDeleteBusinessRoleMutation()
 
   return (
     <div className="space-y-5">
@@ -159,7 +183,7 @@ export default function BusinessTeamPage() {
             onClick={() => exportToCsv('business-team', team ?? [], [
               { header: 'Name', value: (m) => `${m.firstName} ${m.lastName}` },
               { header: 'Email', value: (m) => m.email },
-              { header: 'Role', value: (m) => m.role },
+              { header: 'Role', value: (m) => m.role.name },
               { header: 'Status', value: (m) => m.isActive ? 'Active' : 'Inactive' },
               { header: 'Joined', value: (m) => formatDateTime(m.createdAt) },
             ])}
@@ -167,7 +191,7 @@ export default function BusinessTeamPage() {
           >
             <Download className="w-4 h-4" /> Export
           </button>
-          {isOwner && (
+          {canManage && (
             <button
               onClick={() => setShowAdd(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg"
@@ -188,12 +212,22 @@ export default function BusinessTeamPage() {
           <p className="text-center text-sm text-[#525A72] py-12">No team members yet.</p>
         ) : (
           <div className="divide-y divide-[#EDF0F6]">
-            {team.map((m) => <MemberRow key={m.id} member={m} />)}
+            {team.map((m) => <MemberRow key={m.id} member={m} canManage={canManage} />)}
           </div>
         )}
       </div>
 
-      {showAdd && <AddMemberModal onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddMemberModal roles={roles} onClose={() => setShowAdd(false)} />}
+
+      <RoleManager
+        permissions={permissions}
+        roles={roles}
+        isLoading={false}
+        canManage={canManage}
+        onCreate={(body) => createRole(body).unwrap()}
+        onUpdate={(args) => updateRole(args).unwrap()}
+        onDelete={(id) => deleteRole(id).unwrap()}
+      />
     </div>
   )
 }

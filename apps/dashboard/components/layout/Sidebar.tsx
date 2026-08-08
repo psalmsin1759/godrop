@@ -32,7 +32,9 @@ import {
   Pin,
   PinOff,
   MessageSquareWarning,
+  ShieldCheck,
 } from 'lucide-react'
+import { hasPermission } from '@/lib/permissions'
 
 function GodropMark({ size = 22 }: { size?: number }) {
   return (
@@ -48,6 +50,7 @@ interface NavLinkItem {
   icon: React.ElementType
   label: string
   badge?: number
+  permission?: string // omit for always-visible items (e.g. own dashboard/home)
 }
 
 interface NavSection {
@@ -58,67 +61,61 @@ interface NavSection {
 // ─── System admin ───────────────────────────────────────────────────────────
 const systemOperations: NavLinkItem[] = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/orders', icon: ShoppingBag, label: 'Orders' },
-  { href: '/vendors', icon: Store, label: 'Vendors' },
-  { href: '/riders', icon: Bike, label: 'Riders' },
-  { href: '/customers', icon: Users, label: 'Customers' },
-  { href: '/trucks', icon: Truck, label: 'Trucks' },
-  { href: '/parcels', icon: Package, label: 'Parcels' },
+  { href: '/orders', icon: ShoppingBag, label: 'Orders', permission: 'orders:read' },
+  { href: '/vendors', icon: Store, label: 'Vendors', permission: 'vendors:read' },
+  { href: '/riders', icon: Bike, label: 'Riders', permission: 'riders:read' },
+  { href: '/customers', icon: Users, label: 'Customers', permission: 'customers:read' },
+  { href: '/trucks', icon: Truck, label: 'Trucks', permission: 'trucks:read' },
+  { href: '/parcels', icon: Package, label: 'Parcels', permission: 'parcels:read' },
 ]
 const systemGrowth: NavLinkItem[] = [
-  { href: '/heroes', icon: ImagePlay, label: 'Hero Slides' },
-  { href: '/banners', icon: Megaphone, label: 'Promo Banners' },
-  { href: '/coupons', icon: TicketPercent, label: 'Coupons' },
+  { href: '/heroes', icon: ImagePlay, label: 'Hero Slides', permission: 'heroes:write' },
+  { href: '/banners', icon: Megaphone, label: 'Promo Banners', permission: 'banners:write' },
+  { href: '/coupons', icon: TicketPercent, label: 'Coupons', permission: 'coupons:write' },
 ]
 const systemInsights: NavLinkItem[] = [
-  { href: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { href: '/disputes', icon: MessageSquareWarning, label: 'Disputes', badge: 0 },
-  { href: '/audit-logs', icon: AlertTriangle, label: 'Audit Logs' },
+  { href: '/analytics', icon: BarChart3, label: 'Analytics', permission: 'analytics:read' },
+  { href: '/disputes', icon: MessageSquareWarning, label: 'Disputes', badge: 0, permission: 'disputes:read' },
+  { href: '/audit-logs', icon: AlertTriangle, label: 'Audit Logs', permission: 'audit_logs:read' },
 ]
 const systemAdministration: NavLinkItem[] = [
-  { href: '/admins', icon: UserCog, label: 'Admins' },
-  { href: '/businesses', icon: Building2, label: 'Businesses' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
+  { href: '/admins', icon: UserCog, label: 'Admins', permission: 'admins:read' },
+  { href: '/roles', icon: ShieldCheck, label: 'Roles', permission: 'roles:read' },
+  { href: '/businesses', icon: Building2, label: 'Businesses', permission: 'businesses:read' },
+  { href: '/settings', icon: Settings, label: 'Settings', permission: 'settings:read' },
+  { href: '/otp-assist', icon: KeyRound, label: 'OTP Assist', permission: 'otp:issue' },
 ]
 const systemMessaging: NavLinkItem[] = [
-  { href: '/messaging/email', icon: Mail, label: 'Email' },
-  { href: '/messaging/sms', icon: Smartphone, label: 'Test OTP SMS' },
-  { href: '/push', icon: Bell, label: 'Push Notifications' },
+  { href: '/messaging/email', icon: Mail, label: 'Email', permission: 'messaging:send' },
+  { href: '/messaging/sms', icon: Smartphone, label: 'Test OTP SMS', permission: 'messaging:send' },
+  { href: '/push', icon: Bell, label: 'Push Notifications', permission: 'push:send' },
 ]
 
 // ─── Vendor ──────────────────────────────────────────────────────────────────
 const vendorOperations: NavLinkItem[] = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/orders', icon: ShoppingBag, label: 'Orders' },
-  { href: '/catalog', icon: Tag, label: 'Catalogue' },
-  { href: '/wallet', icon: Wallet, label: 'Wallet' },
+  { href: '/orders', icon: ShoppingBag, label: 'Orders', permission: 'orders:read' },
+  { href: '/catalog', icon: Tag, label: 'Catalogue', permission: 'catalog:read' },
+  { href: '/wallet', icon: Wallet, label: 'Wallet', permission: 'wallet:read' },
 ]
 const vendorInsights: NavLinkItem[] = [
-  { href: '/analytics', icon: BarChart3, label: 'Analytics' },
-  { href: '/audit-logs', icon: AlertTriangle, label: 'Audit Logs' },
+  { href: '/analytics', icon: BarChart3, label: 'Analytics', permission: 'analytics:read' },
+  { href: '/audit-logs', icon: AlertTriangle, label: 'Audit Logs', permission: 'audit_logs:read' },
 ]
 const vendorAdministration: NavLinkItem[] = [
-  { href: '/team', icon: UserCog, label: 'Team' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
-]
-
-const vendorStaffOperations: NavLinkItem[] = [
-  { href: '/orders', icon: ShoppingBag, label: 'Orders' },
-  { href: '/catalog', icon: Tag, label: 'Catalogue' },
-]
-const vendorStaffAdministration: NavLinkItem[] = [
-  { href: '/settings', icon: Settings, label: 'Settings' },
+  { href: '/team', icon: UserCog, label: 'Team', permission: 'team:read' },
+  { href: '/settings', icon: Settings, label: 'Settings', permission: 'settings:read' },
 ]
 
 // ─── Business ────────────────────────────────────────────────────────────────
 const businessOperations: NavLinkItem[] = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/business/riders', icon: Bike, label: 'Riders' },
-  { href: '/business/wallet', icon: Wallet, label: 'Wallet' },
+  { href: '/business/riders', icon: Bike, label: 'Riders', permission: 'riders:read' },
+  { href: '/business/wallet', icon: Wallet, label: 'Wallet', permission: 'wallet:read' },
 ]
 const businessAdministration: NavLinkItem[] = [
-  { href: '/business/team', icon: UserCog, label: 'Team' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
+  { href: '/business/team', icon: UserCog, label: 'Team', permission: 'team:read' },
+  { href: '/settings', icon: Settings, label: 'Settings', permission: 'settings:read' },
 ]
 
 const COLLAPSED_SECTIONS_KEY = 'sidebar-collapsed-sections'
@@ -158,18 +155,11 @@ export default function Sidebar({
 
   const isBusiness = session?.admin?.type === 'BUSINESS'
   const isVendor = session?.admin?.type === 'VENDOR'
-  const isVendorStaff = isVendor && session?.admin?.role === 'STAFF'
-  const isSuperAdmin = session?.admin?.role === 'SUPER_ADMIN'
 
-  const sections: NavSection[] = isBusiness
+  const rawSections: NavSection[] = isBusiness
     ? [
         { label: 'Operations', items: businessOperations },
         { label: 'Administration', items: businessAdministration },
-      ]
-    : isVendorStaff
-    ? [
-        { label: 'Operations', items: vendorStaffOperations },
-        { label: 'Administration', items: vendorStaffAdministration },
       ]
     : isVendor
     ? [
@@ -181,14 +171,16 @@ export default function Sidebar({
         { label: 'Operations', items: systemOperations },
         { label: 'Growth', items: systemGrowth },
         { label: 'Insights', items: systemInsights },
-        {
-          label: 'Administration',
-          items: isSuperAdmin
-            ? [...systemAdministration, { href: '/otp-assist', icon: KeyRound, label: 'OTP Assist' }]
-            : systemAdministration,
-        },
+        { label: 'Administration', items: systemAdministration },
         { label: 'Messaging', items: systemMessaging },
       ]
+
+  // Granular RBAC: a nav item with no `permission` is always visible (own
+  // dashboard/home); otherwise it only shows if the admin's role grants it.
+  const sections: NavSection[] = rawSections.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.permission || hasPermission(session, item.permission)),
+  }))
 
   const adminInitials = session?.admin
     ? `${session.admin.firstName[0]}${session.admin.lastName[0]}`

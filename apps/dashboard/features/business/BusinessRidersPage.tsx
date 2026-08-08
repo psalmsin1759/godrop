@@ -9,6 +9,7 @@ import {
   useGetBusinessRiderOrdersQuery,
 } from '@/store/services/businessApi'
 import { useSession } from 'next-auth/react'
+import { hasPermission } from '@/lib/permissions'
 import { formatNaira, formatDateTime } from '@/lib/utils'
 import { exportToCsv } from '@/lib/exportCsv'
 import type { Rider } from '@/types/api'
@@ -119,7 +120,7 @@ function RiderOrdersDrawer({ rider, onClose }: { rider: Rider; onClose: () => vo
 
 export default function BusinessRidersPage() {
   const { data: session } = useSession()
-  const isOwner = session?.admin?.role === 'OWNER'
+  const isOwner = hasPermission(session, 'riders:write')
   const [search, setSearch] = useState('')
   const [showAssign, setShowAssign] = useState(false)
   const [selectedRider, setSelectedRider] = useState<Rider | null>(null)

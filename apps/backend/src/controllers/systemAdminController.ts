@@ -20,7 +20,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       action: "LOGIN",
       entity: result.admin.type === "VENDOR" ? "VendorAdmin" : "SystemAdmin",
       entityId: result.admin.id,
-      newValues: { email: result.admin.email, role: result.admin.role, type: result.admin.type },
+      newValues: { email: result.admin.email, role: result.admin.role.name, type: result.admin.type },
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
     });

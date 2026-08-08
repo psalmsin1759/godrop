@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { AdminRole } from "@prisma/client";
 
 export const graphQuerySchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "from must be YYYY-MM-DD").optional(),
@@ -65,11 +64,23 @@ export const inviteTeamMemberSchema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
-  role: z.enum([AdminRole.MANAGER, AdminRole.STAFF]),
+  roleId: z.string().cuid(),
 });
 
 export const updateTeamMemberSchema = z.object({
-  role: z.enum([AdminRole.MANAGER, AdminRole.STAFF]),
+  roleId: z.string().cuid(),
+});
+
+export const createVendorRoleSchema = z.object({
+  name: z.string().min(1).max(50),
+  description: z.string().max(200).optional(),
+  permissions: z.array(z.string()).min(1),
+});
+
+export const updateVendorRoleSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  description: z.string().max(200).optional(),
+  permissions: z.array(z.string()).min(1).optional(),
 });
 
 export const changePasswordSchema = z.object({

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useGetAuditLogsQuery, useGetVendorAuditLogsQuery } from './store/auditApi'
 import { exportToCsv } from '@/lib/exportCsv'
+import { hasPermission } from '@/lib/permissions'
 import { Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertTriangle, RefreshCw, Download } from 'lucide-react'
 
 const actionColors: Record<string, { bg: string; text: string }> = {
@@ -27,7 +28,7 @@ export default function AuditLogPage() {
   const router = useRouter()
   const admin = session?.admin
   const isVendor = admin?.type === 'VENDOR'
-  const isVendorStaff = isVendor && admin?.role === 'STAFF'
+  const isVendorStaff = isVendor && !hasPermission(session, 'audit_logs:read')
 
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')

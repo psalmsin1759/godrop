@@ -1,22 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
-import { AdminRole, AdminType } from "@prisma/client";
+import { AdminType } from "@prisma/client";
 import { fail } from "../utils/response";
-
-type SystemRole = Extract<AdminRole, "SUPER_ADMIN" | "ADMIN">;
-type VendorRole = Extract<AdminRole, "OWNER" | "MANAGER" | "STAFF">;
-
-const SYSTEM_ROLE_WEIGHT: Record<SystemRole, number> = {
-  SUPER_ADMIN: 2,
-  ADMIN: 1,
-};
-
-const VENDOR_ROLE_WEIGHT: Record<VendorRole, number> = {
-  OWNER: 3,
-  MANAGER: 2,
-  STAFF: 1,
-};
+import { hasPermission, WILDCARD } from "../lib/permissions";
 
 interface AdminJwtPayload {
   adminId: string;
@@ -34,7 +21,7 @@ export async function requireAdminAuth(req: Request, res: Response, next: NextFu
 
     const admin = await prisma.admin.findUnique({
       where: { id: payload.adminId },
-      include: { vendor: true },
+      include: { vendor: true, role: true },
     });
     if (!admin || !admin.isActive) return fail(res, "Unauthorized", 401);
 
@@ -59,28 +46,34 @@ export function requireVendorAdmin(req: Request, res: Response, next: NextFuncti
   next();
 }
 
-export function requireSystemRole(minRole: SystemRole) {
+export function requireBusinessAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.admin || req.admin.type !== AdminType.BUSINESS) {
+    return fail(res, "Forbidden — business admin access required", 403);
+  }
+  next();
+}
+
+// Granular RBAC: gate a route on a permission key from the admin's Role
+// (see lib/permissions.ts for the catalog). '*' on a role grants everything.
+export function requirePermission(key: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const admin = req.admin;
     if (!admin) return fail(res, "Unauthorized", 401);
-    if (admin.type !== AdminType.SYSTEM) return fail(res, "Forbidden", 403);
-    const weight = SYSTEM_ROLE_WEIGHT[admin.role as SystemRole];
-    if (!weight || weight < SYSTEM_ROLE_WEIGHT[minRole]) {
+    if (!hasPermission(admin.role?.permissions, key)) {
       return fail(res, "Forbidden — insufficient permissions", 403);
     }
     next();
   };
 }
 
-export function requireVendorRole(minRole: VendorRole) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const admin = req.admin;
-    if (!admin) return fail(res, "Unauthorized", 401);
-    if (admin.type !== AdminType.VENDOR) return fail(res, "Forbidden", 403);
-    const weight = VENDOR_ROLE_WEIGHT[admin.role as VendorRole];
-    if (!weight || weight < VENDOR_ROLE_WEIGHT[minRole]) {
-      return fail(res, "Forbidden — insufficient permissions", 403);
-    }
-    next();
-  };
+// Identity check (not a capability check) — for actions exclusive to the
+// account owner (e.g. deleting the vendor/business account), independent
+// of whatever permission bundle the owner's role happens to grant.
+export function requireOwner(req: Request, res: Response, next: NextFunction) {
+  if (!req.admin?.isOwner) {
+    return fail(res, "Forbidden — owner access required", 403);
+  }
+  next();
 }
+
+export { WILDCARD };

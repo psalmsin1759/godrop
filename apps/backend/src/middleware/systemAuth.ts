@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { requireAdminAuth, requireSystemAdmin, requireSystemRole } from "./adminAuth";
+import { requireAdminAuth, requireSystemAdmin, requirePermission, requireOwner } from "./adminAuth";
 
-export { requireSystemRole };
+export { requirePermission, requireOwner };
 
 export function requireSystemAuth(req: Request, res: Response, next: NextFunction) {
   requireAdminAuth(req, res, (err?: any) => {

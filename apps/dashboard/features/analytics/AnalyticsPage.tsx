@@ -18,6 +18,7 @@ import { useGetRiderStatsQuery, useGetRidersQuery } from '@/store/services/rider
 import { useGetVendorsQuery } from '@/features/vendors/store/vendorsApi'
 import { useGetDisputesQuery } from '@/store/services/disputesApi'
 import { formatNaira, formatNumber } from '@/lib/utils'
+import { hasPermission } from '@/lib/permissions'
 import { Loader2, TrendingUp, ShoppingBag, Users, Store, Bike, Star, UserCheck, Shield, MessageSquareWarning } from 'lucide-react'
 import type { GraphGranularity } from '@/types/api'
 
@@ -801,7 +802,7 @@ export default function AnalyticsPage() {
   const router = useRouter()
   const admin = session?.admin
   const isVendor = admin?.type === 'VENDOR'
-  const isVendorStaff = isVendor && admin?.role === 'STAFF'
+  const isVendorStaff = isVendor && !hasPermission(session, 'analytics:read')
 
   useEffect(() => {
     if (isVendorStaff) router.replace('/orders')

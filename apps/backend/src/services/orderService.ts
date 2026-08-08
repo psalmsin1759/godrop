@@ -567,6 +567,7 @@ export async function listAllOrders(opts: {
   if (opts.search) {
     where.OR = [
       { trackingCode: { contains: opts.search, mode: "insensitive" } },
+      { paystackRef: { contains: opts.search, mode: "insensitive" } },
       { customer: { is: { firstName: { contains: opts.search, mode: "insensitive" } } } },
       { customer: { is: { lastName: { contains: opts.search, mode: "insensitive" } } } },
       { customer: { is: { phone: { contains: opts.search } } } },

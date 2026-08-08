@@ -468,7 +468,7 @@ function SystemOrdersTable() {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9AA1B4]" />
             <input
               type="text"
-              placeholder="Search tracking, customer…"
+              placeholder="Search tracking, payment ref, customer…"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               className="pl-8 pr-3 py-1.5 text-xs rounded border border-[#E7EAF1] bg-[#F7F9FC] text-[#525A72] placeholder:text-[#9AA1B4] focus:outline-none focus:ring-1 focus:ring-[#1E5FFF] w-52"

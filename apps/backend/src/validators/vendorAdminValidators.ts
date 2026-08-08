@@ -64,11 +64,12 @@ export const inviteTeamMemberSchema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
-  roleId: z.string().cuid(),
+  // Not .cuid() — seeded default roles use hashed ids, not Prisma's cuid().
+  roleId: z.string().min(1),
 });
 
 export const updateTeamMemberSchema = z.object({
-  roleId: z.string().cuid(),
+  roleId: z.string().min(1),
 });
 
 export const createVendorRoleSchema = z.object({

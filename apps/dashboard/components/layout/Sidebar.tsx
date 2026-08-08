@@ -171,8 +171,8 @@ export default function Sidebar({
         { label: 'Operations', items: systemOperations },
         { label: 'Growth', items: systemGrowth },
         { label: 'Insights', items: systemInsights },
-        { label: 'Administration', items: systemAdministration },
         { label: 'Messaging', items: systemMessaging },
+        { label: 'Administration', items: systemAdministration },
       ]
 
   // Granular RBAC: a nav item with no `permission` is always visible (own

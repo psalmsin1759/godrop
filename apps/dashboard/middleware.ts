@@ -30,7 +30,11 @@ const PATH_PERMISSION_MAP: [string, string][] = [
   ['/catalog', 'catalog:read'],
   ['/wallet', 'wallet:read'],
   ['/team', 'team:read'],
-  ['/settings', 'settings:read'],
+  // /settings is intentionally NOT gated here: it hosts personal tabs
+  // (profile, notifications, security/change-password) every admin needs
+  // regardless of role, alongside a platform-config tab that's gated on
+  // its own (backend enforces settings:read/write; SettingsPage hides the
+  // tab client-side for admins who lack it).
 ]
 
 function hasPermission(permissions: string[] | undefined, key: string): boolean {

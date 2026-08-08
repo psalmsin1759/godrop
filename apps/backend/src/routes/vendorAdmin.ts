@@ -43,7 +43,12 @@ router.use(requireVendorAuth);
 
 // Profile
 router.get("/me", ctrl.getProfile);
-router.delete("/me", requireOwner, ctrl.deleteAccount);
+router.delete(
+  "/me",
+  requireOwner,
+  auditVendorAction({ action: "DELETE_ACCOUNT", entity: "VendorAdmin" }),
+  ctrl.deleteAccount
+);
 router.post(
   "/me/change-password",
   validate(changePasswordSchema),
@@ -57,10 +62,21 @@ router.patch(
   ctrl.updateProfile
 );
 router.get("/me/settings", ctrl.getProfileSettings);
-router.patch("/me/settings", validate(updateVendorAdminSettingsSchema), ctrl.updateProfileSettings);
+router.patch(
+  "/me/settings",
+  validate(updateVendorAdminSettingsSchema),
+  auditVendorAction({ action: "UPDATE_SETTINGS", entity: "VendorAdmin" }),
+  ctrl.updateProfileSettings
+);
 
 // ─── Catalog image upload ─────────────────────────────────────
-router.post("/catalog/image", requirePermission("catalog:write"), catalogImageUpload.single("file"), ctrl.uploadCatalogImage);
+router.post(
+  "/catalog/image",
+  requirePermission("catalog:write"),
+  catalogImageUpload.single("file"),
+  auditVendorAction({ action: "UPLOAD_CATALOG_IMAGE", entity: "Product" }),
+  ctrl.uploadCatalogImage
+);
 
 // Categories
 router.get("/categories", requirePermission("catalog:read"), ctrl.listCategories);
@@ -165,11 +181,18 @@ const vendorActor = (req: Parameters<typeof ctrl.getProfile>[0]) => ({
   type: "VENDOR" as const,
   id: req.admin!.vendorId!,
 });
-router.post("/disputes/upload", requirePermission("disputes:write"), upload.single("file"), disputeCtrl.uploadDisputeEvidence);
+router.post(
+  "/disputes/upload",
+  requirePermission("disputes:write"),
+  upload.single("file"),
+  auditVendorAction({ action: "UPLOAD_DISPUTE_EVIDENCE", entity: "Dispute" }),
+  disputeCtrl.uploadDisputeEvidence
+);
 router.post(
   "/disputes",
   requirePermission("disputes:write"),
   validate(createMyDisputeSchema),
+  auditVendorAction({ action: "CREATE_DISPUTE", entity: "Dispute" }),
   disputeCtrl.createMyDispute(vendorActor)
 );
 router.get(
@@ -188,6 +211,7 @@ router.post(
   "/disputes/:id/messages",
   requirePermission("disputes:write"),
   validate(addMyMessageSchema),
+  auditVendorAction({ action: "ADD_DISPUTE_MESSAGE", entity: "Dispute", getEntityId: (r) => r.params.id }),
   disputeCtrl.addMyMessage(vendorActor)
 );
 
@@ -268,15 +292,34 @@ router.post(
   "/audit-logs/export",
   requirePermission("audit_logs:read"),
   validate(exportAuditLogsSchema),
+  auditVendorAction({ action: "EXPORT_AUDIT_LOGS", entity: "AuditLog" }),
   ctrl.exportAuditLogs
 );
 
 // ─── Notifications (own account) ─────────────────────────────
-router.post("/me/push-token", validate(pushTokenSchema), ctrl.registerPushToken);
-router.delete("/me/push-token", validate(removePushTokenSchema), ctrl.removePushToken);
+router.post(
+  "/me/push-token",
+  validate(pushTokenSchema),
+  auditVendorAction({ action: "REGISTER_PUSH_TOKEN", entity: "VendorAdmin" }),
+  ctrl.registerPushToken
+);
+router.delete(
+  "/me/push-token",
+  validate(removePushTokenSchema),
+  auditVendorAction({ action: "REMOVE_PUSH_TOKEN", entity: "VendorAdmin" }),
+  ctrl.removePushToken
+);
 router.get("/notifications", ctrl.listNotifications);
 router.get("/notifications/unread-count", ctrl.getNotificationsUnreadCount);
-router.patch("/notifications/read-all", ctrl.markAllNotificationsRead);
-router.patch("/notifications/:id/read", ctrl.markNotificationRead);
+router.patch(
+  "/notifications/read-all",
+  auditVendorAction({ action: "MARK_ALL_NOTIFICATIONS_READ", entity: "AdminNotification" }),
+  ctrl.markAllNotificationsRead
+);
+router.patch(
+  "/notifications/:id/read",
+  auditVendorAction({ action: "MARK_NOTIFICATION_READ", entity: "AdminNotification", getEntityId: (r) => r.params.id }),
+  ctrl.markNotificationRead
+);
 
 export default router;

@@ -20,14 +20,17 @@ export const createSystemAdminSchema = z.object({
   email: z.string().email(),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
-  roleId: z.string().cuid().optional(),
+  // Not .cuid() — the actual FK constraint on Role is what matters, and
+  // enforcing a specific ID format here is brittle against how those rows
+  // were created (e.g. seeded roles use hashed ids, not Prisma's cuid()).
+  roleId: z.string().min(1).optional(),
 });
 
 export const updateSystemAdminSchema = z.object({
   firstName: z.string().min(1).max(50).optional(),
   lastName: z.string().min(1).max(50).optional(),
   isActive: z.boolean().optional(),
-  roleId: z.string().cuid().optional(),
+  roleId: z.string().min(1).optional(),
 });
 
 export const createRoleSchema = z.object({

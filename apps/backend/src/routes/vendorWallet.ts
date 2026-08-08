@@ -25,6 +25,7 @@ router.post(
   "/bank-account",
   requireOwner,
   validate(saveBankAccountSchema),
+  auditVendorAction({ action: "SAVE_BANK_ACCOUNT", entity: "VendorWallet" }),
   vendorWalletController.saveBankAccount
 );
 router.post(
